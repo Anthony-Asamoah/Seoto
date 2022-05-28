@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Foodie{% endblock %}
+
+{% block style %}
+    <style>
+
+    .time {
+    color: brown;
+    }
+    .food1, .food2, .fancy {
+        color: darkgoldenrod;
+    }
+
+    .images {
+        text-align: center !important;
+        max-width: 1000px;
+        position: relative;
+        margin: auto;
+    }
+    .images .item-img {
+        margin-top:10px;
+        overflow: hidden;
+        border: 5px ridge darkgoldenrod;
+        border-radius: 5px;
+    }
+    img  {
+        object-fit: cover !important;
+        object-position: center !important;
+        width: 100%;
+        height: 20vh;
+        border-radius: 5px;
+        transition: 0.5s ease !important;
+    }
+    img:hover {
+        height: auto;
+        width: auto;
+    }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="header">
+            <h1>So you want something to eat...</h1>
+            <hr />
+        </div>
+        {% if time == 'Fasting' %}
+            <div class="main" style="text-align: center">
+                <h3>
+                    Unfortunately you will be going to bed soon.
+                    Have {{ option_1 | lower}} or {{ option_2 | lower }} for now.
+                </h3>
+            </div>
+        {% else %}
+            <div class="main">
+                <h3>
+                    It's time for <span class="time">{{ mealtime | lower }}</span>
+                    {% if option1 or option2 %}
+                        , so i suggest <span class="food1">{{ option_1 | lower }}</span>
+                        {% if option1 %}
+                        , or <span class="food2">{{ option_2 | lower }}</span>
+                        {% endif %}
+                        {% else %}
+                        but there is nothing on the menu!<br />
+                        <p class="mt-3">Kindly add foods/meals to the menu.</p>
+                    {% endif %}
+                </h3>
+                {% if fancy %}
+                    <h4>Otherwise let's get some <span class="fancy">{{ fancy | lower }}</span></h4>
+                {% endif %}
+            </div>
+            {% if option1 or option2 %}
+                <div class="images">
+                    <div class="option1 slide-item">
+                        <div class="main_img item-img">
+                        <img src="{{ option_1.main_img.url }}" alt="{{ option_1 }}">
+                    </div>
+                    {% if option_1.img_1 %}
+                        <div class="img_1 item-img">
+                            <img src="{{ option_1.img_1.url }}" alt="{{ option_1 }}">
+                        </div>
+                    {% endif %}
+                    {% if option_1.img_2 %}
+                        <div class="img_2 item-img">
+                            <img src="{{ option_1.img_2.url }}" alt="{{ option_1 }}">
+                        </div>
+                    {% endif %}
+                    </div>
+
+                    <div class="option2 slide-item">
+                        <div class="main_img item-img">
+                        <img src="{{ option_2.main_img.url }}" alt="{{ option_2 }}">
+                    </div>
+                    {% if option_1.img_1 %}
+                        <div class="img_1 item-img">
+                            <img src="{{ option_2.img_1.url }}" alt="{{ option_2 }}">
+                        </div>
+                    {% endif %}
+                    {% if option_1.img_2 %}
+                        <div class="img_2 item-img">
+                            <img src="{{ option_2.img_2.url }}" alt="{{ option_2 }}">
+                        </div>
+                    {% endif %}
+                    </div>
+
+                    <div class="fancy slide-item">
+                        <div class="main_img item-img">
+                        <img src="{{ fancy.main_img.url }}" alt="{{ fancy }}">
+                    </div>
+                    {% if fancy.img_1 %}
+                        <div class="img_1 item-img">
+                            <img src="{{ fancy.img_1.url }}" alt="{{ fancy }}">
+                        </div>
+                    {% endif %}
+                    {% if fancy.img_2 %}
+                        <div class="img_2 item-img">
+                            <img src="{{ fancy.img_2.url }}" alt="{{ fancy }}">
+                        </div>
+                    {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <div style="text-align:center">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        {% if option1 or option2 %}
+            let slideIndex = 0;
+            showSlides();
+
+            function showSlides() {
+              let i;
+              let slides = document.getElementsByClassName("slide-item");
+              let dots = document.getElementsByClassName("dot");
+
+              for (i = 0; i < slides.length; i++) {
+                slides[i].style.display = "none";
+              }
+              slideIndex++;
+              if (slideIndex > slides.length) {slideIndex = 1}
+              for (i = 0; i < dots.length; i++) {
+                dots[i].className = dots[i].className.replace(" active", "");
+              }
+              slides[slideIndex-1].style.display = "block";
+              dots[slideIndex-1].className += " active";
+              setTimeout(showSlides, 2000); // Change image every 2 seconds
+            }
+        {% endif %}
+    </script>
+{% endblock %}

@@ -1,0 +1,1 @@
+web: gunicorn seoto.wsgi:application --log-file -

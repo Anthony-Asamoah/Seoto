@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Rhyme DB{% endblock %}
+
+{% block content %}
+
+    <div class="container">
+        <div class="header">
+            <h2>Type in the Rhyme you want and hit the button</h2>
+        </div>
+    <div class="main mt-3">
+        <div class="inputbox">
+            <form action="{% url 'rhymes' %}" method="post">
+                {% csrf_token %}
+                <button class="btn btn-success" type="submit">Find</button>
+                <input type="text" name="rhyme">
+            </form>
+        </div>
+        <div class="rhymes mt-5">
+            {% if words %}
+                <ol>Available words that rhyme with "{{ input }}"
+                    {% for word in words %}
+                        <li>{{ word }}</li>
+                    {% endfor %}
+                </ol>
+                <button class="btn btn-primary">Save</button>
+            {% else %}
+                <h3>No Rhymes Found</h3>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,12 @@
+db.sqlite3
+todo.txt
+
+.env
+.idea/
+/media/
+/__pycache__/
+seoto/__pycache__/
+foodie/__pycache__/
+home/__pycache__/
+rhymes/__pycache__/
+throw_a_die/__pycache__/
