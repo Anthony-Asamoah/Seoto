@@ -1,7 +1,6 @@
 db.sqlite3
 todo.txt
 
-.env
 .idea/
 /media/
 /__pycache__/
