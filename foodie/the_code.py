@@ -36,23 +36,26 @@ def suggest():
 		suggestion1 = available[randint(0, len(available) - 1)]
 		suggestion2 = available[randint(0, len(available) - 1)]
 
-		if fancy:
-			fancy = fancy[randint(0, len(fancy) - 1)]
 		# To ensure both suggestions are not the same
 		while suggestion2 == suggestion1:
 			suggestion2 = available[randint(0, len(available) - 1)]
 
-		return {
+		context = {
 			'mealtime': mealtime,
-			'option1': suggestion1,
-			'option2': suggestion2,
-			'fancy': fancy
+			'option_1': suggestion1,
+			'option_2': suggestion2,
 		}
 
+		if fancy:
+			fancy = fancy[randint(0, len(fancy) - 1)]
+			context.update({'fancy': fancy})
+
 	else:
-		return {
+		context = {
 			'mealtime': mealtime,
-			'option1': None,
-			'option2': None,
+			'option_1': None,
+			'option_2': None,
 			'fancy': None
 		}
+
+	return context

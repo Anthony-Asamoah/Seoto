@@ -48,7 +48,7 @@
             <h1>So you want something to eat...</h1>
             <hr />
         </div>
-        {% if time == 'Fasting' %}
+        {% if mealtime == 'Fasting' %}
             <div class="main" style="text-align: center">
                 <h3>
                     Unfortunately you will be going to bed soon.
@@ -59,9 +59,9 @@
             <div class="main">
                 <h3>
                     It's time for <span class="time">{{ mealtime | lower }}</span>
-                    {% if option1 or option2 %}
+                    {% if option_1 or option_2 %}
                         , so i suggest <span class="food1">{{ option_1 | lower }}</span>
-                        {% if option1 %}
+                        {% if option_1 %}
                         , or <span class="food2">{{ option_2 | lower }}</span>
                         {% endif %}
                         {% else %}
@@ -73,7 +73,7 @@
                     <h4>Otherwise let's get some <span class="fancy">{{ fancy | lower }}</span></h4>
                 {% endif %}
             </div>
-            {% if option1 or option2 %}
+            {% if option_1 or option_2 %}
                 <div class="images">
                     <div class="option1 slide-item">
                         <div class="main_img item-img">
@@ -107,21 +107,23 @@
                     {% endif %}
                     </div>
 
-                    <div class="fancy slide-item">
-                        <div class="main_img item-img">
-                        <img src="{{ fancy.main_img.url }}" alt="{{ fancy }}">
-                    </div>
-                    {% if fancy.img_1 %}
-                        <div class="img_1 item-img">
-                            <img src="{{ fancy.img_1.url }}" alt="{{ fancy }}">
+                    {% if fancy %}
+                        <div class="fancy slide-item">
+                            <div class="main_img item-img">
+                            <img src="{{ fancy.main_img.url }}" alt="{{ fancy }}">
+                        </div>
+                        {% if fancy.img_1 %}
+                            <div class="img_1 item-img">
+                                <img src="{{ fancy.img_1.url }}" alt="{{ fancy }}">
+                            </div>
+                        {% endif %}
+                        {% if fancy.img_2 %}
+                            <div class="img_2 item-img">
+                                <img src="{{ fancy.img_2.url }}" alt="{{ fancy }}">
+                            </div>
+                        {% endif %}
                         </div>
                     {% endif %}
-                    {% if fancy.img_2 %}
-                        <div class="img_2 item-img">
-                            <img src="{{ fancy.img_2.url }}" alt="{{ fancy }}">
-                        </div>
-                    {% endif %}
-                    </div>
                 </div>
             {% endif %}
 
@@ -136,7 +138,7 @@
 
 {% block script %}
     <script>
-        {% if option1 or option2 %}
+        {% if option_1 or option_2 %}
             let slideIndex = 0;
             showSlides();
 
