@@ -10,35 +10,37 @@ def suggest():
 	available = ['Some Water', 'Tea', 'A Beverage']
 	mealtime = 'Fasting'
 
-	fancy = meal.objects.filter(isFancy=True)
+	fancy = meal.objects.filter(isAvailable=True, isFancy=True)
 
 	if hour in range(6, 10):
 		mealtime = 'Breakfast'
-		available = meal.objects.filter(isBreakfast=True)
+		available = meal.objects.filter(isAvailable=True, isBreakfast=True)
 
 	if hour in range(10, 13):
 		mealtime = 'Brunch'
-		available = meal.objects.filter(isBrunch=True)
+		available = meal.objects.filter(isAvailable=True, isBrunch=True)
 
 	if hour in range(13, 18):
 		mealtime = 'Lunch'
-		available = meal.objects.filter(isLunch=True)
+		available = meal.objects.filter(isAvailable=True, isLunch=True)
 
 	if hour in range(18, 21):
 		mealtime = 'Dinner'
-		available = meal.objects.filter(isDinner=True)
+		available = meal.objects.filter(isAvailable=True, isDinner=True)
 
 	if hour in range(21, 24):
 		mealtime = 'Extra'
-		available = meal.objects.filter(isExtra=True)
+		available = meal.objects.filter(isAvailable=True, isExtra=True)
 
 	if available:
 		suggestion1 = available[randint(0, len(available) - 1)]
 		suggestion2 = available[randint(0, len(available) - 1)]
 
 		# To ensure both suggestions are not the same
-		while suggestion2 == suggestion1:
-			suggestion2 = available[randint(0, len(available) - 1)]
+		if len(available) > 1:
+			print('checking suggestion2')
+			while suggestion2 == suggestion1:
+				suggestion2 = available[randint(0, len(available) - 1)]
 
 		context = {
 			'mealtime': mealtime,
