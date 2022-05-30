@@ -6,7 +6,7 @@ from .models import meal
 class mealAdmin(admin.ModelAdmin):
 	list_display = [
 		'name', 'description',
-		'IsAvailable', 'isBreakfast', 'isBrunch', 'isLunch', 'isDinner', 'isExtra', 'isFancy'
+		'isAvailable', 'isBreakfast', 'isBrunch', 'isLunch', 'isDinner', 'isExtra', 'isFancy'
 	]
 	list_editable = list_display[2:]
 	list_display_links = list_display[:1]

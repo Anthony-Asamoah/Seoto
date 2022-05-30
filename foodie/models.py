@@ -8,7 +8,7 @@ class meal(models.Model):
 	isDinner = models.BooleanField(default=False)
 	isExtra = models.BooleanField(default=False)
 	isFancy = models.BooleanField(default=False)
-	IsAvailable = models.BooleanField(default=True)
+	isAvailable = models.BooleanField(default=True)
 
 	name = models.CharField(max_length=100)
 	description = models.TextField(blank=True)
