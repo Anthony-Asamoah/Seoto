@@ -5,6 +5,7 @@ todo.txt
 /media/
 /__pycache__/
 seoto/__pycache__/
+interest_calc/__pycache__/
 foodie/__pycache__/
 home/__pycache__/
 rhymes/__pycache__/
