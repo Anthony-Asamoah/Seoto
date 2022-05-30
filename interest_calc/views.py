@@ -1,5 +1,5 @@
 from django.shortcuts import render, HttpResponse
-from .the_code import interest as calc
+from .the_code import interest as calc, validation
 
 
 def interest(request):
@@ -17,6 +17,11 @@ def interest(request):
 		}
 
 		if principal and rate and time:
+			isValid = validation(principal, rate, time)
+		else:
+			isValid = False
+
+		if isValid:
 			raw_data = calc(principal, rate, time)
 			amount = raw_data.simple()
 
@@ -27,7 +32,7 @@ def interest(request):
 
 			context.update({'amount': amount})
 		else:
-			context.update({'amount': "Kindly fill in all inputs with numbers"})
+			context.update({'amount': "Kindly fill in all inputs with positive numbers only"})
 
 		return render(request, 'interest/interest.html', context)
 

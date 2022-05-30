@@ -1,3 +1,21 @@
+def validation(a, b, c):
+	allowed_input = [str(i) for i in range(10)]
+
+	for i in a:
+		if i not in allowed_input:
+			return False
+
+	for j in b:
+		if j not in allowed_input:
+			return False
+
+	for k in c:
+		if k not in c:
+			return False
+
+	return True
+
+
 class interest:
 	def __init__(self, principal, rate, time):
 		self.principal = int(principal)
