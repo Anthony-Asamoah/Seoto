@@ -11,9 +11,11 @@ from flip_a_coin.views import coin
 
 from home.views import index
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('accounts/', include('django.contrib.auth.urls')),
+
+    path('accounts/', include('accounts.urls')),
 
     path('', index, name='index'),
 
@@ -23,4 +25,3 @@ urlpatterns = [
     path('throw_a_die', die, name='throw_a_die'),
     path('flip_a_coin', coin, name='flip_a_coin')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

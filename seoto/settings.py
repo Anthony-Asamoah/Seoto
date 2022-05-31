@@ -143,3 +143,8 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'anthonyasamoah48@gmail.com'
 EMAIL_HOST_PASSWORD = 'fdjwsuscxzbhrpnc'
 EMAIL_USE_TLS = True
+
+
+# accounts config
+LOGIN_REDIRECT_URL = 'index'
+LOGOUT_REDIRECT_URL = 'index'
