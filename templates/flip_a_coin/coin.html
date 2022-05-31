@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Flip a Coin{% endblock %}
+
+{% load static %}
+
+{% block style %}
+    <style>
+        .main {
+            text-align: center;
+        }
+        .coin {
+        height: 200px;
+        width: 200px;
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: cover;
+        margin: auto;
+        {% if flip == 2 %}
+            background-image: url("{% static 'img/coin_tails.png' %}");
+        {% else %}
+            background-image: url("{% static 'img/coin_heads.png' %}");
+        {% endif %}
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="header">
+            <h1>Hit the button to flip </h1>
+        </div>
+        <div class="main">
+            <div class="button">
+                <form action="{% url 'flip_a_coin' %}" method="post">
+                    {% csrf_token %}
+                    <button class="btn btn-primary" type="submit">Flip</button>
+                </form>
+            </div>
+            {% if flip %}
+                <div class="coin"></div>
+                <div class="info">
+                    <h5>{{ side | title }} side up!</h5>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
