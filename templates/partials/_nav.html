@@ -1,5 +1,5 @@
 <div class="navbar">
-    <a href="{% url 'login' %}" class="nav-link">Home</a>
+    <a href="{% url 'index' %}" class="nav-link">Home</a>
     {% if user.is_authenticated %}
         <a href="{% url 'logout' %}" class="nav-link">Logout</a>
     {% else %}
