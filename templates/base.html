@@ -45,10 +45,19 @@
 </head>
 <body>
     {% include 'partials/_nav.html' %}
-    {% include 'partials/_messsages.html' %}
+    {% include 'partials/_messages.html' %}
     {% block content %}{% endblock %}
     {% include 'partials/_footer.html' %}
 </body>
+
 <script rel="script" href="{% static 'js/bootstrap.min.js' %}"></script>
-    {% block script %}{% endblock %}
+
+<script>
+    setTimeout(function() {
+        $('#message').fadeOut('slow');
+    }, 5000);
+</script>
+
+{% block script %}{% endblock %}
+
 </html>
