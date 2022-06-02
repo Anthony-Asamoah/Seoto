@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
+from django.contrib.messages import constants as messages
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -136,7 +137,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = 'media/'
 
 
-# email config
+# Email config
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -145,6 +146,12 @@ EMAIL_HOST_PASSWORD = 'fdjwsuscxzbhrpnc'
 EMAIL_USE_TLS = True
 
 
-# accounts config
+# Accounts config
 LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'index'
+
+
+# Messages Config
+MESSAGE_TAGS = {
+	messages.ERROR: 'danger',
+}
