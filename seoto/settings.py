@@ -39,6 +39,7 @@ INSTALLED_APPS = [
 	'rhymes',
 	'throw_a_die',
 	'flip_a_coin',
+	'jotter',
 
 	# Django default apps
 	'django.contrib.admin',
