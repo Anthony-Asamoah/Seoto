@@ -5,8 +5,13 @@
 <head>
     <meta charset="UTF-8">
     <title>Seoto {% block title %}{% endblock %}</title>
+    <script src="{% static 'js/bootstrap.min.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <style>
+        #message {
+            text-align: center;
+        }
+
         body {
             margin-bottom: 150px;
         }
@@ -35,10 +40,6 @@
         }
         
         @media screen and (width: 481px) {
-            .navbar {
-                height:10vh;
-            }
-            
         }
     </style>
     {% block style %}{% endblock %}
