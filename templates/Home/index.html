@@ -24,14 +24,22 @@
             <hr />
         </div>
         <div class="main mt-5 mb-5">
-            <h4>Available Apps</h4>
+            <div class="anonymous_apps">
 
-            <a href="{% url 'foodie' %}"><button class="btn btn-primary">Foodie</button></a>
-            <a href="{% url 'interest_calculator'%}"><button class="btn btn-primary">Interest Calc</button></a>
-            <a href="{% url 'rhymes' %}"><button class="btn btn-primary">Rhyme DB</button></a>
-            <a href="{% url 'throw_a_die' %}"><button class="btn btn-primary">Throw a Die</button></a>
-            <a href="{% url 'flip_a_coin' %}"><button class="btn btn-primary">Flip a coin</button></a>
 
+                <h4>Available Apps</h4>
+
+                <a href="{% url 'foodie' %}"><button class="btn btn-primary">Foodie</button></a>
+                <a href="{% url 'interest_calculator'%}"><button class="btn btn-primary">Interest Calc</button></a>
+                <a href="{% url 'rhymes' %}"><button class="btn btn-primary">Rhyme DB</button></a>
+                <a href="{% url 'throw_a_die' %}"><button class="btn btn-primary">Throw a Die</button></a>
+                <a href="{% url 'flip_a_coin' %}"><button class="btn btn-primary">Flip a coin</button></a>
+            </div>
+            <div class="user_apps mt-5">
+                <h4>User only Apps</h4>
+
+                <a href="{% url 'jotter' %}"><button class="btn btn-primary">Jotter</button></a>
+            </div>
         </div>
     </div>
 {% endblock %}
