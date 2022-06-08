@@ -1,8 +1,7 @@
 {% if messages %}
     {% for message in messages %}
-    <div class="container" id="message">
+    <div class="container" id="message" style="transition: 1s ease">
         <div class="alert alert-{{ message.tags }} alert-dismissible text-center" role="alert">
-            <button class="close" type="button" data-dismiss="alert"><span aria-hidden="true">&times;</span></button>
             <strong>
                 {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
                         Error
@@ -15,3 +14,14 @@
     </div>
     {% endfor %}
 {% endif %}
+
+<script>
+    message = document.getElementById('message')
+
+    setTimeout(function() {
+        message.style.opacity = '0';
+        setTimeout(function () {
+            message.style.display = 'none'
+        }, 1000)
+    }, 3000);
+</script>
