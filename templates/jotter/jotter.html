@@ -9,6 +9,15 @@
         .header {
             text-align: center;
         }
+        .list-group-item {
+            transition: 0.5s ease;
+        }
+        .list-group-item:hover {
+            padding-bottom: 20px;
+        }
+        .completed small {
+            padding:0 20px;
+        }
     </style>
 {% endblock %}
 
@@ -16,63 +25,83 @@
     <div class="container">
         <div class="header">
             <h2>Jotter</h2>
-            <p>The smart way to make reminders or track your anime, movies, books & manga </p>
+            <p>The lazy way to make reminders or track your anime, movies, books & manga </p>
         </div>
         <div class="main">
-        <div class="add">
-            <a href="#"><button class="btn btn-primary">Add a new Reminder or make a Note</button></a>
-            <a href="#"><button class="btn btn-primary">Add a show or book to keep track</button></a>
-        </div>
-            <div class="tracker mt-5">
-            {% if tracker_list %}
-                <div class="title">
-                    <h5>Currently watching/reading</h5>
-                </div>
-                <div class="list">
-                        <ul class="list-group">
-                            {% for tracker_item in tracker_list %}
-                              <li class="list-group-item d-flex justify-content-between align-items-center">
-                                {{ tracker_item.title }}. {% if tracker_item.timestamp %}| time: {{ tracker_item.timestamp }} {% endif %}
-                                <span class="badge badge-primary badge-pill">{{ tracker_item.episode_or_chapter }}</span>
-                              </li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <h4>Nothing is currently beign tracked.</h4>
-                        <p>Add shows, books or manga to keep track of your latest episode/chapter.</p>
-
-                </div>
-            {% endif %}
+            <div class="add">
+                <a href="{% url 'new_to_do' %}"><button class="btn btn-primary mb-2">Add a new Reminder or make a Note</button></a>
+                <a href="{% url 'new_to_track' %}"><button class="btn btn-primary mb-2">Add a show or book to keep track</button></a>
             </div>
-
+            <div class="tracker mt-5">
+                {% if tracker_list %}
+                    <div class="title">
+                        <h4>Currently watching/reading</h4>
+                    </div>
+                    <div class="tracker-items list-group">
+                        {% for item in tracker_list %}
+                            <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+                                <div class="d-flex justify-content-between">
+                                    <h5 class="mb-1">{{ item.title | title}}</h5>
+                                    <div class="completed">
+                                        <small class="text-muted">{{ item.category }}</small>
+                                        <button type="button" class="close" aria-label="Close" onclick="window.location='{% url 'completed_to_track' item.id %}'"><span aria-hidden="true">&times;</span></button>
+                                    </div>
+                                </div>
+                                {% if item.link %}
+                                    <p class="mb-1">Continue at {{ item.link }},</p>
+                                {% endif %}
+                                {% if item.episode and item.chapter %}
+                                    <p class="mb-1">Currently on chapter {{ item.chapter }}, episode {{ item.episode }}</p>
+                                {% else %}
+                                    {% if item.episode %}
+                                        <p class="mb-1">Currently on episode {{ item.episode }}</p>
+                                    {% endif %}
+                                    {% if item.chapter %}
+                                        <p class="mb-1">Currently on Chapter{{ item.chapter }}</p>
+                                    {% endif %}
+                                    {% if item.timestamp %}
+                                        <small class="text-muted">Left at on: {{ item.timestamp }}</small>
+                                    {% endif %}
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <h4>Nothing is currently beign tracked.</h4>
+                    <p>Add shows, books or manga to keep track of your latest episode/chapter.</p>
+                {% endif %}
+            </div>
             <div class="todo mt-5">
                 {% if todo_list %}
-                    <div class="row">
-                      <div class="col-4">
-                        <div class="list-group" id="list-tab" role="tablist">
-                            {% for todo_item in todo_list %}
-                                <a class="list-group-item list-group-item-action" id="list-{{ todo_item.title }}-list" data-toggle="list" href="#list-{{ todo_item.title }}" role="tab" aria-controls="{{ todo_item.title }}">
-                                    <span class="badge badge-primary badge-pill">{{ todo_item.priority }} priority</span> | {{ todo_item.title }}
-                                </a>
-                            {% endfor %}
-                        </div>
-                      </div>
-                      <div class="col-8">
-                        <div class="tab-content" id="nav-tabContent">
-                            {% for todo_item in todo_list %}
-                                <div class="tab-pane fade" id="list-{{ todo_item.title }}" role="tabpanel" aria-labelledby="list-{{ todo_item.title }}-list">
-                                    Test
+                    <div class="title">
+                    <h4>Notes & Reminders</h4>
+                    </div>
+                    <div class="todo-items list-group">
+                        {% for item in todo_list %}
+                            <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+                                <div class="d-flex justify-content-between">
+                                    <h5 class="mb-1">{{ item.title | title}}</h5>
+                                    <div class="completed">
+                                        <small class="text-muted">{{ item.priority }} priority</small>
+                                        <button type="button" class="close" aria-label="Close" onclick="window.location='{% url 'complete_todo' item.id %}'"><span aria-hidden="true">&times;</span></button>
+                                    </div>
                                 </div>
-                            {% endfor %}
-                        </div>
-                      </div>
+                                {% if item.notes %}
+                                    <p class="mb-1">{{ item.notes }}</p>
+                                {% endif %}
+                                {% if item.reminder %}
+                                    <small class="text-muted">Reminder on: {{ item.reminder }}</small>
+                                {% else %}
+                                    <small class="text-muted">No reminder set.</small>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
                     </div>
                 {% else %}
                     <h4>The Todo-List is empty</h4>
                     <p>Add items to be reminded.</p>
                 {% endif %}
             </div>
-        </div>
     </div>
 {% endblock %}
 

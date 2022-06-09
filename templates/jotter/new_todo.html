@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}| New Reminder {% endblock %}
+
+{% block style %}
+    {% include 'partials/_form_style_bootstrap.html' %}
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+    <div class="header">
+        <h2>New Item</h2>
+        <p>Take  short note or make a full-blown reminder</p>
+    </div>
+    <div class="main">
+        <div class="form">
+            <form action="{% url 'new_to_do' %}" method="post">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div class="form-group col-sm-2">
+                        <label for="{{ form.priority.id_for_label }}">Priority</label>
+                        {{ form.priority }}
+                    </div>
+                    <div class="form-group col-md-10">
+                        <label for="{{ form.title.id_for_label }}">Title</label>
+                        {{ form.title }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.notes.id_for_label }}">Notes</label>
+                    {{ form.notes }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.reminder.id_for_label }}">Reminder</label>
+                    <input type="datetime-local" class="form-control" name="reminder" id="reminder">
+                </div>
+
+                <button type="submit" class="btn btn-success">Submit</button>
+                <a href="{% url 'jotter' %}"> <span class="btn btn-danger">Cancel & go Back</span></a>
+            </form>
+        </div>
+    </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+
+    </script>
+{% endblock %}

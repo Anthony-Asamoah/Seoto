@@ -24,6 +24,6 @@ urlpatterns = [
     path('rhymes', rhymes, name='rhymes'),
     path('throw_a_die', die, name='throw_a_die'),
     path('flip_a_coin', coin, name='flip_a_coin'),
-    path('jotter', include('jotter.urls')),
+    path('jotter/', include('jotter.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

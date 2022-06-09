@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}| Track a new item {% endblock %}
+
+{% block style %}
+    {% include 'partials/_form_style_bootstrap.html' %}
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+    <div class="header">
+        <h2>New Item</h2>
+        <p>Keep track of a new Show or Book</p>
+    </div>
+    <div class="main">
+        <div class="form">
+            <form action="{% url 'new_to_track' %}" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="{{ form.category.id_for_label }}">Category</label>
+                    {{ form.category }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.title.id_for_label }}">Title</label>
+                    {{ form.title }}
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-2">
+                        <label for="{{ from.episode.id_for_label }}">Episode</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">
+                                    #
+                                </div>
+                            </div>
+                            {{ form.episode }}
+                        </div>
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="{{ form.chapter.id_for_label }}">Chapter</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">
+                                     #
+                                </div>
+                            </div>
+                            {{ form.chapter }}
+                        </div>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="{{ form.timestamp.id_for_label }}">Timestamp</label>
+                        {{ form.timestamp }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.link.id_for_label }}">Link/Url</label>
+                    {{ form.link }}
+                </div>
+                <button type="submit" class="btn btn-success">Submit</button>
+                <a href="{% url 'jotter' %}"> <span class="btn btn-danger">Cancel & go Back</span></a>
+            </form>
+        </div>
+    </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+    
+    </script>
+{% endblock %}

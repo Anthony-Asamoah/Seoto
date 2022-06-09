@@ -1,12 +1,15 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .models import todo, tracker
+from .models import todo, tracker, todo_form, tracker_form
+from django.contrib import messages
+from datetime import datetime
+from django.utils import timezone
 
 
 @login_required
 def jotter(request):
-	todo_list = todo.objects.all().filter(user=request.user)
-	tracker_list = tracker.objects.all().filter(user=request.user)
+	todo_list = todo.objects.all().filter(user=request.user, isCompleted=False).order_by('-added_on', 'priority')
+	tracker_list = tracker.objects.all().filter(user=request.user, isCompleted=False).order_by('-added_on')
 
 	context = {
 		'todo_list': todo_list,
@@ -14,3 +17,78 @@ def jotter(request):
 	}
 
 	return render(request, 'jotter/jotter.html', context)
+
+
+@login_required
+def new_to_do(request):
+	initial_form_data = {
+		'priority': 'Low',
+	}
+	default_form = todo_form(initial=initial_form_data)
+
+	if request.method == 'POST':
+		form = todo_form(request.POST)
+		reminder = request.POST['reminder']
+		if form.is_valid():
+			item = form.save(commit=False)
+			item.user = request.user
+			if reminder:
+				reminder_formatted = datetime.strptime(reminder, '%Y-%m-%dT%H:%M')
+				if reminder_formatted < timezone.now():
+					messages.error(request, 'reminder cannot be set to the past.')
+					return redirect('new_to_do')
+				item.reminder = reminder_formatted
+			try:
+				item.save()
+				messages.success(request, 'Item added.')
+				return redirect('jotter')
+			except Exception as e:
+				print('Error:', e)
+
+		messages.error(request, 'Failed to Submit')
+
+	return render(request, 'jotter/new_todo.html', {'form': default_form})
+
+
+@login_required
+def new_to_track(request):
+	initial_form_data = {
+		'category': 'Other',
+	}
+	default_form = tracker_form(initial=initial_form_data)
+
+	if request.method == 'POST':
+		form = tracker_form(request.POST)
+		if form.is_valid():
+			item = form.save(commit=False)
+			item.user = request.user
+			try:
+				item.save()
+				messages.success(request, 'Item added.')
+				return redirect('jotter')
+			except Exception as e:
+				print('Error:', e)
+
+		messages.error(request, 'Failed to Submit')
+
+	return render(request, 'jotter/new_to_track.html', {'form': default_form})
+
+
+@login_required
+def complete_todo(request, item_id):
+	item = todo.objects.get(id=item_id)
+	item.isCompleted = True
+	item.completed_on = timezone.now()
+	item.save()
+	messages.success(request, 'Item Completed')
+	return redirect('jotter')
+
+
+@login_required
+def complete_to_track(request, item_id):
+	item = tracker.objects.get(id=item_id)
+	item.isCompleted = True
+	item.completed_on = timezone.now()
+	item.save()
+	messages.success(request, 'Item Completed')
+	return redirect('jotter')

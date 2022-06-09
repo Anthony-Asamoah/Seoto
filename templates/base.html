@@ -4,8 +4,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Seoto {% block title %}{% endblock %}</title>
-    <script src="{% static 'js/bootstrap.min.js' %}"></script>
     <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
     <style>
         #message {
@@ -39,7 +39,11 @@
             margin-top: 12px;
         }
         
-        @media screen and (width: 481px) {
+        @media screen and (max-width: 481px) {
+            footer {
+                font-size: 12px;
+                height: 40px;
+            }
         }
     </style>
     {% block style %}{% endblock %}
@@ -52,13 +56,6 @@
 </body>
 
 <script rel="script" href="{% static 'js/bootstrap.min.js' %}"></script>
-
-<script>
-    setTimeout(function() {
-        $('#message').fadeOut('slow');
-    }, 5000);
-</script>
-
 {% block script %}{% endblock %}
 
 </html>
