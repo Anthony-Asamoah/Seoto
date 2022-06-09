@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}| Edit item {% endblock %}
+
+{% block style %}
+    {% include 'partials/_form_style_bootstrap.html' %}
+
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+    <div class="header">
+        <h2>Update Item</h2>
+        <p>Update item #{{ item.id }}</p>
+    </div>
+    <div class="main">
+        <div class="form">
+            <form action="{% url 'edit_to_track' item.id %}" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="{{ form.category.id_for_label }}">Category</label>
+                    {{ form.category }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.title.id_for_label }}">Title</label>
+                    {{ form.title }}
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-2">
+                        <label for="{{ from.episode.id_for_label }}">Episode</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">
+                                    #
+                                </div>
+                            </div>
+                            {{ form.episode }}
+                        </div>
+                    </div>
+                    <div class="form-group col-md-2">
+                        <label for="{{ form.chapter.id_for_label }}">Chapter</label>
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <div class="input-group-text">
+                                     #
+                                </div>
+                            </div>
+                            {{ form.chapter }}
+                        </div>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="{{ form.timestamp.id_for_label }}">Timestamp</label>
+                        {{ form.timestamp }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.link.id_for_label }}">Link/Url</label>
+                    <div class="input-group">
+                        {{ form.link }}
+                        {% if item.link %}
+                        <div class="input-group-prepend">
+                            <div class="input-group-btn">
+                                <a href="{{ item.link }}" target="_blank"><span class="btn btn-primary">Launch/Goto {{ item.category }}</span></a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">Update</button>
+                <a href="{% url 'jotter' %}"> <span class="btn btn-danger">Cancel & go Back</span></a>
+                <a href="{% url 'completed_to_track' item.id %}"><span class="btn btn-warning">Mark as completed</span></a>
+            </form>
+        </div>
+    </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+    
+    </script>
+{% endblock %}

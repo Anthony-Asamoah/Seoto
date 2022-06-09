@@ -39,12 +39,11 @@
                     </div>
                     <div class="tracker-items list-group">
                         {% for item in tracker_list %}
-                            <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+                            <a href="{% url 'edit_to_track' item.id %}" class="list-group-item list-group-item-action flex-column align-items-start">
                                 <div class="d-flex justify-content-between">
                                     <h5 class="mb-1">{{ item.title | title}}</h5>
                                     <div class="completed">
                                         <small class="text-muted">{{ item.category }}</small>
-                                        <button type="button" class="close" aria-label="Close" onclick="window.location='{% url 'completed_to_track' item.id %}'"><span aria-hidden="true">&times;</span></button>
                                     </div>
                                 </div>
                                 {% if item.link %}
@@ -67,7 +66,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <h4>Nothing is currently beign tracked.</h4>
+                    <h4>Nothing is currently being tracked.</h4>
                     <p>Add shows, books or manga to keep track of your latest episode/chapter.</p>
                 {% endif %}
             </div>
@@ -78,12 +77,11 @@
                     </div>
                     <div class="todo-items list-group">
                         {% for item in todo_list %}
-                            <a href="#" class="list-group-item list-group-item-action flex-column align-items-start">
+                            <a href="{% url 'edit_todo' item.id %}" class="list-group-item list-group-item-action flex-column align-items-start">
                                 <div class="d-flex justify-content-between">
                                     <h5 class="mb-1">{{ item.title | title}}</h5>
                                     <div class="completed">
                                         <small class="text-muted">{{ item.priority }} priority</small>
-                                        <button type="button" class="close" aria-label="Close" onclick="window.location='{% url 'complete_todo' item.id %}'"><span aria-hidden="true">&times;</span></button>
                                     </div>
                                 </div>
                                 {% if item.notes %}
