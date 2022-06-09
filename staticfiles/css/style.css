@@ -1,0 +1,538 @@
+/*
+Global Styles
+
+TopNav
+*/
+html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+}
+
+.main {
+  margin-top:5vh;
+  font-family: sans-serif;
+}
+
+/* Forms */
+ .form {
+    padding:20px;
+    text-align: right;
+}
+
+ form > div {
+    padding: 15px;
+}
+ form label {
+    font-size:1.2em;
+    margin: 20px;
+}
+ form input, select, textarea {
+    height: 4vh;
+    min-height: 35px;
+    width: 20vw;
+    min-width: 300px;
+    font-size: 1.3em;
+    transition: 0.5s ease;
+    outline: none;
+    border: 2px solid rgba(0, 0, 0, 0);
+    border-radius: 5px;
+    padding: 2px 10px;
+    color: #102854;
+}
+ input::placeholder {
+    font-family: monospace;
+    font-size: 1em;
+}
+ input:hover, input:focus, select:hover, select:focus, textarea:hover, textarea:focus {
+    background-color: antiquewhite;
+    border: 2px solid #00695f;
+}
+
+.submit button {
+    border-radius: 5px;
+    border: none;
+    background-color: whitesmoke;
+    color: #102854;
+    height:4vh;
+    min-height: 40px;
+    width: 10vw;
+    min-width: 150px;
+    margin-top: 1vh;
+    padding:5px;
+    font-size: 1.35em;
+    transition: 0.3s ease;
+}
+.submit button:hover {
+    background-color: #102854;
+    color: white;
+}
+
+/* End of Global Styles */
+
+
+
+/*
+Specific styling
+*/
+
+/* About Me page*/
+#About .main {
+    margin: 0 20%;
+}
+#About .main p, ul, li, .edu div {
+    color: #102854;
+    font-family: "Garrison Light Sans";
+}
+#About .main h2 {
+    color: #00695f;
+}
+
+#About .main > div {
+    padding:20px;
+    transition: 0.5s ease;
+}
+#About .main > div:hover {
+    background-color: #d9d9d9;
+    padding: 25px;
+}
+/* Header */
+#About .header {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 50px;
+    align-items: center;
+    justify-content: center;
+    height: 500px;
+    margin-top:10vh;
+}
+
+#About .header .name h1{
+    color: #102854;
+    font-weight: bolder;
+    font-size: 4.5em;
+    font-family: monospace;
+    transition: 0.5s ease;
+}
+#About .header .name h1:hover {
+    font-size: 5em;
+}
+#About .header .display_pic img {
+    object-fit: cover;
+    object-position: 50% 30%;
+    height: 400px;
+    width: 300px;
+    border-radius: 5px;
+    transition: 1s ease;
+}
+#About .header .display_pic img:hover {
+    width: 250px;
+}
+
+#About .about {
+    background-color: whitesmoke;
+}
+
+#About .edu > div {
+    padding: 20px;
+}
+
+#About .edu {
+    background-color: whitesmoke;
+}
+
+
+#About .hobby_and_skill {
+    background-color: whitesmoke;
+}
+#About .hobby_and_skill .hobbies ul {
+    list-style-position: outside;
+}
+
+#About ul {
+    list-style-type: square;
+    list-style-position: inside;
+}
+#About li {
+    padding: 10px;
+}
+
+#About .list_title {
+    font-size: 1.2em;
+    color: #003631;
+    border-bottom: 1px solid #102854;
+}
+
+
+/* End of About Me Page*/
+
+
+/* Contact Page */
+#Contact .contact {
+    background-color: white;
+    left:0;
+    position: absolute;
+    width: 100%;
+    text-align: center;
+}
+#Contact .contact h2 {
+    color: #00695f;
+    font-family: sans-serif;
+    font-size: 3em;
+    font-weight: bold;
+    padding:20px
+}
+#Contact hr {
+    width: 50%;
+    min-width: 200px;
+}
+#Contact .contact p {
+    padding:20px;
+    color: #102854;
+    font-family: monospace;
+    font-size: 1.2em;
+}
+#Contact form {
+    padding: 0 25%;
+    text-align: left;
+    background-color: whitesmoke;
+}
+#Contact .contact form div > input, textarea, select {
+    background-color: white !important;
+    font-family: sans-serif;
+    width: 100%;
+}
+#Contact .contact form div > label {
+    font-family: sans-serif;
+}
+#Contact .contact form textarea {
+    height: 200px;
+}
+#Contact form button {
+    background-color: #00695f;
+    color: white;
+    transition: 0.5s ease;
+    border: 2px solid whitesmoke;
+}
+#Contact form button:hover {
+    background-color: #102854;
+    color: white;
+    border: 2px solid #00695f;
+}
+
+/* End of Contact Page */
+
+/* Login Page */
+
+#login .main {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid black;
+    border-radius: 5px;
+    background-image: linear-gradient(110deg, #102854, #00695f);
+    padding:10px;
+    color:white;
+}
+
+#login .header {
+    text-align: center;
+    padding: 20px 0 10px 0;
+    border-bottom: 1px solid white;
+}
+#login .image {
+    text-align: center;
+}
+#login .image img {
+    height: 30vh;
+    object-position: center;
+    object-fit: cover;
+    padding: 50px;
+    border-radius: 100%;
+}
+
+#login .form {
+    text-align: center;
+    padding: 20px;
+}
+#login form > div{
+    padding:5px;
+}
+#login input {
+    text-align: center;
+}
+#login input::placeholder {
+    font-family: monospace;
+    font-size: 1.35em;
+}
+
+/* End of Login page */
+
+
+/* Register Page */
+#register .main {
+    position: absolute;
+    left: 50%;
+/*     top: 50%; */
+    margin-top:10vh;
+    transform: translateX(-50%);
+    border: 1px solid black;
+    border-radius: 5px;
+    background-image: linear-gradient(110deg, #102854, #00695f);
+    padding:10px;
+    color:white;
+    min-width: 30vw;
+}
+
+#register .header {
+    text-align: center;
+    padding: 20px 0 10px 0;
+    border-bottom: 1px solid white;
+}
+
+#register .submit {
+    text-align: center;
+}
+#register .gender select {
+    width: 21.3vw;
+}
+
+/* End of Register Page */
+
+
+/* Calculator Page */
+#Calc_table .main, #Calc_flex .main {
+    margin-top: 100px;
+}
+
+#Calc_table .header, #Calc_flex .header{
+    text-align: center;
+    color: #102854;
+}
+
+/* Table Calculator styling */
+#Calc_table .calc, #Calc_flex .calc{
+    margin: auto;
+    width: 20vw;
+    min-width: 300px;
+    padding: 10px;
+    background-color: #00695f;
+    border-radius: 5px;
+}
+#Calc_table .output {
+    font-size: 24px;
+    padding: 16px 5px;
+    font-weight: bold;
+    text-align: right;
+    width: 96%;
+    height: 50px;
+    border: none;
+    background-color: white;
+}
+#Calc_table .output input {
+  width:500px !important;
+}
+#Calc_table table{
+    width: 100%;
+}
+#Calc_table td{
+    width: 25%;
+}
+
+#Calc_table input{
+    padding: 15px;
+    font-weight: bold;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    color: #102854;
+    background-color: whitesmoke;
+    width: 100%;
+    transition: 0.5s ease;
+}
+#Calc_table input:hover{
+    background-color: darkgray;
+    outline: none;
+}
+#Calc_table .add{
+    height: 105px;
+}
+#Calc_table .equals, #Calc_flex .equals{
+    background-color: green;
+    color: white
+}
+#Calc_table .clear, #Calc_flex .clear{
+    background-color: #a60000;
+    color: white;
+}
+
+/* Flexbox Calculator styling */
+#Calc_flex .calc {
+    width: 20%;
+}
+#Calc_flex .output input {
+    width: 90% !important;
+    height: 50px;
+    background-color: white;
+}
+#Calc_flex .keys > div {
+    display: flex;
+    justify-content: space-evenly;
+    width: 100%;
+}
+#Calc_flex input {
+    padding: 15px;
+    width: 100%;
+    margin: 2px;
+    font-weight: bold;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    color: #102854;
+    background-color: whitesmoke;
+    transition: 0.5s ease;
+}
+#Calc_flex .bottom {
+    display: flex;
+}
+#Calc_flex .bottom .left {
+    flex-grow: 4;
+    display: flex;
+}
+#Calc_flex .bottom .left > div {
+    margin: 2px;
+    width: 100%;
+}
+#Calc_flex .bottom .right {
+    flex-grow: 1;
+    height:104px;
+    width: 76px;
+    margin: 2px;
+}
+#Calc_flex .bottom .right input {
+    height:100%;
+}
+
+/* End of Calculator Page */
+
+
+/* Responsivity */
+@media screen and (max-width:810px ) {
+    #About .navbar a:link, a:visited {
+        padding: 6px 5px;
+    }
+    #About .header {
+        height: fit-content;
+        padding: 30px 0;
+    }
+     #About .header .name h1{
+        font-size: 2.5em;
+    }
+    #About .header .name h1:hover {
+        font-size: 3em;
+    }
+    #About .header .display_pic img {
+        width: 200px;
+        height: 150px;
+    }
+    #About .header .display_pic img:hover {
+        height: 300px;
+    }
+
+    #Contact form {
+        padding: 10%;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .form {
+        text-align: center;
+    }
+
+    .form input, select {
+        text-align: center;
+    }
+
+    .topnav a:link, a:visited {
+        padding: 2px;
+        font-size: 1.25em;
+    }
+
+    /*dropdown*/
+    #About .navbar a{
+        display: none;
+    }
+
+    #About .navbar a.icon {
+        float: right;
+        padding: 0 20px;
+        display: block;
+    }
+
+    #About .navbar.responsive {
+        position: absolute;
+        height: 300px;
+    }
+
+    #About .navbar.responsive .icon {
+        position: absolute;
+        right: 25px;
+        background-color: #102854;
+        color:white;
+        border-radius: 5px;
+    }
+
+    #About .navbar.responsive a {
+        float: none;
+        display: block;
+        text-align: right;
+        padding: 10px 25px;
+        transition: 0.3s ease;
+    }
+    #About .navbar .responsive a:hover {
+        background-color: whitesmoke;
+        color: #102854;
+    }
+    /*End of dropdown*/
+
+    #About .main {
+        margin: 0;
+    }
+
+    #About .header {
+        padding-top: 3vh;
+        flex-direction: column;
+    }
+
+    #About .header .name h1 {
+        font-size: 2.5em;
+    }
+
+    #About .header .name h1:hover {
+        font-size: 3em;
+    }
+
+    #About .header .display_pic {
+        display: none;
+    }
+
+    #About .header .display_pic img:hover {
+        width: 150px;
+    }
+
+    #Contact form {
+        padding: 10px !important;
+    }
+
+    #Contact .contact h2 {
+        font-size: 2em;
+    }
+
+    #Contact hr {
+        width: 50%;
+    }
+
+    #Contact .contact p {
+        font-size: 1.3em;
+    }
+}

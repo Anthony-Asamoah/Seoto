@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block style %}
+    <style>
+    .main {
+        margin: 0 20%;
+        padding: 0!important;
+    }
+    .main p, ul, li, .edu div {
+        color: #102854;
+        font-family: "Garrison Light Sans";
+    }
+    .main h2 {
+        color: #00695f;
+    }
+
+    .main > div {
+        padding:20px ;
+        transition: 0.5s ease;
+    }
+    .main > div:hover {
+        background-color: #d9d9d9;
+        padding-bottom: 50px;
+    }
+    /* Header */
+    .header {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 50px;
+        align-items: center;
+        justify-content: center;
+        height: 500px;
+    }
+
+    .header .name h1{
+        color: #102854;
+        font-weight: bolder;
+        font-size: 4.5em;
+        font-family: monospace;
+        transition: 0.5s ease;
+    }
+    .header .name h1:hover {
+        font-size: 5em;
+    }
+    .header .display_pic img {
+        object-fit: cover;
+        object-position: 50% 30%;
+        height: 400px;
+        width: 300px;
+        border-radius: 5px;
+        transition: 1s ease;
+    }
+    .header .display_pic img:hover {
+        width: 250px;
+    }
+
+    .edu > div {
+        padding: 20px;
+    }
+
+    .hobby_and_skill .hobbies ul {
+        list-style-position: outside;
+    }
+
+    ul {
+        list-style-type: square;
+        list-style-position: inside;
+    }
+    li {
+        padding: 10px;
+    }
+
+    .list_title {
+        font-size: 1.2em;
+        color: #003631;
+        border-bottom: 1px solid #102854;
+    }
+    .form-group label {
+        transition: 0.3s ease;
+    }
+    .form-group:hover label{
+        font-weight: bold;
+    }
+    .form-control {
+        transition: 0.3s ease;
+    }
+    .form-control:hover:not(textarea) {
+        height: 45px;
+    }
+    /* Responsivity */
+@media screen and (max-width:810px ) {
+
+    .header {
+        height: fit-content;
+        padding: 30px 0;
+    }
+
+    .header .name h1 {
+        font-size: 2.5em;
+    }
+
+    .header .name h1:hover {
+        font-size: 3em;
+    }
+
+    .header .display_pic img {
+        width: 200px;
+        height: 150px;
+    }
+
+    .header .display_pic img:hover {
+        height: 300px;
+    }
+}
+
+
+@media screen and (max-width: 480px) {
+
+    .main {
+        margin: 0;
+    }
+
+    .header {
+        padding-top: 3vh;
+        flex-direction: column;
+    }
+
+    .header .name h1 {
+        font-size: 2.5em;
+    }
+
+    .header .name h1:hover {
+        font-size: 3em;
+    }
+
+    .header .display_pic {
+        display: none;
+    }
+
+    .header .display_pic img:hover {
+        width: 150px;
+    }
+}
+    </style>
+{% endblock %}
+
+{% block content %}
+
+  <!--  Name Section  -->
+    <div class="header">
+      <div class="display_pic">
+        <img src="{% static 'img/profile_pic.jpeg' %}" alt="Profile Picture">
+      </div>
+      <div class="name" id="name">
+        <h1>Anthony Asamoah</h1>
+      </div>
+    </div>
+
+  <div class="main">
+
+    <!--  About Section   -->
+    <div class="about" id="about">
+      <h2>About</h2>
+      <p>
+        Hailing from Ghana at the age of twenty-two (22), a passion for learning and a keen interest in coding,
+        i am very excited to be a part of Alt School Africa.
+      </p>
+    </div>
+
+    <!--   Goal Section   -->
+    <div class="goal" id="goal">
+      <h2>Goals for the course</h2>
+      <p>It is my hope to get to know all there is about cloud engineering by the end of the course.</p>
+    </div>
+
+    <!--   Education Section   -->
+    <div class="edu" id="edu">
+      <h2>Education</h2>
+      <div class="first">
+        Completed Basic School at SOS Herman Gmeiner.
+      </div>
+      <div class="scratch">
+        Completed summer camp; Introduction to programming with Scratch.
+      </div>
+      <div class="second">
+        Completed Senior High at Life International School.
+      </div>
+      <div class="third">
+        Completed a Diploma in Electrical & Electronics Engineering with City & Guilds UK, at Ghana Communication
+        Technology University.
+      </div>
+      <div class="fourth">
+        Soon to Graduate with a BSC in Computer Engineering at Ghana Communication Technology University.
+      </div>
+    </div>
+
+    <!--   Job Experience  Section   -->
+    <div class="job" id="job">
+      <h2>Job Experience</h2>
+      <p>Currently, i work as a National Service Personel at the Advanced Information Technology Institue or commonly
+      known as the Kofi Annan Center of Excellence (AITI-KACE).<p>
+      <ul><span class="list_title">Main Roles include;</span>
+        <li>Backend Development with Django - python.</li>
+        <li>Frontend Development with HTML CSS and Angular.</li>
+      </ul>
+      <p>Prior to that, i had been writing basic html css and python code snippets for friends' and personal projects</p>
+    </div>
+
+    <!--   Hobbies and Skills Section   -->
+    <div class="hobby_and_skill" id="hobby_and_skill">
+      <div class="hobbies">
+        <h2>A few hobbies are;</h2>
+        <ul>
+          <li>Sports: Long Tennis, Soccer and swimming.</li>
+          <li>Reading random articles on Quora</li>
+          <li>Photography</li>
+        </ul>
+      </div>
+      <div class="skill">
+        <ul><span class="list_title">Some other skills of mine are;</span>
+          <li>Basic Graphic Design with Adobe Photoshop & Illustrator</li>
+          <li>Music Production with Fruity Loops</li>
+        </ul>
+      </div>
+    </div>
+
+    <!--    Contact & Social Media Links      -->
+  <div class="contact">
+    <div class="social">
+        <h2>Get in touch</h2>
+        <div class="insta">
+            <p>You can find me with the handle @sean_or_tony or @sean0tony on any & all platforms that i am registered on</p>
+            <p>Check out my <a class="warning" href="https://www.instagram.com/sean_or_tony/" target="_blank">instagram</a>, which i am more active on</p>
+        </div>
+        <div class="contact_form">
+            <form action="{% url 'about' %}" method="post">
+                {% csrf_token %}
+                <p>or reach out with the form below</p>
+                <div class="form-group">
+                    <label for="{{ form.name.if_for_label }}">Full name</label>
+                    {{ form.name }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.email.id_for_label }}">Your email</label>
+                    {{ form.email }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.subject.id_for_label }}">Subject</label>
+                    {{ form.subject }}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.message.id_for_label }}">Your message</label>
+                    {{ form.message }}
+                </div>
+                <button class="btn btn-primary" type="submit">Submit</button>
+                <button class="btn btn-danger" type="reset">Clear Form</button>
+            </form>
+        </div>
+    </div>
+  </div>
+  </div>
+
+
+
+{% endblock %}
