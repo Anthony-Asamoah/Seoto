@@ -1,5 +1,5 @@
 def validation(a, b, c):
-	allowed_input = [str(i) for i in range(10)]
+	allowed_input = [str(i) for i in range(10)] + ['.']
 
 	for i in a:
 		if i not in allowed_input:
@@ -18,9 +18,9 @@ def validation(a, b, c):
 
 class interest:
 	def __init__(self, principal, rate, time):
-		self.principal = int(principal)
-		self.rate = int(rate)
-		self.time = int(time)
+		self.principal = float(principal)
+		self.rate = float(rate)
+		self.time = float(time)
 
 	def __str__(self):
 		return "cumulative interest calculator"
@@ -39,7 +39,7 @@ class interest:
 		net = profit + self.principal
 		percent = interest.percent(profit, net)
 
-		return f"profit = {round(profit, 2)} and NET = {net}\nprofit gained = {round(percent, 2)}%"
+		return f"profit = {round(profit, 2)} -> {round(percent, 2)}% | NET = {net}"
 
 	def compound(self):
 		first = (1 + (self.rate / 100)) ** (self.time - 1)
@@ -47,7 +47,7 @@ class interest:
 		profit = net - self.principal
 		percent = interest.percent(profit, net)
 
-		return f"profit = {round(profit, 2)} and NET = {round(net, 2)}\n profit gained = {round(percent, 2)}%"
+		return f"profit = {round(profit, 2)} -> {round(percent, 2)}% | NET = {round(net, 2)}"
 
 	def susu(self):
 		net = self.principal
@@ -60,6 +60,6 @@ class interest:
 
 		percent = interest.percent(profit, net)
 
-		return f"profit = {round(profit, 2)} and NET = {round(net, 2)}.\n profit gained was {round(percent, 2)}%"
+		return f"profit = {round(profit, 2)} -> {round(percent, 2)}% | NET = {round(net, 2)}"
 
 	# End of Main Methods

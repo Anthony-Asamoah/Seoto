@@ -1,4 +1,6 @@
 from django.shortcuts import render, HttpResponse
+import logging
+
 from .the_code import interest as calc, validation
 
 
@@ -8,6 +10,7 @@ def interest(request):
 		rate = request.POST['rate']
 		time = request.POST['time']
 		kind = request.POST['type']
+		logging.info(f'principal: {principal, type(principal)}, rate: {rate, type(rate)}, time: {time, type(time)}')
 
 		context = {
 			'principal': principal,
