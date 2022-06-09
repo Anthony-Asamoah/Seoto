@@ -75,11 +75,6 @@ class todo_form(forms.ModelForm):
 	class Meta:
 		model = todo
 		fields = ['title', 'priority', 'notes']
-		widgets = {
-			'reminder': forms.DateTimeInput(attrs={
-				'placeholder': 'Reminder format: YYYY-MM-DD hh-mm-ss'
-			}),
-		}
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
