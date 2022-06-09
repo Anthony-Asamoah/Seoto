@@ -1,9 +1,19 @@
+from datetime import datetime
+
+from .models import todo, tracker, todo_form, tracker_form
+from .validator import todo_form_validation, tracker_form_validation
+
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from .models import todo, tracker, todo_form, tracker_form
 from django.contrib import messages
-from datetime import datetime
 from django.utils import timezone
+
+import logging
+
+logging.basicConfig(
+	level=logging.DEBUG,
+	format='[%(asctime)s] - %(levelname)s - %(message)s'
+)
 
 
 @login_required
@@ -25,27 +35,9 @@ def new_to_do(request):
 		'priority': 'Low',
 	}
 	default_form = todo_form(initial=initial_form_data)
-
 	if request.method == 'POST':
 		form = todo_form(request.POST)
-		reminder = request.POST['reminder']
-		if form.is_valid():
-			item = form.save(commit=False)
-			item.user = request.user
-			if reminder:
-				reminder_formatted = datetime.strptime(reminder, '%Y-%m-%dT%H:%M')
-				if reminder_formatted < timezone.now():
-					messages.error(request, 'reminder cannot be set to the past.')
-					return redirect('new_to_do')
-				item.reminder = reminder_formatted
-			try:
-				item.save()
-				messages.success(request, 'Item added.')
-				return redirect('jotter')
-			except Exception as e:
-				print('Error:', e)
-
-		messages.error(request, 'Failed to Submit')
+		return todo_form_validation(request, form)
 
 	return render(request, 'jotter/new_todo.html', {'form': default_form})
 
@@ -59,17 +51,7 @@ def new_to_track(request):
 
 	if request.method == 'POST':
 		form = tracker_form(request.POST)
-		if form.is_valid():
-			item = form.save(commit=False)
-			item.user = request.user
-			try:
-				item.save()
-				messages.success(request, 'Item added.')
-				return redirect('jotter')
-			except Exception as e:
-				print('Error:', e)
-
-		messages.error(request, 'Failed to Submit')
+		return tracker_form_validation(request, form)
 
 	return render(request, 'jotter/new_to_track.html', {'form': default_form})
 
@@ -92,3 +74,51 @@ def complete_to_track(request, item_id):
 	item.save()
 	messages.success(request, 'Item Completed')
 	return redirect('jotter')
+
+
+@login_required
+def edit_todo(request, item_id):
+	item = todo.objects.get(pk=item_id)
+	default_form = todo_form(initial={
+		'title': item.title,
+		'priority': item.priority,
+		'notes': item.notes
+	})
+	if item.reminder:
+		formatted_reminder = datetime.strftime(item.reminder, '%Y-%m-%dT%H:%M:%S')
+		logging.info(formatted_reminder)
+	else:
+		formatted_reminder = False
+	context = {
+		'form': default_form,
+		'item': item,
+		'reminder': formatted_reminder
+	}
+
+	if request.method == 'POST':
+		form = todo_form(request.POST, instance=item)
+		return todo_form_validation(request, form)
+
+	return render(request, 'jotter/edit_todo.html', context)
+
+
+@login_required
+def edit_to_track(request, item_id):
+	item = tracker.objects.get(pk=item_id)
+	default_form = tracker_form(initial={
+		'category': item.category,
+		'title': item.title,
+		'chapter': item.chapter,
+		'episode': item.episode,
+		'link': item.link
+	})
+	context = {
+		'form': default_form,
+		'item': item
+	}
+
+	if request.method == 'POST':
+		form = tracker_form(request.POST, instance=item)
+		return tracker_form_validation(request, form)
+
+	return render(request, 'jotter/edit_to_track.html', context)
