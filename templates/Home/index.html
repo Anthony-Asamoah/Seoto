@@ -20,20 +20,22 @@
 {% block content %}
     <div class="container">
         <div class="header mt-2">
-            <h1>Apps for random stuff by <span class="s0t"><a href="{% url 'about' %}">@Sean_or_Tony</a></span></h1>
+            <h1>Apps for random stuff by <span class="s0t"><a href="{% url 'about' %}">Anthony</a></span></h1>
             <hr />
         </div>
         <div class="main mt-5 mb-5">
             <div class="anonymous_apps">
                 <h4>Available Apps</h4>
+                <p>Apps that can be accessed without necessarily having an account with Seoto</p>
                 <a href="{% url 'foodie' %}"><button class="btn btn-primary mb-2">Foodie</button></a>
                 <a href="{% url 'interest_calculator'%}"><button class="btn btn-primary mb-2">Interest Calc</button></a>
                 <a href="{% url 'rhymes' %}"><button class="btn btn-primary mb-2">Rhyme DB</button></a>
                 <a href="{% url 'throw_a_die' %}"><button class="btn btn-primary mb-2">Throw a Die</button></a>
                 <a href="{% url 'flip_a_coin' %}"><button class="btn btn-primary mb-2">Flip a coin</button></a>
             </div>
-            <div class="user_apps mt-5">
+            <div class="user_apps mt-3">
                 <h4>User only Apps</h4>
+                <p>Apps that require you to be logged in before using</p>
                 <a href="{% url 'jotter' %}"><button class="btn btn-primary">Jotter</button></a>
             </div>
         </div>
