@@ -19,7 +19,7 @@ logging.basicConfig(
 @login_required
 def jotter(request):
 	todo_list = todo.objects.all().filter(user=request.user, isCompleted=False).order_by('-added_on', 'priority')
-	tracker_list = tracker.objects.all().filter(user=request.user, isCompleted=False).order_by('-added_on')
+	tracker_list = tracker.objects.all().filter(user=request.user, isCompleted=False).order_by('-added_on', 'category')
 
 	context = {
 		'todo_list': todo_list,
