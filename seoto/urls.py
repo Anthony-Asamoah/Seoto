@@ -3,7 +3,7 @@ from django.urls import path, include
 from django.contrib import admin
 from django.conf import settings
 
-from home.views import index
+from home.views import index, error404, error500
 
 from author.views import about
 from foodie.views import foodie
@@ -29,3 +29,6 @@ urlpatterns = [
     path('jotter/', include('jotter.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+handler404 = error404
+handler500 = error500

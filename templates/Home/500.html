@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}| 505 Error{% endblock %}
+
+{% block style %}
+    {% include 'partials/error_styles.html' %}
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="header">
+            <h2>Error 500 - Internal Server Error</h2>
+        </div>
+        <div class="main mt-2">
+            <p>
+                Unfortunately, this is a result of some bugs lurking around.
+                Worry not, it has been reported and will be handled.
+            </p>
+            <p>Refresh the page to proceed.</p>
+            <p>If that doesn't work, kindly go back</p>
+            <button class="btn btn-primary" onclick="window.location.reload()">Refresh</button>
+            <button class="btn btn-warning" onclick="history.back()">Go Back</button>
+        </div>
+    </div>
+{% endblock %}
+
