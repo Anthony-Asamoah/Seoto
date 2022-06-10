@@ -20,7 +20,7 @@ class interest:
 	def __init__(self, principal, rate, time):
 		self.principal = float(principal)
 		self.rate = float(rate)
-		self.time = float(time)
+		self.time = int(time)
 
 	def __str__(self):
 		return "cumulative interest calculator"
@@ -42,7 +42,7 @@ class interest:
 		return f"profit = {round(profit, 2)} -> {round(percent, 2)}% | NET = {net}"
 
 	def compound(self):
-		first = (1 + (self.rate / 100)) ** (self.time - 1)
+		first = (1 + (self.rate / 100)) ** ((self.time + 1) - 1)
 		net = self.principal * first
 		profit = net - self.principal
 		percent = interest.percent(profit, net)
@@ -50,12 +50,13 @@ class interest:
 		return f"profit = {round(profit, 2)} -> {round(percent, 2)}% | NET = {round(net, 2)}"
 
 	def susu(self):
-		net = self.principal
+		net = 0
 		profit = 0
 
 		for iterations in range(self.time):
-			profit = net * (self.rate / 100)
-			net += profit + self.principal
+			net += self.principal
+			profit += (net * (self.rate / 100))
+			net += profit
 			print(f"period {iterations + 1}: profit: {profit}, net: {net}")
 
 		percent = interest.percent(profit, net)
