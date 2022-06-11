@@ -10,11 +10,6 @@ from django.utils import timezone
 
 import logging
 
-logging.basicConfig(
-	level=logging.DEBUG,
-	format='[%(asctime)s] - %(levelname)s - %(message)s'
-)
-
 
 @login_required
 def jotter(request):

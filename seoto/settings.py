@@ -13,6 +13,14 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 from pathlib import Path
 from django.contrib.messages import constants as messages
 import os
+import logging
+
+logging.basicConfig(
+	filename='logs.txt',
+	level=logging.INFO,
+	format='[%(asctime)s] - %(levelname)s - %(message)s'
+)
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +33,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(32))
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1', 'tony48.pythonanywhere.com']
 

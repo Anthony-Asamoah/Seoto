@@ -1,5 +1,5 @@
 from .models import meal
-
+import logging
 from random import randint
 from datetime import datetime
 
@@ -59,5 +59,5 @@ def suggest():
 			'option_2': None,
 			'fancy': None
 		}
-
+	logging.info(context)
 	return context
