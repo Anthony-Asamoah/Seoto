@@ -5,13 +5,13 @@ from random import randint
 def coin(request):
 	if request.method == 'POST':
 		flip = randint(1, 2)
-		side = 'heads'
+		text = 'Heads'
 
 		if flip == 2:
-			side = 'tails'
+			text = 'Tails'
 
 		context = {
-			'side': side,
+			'text': text,
 			'flip': flip
 		}
 

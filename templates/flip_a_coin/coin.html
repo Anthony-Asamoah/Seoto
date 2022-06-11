@@ -10,8 +10,9 @@
             text-align: center;
         }
         .coin {
-        height: 200px;
-        width: 200px;
+        display: none;
+        height: 300px;
+        width: 300px;
         background-repeat: no-repeat;
         background-position: center;
         background-size: cover;
@@ -38,11 +39,26 @@
                 </form>
             </div>
             {% if flip %}
-                <div class="coin"></div>
-                <div class="info">
-                    <h5>{{ side | title }} side up!</h5>
+                <div class="coin mt-5" id="coin"></div>
+                <div class="info mt-3">
+                    <h5 id="text">Flipped</h5>
                 </div>
             {% endif %}
         </div>
     </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        const coin = document.getElementById('coin');
+        const text = document.getElementById('text');
+        let animate = () => text.innerHTML = text.innerHTML + '.'
+        function show() {
+            coin.style.display = 'block';
+            text.innerText = '{{ text }}';
+        }
+        setTimeout(animate, 500);
+        setTimeout(animate, 1000);
+        setTimeout(show, 1500);
+    </script>
 {% endblock %}
