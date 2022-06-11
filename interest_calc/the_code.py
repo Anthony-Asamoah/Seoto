@@ -57,7 +57,6 @@ class interest:
 			net += self.principal
 			profit += (net * (self.rate / 100))
 			net += profit
-			print(f"period {iterations + 1}: profit: {profit}, net: {net}")
 
 		percent = interest.percent(profit, net)
 
