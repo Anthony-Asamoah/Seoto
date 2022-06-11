@@ -201,66 +201,66 @@
         <p>Basic html css and python code snippets for friends' and personal projects [2018-present]</p>
     </div>
 
-    <!--   Hobbies and Skills Section   -->
-    <div class="hobby_and_skill" id="hobby_and_skill">
-      <div class="hobbies">
-        <h2>A few hobbies are;</h2>
-        <ul>
-          <li>Sports: Long Tennis, Soccer and swimming.</li>
-          <li>Reading random articles on Quora</li>
-          <li>Learning and reading about electronics, auto_mechanics, engines, systems, etc.</li>
-          <li>Photography</li>
+    <!-- Skills -->
+    <div class="skils" id="skills">
+        <h2>Skills under my sleeve;</h2>
+        <ul><span class="list_title">Stacks</span>
+            <li>Html, Css, Bootstrap, Javascript, Typescript, Python & VB</li>
+            <li>Angular, Vanilla Django & Django REST</li>
+            <li>MySQL & Postgresql</li>
         </ul>
-      </div>
-      <div class="skill">
-          <h2>Skills under my sleeve;</h2>
-          <ul><span class="list_title">Stacks</span>
-              <li>Html, Css, Bootstrap, Javascript, Typescript, Python & VB</li>
-              <li>Angular, Vanilla Django & Django REST</li>
-              <li>MySQL & Postgresql</li>
-          </ul>
         <ul><span class="list_title">Unrelated to code;</span>
             <li>Basic Graphic Design with Adobe Photoshop & Illustrator</li>
             <li>Music Production with Fruity Loops</li>
             <li>Troubleshooting & servicing of cars and motorcycles.</li>
         </ul>
-      </div>
+    </div>
+
+    <!--   Hobbies Section   -->
+    <div class="hobbies" id="hobbies">
+      <h2>A few hobbies are;</h2>
+      <ul>
+        <li>Sports: Long Tennis, Soccer and swimming.</li>
+        <li>Reading random articles on Quora</li>
+        <li>Learning and reading about electronics, auto_mechanics, engines, systems, etc.</li>
+        <li>Photography</li>
+      </ul>
     </div>
 
     <!--    Contact & Social Media Links      -->
-  <div class="contact">
-    <div class="social">
-        <h2>Get in touch</h2>
-        <div class="insta">
-            <p>You can find me with the handle @sean_or_tony or @sean0tony on any & all platforms that i am registered on</p>
-            <p>Check out my <a class="warning" href="https://www.instagram.com/sean_or_tony/" target="_blank">instagram</a>, which i am more active on</p>
-        </div>
-        <div class="contact_form">
-            <form action="{% url 'about' %}" method="post">
-                {% csrf_token %}
-                <p>or reach out with the form below</p>
-                <div class="form-group">
-                    <label for="{{ form.name.if_for_label }}">Full name</label>
-                    {{ form.name }}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.email.id_for_label }}">Your email</label>
-                    {{ form.email }}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.subject.id_for_label }}">Subject</label>
-                    {{ form.subject }}
-                </div>
-                <div class="form-group">
-                    <label for="{{ form.message.id_for_label }}">Your message</label>
-                    {{ form.message }}
-                </div>
-                <button class="btn btn-primary" type="submit">Submit</button>
-                <button class="btn btn-danger" type="reset">Clear Form</button>
-            </form>
+    <div class="contact">
+        <div class="social">
+            <h2>Get in touch</h2>
+            <div class="insta">
+                <p>You can find me with the handle @sean_or_tony or @sean0tony on any & all platforms that i am registered on</p>
+                <p>Check out my <a class="warning" href="https://www.instagram.com/sean_or_tony/" target="_blank">instagram</a>, which i am more active on</p>
+            </div>
+            <div class="contact_form">
+                <form action="{% url 'about' %}" method="post">
+                    {% csrf_token %}
+                    <p>or reach out with the form below</p>
+                    <div class="form-group">
+                        <label for="{{ form.name.if_for_label }}">Full name</label>
+                        {{ form.name }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.email.id_for_label }}">Your email</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.subject.id_for_label }}">Subject</label>
+                        {{ form.subject }}
+                    </div>
+                    <div class="form-group">
+                        <label for="{{ form.message.id_for_label }}">Your message</label>
+                        {{ form.message }}
+                    </div>
+                    <button class="btn btn-primary" type="submit">Submit</button>
+                    <button class="btn btn-danger" type="reset">Clear Form</button>
+                </form>
+            </div>
         </div>
     </div>
-  </div>
   </div>
 
 
