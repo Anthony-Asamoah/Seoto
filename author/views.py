@@ -6,7 +6,6 @@ from .models import contact_form
 def about(request):
 	user = request.user
 	if user.is_authenticated:
-
 		form = contact_form(initial={
 			'name': f'{user.first_name.title()} {user.last_name.title()}',
 			'email': user.email

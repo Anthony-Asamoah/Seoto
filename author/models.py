@@ -18,7 +18,7 @@ class contact(models.Model):
 class contact_form(ModelForm):
 	class Meta:
 		model = contact
-		fields = '__all__'
+		fields = ['name', 'email', 'subject', 'message']
 		widgets = {
 			'name': TextInput(attrs={'placeholder': 'First name & Last name'}),
 		}
