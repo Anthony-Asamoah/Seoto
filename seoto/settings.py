@@ -31,9 +31,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(32))
 
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
+
+# Enforce HTTPS instead of HTTP
+SECURE_SSL_REDIRECT = not DEBUG
 
 ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1', 'tony48.pythonanywhere.com']
 
