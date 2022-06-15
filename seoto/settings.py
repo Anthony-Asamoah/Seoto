@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 from pathlib import Path
 from django.contrib.messages import constants as messages
 import os
+import security
 import logging
 
 logging.basicConfig(
@@ -32,7 +33,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(32))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = security.debug
 
 # Enforce HTTPS instead of HTTP
 SECURE_SSL_REDIRECT = not DEBUG
@@ -154,7 +155,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'anthonyasamoah48@gmail.com'
-EMAIL_HOST_PASSWORD = 'fdjwsuscxzbhrpnc'
+EMAIL_HOST_PASSWORD = security.email_password
 EMAIL_USE_TLS = True
 
 

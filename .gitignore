@@ -1,5 +1,6 @@
 db.sqlite3
 todo.txt
+security.py
 
 .idea/
 /media/
@@ -11,4 +12,4 @@ home/__pycache__/
 rhymes/__pycache__/
 throw_a_die/__pycache__/
 flip_a_coin/__pycache__/
-/logs.txt
+logs.txt
