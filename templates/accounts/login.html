@@ -74,23 +74,24 @@
 
     <div class="form">
         <form method="post" action="{% url 'login' %}">
-        {% csrf_token %}
-        <table>
-        <tr>
-            <td>Username </td>
-            <td>{{ form.username }}</td>
-        </tr>
-        <tr>
-            <td>Password </td>
-            <td>{{ form.password }}</td>
-        </tr>
-        </table>
+            {% csrf_token %}
+            <table>
+                <tr>
+                    <td>Username </td>
+                    <td>{{ form.username }}</td>
+                </tr>
+                <tr>
+                    <td>Password </td>
+                    <td>{{ form.password }}</td>
+                </tr>
+            </table>
 
-        <button type="submit" value="login">Login</button>
-        <input type="hidden" name="next" value="{{ next }}">
+            <button class="btn btn-success" type="submit" value="login">Login</button>
+            <input type="hidden" name="next" value="{{ next }}">
         </form>
 
         {# Assumes you set up the password_reset view in your URLconf #}
-        <p><a href="{% url 'password_reset' %}">Lost password?</a></p>
-</div>
+        <a href="{% url 'password_reset' %}"><button class="btn btn-secondary" style="width: 200px">Lost password?</button></a>
+
+    </div>
 {% endblock %}
