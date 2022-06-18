@@ -1,24 +1,24 @@
 /* global styles */
 
 a:link, a:visited {
-    color: #273C5F;
+    color: black;
     transition: 0.5s ease;
 }
 a:hover {
-    color: #1ba87e;
+    color: #e3e3e3;
 }
 
 
 /* Header and Title*/
 #header {
-    background-color: #273C5F;
+    background-color: rgba(103, 103, 103, 0.37);
     height: 50px;
 }
 #branding h1 {
-    color:white
+    color:white;
 }
 #user-tools {
-    color: white;
+    color: whitesmoke;
 }
 
 #header a {
@@ -26,10 +26,10 @@ a:hover {
     transition: 0.3s ease;
 }
 #header a:hover {
-    color: antiquewhite;
+    color: darkolivegreen;
 }
 #header a:visited {
-    color: antiquewhite;
+    color: white;
 }
 
 
@@ -40,47 +40,27 @@ div .content table {
 }
 
 div .breadcrumbs {
-    background-color: #30caa0;
-    color: black;
+    background-color: #7e7e7e;
+    color: white;
     transition: 0.3s ease;
 }
 div.breadcrumbs a {
-    color: #273C5F;
+    color: white;
 }
 div.breadcrumbs a:hover {
-    color: white;
+    color: darkolivegreen;
 }
 
 
 /* Sidebar */
 .module h2, .module caption, .inline-group h2 {
-    background-color: #1ba87e;
-}
-
-
-
-/* Submit Form Buttons */
-.submit-row input {
-    background-color: #273C5F;
-    color: white;
-    transition: 0.3s ease;
-}
-
-.submit-row input:hover, .submit-row input.default {
-    background-color: #1ba87e;
-    color: white;
-    transition: 0.3s ease;
-}
-
-.submit-row input.default:hover {
     background-color: whitesmoke;
-    color:#273C5F;
 }
 
 
 @media (prefers-color-scheme: dark) {
     a:link, a:visited {
-        color: #1ba87e;
+        color: whitesmoke;
         transition: 0.5s ease;
     }
     a:hover {
@@ -89,8 +69,57 @@ div.breadcrumbs a:hover {
 
     /* Sidebar */
     .module h2, .module caption, .inline-group h2 {
-        background-color: #273C5F;
+        background-color: darkgray;
     }
 
+    /* Submit Form Buttons */
+    .submit-row input {
+        background-color: whitesmoke;
+        color: black;
+        transition: 0.3s ease;
+    }
 
+    .submit-row input:hover, .submit-row input.default {
+        background-color: #8a8a8a;
+        color: white;
+        transition: 0.3s ease;
+    }
+
+    .submit-row input.default:hover {
+        background-color: whitesmoke;
+        color:black;
+    }
+
+}
+@media (prefers-color-scheme: light) {
+    a:link, a:visited {
+        color: black;
+        transition: 0.5s ease;
+    }
+    a:hover {
+        color:black;
+    }
+
+    /* Sidebar */
+    .module h2, .module caption, .inline-group h2 {
+        background-color: darkgray;
+    }
+
+    /* Submit Form Buttons */
+    .submit-row input {
+        background-color: whitesmoke;
+        color: black;
+        transition: 0.3s ease;
+    }
+
+    .submit-row input:hover, .submit-row input.default {
+        background-color: #8a8a8a;
+        color: white;
+        transition: 0.3s ease;
+    }
+
+    .submit-row input.default:hover {
+        background-color: whitesmoke;
+        color:black;
+    }
 }
