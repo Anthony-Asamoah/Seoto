@@ -44,6 +44,7 @@ ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1', 'tony48.pythonanywhere.com
 
 INSTALLED_APPS = [
 	# My apps
+	'accounts',
 	'author',
 	'home',
 	'foodie',
