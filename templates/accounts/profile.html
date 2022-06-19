@@ -1,46 +1,28 @@
 {% extends "base.html" %}
 
-{% block title %}| Sign-up{% endblock %}
+{% load static %}
+
+{% block title %}| Profile {% endblock %}
 
 {% block style %}
     <style>
         .header {
             text-align: center;
         }
-        .form {
-            height: auto;
-            min-width: 500px;
-            background-color: whitesmoke;
-            padding:20px;
-            border-radius: 5px;
-            margin: 20px auto;
-        }
 
-        .form input {
-            padding: 2px 5px !important;
-            transition: 0.3s ease;
-            border-radius: 5px;
-            margin:5px;
+        .dp {
+            text-align: center;
         }
-
-        .form input:hover {
-            background-color: whitesmoke;
-            padding: 5px !important;
-        }
-
-        .form button {
-            padding: 5px;
-            width: 100px;
-            border-radius: 5px;
-            margin:5px;
-            transition: 0.5s ease;
-        }
-        button:hover {
-            font-weight: bold;
-            padding: 10px;
+        .dp img {
+            width: 250px;
+            object-fit: cover;
+            object-position: center;
+            margin:20px 0;
+            border-radius: 15px;
         }
 
     </style>
+    {% include 'partials/_form_style_bootstrap.html' %}
 {% endblock %}
 
 {% block content %}
@@ -50,29 +32,53 @@
             <p>Check and update your account details.</p>
         </div>
         <div class="main">
-            <div class="form">
-              <form method="post">
+            <div class="form row">
+                <div class="col-md-4 dp">
+                    {% if extra.picture %}
+                        <img src="{{ extra.picture.url }}" alt="profile picture">
+                    {% else %}
+                        <img src="{% static 'img/profile_pic.png' %}" alt="profile picture">
+                    {% endif %}
+                </div>
+              <form method="post" class="col-md-8" action="{% url 'profile' user.username %}">
+                  {% csrf_token %}
                   <div class="date_joined mb-3">
                       <h6>Account Created on {{ joined_day }}, {{ joined_date }} at {{ joined_time | lower}}</h6>
                   </div>
-                  <div class="form-group">
+                  <div class="form-group form-row">
                       <label for="username">Username</label>
                       <input type="text" name="username" id="username" class="form-control " value="{{ user.username }}" readonly>
                   </div>
-                  <div class="form-group">
-                      <label for="first_name">First Name</label>
-                      <input type="text" name="first_name" id="first_name" class="form-control" value="{{ user.first_name }}">
+                  <div class="form-row">
+                      <div class="form-group col-md-6">
+                          <label for="first_name">First Name</label>
+                          <input type="text" name="first_name" id="first_name" class="form-control" value="{{ user.first_name }}">
+                      </div>
+                      <div class="form-group col-md-6">
+                          <label for="last_name">Last Name</label>
+                          <input type="text" name="last_name" id="last_name" class="form-control" value="{{ user.last_name }}">
+                      </div>
                   </div>
-                  <div class="form-group">
-                      <label for="last_name">Last Name</label>
-                      <input type="text" name="last_name" id="last_name" class="form-control" value="{{ user.last_name }}">
-                  </div>
-                  <div class="form-group">
+                  <div class="form-group form-row">
                       <label for="email">Email</label>
                       <input type="text" name="email" id="email" class="form-control" value="{{ user.email }}">
+                      {% if not extra.email %}
+                        <span class="form-text text-muted">Kindly enter a valid email: example@example.com.eu</span>
+                      {% endif %}
                   </div>
-                  <div class="buttons">
-                      <button type="submit">Update</button>
+                  <div class="form-group form-row">
+                      <label for="contact">Contact</label>
+                      <input type="text" name="contact" id="contact" class="form-control">
+                      {% if not extra.contact %}
+                        <span class="form-text text-muted">Must consist of country code then number: +555 555 555 555</span>
+                      {% endif %}
+                  </div>
+                  <div class="custom-file">
+                      <label for="profile_pic" class="custom-file-label">Change Profile Picture</label>
+                      <input class="custom-file-input border" type="file" name="profile_picture" id="profile_picture" accept="image/*">
+                  </div>
+                  <div class="buttons mt-3">
+                      <button type="submit" class="btn btn-success">Update</button>
                       <a href="{% url 'password_change' %}">Change Password</a>
                   </div>
               </form>
