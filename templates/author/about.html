@@ -12,8 +12,9 @@
         color: #102854;
         font-family: "Garrison Light Sans";
     }
-    .main h2 {
-        color: #00695f;
+    .main h2, h3, h4, h5, h6 {
+        color: #00695f ;
+        transition: 1s ease;
     }
 
     .main > div {
@@ -23,6 +24,9 @@
     .main > div:hover {
         background-color: #d9d9d9;
         padding-bottom: 50px;
+    }
+    .main >div:hover h2, h3, h4, h5,h6 {
+        color: darkgoldenrod;
     }
     /* Header */
     .header {
@@ -82,6 +86,7 @@
     }
     .form-group:hover label{
         font-weight: bold;
+        color: #00695f;
     }
     .form-control {
         transition: 0.3s ease;
@@ -235,28 +240,28 @@
                 <p>You can find me with the handle @sean_or_tony or @sean0tony on any & all platforms that i am registered on</p>
                 <p>Check out my <a class="warning" href="https://www.instagram.com/sean_or_tony/" target="_blank">instagram</a>, which i am more active on</p>
             </div>
-            <div class="contact_form">
+            <div class="contact_form mt-4">
                 <form action="{% url 'about' %}" method="post">
                     {% csrf_token %}
-                    <p>or reach out with the form below</p>
-                    <div class="form-group">
-                        <label for="{{ form.name.if_for_label }}">Full name</label>
+                    <h3 class="mb-4">or reach out with the form below</h3>
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.name.if_for_label }}">Your name</label>
                         {{ form.name }}
                     </div>
-                    <div class="form-group">
+                    <div class="form-group col-md-6">
                         <label for="{{ form.email.id_for_label }}">Your email</label>
                         {{ form.email }}
                     </div>
-                    <div class="form-group">
+                    <div class="form-group col-md-12">
                         <label for="{{ form.subject.id_for_label }}">Subject</label>
                         {{ form.subject }}
                     </div>
-                    <div class="form-group">
+                    <div class="form-group col-md-12">
                         <label for="{{ form.message.id_for_label }}">Your message</label>
                         {{ form.message }}
                     </div>
                     <button class="btn btn-primary" type="submit">Submit</button>
-                    <button class="btn btn-danger" type="reset">Clear Form</button>
+                    <button class="btn btn-warning pl-4 pr-4" type="reset">Clear</button>
                 </form>
             </div>
         </div>
