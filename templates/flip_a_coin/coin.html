@@ -32,18 +32,18 @@
             <h1>Hit the button to flip </h1>
         </div>
         <div class="main">
-            <div class="button">
-                <form action="{% url 'flip_a_coin' %}" method="post">
-                    {% csrf_token %}
-                    <button class="btn btn-primary" type="submit">Flip</button>
-                </form>
-            </div>
             {% if flip %}
                 <div class="coin mt-5" id="coin"></div>
                 <div class="info mt-3">
                     <h5 id="text">Flipped</h5>
                 </div>
             {% endif %}
+            <div class="button">
+                <form action="{% url 'flip_a_coin' %}" method="post">
+                    {% csrf_token %}
+                    <button class="btn btn-warning mt-3" type="submit">Flip</button>
+                </form>
+            </div>
         </div>
     </div>
 {% endblock %}

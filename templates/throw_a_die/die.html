@@ -47,9 +47,10 @@
                 background-image: url("{% static 'svg/6-die.svg' %}");
             {% endif %}
 
+            background-repeat: no-repeat;
             display: none;
-            height: 500px;
-            width: 500px;
+            height: 300px;
+            width: 300px;
             margin: auto;
         }
 
@@ -62,10 +63,6 @@
             <h1>Click the button to cast a die</h1>
         </div>
         <div class="main input-group mt-5">
-            <form action="{% url 'throw_a_die' %}" method="post">
-                {% csrf_token %}
-                <button type="submit">Cast</button>
-            </form>
             {% if side %}
                 <div class="image" >
                     <div class="img" id="image"></div>
@@ -74,6 +71,11 @@
                     <h1 id="side_info">Spinning.</h1>
                 </div>
             {% endif %}
+            <form action="{% url 'throw_a_die' %}" method="post" class="mt-5 mb-5">
+                {% csrf_token %}
+                <button type="submit">Cast</button>
+            </form>
+
         </div>
     </div>
 {% endblock %}
