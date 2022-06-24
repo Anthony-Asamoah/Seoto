@@ -33,9 +33,11 @@ def interest(request):
 			if kind == 'cumulative':
 				amount = raw_data.susu()
 
+			amount = amount.split(' | ')
+
 			context.update({'amount': amount})
 		else:
-			context.update({'amount': "Kindly fill in all inputs with positive numbers only"})
+			context.update({'error': "Kindly fill in all inputs with positive numbers only"})
 
 		return render(request, 'interest/interest.html', context)
 

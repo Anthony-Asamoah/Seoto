@@ -39,7 +39,7 @@ class interest:
 		net = profit + self.principal
 		percent = interest.percent(profit, net)
 
-		return f"profit = {round(profit, 2)} -> {round(percent, 2)}% | NET = {net}"
+		return f"Profit = {round(profit, 2)} -> {round(percent, 2)}% | NET = {net}"
 
 	def compound(self):
 		first = (1 + (self.rate / 100)) ** ((self.time + 1) - 1)
@@ -47,7 +47,7 @@ class interest:
 		profit = net - self.principal
 		percent = interest.percent(profit, net)
 
-		return f"profit = {round(profit, 2)} -> {round(percent, 2)}% | NET = {round(net, 2)}"
+		return f"Profit = {round(profit, 2)} -> {round(percent, 2)}% | NET = {round(net, 2)}"
 
 	def susu(self):
 		net = 0
@@ -60,6 +60,6 @@ class interest:
 
 		percent = interest.percent(profit, net)
 
-		return f"profit = {round(profit, 2)} -> {round(percent, 2)}% | NET = {round(net, 2)}"
+		return f"Profit = {round(profit, 2)} -> {round(percent, 2)}% | NET = {round(net, 2)}"
 
 	# End of Main Methods
