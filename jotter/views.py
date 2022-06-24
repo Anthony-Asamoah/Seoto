@@ -52,26 +52,6 @@ def new_to_track(request):
 
 
 @login_required
-def complete_todo(request, item_id):
-	item = todo.objects.get(id=item_id)
-	item.isCompleted = True
-	item.completed_on = timezone.now()
-	item.save()
-	messages.success(request, 'Item Completed')
-	return redirect('jotter')
-
-
-@login_required
-def complete_to_track(request, item_id):
-	item = tracker.objects.get(id=item_id)
-	item.isCompleted = True
-	item.completed_on = timezone.now()
-	item.save()
-	messages.success(request, 'Item Completed')
-	return redirect('jotter')
-
-
-@login_required
 def edit_todo(request, item_id):
 	item = todo.objects.get(pk=item_id)
 	default_form = todo_form(initial={
@@ -108,6 +88,7 @@ def edit_to_track(request, item_id):
 		'link': item.link
 	})
 	context = {
+		'category': item.category,
 		'form': default_form,
 		'item': item
 	}
@@ -117,3 +98,24 @@ def edit_to_track(request, item_id):
 		return tracker_form_validation(request, form)
 
 	return render(request, 'jotter/edit_to_track.html', context)
+
+
+@login_required
+def complete_todo(request, item_id):
+	item = todo.objects.get(id=item_id)
+	item.isCompleted = True
+	item.completed_on = timezone.now()
+	item.save()
+	messages.success(request, 'Item Completed')
+	return redirect('jotter')
+
+
+@login_required
+def complete_to_track(request, item_id):
+	item = tracker.objects.get(id=item_id)
+	item.isCompleted = True
+	item.completed_on = timezone.now()
+	item.save()
+	messages.success(request, 'Item Completed')
+	return redirect('jotter')
+

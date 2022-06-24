@@ -37,9 +37,9 @@
                     <input type="datetime-local" class="form-control" name="reminder" id="reminder" value="{{ reminder }}">
                 </div>
 
-                <button type="submit" class="btn btn-success">Update</button>
-                <a href="{% url 'jotter' %}"> <span class="btn btn-danger">Cancel & go Back</span></a>
-                <a href="{% url 'complete_todo' item.id %}"> <span class="btn btn-warning">Mark as completed</span></a>
+                <button type="submit" class="btn btn-success mt-2">Update</button>
+                <a href="{% url 'jotter' %}"> <span class="btn btn-danger mt-2">Cancel & go Back</span></a>
+                <a href="{% url 'complete_todo' item.id %}"> <span class="btn btn-warning mt-2">Mark as completed</span></a>
             </form>
         </div>
     </div>

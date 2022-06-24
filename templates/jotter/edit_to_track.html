@@ -6,7 +6,6 @@
 
 {% block style %}
     {% include 'partials/_form_style_bootstrap.html' %}
-
 {% endblock %}
 
 {% block content %}
@@ -29,7 +28,13 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group col-md-2">
-                        <label for="{{ from.episode.id_for_label }}">Episode</label>
+                        <label for="{{ from.episode.id_for_label }}">
+                            {% if category == 'Book' %}
+                                Page
+                            {% else %}
+                                Episode
+                            {% endif %}
+                        </label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <div class="input-group-text">
@@ -51,7 +56,13 @@
                         </div>
                     </div>
                     <div class="form-group col-md-4">
-                        <label for="{{ form.timestamp.id_for_label }}">Timestamp</label>
+                        <label for="{{ form.timestamp.id_for_label }}">
+                            {% if category == 'Book' %}
+                                Line
+                            {% else %}
+                                Timestamp
+                            {% endif %}
+                        </label>
                         {{ form.timestamp }}
                     </div>
                 </div>
@@ -68,9 +79,9 @@
                         {% endif %}
                     </div>
                 </div>
-                <button type="submit" class="btn btn-success">Update</button>
-                <a href="{% url 'jotter' %}"> <span class="btn btn-danger">Cancel & go Back</span></a>
-                <a href="{% url 'completed_to_track' item.id %}"><span class="btn btn-warning">Mark as completed</span></a>
+                <button type="submit" class="btn btn-success mt-3">Update</button>
+                <a href="{% url 'jotter' %}"><span class="btn btn-danger mt-3">Cancel & go Back</span></a>
+                <a href="{% url 'completed_to_track' item.id %}"><span class="btn btn-warning mt-3">Mark as completed</span></a>
             </form>
         </div>
     </div>
