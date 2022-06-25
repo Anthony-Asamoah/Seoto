@@ -38,7 +38,7 @@ DEBUG = security.debug
 # Enforce HTTPS instead of HTTP
 SECURE_SSL_REDIRECT = not DEBUG
 
-ALLOWED_HOSTS = ['0.0.0.0', 'localhost', '127.0.0.1', 'tony48.pythonanywhere.com']
+ALLOWED_HOSTS = security.hosts
 
 # Application definition
 
