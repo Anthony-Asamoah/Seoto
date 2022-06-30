@@ -5,6 +5,7 @@ security.py
 .idea/
 /media/
 __pycache__/
+staticfiles/
 seoto/__pycache__/
 interest_calc/__pycache__/
 foodie/__pycache__/
