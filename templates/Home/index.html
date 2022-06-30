@@ -1,9 +1,57 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block title %}| Home{% endblock %}
 
 {% block style %}
     <style>
+        .apps {
+            display: flex;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+        .card {
+            width: 200px;
+            background-color: white;
+            border-radius: 25px;
+            overflow: hidden;
+            transition: 0.5s ease;
+            border: none;
+            margin:5px;
+        }
+        .card:hover {
+            margin: 2px 15px;
+        }
+
+        .card .card-body{
+            transition: 0.5s ease;
+            font-size: 16px;
+        }
+        .card .card-body {
+            font-family: "Trebuchet MS";
+        }
+        .card .card-title {
+            transition: 0.3s ease;
+            color: #590000;
+        }
+        .card:hover .card-title {
+            color: black;
+        }
+        .card img {
+            opacity: 0.8;
+            object-fit: cover;
+            object-position: center;
+            height: 200px;
+            transition: 0.5s ease;
+        }
+        .card:hover img {
+            opacity: 1;
+        }
+        .card a {
+            color: black;
+            text-decoration: none;
+        }
 
         button {
             transition: padding 0.5s ease !important;
@@ -14,6 +62,23 @@
             padding-right:30px;
         }
 
+        @media screen and (max-width: 481px) {
+            .card {
+                width: 140px;
+            }
+             .card:hover {
+                margin: 2px 8px;
+            }
+            .card img {
+                object-fit: cover;
+                object-position: center;
+                height: 140px;
+            }
+
+            .card-body p {
+                font-size: 14px;
+            }
+        }
     </style>
 {% endblock %}
 
@@ -23,20 +88,84 @@
             <h1>Apps for random stuff by <span class="s0t"><a href="{% url 'about' %}">Anthony</a></span></h1>
             <hr />
         </div>
-        <div class="main mt-5 mb-5">
-            <div class="anonymous_apps">
+        <div class="main mb-5 row">
+            <div class="anonymous_apps mb-5 col-md-8">
                 <h4>Available Apps</h4>
                 <p>Apps that can be accessed without necessarily having an account with Seoto</p>
-                <a href="{% url 'foodie' %}"><button class="btn btn-primary mb-2">Foodie</button></a>
-                <a href="{% url 'interest_calculator'%}"><button class="btn btn-primary mb-2">Interest Calc</button></a>
-                <a href="{% url 'rhymes' %}"><button class="btn btn-primary mb-2">Rhyme DB</button></a>
-                <a href="{% url 'throw_a_die' %}"><button class="btn btn-primary mb-2">Throw a Die</button></a>
-                <a href="{% url 'flip_a_coin' %}"><button class="btn btn-primary mb-2">Flip a coin</button></a>
+                <div class="apps">
+                    <div class="card mb-3">
+                      <a href="{% url 'foodie' %}">
+                          <img src="{% static 'img/food-app-icon.jpg' %}" class="card-img-top" alt="Icon">
+                          <div class="card-body">
+                              <h5 class="card-title">Foodie</h5>
+                            <p class="card-text">
+                                Let me suggest what to eat...
+                            </p>
+                          </div>
+                      </a>
+                    </div>
+                    <div class="card mb-3">
+                      <a href="{% url 'interest_calculator' %}">
+                          <img src="{% static 'img/interest-app-icon.png' %}" class="card-img-top" alt="Icon">
+                          <div class="card-body">
+                              <h5 class="card-title">Interest Calculator</h5>
+                            <p class="card-text">
+                                Know your earnings.
+                            </p>
+                          </div>
+                      </a>
+                    </div>
+                    <div class="card mb-3">
+                      <a href="{% url 'rhymes' %}">
+                          <img src="{% static 'img/rhymes-app-icon.jpg' %}" class="card-img-top" alt="Icon">
+                          <div class="card-body">
+                              <h5 class="card-title">Rhyme DB</h5>
+                            <p class="card-text">
+                                A list of words that rhyme together.
+                            </p>
+                          </div>
+                      </a>
+                    </div>
+                    <div class="card mb-3">
+                      <a href="{% url 'throw_a_die' %}">
+                          <img src="{% static 'img/dice-app-icon.png' %}" class="card-img-top" alt="Icon">
+                          <div class="card-body">
+                              <h5 class="card-title">Throw a die</h5>
+                            <p class="card-text">
+                                Play a game. Ludu or something.
+                            </p>
+                          </div>
+                      </a>
+                    </div>
+                    <div class="card mb-3">
+                      <a href="{% url 'flip_a_coin' %}">
+                          <img src="{% static 'img/coin-app-icon.png' %}" class="card-img-top" alt="Icon">
+                          <div class="card-body">
+                              <h5 class="card-title">Flip a coin</h5>
+                            <p class="card-text">
+                                Settle a dispute maybe.
+                            </p>
+                          </div>
+                      </a>
+                    </div>
+                </div>
             </div>
-            <div class="user_apps mt-3">
+            <div class="user_apps col-md-4">
                 <h4>User only Apps</h4>
-                <p>Apps that require you to be logged in before using</p>
-                <a href="{% url 'jotter' %}"><button class="btn btn-primary">Jotter</button></a>
+                <p>Apps that require you to be logged in</p>
+                <div class="apps">
+                    <div class="card mb-3">
+                      <a href="{% url 'jotter' %}">
+                          <img src="{% static 'img/jotter-app-icon.jpg' %}" class="card-img-top" alt="Icon">
+                          <div class="card-body">
+                              <h5 class="card-title">Jotter</h5>
+                            <p class="card-text">
+                                Your personal handbook.
+                            </p>
+                          </div>
+                      </a>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
