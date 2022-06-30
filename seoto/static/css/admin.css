@@ -5,31 +5,31 @@ a:link, a:visited {
     transition: 0.5s ease;
 }
 a:hover {
-    color: #e3e3e3;
+    color: black;
 }
 
 
 /* Header and Title*/
 #header {
-    background-color: rgba(103, 103, 103, 0.37);
+    background-color: whitesmoke;
     height: 50px;
 }
 #branding h1 {
-    color:white;
+    color:black;
 }
 #user-tools {
-    color: whitesmoke;
+    color: black;
 }
 
-#header a {
-    color:white;
+#header a:link {
+    color:darkslategrey;
     transition: 0.3s ease;
 }
 #header a:hover {
-    color: darkolivegreen;
+    color: black;
 }
 #header a:visited {
-    color: white;
+    color: darkslategrey;
 }
 
 
@@ -48,7 +48,7 @@ div.breadcrumbs a {
     color: white;
 }
 div.breadcrumbs a:hover {
-    color: darkolivegreen;
+    color: darkslategrey;
 }
 
 
