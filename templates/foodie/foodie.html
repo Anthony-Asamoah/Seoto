@@ -35,7 +35,7 @@
         transition: 0.5s ease !important;
     }
     img:hover {
-        height: 40vh;
+        height: auto;
         width: auto;
     }
 
@@ -43,20 +43,20 @@
 {% endblock %}
 
 {% block content %}
-    <div class="">
-        <div class="header container">
+    <div class="container">
+        <div class="header">
             <h1>So you want something to eat...</h1>
             <hr />
         </div>
         {% if mealtime == 'Fasting' %}
-            <div class="main container" style="text-align: center">
+            <div class="main" style="text-align: center">
                 <h3>
                     Unfortunately you will be going to bed soon.
                     Have {{ option_1 | lower}} or {{ option_2 | lower }} for now.
                 </h3>
             </div>
         {% else %}
-            <div class="main container">
+            <div class="main">
                 <h3>
                     It's time for <span class="time">{{ mealtime | lower }}</span>
                     {% if option_1 or option_2 %}
@@ -89,12 +89,8 @@
                             <img src="{{ option_1.img_2.url }}" alt="{{ option_1 }}">
                         </div>
                     {% endif %}
-                    {% if option_1.img_3 %}
-                        <div class="img_3 item-img">
-                            <img src="{{ option_1.img_3.url }}" alt="{{ option_1 }}">
-                        </div>
-                    {% endif %}
                     </div>
+
                     <div class="option2 slide-item">
                         <div class="main_img item-img">
                         <img src="{{ option_2.main_img.url }}" alt="{{ option_2 }}">
@@ -109,12 +105,8 @@
                             <img src="{{ option_2.img_2.url }}" alt="{{ option_2 }}">
                         </div>
                     {% endif %}
-                    {% if option_2.img_3 %}
-                        <div class="img_3 item-img">
-                            <img src="{{ option_2.img_3.url }}" alt="{{ option_2 }}">
-                        </div>
-                    {% endif %}
                     </div>
+
                     {% if fancy %}
                         <div class="fancy slide-item">
                             <div class="main_img item-img">
@@ -128,11 +120,6 @@
                         {% if fancy.img_2 %}
                             <div class="img_2 item-img">
                                 <img src="{{ fancy.img_2.url }}" alt="{{ fancy }}">
-                            </div>
-                        {% endif %}
-                        {% if fancy.img_3 %}
-                            <div class="img_3 item-img">
-                                <img src="{{ fancy.img_3.url }}" alt="{{ fancy }}">
                             </div>
                         {% endif %}
                         </div>
