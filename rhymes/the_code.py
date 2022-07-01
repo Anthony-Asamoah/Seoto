@@ -8,8 +8,12 @@ BASE_DIR = path.join(BASE_DIR, 'rhymes')
 
 def rhymeValidator(rhyme):
 	for letter in range(len(rhyme)):
-		if rhyme[letter] not in string.ascii_letters or rhyme[letter] == 0:
+		if rhyme[letter] not in string.ascii_letters:
 			return False
+	if len(rhyme) == 0:
+		return False
+	if rhyme == '':
+		return False
 	return True
 
 
@@ -23,6 +27,9 @@ def find_rhymes(rhyme_string):
 	temp = " ".join(all_text)
 
 	regex = re.compile(f'\\w*{rhyme_string}\\s')
-	found = regex.findall(temp)
+	found = sorted(set(regex.findall(temp)))
 
-	return sorted(set(found))
+	return {
+		'list': found,
+		'amount': len(found)
+	}

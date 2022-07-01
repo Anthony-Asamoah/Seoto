@@ -7,7 +7,7 @@ from home.views import index, error404, error500
 
 from author.views import about
 from foodie.views import foodie
-from rhymes.views import rhymes
+from rhymes.views import rhymes, download_rhyme
 from throw_a_die.views import die
 from flip_a_coin.views import coin
 from interest_calc.views import interest
@@ -23,6 +23,7 @@ urlpatterns = [
     path('foodie', foodie, name='foodie'),
     path('interest_calculator', interest, name='interest_calculator'),
     path('rhymes', rhymes, name='rhymes'),
+    path('rhymes/download', download_rhyme, name='rhymes_download'),
     path('throw_a_die', die, name='throw_a_die'),
     path('flip_a_coin', coin, name='flip_a_coin'),
     # Registered User apps

@@ -2,6 +2,15 @@
 
 {% block title %}| Rhyme DB{% endblock %}
 
+{% block style %}
+    <style>
+        .list-group {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
 
     <div class="container">
@@ -12,20 +21,29 @@
         <div class="inputbox">
             <form action="{% url 'rhymes' %}" method="post">
                 {% csrf_token %}
-                <button class="btn btn-success" type="submit">Find</button>
-                <input type="text" name="rhyme">
+                <div class="form-inline">
+                    <button class="btn btn-success" type="submit">Find</button>
+                    <div class="form-group">
+                        <input type="text" name="rhyme" class="form-control">
+                    </div>
+                </div>
             </form>
         </div>
         <div class="rhymes mt-5">
             {% if words %}
-                <ol>Available words that rhyme with "{{ input }}"
+                <h5>{{ amount }} available words that rhyme with "{{ input }}"</h5>
+                <ol class="list-group">
                     {% for word in words %}
-                        <li>{{ word }}</li>
+                        <li class="list-group-item">{{ word | title }}</li>
                     {% endfor %}
                 </ol>
-                <button class="btn btn-primary">Save</button>
+                <a href="{% url 'rhymes_download' %}"><button class="btn btn-primary mt-3" type="button">Download</button></a>
             {% else %}
-                <h3>No Rhymes Found</h3>
+                {% if input %}
+                <h3>Nothing goes with '{{ input }}'</h3>
+                {% endif %}
+            {% endif %}
+            {% if input %}
             {% endif %}
         </div>
     </div>
