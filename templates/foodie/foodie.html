@@ -6,127 +6,191 @@
 
 {% block style %}
     <style>
-
     .time {
     color: brown;
     }
     .food1, .food2, .fancy {
         color: darkgoldenrod;
     }
-
     .images {
-        text-align: center !important;
-        max-width: 1000px;
-        position: relative;
-        margin: auto;
+        margin: auto auto;
     }
+
+    .slide-item {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        flex-direction: row;
+        align-items: baseline;
+        animation-name: fade;
+        animation-duration: 1.5s;
+    }
+
+    @keyframes fade {
+      from {opacity: 0.1}
+      to {opacity: 1}
+    }
+
     .images .item-img {
-        margin-top:10px;
+        width: 20%;
+        height: 40vh;
+        margin:10px;
+        border: 3px ridge darkgoldenrod;
+        border-radius: 10px;
         overflow: hidden;
-        border: 5px ridge darkgoldenrod;
-        border-radius: 5px;
+        transition: 0.5s ease;
+        box-shadow: 0 5px 10px 1px gray;
     }
-    img  {
-        object-fit: cover !important;
-        object-position: center !important;
+    .images .item-img:hover {
+        width: 30%;
+        height: 45vh;
+    }
+    .images .main_img {
+        width: 30% !important;
+        height: 42vh;
+    }
+    .images .main_img:hover {
+        width: 40% !important;
+        height: 45vh;
+    }
+
+    .images img {
+        object-position: center;
+        object-fit: cover;
         width: 100%;
-        height: 20vh;
-        border-radius: 5px;
-        transition: 0.5s ease !important;
+        height: 100%;
     }
-    img:hover {
-        height: auto;
-        width: auto;
+
+    @media screen and (max-width: 992px) {
+        .main {
+            text-align: center;
+        }
+        .images .item-img {
+            width: 500px;
+            height: 200px;
+        }
+        .images .main_img {
+            width: 500px !important;
+            height: 200px !important;
+        }
+        .images .item-img:hover {
+            width: 600px;
+            height: 300px;
+        }
+        .images .main_img:hover {
+            width: 600px !important;
+            height: 250px !important;
+        }
+
+    }
+
+    @media screen and (max-width: 480px) {
+        .images .item-img {
+            width: 400px;
+            height: 150px;
+        }
+        .images .main_img {
+            width: 400px !important;
+            height: 150px !important;
+        }
+        .images .item-img:hover {
+            width: 400px;
+            height: 250px;
+        }
+        .images .main_img:hover {
+            width: 400px !important;
+            height: 250px !important;
+        }
     }
 
     </style>
 {% endblock %}
 
 {% block content %}
-    <div class="container">
-        <div class="header">
+    <div class="">
+        <div class="header container">
             <h1>So you want something to eat...</h1>
             <hr />
         </div>
         {% if mealtime == 'Fasting' %}
-            <div class="main" style="text-align: center">
+            <div class="main container" style="text-align: center">
                 <h3>
-                    Unfortunately you will be going to bed soon.
-                    Have {{ option_1 | lower}} or {{ option_2 | lower }} for now.
+                    Unfortunately<wbr> you will be going to bed soon.
+                    Have {{ option_1 | lower}}<wbr> or {{ option_2 | lower }}<wbr> for now.
                 </h3>
             </div>
         {% else %}
-            <div class="main">
+            <div class="main container">
                 <h3>
                     It's time for <span class="time">{{ mealtime | lower }}</span>
                     {% if option_1 or option_2 %}
-                        , so i suggest <span class="food1">{{ option_1 | lower }}</span>
-                        {% if option_1 %}
-                        , or <span class="food2">{{ option_2 | lower }}</span>
-                        {% endif %}
-                        {% else %}
-                        but there is nothing on the menu!<br />
-                        <p class="mt-3">Kindly add foods/meals to the menu.</p>
+                    ,<wbr> so i suggest <span class="food1">{{ option_1 | lower }}</span>
+                    {% if option_1 %}
+                    <wbr> or <span class="food2">{{ option_2 | lower }}</span>
+                    {% endif %}
+                    {% else %}
+                    but there is nothing<wbr> on the menu!<br />
+                    <p class="mt-3">Kindly add foods/meals<wbr> to the menu.</p>
                     {% endif %}
                 </h3>
                 {% if fancy %}
-                    <h4>Otherwise let's get some <span class="fancy">{{ fancy | lower }}</span></h4>
+                    <h4>Otherwise<wbr> let's get some <span class="fancy">{{ fancy | lower }}</span></h4>
                 {% endif %}
             </div>
             {% if option_1 or option_2 %}
                 <div class="images">
+
                     <div class="option1 slide-item">
+                        {% if option_1.img_1 %}
+                            <div class="img_1 item-img">
+                                <img src="{{ option_1.img_1.url }}" alt="{{ option_1 }}">
+                            </div>
+                        {% endif %}
                         <div class="main_img item-img">
-                        <img src="{{ option_1.main_img.url }}" alt="{{ option_1 }}">
-                    </div>
-                    {% if option_1.img_1 %}
-                        <div class="img_1 item-img">
-                            <img src="{{ option_1.img_1.url }}" alt="{{ option_1 }}">
+                            <img src="{{ option_1.main_img.url }}" alt="{{ option_1 }}">
                         </div>
-                    {% endif %}
-                    {% if option_1.img_2 %}
-                        <div class="img_2 item-img">
-                            <img src="{{ option_1.img_2.url }}" alt="{{ option_1 }}">
-                        </div>
-                    {% endif %}
+                        {% if option_1.img_2 %}
+                            <div class="img_2 item-img">
+                                <img src="{{ option_1.img_2.url }}" alt="{{ option_1 }}">
+                            </div>
+                        {% endif %}
                     </div>
 
                     <div class="option2 slide-item">
+                        {% if option_2.img_1 %}
+                            <div class="img_1 item-img">
+                                <img src="{{ option_2.img_1.url }}" alt="{{ option_2 }}">
+                            </div>
+                        {% endif %}
                         <div class="main_img item-img">
-                        <img src="{{ option_2.main_img.url }}" alt="{{ option_2 }}">
-                    </div>
-                    {% if option_2.img_1 %}
-                        <div class="img_1 item-img">
-                            <img src="{{ option_2.img_1.url }}" alt="{{ option_2 }}">
+                            <img src="{{ option_2.main_img.url }}" alt="{{ option_2 }}">
                         </div>
-                    {% endif %}
-                    {% if option_2.img_2 %}
-                        <div class="img_2 item-img">
-                            <img src="{{ option_2.img_2.url }}" alt="{{ option_2 }}">
-                        </div>
-                    {% endif %}
+                        {% if option_2.img_2 %}
+                            <div class="img_2 item-img">
+                                <img src="{{ option_2.img_2.url }}" alt="{{ option_2 }}">
+                            </div>
+                        {% endif %}
                     </div>
 
                     {% if fancy %}
                         <div class="fancy slide-item">
+                            {% if fancy.img_1 %}
+                                <div class="img_1 item-img">
+                                    <img src="{{ fancy.img_1.url }}" alt="{{ fancy }}">
+                                </div>
+                            {% endif %}
                             <div class="main_img item-img">
-                            <img src="{{ fancy.main_img.url }}" alt="{{ fancy }}">
-                        </div>
-                        {% if fancy.img_1 %}
-                            <div class="img_1 item-img">
-                                <img src="{{ fancy.img_1.url }}" alt="{{ fancy }}">
+                                <img src="{{ fancy.main_img.url }}" alt="{{ fancy }}">
                             </div>
-                        {% endif %}
-                        {% if fancy.img_2 %}
-                            <div class="img_2 item-img">
-                                <img src="{{ fancy.img_2.url }}" alt="{{ fancy }}">
-                            </div>
-                        {% endif %}
+                            {% if fancy.img_2 %}
+                                <div class="img_2 item-img">
+                                    <img src="{{ fancy.img_2.url }}" alt="{{ fancy }}">
+                                </div>
+                            {% endif %}
                         </div>
                     {% endif %}
                 </div>
             {% endif %}
-
             <div style="text-align:center">
               <span class="dot"></span>
               <span class="dot"></span>
@@ -150,14 +214,20 @@
               for (i = 0; i < slides.length; i++) {
                 slides[i].style.display = "none";
               }
+
               slideIndex++;
-              if (slideIndex > slides.length) {slideIndex = 1}
+              if (slideIndex > slides.length) {
+                  slideIndex = 1
+              }
+
               for (i = 0; i < dots.length; i++) {
                 dots[i].className = dots[i].className.replace(" active", "");
               }
-              slides[slideIndex-1].style.display = "block";
+
+              slides[slideIndex-1].style.display = "flex";
               dots[slideIndex-1].className += " active";
-              setTimeout(showSlides, 2000); // Change image every 2 seconds
+
+              setTimeout(showSlides, 3000);
             }
         {% endif %}
     </script>
