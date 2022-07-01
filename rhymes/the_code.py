@@ -33,3 +33,20 @@ def find_rhymes(rhyme_string):
 		'list': found,
 		'amount': len(found)
 	}
+
+
+def write_to_file(rhyme, words, amount):
+	with open('rhymes/Rhymes_Seoto.txt', 'w') as file:
+		to_file = f'''
+				{'Rhyme Db'.rjust(30)}
+				{'Powered by Python & Wine'.rjust(30)}
+
+
+		'''
+		to_file += f'({amount}) Words that rhyme with "{rhyme}"\n' + '\n' + ''.center(70, '-') + '\n\n'
+
+		for word in words:
+			to_file += f'{word.capitalize()}\n'
+		to_file += (''.center(70, '-'))
+
+		file.write(to_file)

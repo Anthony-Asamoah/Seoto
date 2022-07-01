@@ -1,4 +1,4 @@
-from django.shortcuts import render, HttpResponse
+from django.shortcuts import render
 from django.http import FileResponse
 from . import the_code
 
@@ -13,20 +13,7 @@ def rhymes(request):
 			words = info['list']
 			amount = info['amount']
 
-			with open('rhymes/Rhymes_Seoto.txt', 'w') as file:
-				to_file = f'''
-						{'Rhyme Db'.rjust(30)}
-						{'Powered by Python & Wine'.rjust(30)}
-					
-					
-				'''
-				to_file += f'({amount}) Words that rhyme with "{rhyme}"\n' + '\n' + ''.center(70, '-') + '\n\n'
-
-				for word in words:
-					to_file += f'{word.capitalize()}\n'
-				to_file += (''.center(70, '-'))
-
-				file.write(to_file)
+			# the_code.write_to_file(rhyme, words, amount)
 
 		else:
 			words = False

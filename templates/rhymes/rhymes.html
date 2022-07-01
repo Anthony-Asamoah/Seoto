@@ -37,7 +37,7 @@
                         <li class="list-group-item">{{ word | title }}</li>
                     {% endfor %}
                 </ol>
-                <a href="{% url 'rhymes_download' %}"><button class="btn btn-primary mt-3" type="button">Download</button></a>
+{#                <a href="{% url 'rhymes_download' %}"><button class="btn btn-primary mt-3" type="button">Download</button></a>#}
             {% else %}
                 {% if input %}
                 <h3>Nothing goes with '{{ input }}'</h3>
