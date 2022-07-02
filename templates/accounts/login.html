@@ -90,8 +90,7 @@
             <input type="hidden" name="next" value="{{ next }}">
         </form>
 
-        {# Assumes you set up the password_reset view in your URLconf #}
         <a href="{% url 'password_reset' %}"><button class="btn btn-secondary" style="width: 200px">Lost password?</button></a>
-
+        <a href="{% url 'register' %}">Don't have an account? Create one</a>
     </div>
 {% endblock %}

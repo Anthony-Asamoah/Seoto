@@ -11,6 +11,12 @@
             max-width: 600px;
             margin: auto;
         }
+        .button {
+            text-align: right;
+            margin: 0 15px;
+            font-family: Roboto;
+        }
+
     </style>
     {% include 'partials/_form_style_bootstrap.html' %}
 {% endblock %}
@@ -43,7 +49,9 @@
                     </div>
                   </div>
                 {% endfor %}
-                <button class="btn btn-primary" type="submit">Register</button>
+              <div class="button">
+                  <button class="btn btn-success" type="submit">Register</button>
+              </div>
               </form>
             </div>
         </div>

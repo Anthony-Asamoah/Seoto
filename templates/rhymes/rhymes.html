@@ -30,17 +30,21 @@
             outline: none;
             border-radius: 5px;
             transition: 0.5s ease;
+            text-align: right;
+            background-color: white;
+            border: none;
+            border-bottom: 2px solid #006fc9;
         }
         form .input:hover {
-            width: 90%;
+            height: 45px;
         }
         form .input:hover input {
-            color:white;
-            background-color: #006fc9
+            color:black;
+            background-color: white
         }
         form .input input:focus {
-            color:white;
-            background-color: #006fc9;
+            color:black;
+            background-color: white;
         }
         form .button {
             flex-grow: 4;
@@ -69,7 +73,7 @@
             <form action="{% url 'rhymes' %}" method="post">
                 {% csrf_token %}
                 <div class="input">
-                    <input type="text" name="rhyme" id="rhmye">
+                    <input type="text" name="rhyme" id="rhmye" required placeholder="example; ion">
                     <small class="text-muted">Typically the last 2/3 characters of a word.</small>
                 </div>
                 <div class="button">
