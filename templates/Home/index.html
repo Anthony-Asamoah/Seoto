@@ -13,37 +13,43 @@
         }
         .card {
             width: 200px;
+            height: 260px;
             background-color: white;
             border-radius: 25px;
             overflow: hidden;
-            transition: 0.5s ease;
+            transition: .5s ease;
             border: none;
             margin:5px;
         }
         .card:hover {
             margin: 2px 15px;
+            height: 290px;
         }
 
         .card .card-body{
-            transition: 0.5s ease;
+            transition: .5s ease;
             font-size: 16px;
         }
         .card .card-body {
             font-family: "Trebuchet MS";
+            padding: 0 10px;
         }
         .card .card-title {
-            transition: 0.3s ease;
+            text-align: center;
+            margin-top: 20px;
+            transition: .3s ease;
             color: #590000;
         }
         .card:hover .card-title {
             color: black;
+            margin-top: 0;
         }
         .card img {
             opacity: 0.8;
             object-fit: cover;
             object-position: center;
             height: 200px;
-            transition: 0.5s ease;
+            transition: .5s ease;
         }
         .card:hover img {
             opacity: 1;
@@ -62,6 +68,19 @@
             padding-right:30px;
         }
 
+        .info {
+            padding: 0 5px;
+            opacity: 0;
+            transition: .5s ease;
+            border: 0px blue;
+        }
+        .card:hover .info {
+            opacity: 1;
+            border-top: 2px solid whitesmoke;
+            border-bottom: 3px solid whitesmoke;
+            border-radius: 15px;
+        }
+
         @media screen and (max-width: 481px) {
             .card {
                 width: 140px;
@@ -70,13 +89,33 @@
                 margin: 2px 8px;
             }
             .card img {
-                object-fit: cover;
-                object-position: center;
                 height: 140px;
             }
 
             .card-body p {
                 font-size: 14px;
+            }
+        }
+
+        @media screen and (max-width: 1024px ) {
+            .card {
+                width: 140px;
+                height: 210px;
+            }
+            .card:hover {
+                height: 255px;
+            }
+
+            .card img {
+                height: 140px;
+            }
+            .info {
+                opacity: 0;
+                transition: .5s ease;
+            }
+            .card:hover .info {
+                display: block;
+                opacity: 1;
             }
         }
     </style>
@@ -93,75 +132,87 @@
                 <h4>Available Apps</h4>
                 <p>Apps that can be accessed without necessarily having an account with Seoto</p>
                 <div class="apps">
-                    <div class="card mb-3">
+                    <div class="card mb-3" id="card" onmouseenter="show(1)" onmouseleave="hide(1)">
                       <a href="{% url 'foodie' %}">
                           <img src="{% static 'img/food-app-icon.jpg' %}" class="card-img-top" alt="Icon">
                           <div class="card-body">
                               <h5 class="card-title">Foodie</h5>
-                            <p class="card-text">
+                              <div class="info" id="info1">
+                                <span class="card-text">
                                 Let me suggest what to eat...
-                            </p>
+                            </span>
+                              </div>
                           </div>
                       </a>
                     </div>
-                    <div class="card mb-3">
+                    <div class="card mb-3" id="card" onmouseenter="show(2)" onmouseleave="hide(2)">
                       <a href="{% url 'interest_calculator' %}">
                           <img src="{% static 'img/interest-app-icon.png' %}" class="card-img-top" alt="Icon">
                           <div class="card-body">
                               <h5 class="card-title">Interest Calculator</h5>
-                            <p class="card-text">
+                              <div class="info" id="info2">
+                                <span class="card-text">
                                 Know your earnings.
-                            </p>
+                            </span>
+                              </div>
                           </div>
                       </a>
                     </div>
-                    <div class="card mb-3">
+                    <div class="card mb-3" id="card" onmouseenter="show(3)" onmouseleave="hide(3)">
                       <a href="{% url 'rhymes' %}">
                           <img src="{% static 'img/rhymes-app-icon.jpg' %}" class="card-img-top" alt="Icon">
                           <div class="card-body">
                               <h5 class="card-title">Rhyme DB</h5>
-                            <p class="card-text">
+                              <div class="info" id="info3">
+                                <span class="card-text">
                                 A list of words that rhyme together.
-                            </p>
+                            </span>
+                              </div>
                           </div>
                       </a>
                     </div>
-                    <div class="card mb-3">
+                    <div class="card mb-3" id="card" onmouseenter="show(4)" onmouseleave="hide(4)">
                       <a href="{% url 'throw_a_die' %}">
                           <img src="{% static 'img/dice-app-icon.png' %}" class="card-img-top" alt="Icon">
                           <div class="card-body">
                               <h5 class="card-title">Throw a die</h5>
-                            <p class="card-text">
+                              <div class="info" id="info4">
+                                <span class="card-text">
                                 Play a game. Ludu or something.
-                            </p>
+                            </span>
+                              </div>
                           </div>
                       </a>
                     </div>
-                    <div class="card mb-3">
+                    <div class="card mb-3" id="card" onmouseenter="show(5)" onmouseleave="hide(5)">
                       <a href="{% url 'flip_a_coin' %}">
                           <img src="{% static 'img/coin-app-icon.png' %}" class="card-img-top" alt="Icon">
                           <div class="card-body">
                               <h5 class="card-title">Flip a coin</h5>
-                            <p class="card-text">
+                              <div class="info" id="info5">
+                                <span class="card-text">
                                 Settle a dispute maybe.
-                            </p>
+                            </span>
+                              </div>
                           </div>
                       </a>
                     </div>
                 </div>
             </div>
-            <div class="user_apps col-md-4">
+            <div class="user_apps col-md-4" id="card">
                 <h4>User only Apps</h4>
                 <p>Apps that require you to be logged in</p>
                 <div class="apps">
-                    <div class="card mb-3">
+                    <div class="card mb-3" onmouseenter="show(10)" onmouseleave="hide(10)">
                       <a href="{% url 'jotter' %}">
                           <img src="{% static 'img/jotter-app-icon.jpg' %}" class="card-img-top" alt="Icon">
                           <div class="card-body">
                               <h5 class="card-title">Jotter</h5>
-                            <p class="card-text">
-                                Your personal handbook.
-                            </p>
+                              <div class="info" id="info10">
+                                <span class="card-text">
+                                    Your personal handbook.
+                                </span>
+                              </div>
                           </div>
                       </a>
                     </div>
@@ -169,4 +220,7 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block script %}
 {% endblock %}
