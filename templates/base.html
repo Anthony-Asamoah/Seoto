@@ -21,15 +21,27 @@
         }
 
         body {
-            margin-bottom: 150px;
+            margin-bottom: 140px;
         }
 
+        .header {
+            {# Window load effects #}
+            transition: .5s ease;
+            opacity: 0;
+            padding: 0;
+            {# End of effects #}
+        }
         .main {
+            {# Window load effects #}
+            transition: .5s ease;
+            opacity: 0;
+            padding: 30px;
+            {# End of effects #}
+
             background-color: whitesmoke;
-            padding:20px;
         }
         .header h1 {
-            text-align: center
+            text-align: center;
         }
 
         footer {
@@ -46,7 +58,7 @@
             font-family: monospace;
             margin-top: 12px;
         }
-        
+
         @media screen and (max-width: 481px) {
             footer {
                 font-size: 12px;
@@ -67,6 +79,17 @@
 </body>
 
 <script rel="script" href="{% static 'js/bootstrap.min.js' %}"></script>
+<script>
+    let canvas = document.querySelector('.main')
+    let head = document.querySelector('.header')
+    function show() {
+        canvas.style.opacity = '1';
+        canvas.style.padding = '20px';
+        head.style.opacity = '1';
+        head.style.padding = '5px';
+    }
+    window.onloadeddata = setTimeout(show, 250);
+</script>
 {% block script %}{% endblock %}
 
 </html>
