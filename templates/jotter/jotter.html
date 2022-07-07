@@ -22,6 +22,7 @@
             text-align: right;
         }
     </style>
+    {% include 'partials/_form_style_bootstrap.html' %}
 {% endblock %}
 
 {% block content %}
@@ -34,18 +35,16 @@
 
         <div class="main">
 
-            <div class="add">
-                <a href="{% url 'new_to_do' %}"><button class="btn btn-success mb-2">Add a new Reminder or make a Note</button></a>
-                <a href="{% url 'new_to_track' %}"><button class="btn btn-success mb-2">Add a show or book to keep track</button></a>
-            </div>
+            {% if todo_list and tracker_list %}
+                <div class="add mb-3">
+                    <a href="{% url 'new_to_do' %}"><button class="btn btn-success mb-2">Add a new Reminder or make a Note</button></a>
+                    <a href="{% url 'new_to_track' %}"><button class="btn btn-success mb-2">Add a show or book to keep track</button></a>
+                </div>
+            {% endif %}
 
-            <div class="todo mt-5">
+            <div class="todo mb-5">
                 {% if todo_list %}
                     <div class="title">
-                    <div class="add">
-                        <a href="{% url 'new_to_do' %}"><button class="btn btn-success mb-2">Add a new Reminder or make a Note</button></a>
-                        <a href="{% url 'new_to_track' %}"><button class="btn btn-success mb-2">Add a show or book to keep track</button></a>
-                    </div>
                     <h4>Notes & Reminders</h4>
                     </div>
                     <div class="todo-items list-group">
@@ -69,8 +68,19 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <h4>The Todo-List is empty</h4>
-                    <p>Add items to be reminded.</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4>The Todo-List is empty</h4>
+                            <p>Add items to be reminded.</p>
+                        </div>
+                        <div class="col-md-6 add">
+                            <a href="{% url 'new_to_do' %}"><button class="btn btn-success mb-2">Add a new Reminder or make a Note</button></a>
+                            {% if tracker_list %}
+                                <a href="{% url 'new_to_track' %}"><button class="btn btn-success mb-2">Add a show or book to keep track</button></a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="add"></div>
                 {% endif %}
             </div>
 
@@ -108,8 +118,15 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <h4>Nothing is currently being tracked.</h4>
-                    <p>Add shows, books or manga to keep track of your latest episode/chapter.</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4>Nothing is currently being tracked.</h4>
+                            <p>Add shows, books or manga to keep track of your latest episode/chapter.</p>
+                        </div>
+                        <div class="col-md-6 add">
+                            <a href="{% url 'new_to_track' %}"><button class="btn btn-success mb-2">Add a show or book to keep track</button></a>
+                        </div>
+                    </div>
                 {% endif %}
             </div>
         </div>
