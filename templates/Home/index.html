@@ -84,8 +84,9 @@
         @media screen and (max-width: 481px) {
             .card {
                 width: 140px;
+                height: 300px;
             }
-             .card:hover {
+            .card:hover {
                 margin: 2px 8px;
             }
             .card img {
@@ -94,6 +95,18 @@
 
             .card-body p {
                 font-size: 14px;
+            }
+
+            .card .card-title {
+                margin-top: 0;
+            }
+
+            .info {
+                opacity: .5;
+                transition: .5s ease;
+            }
+            .card:hover .info {
+                opacity: 1;
             }
         }
 
@@ -122,14 +135,33 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container">
+    <div class="container" >
         <div class="header mt-2">
             <h1>Apps for random stuff by <span class="s0t"><a href="{% url 'about' %}">Anthony</a></span></h1>
             <hr />
         </div>
         <div class="main mb-5 row">
-            <div class="anonymous_apps mb-5 col-md-8">
-                <h4>Available Apps</h4>
+            <div class="user_apps col-md-4 mb-5" id="card">
+                <h4>Membership Apps</h4>
+                <p>Apps that require you to be logged in</p>
+                <div class="apps">
+                    <div class="card mb-3" onmouseenter="show(10)" onmouseleave="hide(10)">
+                      <a href="{% url 'jotter' %}">
+                          <img src="{% static 'img/jotter-app-icon.jpg' %}" class="card-img-top" alt="Icon">
+                          <div class="card-body">
+                              <h5 class="card-title">Jotter</h5>
+                              <div class="info" id="info10">
+                                <span class="card-text">
+                                    Your personal handbook.
+                                </span>
+                              </div>
+                          </div>
+                      </a>
+                    </div>
+                </div>
+            </div>
+            <div class="anonymous_apps col-md-8">
+                <h4>Free Apps</h4>
                 <p>Apps that can be accessed without necessarily having an account with Seoto</p>
                 <div class="apps">
                     <div class="card mb-3" id="card" onmouseenter="show(1)" onmouseleave="hide(1)">
@@ -193,25 +225,6 @@
                                 <span class="card-text">
                                 Settle a dispute maybe.
                             </span>
-                              </div>
-                          </div>
-                      </a>
-                    </div>
-                </div>
-            </div>
-            <div class="user_apps col-md-4" id="card">
-                <h4>User only Apps</h4>
-                <p>Apps that require you to be logged in</p>
-                <div class="apps">
-                    <div class="card mb-3" onmouseenter="show(10)" onmouseleave="hide(10)">
-                      <a href="{% url 'jotter' %}">
-                          <img src="{% static 'img/jotter-app-icon.jpg' %}" class="card-img-top" alt="Icon">
-                          <div class="card-body">
-                              <h5 class="card-title">Jotter</h5>
-                              <div class="info" id="info10">
-                                <span class="card-text">
-                                    Your personal handbook.
-                                </span>
                               </div>
                           </div>
                       </a>
