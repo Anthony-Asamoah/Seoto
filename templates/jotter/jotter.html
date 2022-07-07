@@ -18,20 +18,62 @@
         .completed small {
             padding:0 20px;
         }
+        .add {
+            text-align: right;
+        }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="container">
+
         <div class="header">
             <h2>Jotter</h2>
             <p>The lazy way to make reminders or track your anime, movies, books & manga </p>
         </div>
+
         <div class="main">
+
             <div class="add">
-                <a href="{% url 'new_to_do' %}"><button class="btn btn-primary mb-2">Add a new Reminder or make a Note</button></a>
-                <a href="{% url 'new_to_track' %}"><button class="btn btn-primary mb-2">Add a show or book to keep track</button></a>
+                <a href="{% url 'new_to_do' %}"><button class="btn btn-success mb-2">Add a new Reminder or make a Note</button></a>
+                <a href="{% url 'new_to_track' %}"><button class="btn btn-success mb-2">Add a show or book to keep track</button></a>
             </div>
+
+            <div class="todo mt-5">
+                {% if todo_list %}
+                    <div class="title">
+                    <div class="add">
+                        <a href="{% url 'new_to_do' %}"><button class="btn btn-success mb-2">Add a new Reminder or make a Note</button></a>
+                        <a href="{% url 'new_to_track' %}"><button class="btn btn-success mb-2">Add a show or book to keep track</button></a>
+                    </div>
+                    <h4>Notes & Reminders</h4>
+                    </div>
+                    <div class="todo-items list-group">
+                        {% for item in todo_list %}
+                            <a href="{% url 'edit_todo' item.id %}" class="list-group-item list-group-item-action flex-column align-items-start">
+                                <div class="d-flex justify-content-between">
+                                    <h5 class="mb-1">{{ item.title | title}}</h5>
+                                    <div class="completed">
+                                        <small class="text-muted">{{ item.priority }} priority</small>
+                                    </div>
+                                </div>
+                                {% if item.notes %}
+                                    <p class="mb-1">{{ item.notes }}</p>
+                                {% endif %}
+                                {% if item.reminder %}
+                                    <small class="text-muted">Reminder on: {{ item.reminder }}</small>
+                                {% else %}
+                                    <small class="text-muted">No reminder set.</small>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <h4>The Todo-List is empty</h4>
+                    <p>Add items to be reminded.</p>
+                {% endif %}
+            </div>
+
             <div class="tracker mt-5">
                 {% if tracker_list %}
                     <div class="title">
@@ -70,36 +112,7 @@
                     <p>Add shows, books or manga to keep track of your latest episode/chapter.</p>
                 {% endif %}
             </div>
-            <div class="todo mt-5">
-                {% if todo_list %}
-                    <div class="title">
-                    <h4>Notes & Reminders</h4>
-                    </div>
-                    <div class="todo-items list-group">
-                        {% for item in todo_list %}
-                            <a href="{% url 'edit_todo' item.id %}" class="list-group-item list-group-item-action flex-column align-items-start">
-                                <div class="d-flex justify-content-between">
-                                    <h5 class="mb-1">{{ item.title | title}}</h5>
-                                    <div class="completed">
-                                        <small class="text-muted">{{ item.priority }} priority</small>
-                                    </div>
-                                </div>
-                                {% if item.notes %}
-                                    <p class="mb-1">{{ item.notes }}</p>
-                                {% endif %}
-                                {% if item.reminder %}
-                                    <small class="text-muted">Reminder on: {{ item.reminder }}</small>
-                                {% else %}
-                                    <small class="text-muted">No reminder set.</small>
-                                {% endif %}
-                            </a>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <h4>The Todo-List is empty</h4>
-                    <p>Add items to be reminded.</p>
-                {% endif %}
-            </div>
+        </div>
     </div>
 {% endblock %}
 
