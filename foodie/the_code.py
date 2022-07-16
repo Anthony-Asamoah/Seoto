@@ -52,12 +52,4 @@ def suggest():
 			fancy = fancy[randint(0, len(fancy) - 1)]
 			context.update({'fancy': fancy})
 
-	else:
-		context = {
-			'mealtime': mealtime,
-			'option_1': None,
-			'option_2': None,
-			'fancy': None
-		}
-	logging.info(context)
 	return context
