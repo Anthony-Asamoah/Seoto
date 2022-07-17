@@ -22,6 +22,7 @@
             margin-top: 2px;
             width: 80%;
             transition: 0.5s ease;
+            text-align: right;
         }
         form .input input {
             width: 100%;
@@ -66,15 +67,15 @@
 
     <div class="container">
         <div class="header">
-            <h2>Type in the Rhyme you want and hit the button</h2>
+            <h2>Type in the Rhyme(s) you want and hit the button</h2>
         </div>
     <div class="main mt-3">
         <div class="form">
             <form action="{% url 'rhymes' %}" method="post">
                 {% csrf_token %}
                 <div class="input">
-                    <input type="text" name="rhyme" id="rhmye" required placeholder="example; ion">
-                    <small class="text-muted">Typically the last 2/3 characters of a word.</small>
+                    <input type="text" name="rhyme" id="rhmye" required placeholder="example; tion, ime, tor">
+                    <small class="text-muted">Search for two or more items by separating each rhyme with a comma</small>
                 </div>
                 <div class="button">
                     <button class="btn btn-primary" type="submit">Find</button>

@@ -1,3 +1,5 @@
+import logging
+
 from seoto.settings import BASE_DIR
 from os import path
 import re
@@ -9,7 +11,8 @@ BASE_DIR = path.join(BASE_DIR, 'rhymes')
 def rhymeValidator(rhyme):
 	for letter in range(len(rhyme)):
 		if rhyme[letter] not in string.ascii_letters:
-			return False
+			if rhyme[letter] not in [' ', ',']:
+				return False
 	if len(rhyme) == 0:
 		return False
 	if rhyme == '':
@@ -26,13 +29,26 @@ def find_rhymes(rhyme_string):
 
 	temp = " ".join(all_text)
 
-	regex = re.compile(f'\\w*{rhyme_string}\\s')
-	found = sorted(set(regex.findall(temp)))
+	if ',' not in rhyme_string:
+		regex = re.compile(f'\\w*{rhyme_string.strip()}\\s')
+		found = sorted(set(regex.findall(temp)))
+
+	else:
+		found = set()
+		rhyme_list = rhyme_string.split(',')
+
+		for item in rhyme_list:
+			item = item.strip()
+			if rhymeValidator(item):
+				regex = re.compile(f'\\w*{item}\\s')
+				found.update(sorted(set(regex.findall(temp))))
 
 	return {
 		'list': found,
 		'amount': len(found)
 	}
+
+
 
 
 def write_to_file(rhyme, words, amount):
