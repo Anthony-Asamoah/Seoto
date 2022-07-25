@@ -1,7 +1,6 @@
 from django.http import JsonResponse
 from django.shortcuts import render
 from .serializer import serialize
-
 from . import the_code
 
 
@@ -12,7 +11,7 @@ def foodie(request):
 
 def foodie_rest(request):
 	context = the_code.suggest()
-	context = serialize(context)
+	context = serialize(context, request)
 
 	return JsonResponse(context)
 
