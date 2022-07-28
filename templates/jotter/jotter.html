@@ -115,7 +115,9 @@
                                     <p class="mb-1">Continue at {{ item.link }},</p>
                                 {% endif %}
                                 {% if item.episode and item.chapter %}
-                                    <p class="mb-1">Currently on chapter {{ item.chapter }}, episode {{ item.episode }}</p>
+                                    <p class="mb-1">Currently on chapter {{ item.chapter }},
+                                        {% if item.category == 'Book' or item.category == 'Manga' or item.category == 'Webtoon' %}page
+                                        {% else %}episode{% endif %}{{ item.episode }}</p>
                                 {% else %}
                                     {% if item.episode %}
                                         <p class="mb-1">Currently on episode {{ item.episode }}</p>
