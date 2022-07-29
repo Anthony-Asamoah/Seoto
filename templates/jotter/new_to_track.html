@@ -28,7 +28,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group col-md-2">
-                        <label for="{{ from.episode.id_for_label }}">Episode</label>
+                        <label for="{{ from.episode.id_for_label }}" id="episode_label">Episode</label>
                         <div class="input-group">
                             <div class="input-group-prepend">
                                 <div class="input-group-text">
@@ -50,7 +50,7 @@
                         </div>
                     </div>
                     <div class="form-group col-md-4">
-                        <label for="{{ form.timestamp.id_for_label }}">Timestamp</label>
+                        <label for="{{ form.timestamp.id_for_label }}" id="timestamp_label">Timestamp</label>
                         {{ form.timestamp }}
                     </div>
                 </div>
@@ -68,6 +68,17 @@
 
 {% block script %}
     <script>
-    
+        function update() {
+            var category = document.getElementById("id_category");
+            var categ = category.value;
+            if (categ === 'Book' || categ === 'Manga' || categ === 'Webtoon') {
+                document.getElementById('episode_label').innerText = 'Page'
+                document.getElementById('timestamp_label').innerText = 'Line'
+            }
+            console.log(`Category: ${categ}`)
+        }
+        update()
+        document.getElementById('id_category').addEventListener('change', update)
+
     </script>
 {% endblock %}
