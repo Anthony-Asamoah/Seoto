@@ -18,16 +18,16 @@ def serialize(context, request):
 	result.update(dict(mealtime=mealtime))
 
 	one = context['option_1']
-	one = meal.objects.all().filter(name=one.name).values('id', 'name', 'main_img', 'img_1', 'img_2', 'img_3')[0]
+	one = meal.objects.all().filter(name=one.name).values()[0]
 	result.update(dict(option_1=include_img_url(one)))
 
 	two = context['option_2']
-	two = meal.objects.all().filter(name=two.name).values('id', 'name', 'main_img', 'img_1', 'img_2', 'img_3')[0]
+	two = meal.objects.all().filter(name=two.name).values()[0]
 	result.update(dict(option_2=include_img_url(two)))
 
 	if 'fancy' in context.keys():
 		fancy = context['fancy']
-		fancy = meal.objects.all().filter(name=fancy.name).values('id', 'name', 'main_img', 'img_1', 'img_2', 'img_3')[0]
+		fancy = meal.objects.all().filter(name=fancy.name).values()[0]
 		result.update(dict(fancy=include_img_url(fancy)))
 
 	logging.info(result)
