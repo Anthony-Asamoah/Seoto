@@ -5,6 +5,7 @@ from datetime import datetime
 
 
 def suggest():
+	context = {}
 	hour = datetime.now().hour
 
 	available = ['Some Water', 'Tea', 'A Beverage']
@@ -52,4 +53,9 @@ def suggest():
 			fancy = fancy[randint(0, len(fancy) - 1)]
 			context.update({'fancy': fancy})
 
+	return context
+
+
+def get_all():
+	context = meal.objects.all().filter(isAvailable=True).values()
 	return context
