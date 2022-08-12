@@ -32,13 +32,19 @@
             <h1>Interest Calculator | Powered by Wine & Python</h1>
         </div>
         <div class="main mt-5">
+        {% if not amount%}
             <div class="alert alert-primary">
-                fill in the form (with numbers only) and choose the interest method to calculate.
+                fill in the form (with positive numbers only)<wbr> and choose the interest method to calculate.
             </div>
+        {% endif %}
             <div class="ans">
                 {% if error %}
                     <div class="alert alert-secondary mt-2">
-                        <p>{{ error }}</p>
+                        <p>Fields must contain <b>positive numbers</b> only!</p>
+                        <p>
+                            Also, <b>Time</b> cannot be a fraction,<wbr> ie: <b>0.5</b> of a year.<wbr>
+                            Instead, use the number of months.
+                        </p>
                     </div>
                 {% endif %}
                 {% if amount %}
@@ -55,15 +61,15 @@
                     <div class="inputs row">
                         <div class="form-group col-sm-auto ">
                             <label for="principal">Principal</label>
-                            <input class="" type="text" name="principal" id="principal" value="{{ principal }}">
+                            <input class="" type="text" name="principal" id="principal" value="{{ principal }}" required>
                         </div>
                         <div class="form-group col-sm-auto ">
                             <label for="rate">Rate</label>
-                            <input class="" type="text" name="rate" id="rate" value="{{ rate }}">
+                            <input class="" type="text" name="rate" id="rate" value="{{ rate }}" required>
                         </div>
                         <div class="form-group col-sm-auto ">
                             <label for="time">Rollovers</label>
-                            <input class="" type="text" name="time" id="time" value="{{ time }}">
+                            <input class="" type="text" name="time" id="time" value="{{ time }}" required >
                         </div>
                     </div>
                     <div class="buttons mt-3">

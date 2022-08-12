@@ -1,16 +1,22 @@
-def validation(a, b, c):
-	allowed_input = [str(i) for i in range(10)] + ['.']
+def validation(principal, rate, time):
+	allowed_input = [str(numbers) for numbers in range(10)] + ['.']
 
-	for i in a:
-		if i not in allowed_input:
+	if principal == '0' or rate == '0' or time == '0':
+		return False
+
+	if '.' in time:
+		return False
+
+	for character in principal:
+		if character not in allowed_input:
 			return False
 
-	for j in b:
-		if j not in allowed_input:
+	for character in rate:
+		if character not in allowed_input:
 			return False
 
-	for k in c:
-		if k not in c:
+	for character in time:
+		if character not in time:
 			return False
 
 	return True

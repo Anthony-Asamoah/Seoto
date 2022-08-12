@@ -37,7 +37,7 @@ def interest(request):
 
 			context.update({'amount': amount})
 		else:
-			context.update({'error': "Kindly fill in all inputs with positive numbers only"})
+			context.update({'error': True})
 
 		return render(request, 'interest/interest.html', context)
 
