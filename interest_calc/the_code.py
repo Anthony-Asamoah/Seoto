@@ -16,7 +16,7 @@ def validation(principal, rate, time):
 			return False
 
 	for character in time:
-		if character not in time:
+		if character not in allowed_input:
 			return False
 
 	return True
