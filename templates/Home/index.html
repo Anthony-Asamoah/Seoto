@@ -82,6 +82,10 @@
         }
 
         @media screen and (max-width: 481px) {
+            .apps {
+                justify-content: space-evenly;
+            }
+
             .card {
                 width: 140px;
                 height: 300px;
@@ -144,9 +148,9 @@
             <hr />
         </div>
         <div class="main mb-5 row">
-            <div class="user_apps col-md-4 mb-5" id="card">
-                <h4>Membership Apps</h4>
-                <p>Apps that require you to be logged in</p>
+            <div class="anonymous_apps">
+                <h4>Available Apps</h4>
+                <p>Mini python projects by Sean_or_tony</p>
                 <div class="apps">
                     <div class="card mb-3" onmouseenter="show(10)" onmouseleave="hide(10)">
                       <a href="{% url 'jotter' %}">
@@ -161,12 +165,6 @@
                           </div>
                       </a>
                     </div>
-                </div>
-            </div>
-            <div class="anonymous_apps col-md-8">
-                <h4>Free Apps</h4>
-                <p>Apps that can be accessed without necessarily having an account with Seoto</p>
-                <div class="apps">
                     <div class="card mb-3" id="card" onmouseenter="show(1)" onmouseleave="hide(1)">
                       <a href="{% url 'foodie' %}">
                           <img src="{% static 'img/food-app-icon.jpg' %}" class="card-img-top" alt="Icon">
