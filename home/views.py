@@ -1,6 +1,6 @@
 import logging
 from django.views.decorators.csrf import csrf_exempt
-
+from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.shortcuts import render
 from datetime import datetime
@@ -45,4 +45,15 @@ def incoming(request):
         return HttpResponse(status=403)
     body = request.body.decode()
     logging.info(f'Webhook body: {body}')
+
+    try:
+        send_mail(
+            f'Webhook was accessed on {datetime.now().utcnow()}',
+            f'{body}.',
+            'anthonyasamoah48@gmail.com',
+            ['anthonyasamoah48@gmail.com'],
+            fail_silently=False,
+        )
+    except Exception as e:
+        logging.warning('Webhook email not sent')
     return HttpResponse(status=200)
