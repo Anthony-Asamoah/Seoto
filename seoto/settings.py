@@ -5,8 +5,11 @@ Django settings for seoto project.
 from pathlib import Path
 from django.contrib.messages import constants as messages
 import os
-import security
 import logging
+from os import getenv
+from dotenv import load_dotenv
+
+load_dotenv('.env')
 
 logging.basicConfig(
 	filename='logs.txt',
@@ -21,12 +24,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(32))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = security.debug
+DEBUG = getenv('DEBUG')
 
 # Enforce HTTPS instead of HTTP
 SECURE_SSL_REDIRECT = not DEBUG
 
-ALLOWED_HOSTS = security.hosts
+ALLOWED_HOSTS = [ip for ip in getenv('ALLOWED_HOSTS').split(",")]
 
 # Application definition
 INSTALLED_APPS = [
@@ -131,7 +134,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'anthonyasamoah48@gmail.com'
-EMAIL_HOST_PASSWORD = security.email_password
+EMAIL_HOST_PASSWORD = getenv('EMAIL_PASSWORD')
 EMAIL_USE_TLS = True
 
 # Accounts config

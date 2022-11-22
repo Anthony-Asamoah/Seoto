@@ -1,7 +1,7 @@
 db.sqlite3
 todo.txt
 security.py
-
+.env
 .idea/
 /media/
 __pycache__/
