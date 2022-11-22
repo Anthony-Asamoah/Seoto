@@ -33,6 +33,7 @@ def get_client_ip(request):
     except Exception as e:
         ip = request.META.get('REMOTE_ADDR')
 
+    logging.info(f'IP: {ip}')
     return ip
 
 
