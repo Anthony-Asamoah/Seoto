@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import logging
 from django.views.decorators.csrf import csrf_exempt
 from django.core.mail import send_mail
@@ -44,13 +46,24 @@ def incoming(request):
     if get_client_ip(request) not in ["52.31.139.75", "52.49.173.169", "52.214.14.220"] + ["127.0.0.1"]:
         logging.info('Invalid IP at webhook')
         return HttpResponse(status=403)
-    body = request.body.decode()
-    logging.info(f'Webhook body: {body}')
+    body = request.body
+
+    try:
+        signature = request.headers['x-paystack-signature']
+    except Exception as e:
+        logging.info('Paystack signature not present')
+    else:
+        key = "sk_test_c3a181aef6c710d5dafe7aae359aa67028185dc8".encode()
+        hash = hmac.new(key, body, hashlib.sha512).hexdigest()
+        if hash != signature:
+            logging.debug(f'Signatures are not equal: \n{hash}\n{key}')
+            return HttpResponse(status=403)
+        logging.debug(f'Verified as paystack')
 
     try:
         send_mail(
             f'Webhook was accessed on {datetime.now().utcnow()}',
-            f'{body}.',
+            f'{body.decode()}.',
             'anthonyasamoah48@gmail.com',
             ['anthonyasamoah48@gmail.com'],
             fail_silently=False,
