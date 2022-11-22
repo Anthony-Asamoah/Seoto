@@ -10,6 +10,7 @@ from rhymes.views import rhymes, download_rhyme
 from throw_a_die.views import die
 from flip_a_coin.views import coin
 from interest_calc.views import interest
+from home.views import incoming
 
 
 urlpatterns = [
@@ -27,6 +28,7 @@ urlpatterns = [
     path('flip_a_coin', coin, name='flip_a_coin'),
     # Registered User apps
     path('jotter/', include('jotter.urls')),
+    path('incoming', incoming, name='incoming'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
