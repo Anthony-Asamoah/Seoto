@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import contact_form
+from .models import contact_form, stack
 
 
 def about(request):
@@ -21,8 +21,12 @@ def about(request):
 			return redirect('about')
 		else:
 			messages.error(request, 'Could not be submitted.')
-
+	try:
+		stk = stack.objects.filter(is_active=True).first()
+	except Exception as e:
+		stk = None
 	context = {
 		'form': form,
+		'stack': stk
 	}
 	return render(request, 'author/about.html', context)

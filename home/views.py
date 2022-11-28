@@ -50,5 +50,5 @@ Body/Data:
 		send_mail(mail_title, mail_body, mail_sender, mail_recipient, fail_silently=False)
 	except Exception as e:
 		logging.warning('Webhook email not sent')
-		return HttpResponse(status=500 )
+		return HttpResponse(status=500)
 	return HttpResponse(status=200)
