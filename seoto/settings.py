@@ -1,15 +1,16 @@
 """
-Django settings for seoto project.
+Django settings for Seoto project.
 """
 
-from pathlib import Path
-from django.contrib.messages import constants as messages
-import os
 import logging
-from os import getenv
-from dotenv import load_dotenv
+from os import getenv, environ, path
+from pathlib import Path
 
-load_dotenv('.env')
+from django.contrib.messages import constants as messages
+
+from seoto.utils import load_variables_into_environment
+
+load_variables_into_environment()
 
 logging.basicConfig(
 	filename='logs.txt',
@@ -17,11 +18,10 @@ logging.basicConfig(
 	format='[%(asctime)s] - %(levelname)s - %(message)s'
 )
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(32))
+SECRET_KEY = getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = getenv('DEBUG')
@@ -119,14 +119,14 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = (os.path.join(BASE_DIR, 'seoto/static'),)
+STATIC_ROOT = path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = (path.join(BASE_DIR, 'seoto/static'),)
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Media config
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = path.join(BASE_DIR, 'media')
 MEDIA_URL = 'media/'
 
 # Email config
