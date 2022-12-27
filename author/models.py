@@ -24,7 +24,7 @@ class message(models.Model):
 	email = models.EmailField(null=False, blank=False)
 	subject = models.CharField(max_length=200, blank=False, null=False)
 	message = models.TextField(null=False, blank=False)
-	submitted_on = models.DateTimeField(default=timezone.now())
+	submitted_on = models.DateTimeField(default=timezone.now)
 	replied = models.BooleanField(default=False)
 
 	def __str__(self):

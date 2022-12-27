@@ -28,7 +28,7 @@ class tracker(models.Model):
 	chapter = models.IntegerField(blank=True, null=True)
 	timestamp = models.CharField(null=True, blank=True, max_length=20)
 	link = models.URLField(null=True, blank=True)
-	added_on = models.DateTimeField(default=timezone.now())
+	added_on = models.DateTimeField(default=timezone.now)
 	isCompleted = models.BooleanField(default=False)
 	completed_on = models.DateTimeField(null=True, blank=True)
 
@@ -62,7 +62,7 @@ class todo(models.Model):
 	reminder = models.DateTimeField(null=True, blank=True)
 	isCompleted = models.BooleanField(default=False)
 	completed_on = models.DateTimeField(null=True, blank=True)
-	added_on = models.DateTimeField(default=timezone.now())
+	added_on = models.DateTimeField(default=timezone.now)
 
 	class Meta:
 		verbose_name_plural = "todo"
