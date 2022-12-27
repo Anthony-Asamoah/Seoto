@@ -6,7 +6,7 @@ def load_variables_into_environment():
 		with open(r".env", 'r') as env:
 			variables = env.readlines()
 	except FileNotFoundError:
-		with open(r"../.env", 'r') as env:
+		with open(r"/home/Tony48/tony48.pythonanywhere.com/.env", 'r') as env:
 			variables = env.readlines()
 
 	for variable in variables:
