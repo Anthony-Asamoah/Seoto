@@ -19,6 +19,6 @@ def load_variables_into_environment():
 	for variable in variables:
 		environ[variable.split('=')[0]] = str(variable.split('=')[1].replace('\n', ''))
 
-	logging.info(variables)
+	# logging.info(variables)
 
 	del variables
