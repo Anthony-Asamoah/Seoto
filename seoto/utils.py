@@ -1,4 +1,11 @@
+import logging
 from os import environ
+
+logging.basicConfig(
+	filename='logs.txt',
+	level=logging.DEBUG,
+	format='[%(asctime)s] - %(levelname)s - %(message)s'
+)
 
 
 def load_variables_into_environment():
@@ -11,5 +18,7 @@ def load_variables_into_environment():
 
 	for variable in variables:
 		environ[variable.split('=')[0]] = str(variable.split('=')[1].replace('\n', ''))
+
+	logging.info(variables)
 
 	del variables
