@@ -21,7 +21,7 @@
         .add {
             text-align: right;
         }
-        .todo-items {
+        .todo-items, .tracker-item {
             overflow: hidden;
         }
     </style>
@@ -104,7 +104,7 @@
                     </div>
                     <div class="tracker-items list-group">
                         {% for item in tracker_list %}
-                            <a href="{% url 'edit_to_track' item.id %}" class="list-group-item list-group-item-action flex-column align-items-start">
+                            <a href="{% url 'edit_to_track' item.id %}" class="tracker-item list-group-item list-group-item-action flex-column align-items-start">
                                 <div class="d-flex justify-content-between">
                                     <h5 class="mb-1">{{ item.title | title}}</h5>
                                     <div class="completed">
