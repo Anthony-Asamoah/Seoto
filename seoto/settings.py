@@ -4,6 +4,7 @@ Django settings for seoto project.
 
 from pathlib import Path
 from django.contrib.messages import constants as messages
+import ast
 import os
 import logging
 from os import getenv
@@ -24,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(32))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = getenv('DEBUG')
+DEBUG = ast.literal_eval(getenv('DEBUG'))
 
 # Enforce HTTPS instead of HTTP
 SECURE_SSL_REDIRECT = not DEBUG
