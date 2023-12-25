@@ -14,13 +14,13 @@ from seoto.utils import GetEnv as Env
 
 load_dotenv('.env')
 
+print(os.environ)
 
 logging.basicConfig(
     filename='logs.txt',
     level=Env.int('LOG_LEVEL'),
     format=Env.str('LOG_FORMAT')
 )
-logging.info(os.environ)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = pathlib(__file__).resolve().parent.parent
 
