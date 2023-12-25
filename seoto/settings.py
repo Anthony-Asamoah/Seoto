@@ -14,8 +14,6 @@ from seoto.utils import GetEnv as Env
 
 load_dotenv('.env')
 
-print(os.environ)
-
 logging.basicConfig(
     filename='logs.txt',
     level=Env.int('LOG_LEVEL'),
