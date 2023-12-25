@@ -1,24 +1,25 @@
-import logging
-from os import environ
-
-logging.basicConfig(
-	filename='logs.txt',
-	level=logging.DEBUG,
-	format='[%(asctime)s] - %(levelname)s - %(message)s'
-)
+import ast
+import os
 
 
-def load_variables_into_environment():
-	try:
-		with open(r".env", 'r') as env:
-			variables = env.readlines()
-	except FileNotFoundError:
-		with open(r"/home/Tony48/tony48.pythonanywhere.com/.env", 'r') as env:
-			variables = env.readlines()
+class GetEnv:
+    class NotFound(Exception):
+        pass
 
-	for variable in variables:
-		environ[variable.split('=')[0]] = str(variable.split('=')[1].replace('\n', ''))
+    @classmethod
+    def str(cls, var_name: str) -> str:
+        var = os.environ.get(var_name)
+        if not var: raise cls.NotFound(f"{var_name} not found")
+        return var
 
-	# logging.info(variables)
+    @classmethod
+    def int(cls, var_name: str) -> int:
+        return int(cls.str(var_name))
 
-	del variables
+    @classmethod
+    def bool(cls, var_name: str) -> bool:
+        return ast.literal_eval(cls.str(var_name))
+
+    @classmethod
+    def tuple(cls, var_name: str) -> tuple:
+        return tuple(cls.str(var_name).split(","))
