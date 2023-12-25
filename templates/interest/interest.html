@@ -32,7 +32,7 @@
             <h1>Interest Calculator | Powered by Wine & Python</h1>
         </div>
         <div class="main mt-5">
-        {% if not amount%}
+        {% if not result%}
             <div class="alert alert-primary">
                 fill in the form (with positive numbers only)<wbr> and choose the interest method to calculate.
             </div>
@@ -47,9 +47,9 @@
                         </p>
                     </div>
                 {% endif %}
-                {% if amount %}
+                {% if result %}
                     <div class="alert alert-secondary mt-2">
-                        {% for item in amount %}
+                        {% for item in result %}
                             <h5>{{ item }}</h5>
                         {% endfor %}
                     </div>
@@ -73,9 +73,9 @@
                         </div>
                     </div>
                     <div class="buttons mt-3">
-                        <button class="btn btn-info" type="submit" name="type" id="simple" value="simple">Simple</button>
-                        <button class="btn btn-success" type="submit" name="type" id="compound" value="compound">Compound</button>
-                        <button class="btn btn-primary" type="submit" name="type" id="cumulative" value="cumulative">Cumulative</button>
+                        <button class="btn btn-info" type="submit" name="type" id="simple" value="1">Simple</button>
+                        <button class="btn btn-success" type="submit" name="type" id="compound" value="2">Compound</button>
+                        <button class="btn btn-primary" type="submit" name="type" id="cumulative" value="3">Cumulative</button>
                     </div>
                 </form>
             </div>

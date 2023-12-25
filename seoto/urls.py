@@ -9,7 +9,7 @@ from author.views import about
 from rhymes.views import rhymes, download_rhyme
 from throw_a_die.views import die
 from flip_a_coin.views import coin
-from interest_calc.views import interest
+from interest_calc.views import Interest
 from home.views import incoming
 
 
@@ -21,7 +21,7 @@ urlpatterns = [
     path('', index, name='index'),
     # Anonymous User apps
     path('foodie/', include('foodie.urls')),
-    path('interest_calculator', interest, name='interest_calculator'),
+    path('interest_calculator', Interest.as_view(), name='interest_calculator'),
     path('rhymes', rhymes, name='rhymes'),
     path('rhymes/download', download_rhyme, name='rhymes_download'),
     path('throw_a_die', die, name='throw_a_die'),

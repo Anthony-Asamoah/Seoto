@@ -1,44 +1,30 @@
-from django.shortcuts import render, HttpResponse
 import logging
 
-from .the_code import interest as calc, validation
+from django.contrib import messages
+from django.shortcuts import render
+from django.views import View
+
+from .the_code import Calculator, Validation
 
 
-def interest(request):
-	if request.method == 'POST':
-		principal = request.POST['principal']
-		rate = request.POST['rate']
-		time = request.POST['time']
-		kind = request.POST['type']
-		logging.info(f'principal: {principal, type(principal)}, rate: {rate, type(rate)}, time: {time, type(time)}')
+class Interest(View):
+    def get(self, request):
+        return render(request, 'interest/interest.html')
 
-		context = {
-			'principal': principal,
-			'rate': rate,
-			'time': time,
-			'kind': kind,
-		}
+    def post(self, request):
+        principal = request.POST['principal']
+        rate = request.POST['rate']
+        time = request.POST['time']
+        kind = request.POST['type']
+        logging.debug(f'principal: {principal, type(principal)}, rate: {rate, type(rate)}, time: {time, type(time)}')
 
-		if principal and rate and time:
-			isValid = validation(principal, rate, time)
-		else:
-			isValid = False
+        context = {'principal': principal, 'rate': rate, 'time': time}
+        try:
+            Validation.is_valid(principal, rate, time, kind)
+            context['result'] = Calculator(principal, rate, time).calculate(kind)
+            return render(request, 'interest/interest.html', context)
 
-		if isValid:
-			raw_data = calc(principal, rate, time)
-			amount = raw_data.simple()
-
-			if kind == 'compound':
-				amount = raw_data.compound()
-			if kind == 'cumulative':
-				amount = raw_data.susu()
-
-			amount = amount.split(' | ')
-
-			context.update({'amount': amount})
-		else:
-			context.update({'error': True})
-
-		return render(request, 'interest/interest.html', context)
-
-	return render(request, 'interest/interest.html')
+        except ValueError as e:
+            messages.error(request, str(e))
+            context.update({'error': True})
+            return render(request, 'interest/interest.html', context)
