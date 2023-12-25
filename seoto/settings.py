@@ -3,6 +3,7 @@ Django settings for Seoto project.
 """
 
 import logging
+import os
 from os import path
 from pathlib import Path as pathlib
 
@@ -13,12 +14,13 @@ from seoto.utils import GetEnv as Env
 
 load_dotenv('.env')
 
+
 logging.basicConfig(
     filename='logs.txt',
     level=Env.int('LOG_LEVEL'),
     format=Env.str('LOG_FORMAT')
 )
-
+logging.info(os.environ)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = pathlib(__file__).resolve().parent.parent
 
