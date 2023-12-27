@@ -7,7 +7,7 @@ from home.views import index, error404, error500
 
 from author.views import about
 from rhymes.views import rhymes, download_rhyme
-from throw_a_die.views import die
+from throw_a_die.views import Die
 from flip_a_coin.views import Coin
 from interest_calc.views import Interest
 from home.views import incoming
@@ -24,7 +24,7 @@ urlpatterns = [
     path('interest_calculator', Interest.as_view(), name='interest_calculator'),
     path('rhymes', rhymes, name='rhymes'),
     path('rhymes/download', download_rhyme, name='rhymes_download'),
-    path('throw_a_die', die, name='throw_a_die'),
+    path('throw_a_die', Die.as_view(), name='throw_a_die'),
     path('flip_a_coin', Coin.as_view(), name='flip_a_coin'),
     # Registered User apps
     path('jotter/', include('jotter.urls')),
