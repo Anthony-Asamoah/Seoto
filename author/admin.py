@@ -1,18 +1,18 @@
 from django.contrib import admin
 
-from .models import message, stack
+from .models import Message, Stack
 
 
-@admin.register(stack)
-class stackAdmin(admin.ModelAdmin):
+@admin.register(Stack)
+class StackAdmin(admin.ModelAdmin):
 	list_display = ['id', 'is_active', 'label']
 	list_display_links = ['label']
 	list_editable = ['is_active']
 	ordering = ['id']
 
 
-@admin.register(message)
-class messageAdmin(admin.ModelAdmin):
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
 	list_display = ['name', 'email', 'subject', 'message', 'replied']
 	list_display_links = list_display[:-1]
 	list_filter = ['replied', 'email']

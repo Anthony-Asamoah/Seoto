@@ -1,34 +1,32 @@
 from django.contrib import messages
 from django.shortcuts import render, redirect
+from django.views import View
 
-from .models import contact_form, stack
+from .models import Stack
+from .forms import ContactForm
 
 
-def about(request):
-    user = request.user
-    if user.is_authenticated:
-        form = contact_form(initial={
-            'name': f'{user.first_name.title()} {user.last_name.title()}',
-            'email': user.email
-        })
-    else:
-        form = contact_form()
+class About(View):
+    def get(self, request):
+        user = request.user
+        form = ContactForm()
+        if user.is_authenticated:
+            form = ContactForm(initial={
+                'name': f'{user.first_name.title()} {user.last_name.title()}',
+                'email': user.email
+            })
+        context = {
+            'form': form,
+            'stack': Stack.objects.filter(is_active=True).first() or None
+        }
+        return render(request, 'author/about.html', context)
 
-    if request.method == 'POST':
-        form = contact_form(request.POST)
+    def post(self, request):
+        form = ContactForm(request.POST)
         if form.is_valid():
             details = form.save()
             details.forward_to_email()
             messages.success(request, 'Message Submitted.')
             return redirect('about')
         else:
-            messages.error(request, 'Could not be submitted.')
-    try:
-        stk = stack.objects.filter(is_active=True).first()
-    except Exception as e:
-        stk = None
-    context = {
-        'form': form,
-        'stack': stk
-    }
-    return render(request, 'author/about.html', context)
+            messages.error(request, 'Could not send the message. Lets try again.')

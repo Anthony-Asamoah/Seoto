@@ -5,7 +5,7 @@ from django.conf import settings
 
 from home.views import index, error404, error500
 
-from author.views import about
+from author.views import About
 from rhymes.views import rhymes, download_rhyme
 from throw_a_die.views import Die
 from flip_a_coin.views import Coin
@@ -14,7 +14,7 @@ from home.views import incoming
 
 
 urlpatterns = [
-    path('@sean_or_tony', about, name='about'),
+    path('@sean_or_tony', About.as_view(), name='about'),
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
 
