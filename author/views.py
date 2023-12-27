@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.views import View
@@ -25,8 +27,12 @@ class About(View):
         form = ContactForm(request.POST)
         if form.is_valid():
             details = form.save()
-            details.forward_to_email()
-            messages.success(request, 'Message Submitted.')
+            msg = 'Message Sent.'
+            try: details.forward_to_email()
+            except Exception as e:
+                logging.warning(e)
+                msg = 'Message Saved.'
+            messages.success(request, msg)
             return redirect('about')
         else:
             messages.error(request, 'Could not send the message. Lets try again.')
