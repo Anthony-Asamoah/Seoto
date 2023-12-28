@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}| Home{% endblock %}
+
+{% block style %}
+    <style>
+        .apps {
+            display: flex;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+        .card {
+            width: 200px;
+            height: 250px;
+            background-color: white;
+            border-radius: 25px;
+            overflow: hidden;
+            transition: .5s ease;
+            border: none;
+            margin:5px;
+        }
+        .card:hover {
+            margin: 2px 15px;
+            height: 290px;
+        }
+
+        .card .card-body{
+            transition: .5s ease;
+            font-size: 16px;
+        }
+        .card .card-body {
+            font-family: "Trebuchet MS";
+            padding: 0 10px;
+        }
+        .card .card-title {
+            text-align: center;
+            margin-top: 20px;
+            transition: .3s ease;
+            color: #590000;
+        }
+        .card:hover .card-title {
+            color: black;
+            margin-top: 0;
+        }
+        .card img {
+            opacity: 0.8;
+            object-fit: cover;
+            object-position: center;
+            height: 200px;
+            transition: .5s ease;
+        }
+        .card:hover img {
+            opacity: 1;
+        }
+        .card a {
+            color: black;
+            text-decoration: none;
+        }
+
+        button {
+            transition: padding 0.5s ease !important;
+        }
+
+        button:hover {
+            padding-left: 30px;
+            padding-right:30px;
+        }
+
+        .info {
+            padding: 0 5px;
+            opacity: 0;
+            transition: .5s ease;
+            border: 0px blue;
+        }
+        .card:hover .info {
+            opacity: 1;
+            border-top: 2px solid whitesmoke;
+            border-bottom: 3px solid whitesmoke;
+            border-radius: 15px;
+        }
+
+        @media screen and (max-width: 481px) {
+            .apps {
+                justify-content: space-evenly;
+            }
+
+            .card {
+                width: 140px;
+                height: 300px;
+            }
+            .card:hover {
+                margin: 2px 8px;
+            }
+            .card img {
+                height: 140px;
+            }
+
+            .card-body p {
+                font-size: 14px;
+            }
+
+            .card .card-title {
+                margin-top: 20px;
+            }
+            .card:hover .card-title {
+                margin-top: 0px;
+            }
+
+            .info {
+                opacity: .5;
+                transition: .5s ease;
+            }
+            .card:hover .info {
+                opacity: 1;
+            }
+        }
+
+        @media screen and (max-width: 1024px ) {
+            .card {
+                width: 140px;
+                height: 210px;
+            }
+            .card:hover {
+                height: 255px;
+            }
+
+            .card img {
+                height: 140px;
+            }
+            .info {
+                opacity: 0;
+                transition: .5s ease;
+            }
+            .card:hover .info {
+                display: block;
+                opacity: 1;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container" >
+        <div class="header mt-2">
+            <h1>Overview</h1>
+            <hr />
+        </div>
+        <div class="main mb-5 row">
+            class works
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+{% endblock %}

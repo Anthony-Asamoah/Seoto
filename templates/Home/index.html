@@ -153,6 +153,19 @@
                 <p>Mini python projects by Sean_or_tony</p>
                 <div class="apps">
                     <div class="card mb-3" onmouseenter="show(10)" onmouseleave="hide(10)">
+                      <a href="{% url 'dashboard' %}">
+                          <img src="{% static 'img/jotter-app-icon.jpg' %}" class="card-img-top" alt="Icon">
+                          <div class="card-body">
+                              <h5 class="card-title">Dashboard</h5>
+                              <div class="info" id="info10">
+                                <span class="card-text">
+                                    The bigger picture.
+                                </span>
+                              </div>
+                          </div>
+                      </a>
+                    </div>
+                    <div class="card mb-3" onmouseenter="show(10)" onmouseleave="hide(10)">
                       <a href="{% url 'jotter' %}">
                           <img src="{% static 'img/jotter-app-icon.jpg' %}" class="card-img-top" alt="Icon">
                           <div class="card-body">
