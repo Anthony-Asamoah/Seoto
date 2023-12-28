@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.db import models
 from django.utils import timezone
 
-from seoto.utils import Validators
+from seoto.model_validators import Validators
 
 
 class Stack(models.Model):
