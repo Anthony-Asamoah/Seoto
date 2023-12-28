@@ -59,13 +59,14 @@ class RhymeDB:
         return len(self._all_words)
 
     def get_text(self) -> str:
-        if not self._result: return ''
+        if not self._result:
+            return ''
         if len(self._result.keys()) == 1:
-            return '\n'.join(self._result[self.rhyme_string])
+            return '\n'.join(list(self._result.values())[0])
         txt = ''
         for rhyme, words in self._result.items():
             txt += '...' + rhyme + '\n'
-            txt += '\n'.join(words)
+            txt += '\n'.join(words or [])
             txt += '\n\n'
         return txt
 
