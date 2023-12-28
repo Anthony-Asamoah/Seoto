@@ -2,33 +2,10 @@ import logging
 import string
 
 
-class Validation:
-    allowed_input = string.digits
-    allowed_input += '.'
-    allowed_kind_input = ['1', '2', '3']
-
-    @classmethod
-    def is_valid(cls, principal: str, rate: str, time: str, kind: str) -> None:
-        if kind not in cls.allowed_kind_input:
-            logging.critical(f"Invalid input for 'Kind'. expected one of: {cls.allowed_kind_input} but got {kind}")
-            raise ValueError(f"An error occurred.")
-        if not principal or principal == '0': raise ValueError("Principal must be a value greater than 0")
-        if not rate or rate == '0': raise ValueError("Rate must be a value greater than 0")
-        if not time or time == '0': raise ValueError("Time must be a value greater than 0")
-        if '.' in time: raise ValueError("Time must be an integer (whole number, not a fraction/decimal)")
-        cls._is_valid_str(principal, 'principal')
-        cls._is_valid_str(rate, 'rate')
-        cls._is_valid_str(time, 'time')
-
-    @classmethod
-    def _is_valid_str(cls, value: str, label: str) -> None:
-        for i in value:
-            if i not in cls.allowed_input:
-                raise ValueError(f'Character not allowed in {label}: {i}')
-
-
 class Calculator:
-    def __init__(self, principal, rate, time):
+    def __init__(self, principal, rate, time, kind):
+        self.is_valid(principal, rate, time, kind)
+        self.kind = kind
         self.principal = float(principal)
         self.rate = float(rate)
         self.time = int(time)
@@ -36,13 +13,13 @@ class Calculator:
     def __str__(self):
         return f"Calculate Calculator on {self.principal} @ {self.rate} by {self.time} times"
 
-    def calculate(self, arg):
+    def get_result(self):
         function_map = {
             '1': self.simple,
             '2': self.compound,
             '3': self.susu
         }
-        return function_map.get(arg)()
+        return function_map.get(self.kind)()
 
     def simple(self):
         profit = (self.principal * self.time) * (self.rate / 100)
@@ -89,3 +66,26 @@ class Calculator:
     def percent(profit, principal):
         percent = ((profit / principal) * 100)
         return percent
+
+    allowed_input = string.digits
+    allowed_input += '.'
+    allowed_kind_input = ['1', '2', '3']
+
+    @classmethod
+    def is_valid(cls, principal: str, rate: str, time: str, kind: str) -> None:
+        if kind not in cls.allowed_kind_input:
+            logging.critical(f"Invalid input for 'Kind'. expected one of: {cls.allowed_kind_input} but got {kind}")
+            raise ValueError(f"An error occurred.")
+        if not principal or principal == '0': raise ValueError("Principal must be a value greater than 0")
+        if not rate or rate == '0': raise ValueError("Rate must be a value greater than 0")
+        if not time or time == '0': raise ValueError("Time must be a value greater than 0")
+        if '.' in time: raise ValueError("Time must be an integer (whole number, not a fraction/decimal)")
+        cls._is_valid_str(principal, 'principal')
+        cls._is_valid_str(rate, 'rate')
+        cls._is_valid_str(time, 'time')
+
+    @classmethod
+    def _is_valid_str(cls, value: str, label: str) -> None:
+        for i in value:
+            if i not in cls.allowed_input:
+                raise ValueError(f'Character not allowed in {label}: {i}')

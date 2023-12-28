@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.shortcuts import render
 from django.views import View
 
-from .the_code import Calculator, Validation
+from .the_code import Calculator
 
 
 class Interest(View):
@@ -20,8 +20,7 @@ class Interest(View):
 
         context = {'principal': principal, 'rate': rate, 'time': time}
         try:
-            Validation.is_valid(principal, rate, time, kind)
-            context['result'] = Calculator(principal, rate, time).calculate(kind)
+            context['result'] = Calculator(principal, rate, time, kind).get_result()
             return render(request, 'interest/interest.html', context)
 
         except ValueError as e:
