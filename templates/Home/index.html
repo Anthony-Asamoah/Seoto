@@ -11,6 +11,7 @@
             justify-content: flex-start;
             flex-wrap: wrap;
         }
+
         .card {
             width: 200px;
             height: 250px;
@@ -19,31 +20,36 @@
             overflow: hidden;
             transition: .5s ease;
             border: none;
-            margin:5px;
+            margin: 5px;
         }
+
         .card:hover {
             margin: 2px 15px;
             height: 290px;
         }
 
-        .card .card-body{
+        .card .card-body {
             transition: .5s ease;
             font-size: 16px;
         }
+
         .card .card-body {
             font-family: "Trebuchet MS";
             padding: 0 10px;
         }
+
         .card .card-title {
             text-align: center;
             margin-top: 20px;
             transition: .3s ease;
             color: #590000;
         }
+
         .card:hover .card-title {
             color: black;
             margin-top: 0;
         }
+
         .card img {
             opacity: 0.8;
             object-fit: cover;
@@ -51,9 +57,11 @@
             height: 200px;
             transition: .5s ease;
         }
+
         .card:hover img {
             opacity: 1;
         }
+
         .card a {
             color: black;
             text-decoration: none;
@@ -65,7 +73,7 @@
 
         button:hover {
             padding-left: 30px;
-            padding-right:30px;
+            padding-right: 30px;
         }
 
         .info {
@@ -74,6 +82,7 @@
             transition: .5s ease;
             border: 0px blue;
         }
+
         .card:hover .info {
             opacity: 1;
             border-top: 2px solid whitesmoke;
@@ -90,9 +99,11 @@
                 width: 140px;
                 height: 300px;
             }
+
             .card:hover {
                 margin: 2px 8px;
             }
+
             .card img {
                 height: 140px;
             }
@@ -104,6 +115,7 @@
             .card .card-title {
                 margin-top: 20px;
             }
+
             .card:hover .card-title {
                 margin-top: 0px;
             }
@@ -112,6 +124,7 @@
                 opacity: .5;
                 transition: .5s ease;
             }
+
             .card:hover .info {
                 opacity: 1;
             }
@@ -122,6 +135,7 @@
                 width: 140px;
                 height: 210px;
             }
+
             .card:hover {
                 height: 255px;
             }
@@ -129,10 +143,12 @@
             .card img {
                 height: 140px;
             }
+
             .info {
                 opacity: 0;
                 transition: .5s ease;
             }
+
             .card:hover .info {
                 display: block;
                 opacity: 1;
@@ -142,106 +158,108 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container" >
+    <div class="container">
         <div class="header mt-2">
             <h1>Apps for random stuff by <span class="s0t"><a href="{% url 'about' %}">Anthony</a></span></h1>
-            <hr />
+            <hr/>
         </div>
         <div class="main mb-5 row">
             <div class="anonymous_apps">
                 <h4>Available Apps</h4>
-                <p>Mini python projects by Sean_or_tony</p>
+                <p>Powered by Wine</p>
                 <div class="apps">
-                    <div class="card mb-3" onmouseenter="show(10)" onmouseleave="hide(10)">
-                      <a href="{% url 'dashboard' %}">
-                          <img src="{% static 'img/jotter-app-icon.jpg' %}" class="card-img-top" alt="Icon">
-                          <div class="card-body">
-                              <h5 class="card-title">Dashboard</h5>
-                              <div class="info" id="info10">
+                    {% if user.is_authenticated and user.is_staff %}
+                        <div class="card mb-3" onmouseenter="show(10)" onmouseleave="hide(10)">
+                            <a href="{% url 'dashboard' %}">
+                                <img src="{% static 'img/jotter-app-icon.jpg' %}" class="card-img-top" alt="Icon">
+                                <div class="card-body">
+                                    <h5 class="card-title">Dashboard</h5>
+                                    <div class="info" id="info10">
                                 <span class="card-text">
                                     The bigger picture.
                                 </span>
-                              </div>
-                          </div>
-                      </a>
-                    </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endif %}
                     <div class="card mb-3" onmouseenter="show(10)" onmouseleave="hide(10)">
-                      <a href="{% url 'jotter' %}">
-                          <img src="{% static 'img/jotter-app-icon.jpg' %}" class="card-img-top" alt="Icon">
-                          <div class="card-body">
-                              <h5 class="card-title">Jotter</h5>
-                              <div class="info" id="info10">
+                        <a href="{% url 'jotter' %}">
+                            <img src="{% static 'img/jotter-app-icon.jpg' %}" class="card-img-top" alt="Icon">
+                            <div class="card-body">
+                                <h5 class="card-title">Jotter</h5>
+                                <div class="info" id="info10">
                                 <span class="card-text">
                                     Your personal handbook.
                                 </span>
-                              </div>
-                          </div>
-                      </a>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="card mb-3" id="card" onmouseenter="show(1)" onmouseleave="hide(1)">
-                      <a href="{% url 'foodie' %}">
-                          <img src="{% static 'img/food-app-icon.jpg' %}" class="card-img-top" alt="Icon">
-                          <div class="card-body">
-                              <h5 class="card-title">Foodie</h5>
-                              <div class="info" id="info1">
+                        <a href="{% url 'foodie' %}">
+                            <img src="{% static 'img/food-app-icon.jpg' %}" class="card-img-top" alt="Icon">
+                            <div class="card-body">
+                                <h5 class="card-title">Foodie</h5>
+                                <div class="info" id="info1">
                                 <span class="card-text">
                                 Let me suggest what to eat...
                             </span>
-                              </div>
-                          </div>
-                      </a>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="card mb-3" id="card" onmouseenter="show(2)" onmouseleave="hide(2)">
-                      <a href="{% url 'interest_calculator' %}">
-                          <img src="{% static 'img/interest-app-icon.png' %}" class="card-img-top" alt="Icon">
-                          <div class="card-body">
-                              <h5 class="card-title">Interest Calculator</h5>
-                              <div class="info" id="info2">
+                        <a href="{% url 'interest_calculator' %}">
+                            <img src="{% static 'img/interest-app-icon.png' %}" class="card-img-top" alt="Icon">
+                            <div class="card-body">
+                                <h5 class="card-title">Interest Calculator</h5>
+                                <div class="info" id="info2">
                                 <span class="card-text">
                                 Know your earnings.
                             </span>
-                              </div>
-                          </div>
-                      </a>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="card mb-3" id="card" onmouseenter="show(3)" onmouseleave="hide(3)">
-                      <a href="{% url 'rhymes' %}">
-                          <img src="{% static 'img/rhymes-app-icon.jpg' %}" class="card-img-top" alt="Icon">
-                          <div class="card-body">
-                              <h5 class="card-title">Rhyme DB</h5>
-                              <div class="info" id="info3">
+                        <a href="{% url 'rhymes' %}">
+                            <img src="{% static 'img/rhymes-app-icon.jpg' %}" class="card-img-top" alt="Icon">
+                            <div class="card-body">
+                                <h5 class="card-title">Rhyme DB</h5>
+                                <div class="info" id="info3">
                                 <span class="card-text">
                                 A list of words that rhyme together.
                             </span>
-                              </div>
-                          </div>
-                      </a>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="card mb-3" id="card" onmouseenter="show(4)" onmouseleave="hide(4)">
-                      <a href="{% url 'throw_a_die' %}">
-                          <img src="{% static 'img/dice-app-icon.png' %}" class="card-img-top" alt="Icon">
-                          <div class="card-body">
-                              <h5 class="card-title">Throw a die</h5>
-                              <div class="info" id="info4">
+                        <a href="{% url 'throw_a_die' %}">
+                            <img src="{% static 'img/dice-app-icon.png' %}" class="card-img-top" alt="Icon">
+                            <div class="card-body">
+                                <h5 class="card-title">Throw a die</h5>
+                                <div class="info" id="info4">
                                 <span class="card-text">
                                 Play a game. Ludu or something.
                             </span>
-                              </div>
-                          </div>
-                      </a>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                     <div class="card mb-3" id="card" onmouseenter="show(5)" onmouseleave="hide(5)">
-                      <a href="{% url 'flip_a_coin' %}">
-                          <img src="{% static 'img/coin-app-icon.png' %}" class="card-img-top" alt="Icon">
-                          <div class="card-body">
-                              <h5 class="card-title">Flip a coin</h5>
-                              <div class="info" id="info5">
+                        <a href="{% url 'flip_a_coin' %}">
+                            <img src="{% static 'img/coin-app-icon.png' %}" class="card-img-top" alt="Icon">
+                            <div class="card-body">
+                                <h5 class="card-title">Flip a coin</h5>
+                                <div class="info" id="info5">
                                 <span class="card-text">
                                 Settle a dispute maybe.
                             </span>
-                              </div>
-                          </div>
-                      </a>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>
