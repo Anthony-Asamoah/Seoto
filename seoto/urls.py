@@ -14,9 +14,9 @@ from throw_a_die.views import Die
 
 urlpatterns = [
       path('', Home.as_view(), name='index'),
-      path('admin/', admin.site.urls),
+      path('admin/', admin.site.urls, name='admin'),
       path('accounts/', include('accounts.urls')),
-      path('home/', include("home.urls", )),
+      path('home/', include("home.urls")),
       # Anonymous
       path('@sean_or_tony', About.as_view(), name='about'),
       path('foodie/', include('foodie.urls')),
