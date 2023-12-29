@@ -32,6 +32,11 @@ class tracker(models.Model):
 	isCompleted = models.BooleanField(default=False)
 	completed_on = models.DateTimeField(null=True, blank=True)
 
+	@property
+	def ellipses_link(self):
+		if not self.link: return
+		return f"{self.link[:30]}{'...' if len(self.link) > 30 else ''}"
+
 	class Meta:
 		verbose_name_plural = "tracker"
 
@@ -63,6 +68,11 @@ class todo(models.Model):
 	isCompleted = models.BooleanField(default=False)
 	completed_on = models.DateTimeField(null=True, blank=True)
 	added_on = models.DateTimeField(default=timezone.now)
+
+	@property
+	def ellipses_notes(self) -> str:
+		if not self.notes: return ''
+		return f"{self.notes[:30]}{'...' if len(self.notes) > 30 else ''}"
 
 	class Meta:
 		verbose_name_plural = "todo"
