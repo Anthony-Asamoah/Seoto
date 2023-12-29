@@ -7,6 +7,7 @@
         .errors {
             text-align: center;
         }
+
         .alert {
             min-width: 50px;
             width: 30vw;
@@ -71,21 +72,25 @@
 
 {% block content %}
     <div class="container">
-        {% if form.errors %}
-            <div class="errors">
-                <div class="alert alert-warning">
+        <div class="errors">
+            {% if form.errors %}
+                <div class="alert alert-warning mt-3">
                     <h4>Incorrect username or password</h4>
                 </div>
-            </div>
-        {% endif %}
-        {% if next %}
-            {% if user.is_authenticated %}
-                <p>Your account doesn't have access to this page. To proceed,
-                    please log in with an account that has access.</p>
-            {% else %}
-                <p>Kindly log in to see this page.</p>
             {% endif %}
-        {% endif %}
+            {% if next %}
+                {% if user.is_authenticated %}
+                    <div class="alert alert-warning mt-3">
+                        Your account doesn't have access to this app. To proceed,
+                        please log in with a valid account
+                    </div>
+                {% else %}
+                    <div class="alert alert-secondary text-success mt-3">
+                        Kindly login to proceed.
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
 
         <div class="form">
             <form method="post" action="{% url 'login' %}">
