@@ -9,7 +9,7 @@
             padding: 0 !important;
         }
 
-        .main p, ul, li, .edu div {
+        .main p, ul, li, .edu div, .job div {
             color: #102854;
             font-family: "Garrison Light Sans";
         }
@@ -54,6 +54,18 @@
         .header .name h1:hover {
             font-size: 5em;
         }
+        
+        .header .links > a {
+            text-decoration: None;
+            color: #0b2e13;
+            transition: 0.5s ease;
+            border-radius: 5%;
+        }        
+        .header .links > a:hover {
+            padding: 0 1.5em;
+            background-color: #0b2e13;
+            color: white;
+        }
 
         .header .display_pic img {
             object-fit: cover;
@@ -68,8 +80,21 @@
             width: 250px;
         }
 
-        .edu > div {
+        .edu > div, .job > div {
             padding: 20px;
+        }
+
+        .item-head > div {
+            display: inline;
+        }
+
+        .item-content > div {
+            display: inline;
+            color: gray !important;
+        }
+
+        .item-content {
+            color: gray !important;
         }
 
         .hobby_and_skill .hobbies ul {
@@ -173,8 +198,15 @@
             <img src="{% static 'img/profile_pic.jpeg' %}" alt="Profile Picture">
         </div>
         <div class="name" id="name">
-            <h1>Anthony Asamoah</h1>
-            <p style="text-align: center">@sean_or_tony</p>
+            <h1>{{ intro.first_name }} {{ intro.last_name }}</h1>
+            <div class="links" style="text-align: center">
+                {% for link in intro.links.all %}
+                    {% if not forloop.first %}
+                        |
+                    {% endif %}
+                    <a href="{{ link.url }}">{{ link.label }}</a>
+                {% endfor %}
+            </div>
         </div>
     </div>
 
@@ -183,44 +215,55 @@
         <!--  About Section   -->
         <div class="about" id="about">
             <h2>About</h2>
-            <p>
-                Hailing from Ghana with a passion for learning and a keen interest in coding,
-                I am but a humble young man that dreamed of building supercars, sport bikes and powerful engines but
-                ended up falling in love
-                with instructing his computer.
-            </p>
+            <p>{{ intro.about }}</p>
         </div>
 
         <!--   Education Section   -->
         <div class="edu" id="edu">
             <h2>Education</h2>
-            <div class="fourth">
-                BSC in Computer Engineering at Ghana Communication Technology University. [2018-current]
-            </div>
-            <div class="third">
-                Diploma in Electrical & Electronics Engineering with City & Guilds UK, at Ghana Communication
-                Technology University. [2017-2018]
-            </div>
-            <div class="second">
-                Completed Senior High at Life International College. [2014-2017]
-            </div>
-            <div class="scratch">
-                Completed code camp (summer 2014); Introduction to programming with Scratch.
-            </div>
-            <div class="first">
-                Completed Basic School at SOS Herman Gmeiner. [2014]
-            </div>
+            {% for item in education %}
+                <div class="education-item">
+                    <div class="item-head">
+                        <div class="cert-title">{{ item.certificate_title }}</div>
+                        at
+                        <div class="cert-school">{{ item.school }}</div>
+                    </div>
+                    <div class="item-content">
+                        <div class="cert-start">{{ item.start_date|date:"Y" }}</div>
+                        -
+                        <div class="cert-end">{% if not item.end_date %}
+                            now{% endif %}{{ item.end_date|date:"Y" }}</div>
+                        |
+                        <div class="cert-type">{{ item.other_certificate_type }}</div>
+                    </div>
+                </div>
+            {% endfor %}
         </div>
 
         <!--   Job Experience  Section   -->
-        <div class="job" id="job">
-            <h2>Job Experience</h2>
-            <p>Backend Developer at the Advanced Information Technology Institute, or more commonly
-                known as the Kofi Annan Center of Excellence (AITI-KACE). [2021-2022]
-            <p>
-            <p>Intern at FKS Motors - servicing and maintenance of vehicles. [2019]</p>
-            <p>Basic html css and python code snippets for friends' and personal projects [2018-present]</p>
-        </div>
+        {% if job_history %}
+            <div class="job" id="job">
+                <h2>Job Experience</h2>
+                {% for item in job_history %}
+                    <div class="job-item">
+                        <div class="item-head">
+                            <div class="job-title">{{ item.job_title }}</div>
+                            at
+                            <div class="job-employer">{{ item.employer }}</div>
+                        </div>
+                        <div class="item-content">
+                            <div class="job-start">{{ item.start_date|date:"Y" }}</div>
+                            -
+                            <div class="job-end">{% if not item.end_date %}
+                                now{% endif %}{{ item.end_date|date:"Y" }}</div>
+                            |
+                            <div class="job-city">{{ item.city }}</div>
+                            <br>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
 
         <!-- Skills -->
         <div class="skils" id="skills">

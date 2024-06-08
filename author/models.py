@@ -40,7 +40,7 @@ class Intro(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     show_date_of_birth = models.BooleanField(default=True)
     profile_image = models.ImageField(upload_to='author/profile_picture')
-    about = models.TextField(blank=True, null=True)
+    about = models.TextField()
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -70,12 +70,12 @@ class CertificateType(DefaultEnum):
 class Education(models.Model):
     school = models.CharField(max_length=250)
     certificate_title = models.CharField(max_length=250)
-    certificate_type = models.CharField(max_length=250, choices=CertificateType.key_value_pairs())
+    certificate_type = models.CharField(max_length=250, choices=CertificateType.value_value_pairs())
     other_certificate_type = models.CharField(
         max_length=250, blank=True, null=True,
     )
     start_date = models.DateField()
-    end_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
     city = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     order = models.PositiveSmallIntegerField(default=1, blank=True)
@@ -96,6 +96,7 @@ class Education(models.Model):
     def validate_certificate_type(self):
         if self.certificate_type == CertificateType.OTHER.name and not self.other_certificate_type:
             raise ValidationError(dict(other_certificate_type='Kindly specify the type of certificate.'))
+        self.other_certificate_type = self.certificate_type
 
 
 class JobExperience(models.Model):

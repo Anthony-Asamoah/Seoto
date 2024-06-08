@@ -21,8 +21,8 @@ class About(View):
             })
         context = {
             'intro': Intro.objects.filter().first() or None,
-            'education': Education.objects.all() or None,
-            'job_history': JobExperience.objects.all() or None,
+            'education': Education.objects.filter(hidden=False) or None,
+            'job_history': JobExperience.objects.filter(hidden=False) or None,
             'stack': Stack.objects.filter(is_active=True).first() or None,
             'form': form,
         }
