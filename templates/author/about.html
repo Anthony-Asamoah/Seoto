@@ -32,7 +32,16 @@
         .main > div:hover h2, h3, h4, h5, h6 {
             color: darkgoldenrod;
         }
-
+        .main > div span{
+            color: darkgoldenrod;
+            transition: 0.5s ease;
+        }
+        .main > div:hover span{
+            color: #00695f;
+        }
+        .main > div:hover li::marker{
+            color: #00695f;
+        }
         /* Header */
         .header {
             display: flex;
@@ -136,6 +145,17 @@
 
         .form-control:hover:not(textarea) {
             height: 45px;
+        }
+        .btn-primary {
+            background-color: #00695f;
+            border: 0;
+        }
+        .btn-primary:hover {
+            background-color: #003d38;
+        }
+        .btn-warning {
+            background-color: darkgoldenrod;
+            border: 0;
         }
 
         /* Responsivity */
@@ -312,7 +332,7 @@
                 <div class="contact_form mt-4">
                     <form action="{% url 'about' %}" method="post">
                         {% csrf_token %}
-                        <h3 class="mb-4">or reach out with the form below</h3>
+                        <h3 class="mb-4"><span class="form-group-inverse">or reach out with the form below</span></h3>
                         <div class="form-group col-md-6">
                             <label for="{{ form.name.if_for_label }}">Your name</label>
                             {{ form.name }}
