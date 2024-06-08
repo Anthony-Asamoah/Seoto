@@ -4,7 +4,9 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.views import View
 
-from .models import Stack
+from .models import (
+    Stack, Intro, Education, JobExperience
+)
 from .forms import ContactForm
 
 
@@ -18,8 +20,11 @@ class About(View):
                 'email': user.email
             })
         context = {
+            'intro': Intro.objects.filter().first() or None,
+            'education': Education.objects.all() or None,
+            'job_history': JobExperience.objects.all() or None,
+            'stack': Stack.objects.filter(is_active=True).first() or None,
             'form': form,
-            'stack': Stack.objects.filter(is_active=True).first() or None
         }
         return render(request, 'author/about.html', context)
 

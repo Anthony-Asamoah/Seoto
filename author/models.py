@@ -29,13 +29,19 @@ class Intro(models.Model):
     first_name = models.CharField(max_length=250)
     last_name = models.CharField(max_length=250)
     email = models.EmailField(max_length=250)
+    show_email = models.BooleanField(default=True)
     phone = models.CharField(max_length=17)
+    show_phone = models.BooleanField(default=True)
     country = models.CharField(max_length=250, null=True, blank=True)
     city = models.CharField(max_length=250, null=True, blank=True)
+    show_address = models.BooleanField(default=True)
     nationality = models.CharField(max_length=250, null=True, blank=True)
+    show_nationality = models.BooleanField(default=True)
     date_of_birth = models.DateField(null=True, blank=True)
+    show_date_of_birth = models.BooleanField(default=True)
     profile_image = models.ImageField(upload_to='author/profile_picture')
     about = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         verbose_name_plural = "Intro"
@@ -73,6 +79,7 @@ class Education(models.Model):
     city = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     order = models.PositiveSmallIntegerField(default=1, blank=True)
+    hidden = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = "Education"
@@ -99,6 +106,7 @@ class JobExperience(models.Model):
     city = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     order = models.PositiveSmallIntegerField(default=1, blank=True)
+    hidden = models.BooleanField(default=False)
 
     def __str__(self):
         return self.job_title
