@@ -54,13 +54,14 @@
         .header .name h1:hover {
             font-size: 5em;
         }
-        
+
         .header .links > a {
             text-decoration: None;
             color: #0b2e13;
             transition: 0.5s ease;
             border-radius: 5%;
-        }        
+        }
+
         .header .links > a:hover {
             padding: 0 1.5em;
             background-color: #0b2e13;
@@ -219,26 +220,28 @@
         </div>
 
         <!--   Education Section   -->
-        <div class="edu" id="edu">
-            <h2>Education</h2>
-            {% for item in education %}
-                <div class="education-item">
-                    <div class="item-head">
-                        <div class="cert-title">{{ item.certificate_title }}</div>
-                        at
-                        <div class="cert-school">{{ item.school }}</div>
+        {% if education %}
+            <div class="edu" id="edu">
+                <h2>Education</h2>
+                {% for item in education %}
+                    <div class="education-item">
+                        <div class="item-head">
+                            <div class="cert-title">{{ item.certificate_title }}</div>
+                            at
+                            <div class="cert-school">{{ item.school }}</div>
+                        </div>
+                        <div class="item-content">
+                            <div class="cert-start">{{ item.start_date|date:"Y" }}</div>
+                            -
+                            <div class="cert-end">{% if not item.end_date %}
+                                now{% endif %}{{ item.end_date|date:"Y" }}</div>
+                            |
+                            <div class="cert-type">{{ item.other_certificate_type }}</div>
+                        </div>
                     </div>
-                    <div class="item-content">
-                        <div class="cert-start">{{ item.start_date|date:"Y" }}</div>
-                        -
-                        <div class="cert-end">{% if not item.end_date %}
-                            now{% endif %}{{ item.end_date|date:"Y" }}</div>
-                        |
-                        <div class="cert-type">{{ item.other_certificate_type }}</div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+                {% endfor %}
+            </div>
+        {% endif %}
 
         <!--   Job Experience  Section   -->
         {% if job_history %}

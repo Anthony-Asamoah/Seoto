@@ -103,7 +103,7 @@ class JobExperience(models.Model):
     job_title = models.CharField(max_length=250)
     employer = models.CharField(max_length=250)
     start_date = models.DateField()
-    end_date = models.DateField()
+    end_date = models.DateField(blank=True, null=True)
     city = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     order = models.PositiveSmallIntegerField(default=1, blank=True)
@@ -111,6 +111,9 @@ class JobExperience(models.Model):
 
     def __str__(self):
         return self.job_title
+
+    class Meta:
+        ordering = ["order"]
 
 
 class Stack(models.Model):
