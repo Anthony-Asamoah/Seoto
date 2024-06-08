@@ -1,22 +1,21 @@
 <nav class="navbar navbar-expand navbar-light bg-light d-flex justify-content-between">
     <div class="brand">
+        <a class="navbar-brand" href="{% url 'index' %}">Seoto</a>
         {% if user.is_authenticated %}
-        <a class="navbar-brand" href="
+            <a class="navbar-brand" href="
             {% if user.username in request.path_info %}
                 {% url 'index' %}
             {% else %}
                 {% url 'profile' user.username %}
             {% endif %}
         ">
-          Seoto
-            {% if user.first_name %}
-             | {{ user.first_name | title }}
-            {% else %}
-             | {{ user.username | title}}
-            {% endif %}
-        </a>
+                {% if user.first_name %}
+                    | {{ user.first_name | title }}
+                {% else %}
+                    | {{ user.username | title }}
+                {% endif %}
+            </a>
         {% else %}
-        <a class="navbar-brand" href="{% url 'index' %}">Seoto</a>
         {% endif %}
     </div>
     <div class="links" id="links">

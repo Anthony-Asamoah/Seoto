@@ -5,10 +5,11 @@
 {% block style %}
     <style>
         .list-group {
-            max-height: 60vh;
+            max-height: 55vh;
             height: auto;
             overflow-y: auto;
         }
+
         form {
             display: flex;
             flex-wrap: nowrap;
@@ -18,16 +19,18 @@
             height: 50px;
 
         }
+
         form .input {
             margin-top: 2px;
             width: 80%;
             transition: 0.5s ease;
             text-align: right;
         }
+
         form .input input {
             width: 100%;
-            height:40px;
-            padding:0 10px;
+            height: 40px;
+            padding: 0 10px;
             outline: none;
             border-radius: 5px;
             transition: 0.5s ease;
@@ -36,29 +39,39 @@
             border: none;
             border-bottom: 2px solid #006fc9;
         }
+
         form .input:hover {
             height: 45px;
         }
+
         form .input:hover input {
-            color:black;
+            color: black;
             background-color: white
         }
+
         form .input input:focus {
-            color:black;
+            color: black;
             background-color: white;
         }
+
         form .button {
             flex-grow: 4;
-            margin:0 10px;
+            margin: 0 10px;
         }
+
         form .button button {
             height: 40px;
             width: 100px;
-            padding:5px 10px;
+            padding: 5px 10px;
             transition: 0.5s ease;
         }
+
         form .button button:hover {
             width: 130px;
+        }
+        
+        .download {
+            text-align: right;
         }
     </style>
 {% endblock %}
@@ -69,37 +82,44 @@
         <div class="header">
             <h2>Type in the Rhyme(s) you want and click 'Find'</h2>
         </div>
-    <div class="main mt-3">
-        <div class="form">
-            <form action="{% url 'rhymes' %}" method="post">
-                {% csrf_token %}
-                <div class="input">
-                    <input type="text" name="rhyme" id="rhmye" required placeholder="example; tion, ime, tor">
-                    <small class="text-muted">Search for two or more items by separating each rhyme with a comma</small>
-                </div>
-                <div class="button">
-                    <button class="btn btn-primary" type="submit">Find</button>
-                </div>
-            </form>
-        </div>
-        <div class="rhymes mt-5">
-            {% if words %}
-                <h5>{{ amount }} available words that rhyme with "{{ input }}"</h5>
-                <ol class="list-group">
-                    {% for word in words %}
-                        <li class="list-group-item">{{ word | title }}</li>
-                    {% endfor %}
-                </ol>
-{#                <a href="{% url 'rhymes_download' %}"><button class="btn btn-primary mt-3" type="button">Download</button></a>#}
-            {% else %}
-                {% if input %}
-                <h3>Nothing goes with '{{ input }}'</h3>
+        <div class="main mt-3">
+            <div class="form">
+                <form action="{% url 'rhymes' %}" method="post">
+                    {% csrf_token %}
+                    <div class="input">
+                        <input type="text" name="rhyme" id="rhmye" required placeholder="example; tion, ime, tor">
+                        <small class="text-muted">Search for two or more items by separating each rhyme with a
+                            comma</small>
+                    </div>
+                    <div class="button">
+                        <button class="btn btn-primary" type="submit">Find</button>
+                    </div>
+                </form>
+            </div>
+            <div class="rhymes mt-5">
+                {% if words %}
+                    <div class="response">
+                        <h4>"...{{ input }}" matched {{ amount }} word(s).</h4>
+                        <div class="list">
+                            <ol class="list-group">
+                                {% for word in words %}
+                                    <li class="list-group-item">{{ word }}</li>
+                                {% endfor %}
+                            </ol>
+                        </div>
+                        {% if user.is_authenticated %}
+                            <div class="download mt-3">
+                                <a href="{% url 'rhymes_download' %}"><span class="btn btn-outline-primary">Save a copy</span></a>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    {% if input %}
+                        <h3>Nothing goes with '{{ input }}'</h3>
+                    {% endif %}
                 {% endif %}
-            {% endif %}
-            {% if input %}
-            {% endif %}
+            </div>
         </div>
-    </div>
     </div>
 
 {% endblock %}

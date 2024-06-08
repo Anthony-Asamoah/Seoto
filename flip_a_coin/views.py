@@ -1,20 +1,14 @@
-from django.shortcuts import render
 from random import randint
 
+from django.shortcuts import render
+from django.views import View
 
-def coin(request):
-	if request.method == 'POST':
-		flip = randint(1, 2)
-		text = 'Heads'
 
-		if flip == 2:
-			text = 'Tails'
+class Coin(View):
+    def post(self, request):
+        text = {1: 'Heads', 2: 'Tails'}
+        flip = randint(1, 2)
+        return render(request, 'flip_a_coin/coin.html', {'text': text.get(flip), 'flip': flip})
 
-		context = {
-			'text': text,
-			'flip': flip
-		}
-
-		return render(request, 'flip_a_coin/coin.html', context)
-
-	return render(request, 'flip_a_coin/coin.html')
+    def get(self, request):
+        return render(request, 'flip_a_coin/coin.html')

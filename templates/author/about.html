@@ -4,270 +4,287 @@
 
 {% block style %}
     <style>
-    .main {
-        margin: 0 20%;
-        padding: 0!important;
-    }
-    .main p, ul, li, .edu div {
-        color: #102854;
-        font-family: "Garrison Light Sans";
-    }
-    .main h2, h3, h4, h5, h6 {
-        color: #00695f ;
-        transition: 1s ease;
-    }
+        .main {
+            margin: 0 20%;
+            padding: 0 !important;
+        }
 
-    .main > div {
-        padding:20px ;
-        transition: 0.5s ease;
-    }
-    .main > div:hover {
-        background-color: #d9d9d9;
-        padding-bottom: 50px;
-    }
-    .main >div:hover h2, h3, h4, h5,h6 {
-        color: darkgoldenrod;
-    }
-    /* Header */
-    .header {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 50px;
-        align-items: center;
-        justify-content: center;
-        height: 500px;
-    }
+        .main p, ul, li, .edu div {
+            color: #102854;
+            font-family: "Garrison Light Sans";
+        }
 
-    .header .name h1{
-        color: #102854;
-        font-weight: bolder;
-        font-size: 4.5em;
-        font-family: monospace;
-        transition: 0.5s ease;
-    }
-    .header .name h1:hover {
-        font-size: 5em;
-    }
-    .header .display_pic img {
-        object-fit: cover;
-        object-position: 50% 30%;
-        height: 400px;
-        width: 300px;
-        border-radius: 5px;
-        transition: 1s ease;
-    }
-    .header .display_pic img:hover {
-        width: 250px;
-    }
+        .main h2, h3, h4, h5, h6 {
+            color: #00695f;
+            transition: 1s ease;
+        }
 
-    .edu > div {
-        padding: 20px;
-    }
+        .main > div {
+            padding: 20px;
+            transition: 0.5s ease;
+        }
 
-    .hobby_and_skill .hobbies ul {
-        list-style-position: outside;
-    }
+        .main > div:hover {
+            background-color: #d9d9d9;
+            padding-bottom: 50px;
+        }
 
-    ul {
-        list-style-type: square;
-        list-style-position: inside;
-    }
-    li {
-        padding: 10px;
-    }
+        .main > div:hover h2, h3, h4, h5, h6 {
+            color: darkgoldenrod;
+        }
 
-    .list_title {
-        font-size: 1.2em;
-        color: #003631;
-        border-bottom: 1px solid #102854;
-    }
-    .form-group label {
-        transition: 0.3s ease;
-    }
-    .form-group:hover label{
-        font-weight: bold;
-        color: #00695f;
-    }
-    .form-control {
-        transition: 0.3s ease;
-    }
-    .form-control:hover:not(textarea) {
-        height: 45px;
-    }
-    /* Responsivity */
-@media screen and (max-width:810px ) {
+        /* Header */
+        .header {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 50px;
+            align-items: center;
+            justify-content: center;
+            height: 500px;
+        }
 
-    .header {
-        height: fit-content;
-        padding: 30px 0;
-    }
+        .header .name h1 {
+            color: #102854;
+            font-weight: bolder;
+            font-size: 4.5em;
+            font-family: monospace;
+            transition: 0.5s ease;
+        }
 
-    .header .name h1 {
-        font-size: 2.5em;
-    }
+        .header .name h1:hover {
+            font-size: 5em;
+        }
 
-    .header .name h1:hover {
-        font-size: 3em;
-    }
+        .header .display_pic img {
+            object-fit: cover;
+            object-position: 50% 30%;
+            height: 400px;
+            width: 300px;
+            border-radius: 5px;
+            transition: 1s ease;
+        }
 
-    .header .display_pic img {
-        width: 200px;
-        height: 150px;
-    }
+        .header .display_pic img:hover {
+            width: 250px;
+        }
 
-    .header .display_pic img:hover {
-        height: 300px;
-    }
-}
+        .edu > div {
+            padding: 20px;
+        }
+
+        .hobby_and_skill .hobbies ul {
+            list-style-position: outside;
+        }
+
+        ul {
+            list-style-type: square;
+            list-style-position: inside;
+        }
+
+        li {
+            padding: 10px;
+        }
+
+        .list_title {
+            font-size: 1.2em;
+            color: #003631;
+            border-bottom: 1px solid #102854;
+        }
+
+        .form-group label {
+            transition: 0.3s ease;
+        }
+
+        .form-group:hover label {
+            font-weight: bold;
+            color: #00695f;
+        }
+
+        .form-control {
+            transition: 0.3s ease;
+        }
+
+        .form-control:hover:not(textarea) {
+            height: 45px;
+        }
+
+        /* Responsivity */
+        @media screen and (max-width: 810px ) {
+
+            .header {
+                height: fit-content;
+                padding: 30px 0;
+            }
+
+            .header .name h1 {
+                font-size: 2.5em;
+            }
+
+            .header .name h1:hover {
+                font-size: 3em;
+            }
+
+            .header .display_pic img {
+                width: 200px;
+                height: 150px;
+            }
+
+            .header .display_pic img:hover {
+                height: 300px;
+            }
+        }
 
 
-@media screen and (max-width: 480px) {
+        @media screen and (max-width: 480px) {
 
-    .main {
-        margin: 0;
-    }
+            .main {
+                margin: 0;
+            }
 
-    .header {
-        padding-top: 3vh;
-        flex-direction: column;
-    }
+            .header {
+                padding-top: 3vh;
+                flex-direction: column;
+            }
 
-    .header .name h1 {
-        font-size: 2.5em;
-    }
+            .header .name h1 {
+                font-size: 2.5em;
+            }
 
-    .header .name h1:hover {
-        font-size: 3em;
-    }
+            .header .name h1:hover {
+                font-size: 3em;
+            }
 
-    .header .display_pic {
-        display: none;
-    }
+            .header .display_pic {
+                display: none;
+            }
 
-    .header .display_pic img:hover {
-        width: 150px;
-    }
-}
+            .header .display_pic img:hover {
+                width: 150px;
+            }
+        }
     </style>
 {% endblock %}
 
 {% block content %}
 
-  <!--  Name Section  -->
+    <!--  Name Section  -->
     <div class="header">
-      <div class="display_pic">
-        <img src="{% static 'img/profile_pic.jpeg' %}" alt="Profile Picture">
-      </div>
-      <div class="name" id="name">
+        <div class="display_pic">
+            <img src="{% static 'img/profile_pic.jpeg' %}" alt="Profile Picture">
+        </div>
+        <div class="name" id="name">
             <h1>Anthony Asamoah</h1>
             <p style="text-align: center">@sean_or_tony</p>
-      </div>
+        </div>
     </div>
 
-  <div class="main">
+    <div class="main">
 
-    <!--  About Section   -->
-    <div class="about" id="about">
-      <h2>About</h2>
-      <p>
-          Hailing from Ghana with a passion for learning and a keen interest in coding,
-          i am but a humble young man that dreamed of building supercars, sport bikes and powerful engines but ended up falling in love
-          with instructing his computer.
-      </p>
-    </div>
+        <!--  About Section   -->
+        <div class="about" id="about">
+            <h2>About</h2>
+            <p>
+                Hailing from Ghana with a passion for learning and a keen interest in coding,
+                I am but a humble young man that dreamed of building supercars, sport bikes and powerful engines but
+                ended up falling in love
+                with instructing his computer.
+            </p>
+        </div>
 
-    <!--   Education Section   -->
-    <div class="edu" id="edu">
-      <h2>Education</h2>
-      <div class="fourth">
-        BSC in Computer Engineering at Ghana Communication Technology University. [2018-current]
-      </div>
-      <div class="third">
-        Diploma in Electrical & Electronics Engineering with City & Guilds UK, at Ghana Communication
-        Technology University. [2017-2018]
-      </div>
-      <div class="second">
-        Completed Senior High at Life International College. [2014-2017]
-      </div>
-      <div class="scratch">
-        Completed code camp (summer 2014); Introduction to programming with Scratch.
-      </div>
-      <div class="first">
-        Completed Basic School at SOS Herman Gmeiner. [2014]
-      </div>
-    </div>
-
-    <!--   Job Experience  Section   -->
-    <div class="job" id="job">
-        <h2>Job Experience</h2>
-        <p>Backend Developer at the Advanced Information Technology Institute, or more commonly
-        known as the Kofi Annan Center of Excellence (AITI-KACE). [2021-2022]<p>
-        <p>Intern at FKS Motors - servicing and maintenance of vehicles. [2019]</p>
-        <p>Basic html css and python code snippets for friends' and personal projects [2018-present]</p>
-    </div>
-
-    <!-- Skills -->
-    <div class="skils" id="skills">
-        <h2>Skills under my sleeve;</h2>
-        <ul><span class="list_title">Stacks</span>
-            <li>Html, Css, Bootstrap, Javascript, Typescript & Python</li>
-            <li>Angular, Vanilla Django & Django REST</li>
-            <li>GraphQL, MySQL & Postgresql</li>
-        </ul>
-        <ul><span class="list_title">Unrelated to code;</span>
-            <li>Basic Graphic Design with Adobe Photoshop & Illustrator</li>
-            <li>Music Production with Fruity Loops</li>
-            <li>Troubleshooting & servicing of cars and motorcycles.</li>
-        </ul>
-    </div>
-
-    <!--   Hobbies Section   -->
-    <div class="hobbies" id="hobbies">
-      <h2>A few hobbies are;</h2>
-      <ul>
-        <li>Sports: Long Tennis, Soccer and swimming.</li>
-        <li>Reading random articles on Quora</li>
-        <li>Learning and reading about electronics, auto_mechanics, engines, systems, etc.</li>
-        <li>Photography</li>
-      </ul>
-    </div>
-
-    <!--    Contact & Social Media Links      -->
-    <div class="contact">
-        <div class="social">
-            <h2>Get in touch</h2>
-            <div class="insta">
-                <p>You can find me with the handle @sean_or_tony or @sean0tony on any & all platforms that i am registered on</p>
-                <p>Check out my <a class="warning" href="https://www.instagram.com/sean_or_tony/" target="_blank">instagram</a>, which i am more active on</p>
+        <!--   Education Section   -->
+        <div class="edu" id="edu">
+            <h2>Education</h2>
+            <div class="fourth">
+                BSC in Computer Engineering at Ghana Communication Technology University. [2018-current]
             </div>
-            <div class="contact_form mt-4">
-                <form action="{% url 'about' %}" method="post">
-                    {% csrf_token %}
-                    <h3 class="mb-4">or reach out with the form below</h3>
-                    <div class="form-group col-md-6">
-                        <label for="{{ form.name.if_for_label }}">Your name</label>
-                        {{ form.name }}
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label for="{{ form.email.id_for_label }}">Your email</label>
-                        {{ form.email }}
-                    </div>
-                    <div class="form-group col-md-12">
-                        <label for="{{ form.subject.id_for_label }}">Subject</label>
-                        {{ form.subject }}
-                    </div>
-                    <div class="form-group col-md-12">
-                        <label for="{{ form.message.id_for_label }}">Your message</label>
-                        {{ form.message }}
-                    </div>
-                    <button class="btn btn-primary" type="submit">Submit</button>
-                    <button class="btn btn-warning pl-4 pr-4" type="reset">Clear</button>
-                </form>
+            <div class="third">
+                Diploma in Electrical & Electronics Engineering with City & Guilds UK, at Ghana Communication
+                Technology University. [2017-2018]
+            </div>
+            <div class="second">
+                Completed Senior High at Life International College. [2014-2017]
+            </div>
+            <div class="scratch">
+                Completed code camp (summer 2014); Introduction to programming with Scratch.
+            </div>
+            <div class="first">
+                Completed Basic School at SOS Herman Gmeiner. [2014]
+            </div>
+        </div>
+
+        <!--   Job Experience  Section   -->
+        <div class="job" id="job">
+            <h2>Job Experience</h2>
+            <p>Backend Developer at the Advanced Information Technology Institute, or more commonly
+                known as the Kofi Annan Center of Excellence (AITI-KACE). [2021-2022]
+            <p>
+            <p>Intern at FKS Motors - servicing and maintenance of vehicles. [2019]</p>
+            <p>Basic html css and python code snippets for friends' and personal projects [2018-present]</p>
+        </div>
+
+        <!-- Skills -->
+        <div class="skils" id="skills">
+            <h2>Skills under my sleeve;</h2>
+            <ul><span class="list_title">Stacks</span>
+                <li>{{ stack.languages }}</li>
+                <li>{{ stack.frameworks }}</li>
+                <li>{{ stack.databases }}</li>
+            </ul>
+            <ul><span class="list_title">Unrelated to code;</span>
+                <li>Basic Graphic Design with Adobe Photoshop & Illustrator</li>
+                <li>Music Production with Fruity Loops</li>
+                <li>Troubleshooting & servicing of cars and motorcycles.</li>
+            </ul>
+        </div>
+
+        <!--   Hobbies Section   -->
+        <div class="hobbies" id="hobbies">
+            <h2>A few hobbies are;</h2>
+            <ul>
+                <li>Sports: Long Tennis, Soccer and swimming.</li>
+                <li>Reading random articles on Quora</li>
+                <li>Learning and reading about electronics, auto_mechanics, engines, systems, etc.</li>
+                <li>Photography</li>
+                <li>Playing the guitar</li>
+            </ul>
+        </div>
+
+        <!--    Contact & Social Media Links      -->
+        <div class="contact">
+            <div class="social">
+                <h2>Get in touch</h2>
+                <div class="insta">
+                    <p>You can find me with the handle @sean_or_tony or @sean0tony on any & all platforms that I am
+                        registered on</p>
+                    <p>Check out my <a class="warning" href="https://www.instagram.com/sean_or_tony/" target="_blank">instagram</a>,
+                        which I am more active on</p>
+                </div>
+                <div class="contact_form mt-4">
+                    <form action="{% url 'about' %}" method="post">
+                        {% csrf_token %}
+                        <h3 class="mb-4">or reach out with the form below</h3>
+                        <div class="form-group col-md-6">
+                            <label for="{{ form.name.if_for_label }}">Your name</label>
+                            {{ form.name }}
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="{{ form.email.id_for_label }}">Your email</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="{{ form.subject.id_for_label }}">Subject</label>
+                            {{ form.subject }}
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="{{ form.message.id_for_label }}">Your message</label>
+                            {{ form.message }}
+                        </div>
+                        <button class="btn btn-primary" type="submit">Submit</button>
+                        <button class="btn btn-warning pl-4 pr-4" type="reset">Clear</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-  </div>
-
-
 
 {% endblock %}

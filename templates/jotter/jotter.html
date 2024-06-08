@@ -9,19 +9,24 @@
         .header {
             text-align: center;
         }
+
         .list-group-item {
             transition: 0.5s ease;
         }
+
         .list-group-item:hover {
             padding-bottom: 20px;
         }
+
         .completed small {
-            padding:0 20px;
+            padding: 0 20px;
         }
+
         .add {
             text-align: right;
         }
-        .todo-items {
+
+        .todo-items, .tracker-item {
             overflow: hidden;
         }
     </style>
@@ -41,35 +46,44 @@
             {% if todo_list and not tracker_list %}
 
                 <div class="add mb-5">
-                    <a href="{% url 'new_to_do' %}"><button class="btn btn-success mb-2">Add a new Reminder or make a Note</button></a>
-                    <a href="{% url 'new_to_track' %}"><button class="btn btn-success mb-2">Add a show or book to keep track</button></a>
+                    <a href="{% url 'new_to_do' %}">
+                        <button class="btn btn-success mb-2">Add a new Reminder or make a Note</button>
+                    </a>
+                    <a href="{% url 'new_to_track' %}">
+                        <button class="btn btn-success mb-2">Add a show or book to keep track</button>
+                    </a>
                 </div>
 
             {% endif %}
 
             {% if todo_list and tracker_list %}
                 <div class="add mb-3">
-                    <a href="{% url 'new_to_do' %}"><button class="btn btn-success mb-2">Add a new Reminder or make a Note</button></a>
-                    <a href="{% url 'new_to_track' %}"><button class="btn btn-success mb-2">Add a show or book to keep track</button></a>
+                    <a href="{% url 'new_to_do' %}">
+                        <button class="btn btn-success mb-2">Add a new Reminder or make a Note</button>
+                    </a>
+                    <a href="{% url 'new_to_track' %}">
+                        <button class="btn btn-success mb-2">Add a show or book to keep track</button>
+                    </a>
                 </div>
             {% endif %}
 
             <div class="todo mb-5">
                 {% if todo_list %}
                     <div class="title">
-                    <h4>Notes & Reminders</h4>
+                        <h4>Notes & Reminders</h4>
                     </div>
                     <div class="todo-items list-group">
                         {% for item in todo_list %}
-                            <a href="{% url 'edit_todo' item.id %}" class="list-group-item list-group-item-action flex-column align-items-start">
+                            <a href="{% url 'edit_todo' item.id %}"
+                               class="list-group-item list-group-item-action flex-column align-items-start">
                                 <div class="d-flex justify-content-between">
-                                    <h5 class="mb-1">{{ item.title | title}}</h5>
+                                    <h5 class="mb-1">{{ item.title | title }}</h5>
                                     <div class="completed">
                                         <small class="text-muted">{{ item.priority }} priority</small>
                                     </div>
                                 </div>
                                 {% if item.notes %}
-                                    <p class="mb-1">{{ item.notes }}</p>
+                                    <p class="mb-1">{{ item.ellipses_notes }}</p>
                                 {% endif %}
                                 {% if item.reminder %}
                                     <small class="text-muted">Reminder on: {{ item.reminder }}</small>
@@ -86,10 +100,14 @@
                             <p>Add items to be reminded.</p>
                         </div>
                         <div class="col-md-6 add">
-                            <a href="{% url 'new_to_do' %}"><button class="btn btn-success mb-2">Add a new Reminder or make a Note</button></a>
+                            <a href="{% url 'new_to_do' %}">
+                                <button class="btn btn-success mb-2">Add a new Reminder or make a Note</button>
+                            </a>
 
                             {% if tracker_list %}
-                                <a href="{% url 'new_to_track' %}"><button class="btn btn-success mb-2">Add a show or book to keep track</button></a>
+                                <a href="{% url 'new_to_track' %}">
+                                    <button class="btn btn-success mb-2">Add a show or book to keep track</button>
+                                </a>
                             {% endif %}
                         </div>
                     </div>
@@ -104,19 +122,21 @@
                     </div>
                     <div class="tracker-items list-group">
                         {% for item in tracker_list %}
-                            <a href="{% url 'edit_to_track' item.id %}" class="list-group-item list-group-item-action flex-column align-items-start">
+                            <a href="{% url 'edit_to_track' item.id %}"
+                               class="tracker-item list-group-item list-group-item-action flex-column align-items-start">
                                 <div class="d-flex justify-content-between">
-                                    <h5 class="mb-1">{{ item.title | title}}</h5>
+                                    <h5 class="mb-1">{{ item.title | title }}</h5>
                                     <div class="completed">
                                         <small class="text-muted">{{ item.category }}</small>
                                     </div>
                                 </div>
                                 {% if item.link %}
-                                    <p class="mb-1">Continue at {{ item.link }}</p>
+                                    <p class="mb-1">Continue at {{ item.ellipses_link }}</p>
                                 {% endif %}
                                 {% if item.episode and item.chapter %}
                                     <p class="mb-1">Currently on chapter {{ item.chapter }},
-                                        {% if item.category == 'Book' or item.category == 'Manga' or item.category == 'Webtoon' %}page
+                                        {% if item.category == 'Book' or item.category == 'Manga' or item.category == 'Webtoon' %}
+                                            page
                                         {% else %}episode{% endif %}{{ item.episode }}</p>
                                 {% else %}
                                     {% if item.episode %}
@@ -140,7 +160,9 @@
                         </div>
                         {% if not todo_list %}
                             <div class="col-md-6 add">
-                                <a href="{% url 'new_to_track' %}"><button class="btn btn-success mb-2">Add a show or book to keep track</button></a>
+                                <a href="{% url 'new_to_track' %}">
+                                    <button class="btn btn-success mb-2">Add a show or book to keep track</button>
+                                </a>
                             </div>
                         {% endif %}
                     </div>

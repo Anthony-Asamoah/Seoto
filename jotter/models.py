@@ -28,9 +28,14 @@ class tracker(models.Model):
 	chapter = models.IntegerField(blank=True, null=True)
 	timestamp = models.CharField(null=True, blank=True, max_length=20)
 	link = models.URLField(null=True, blank=True)
-	added_on = models.DateTimeField(default=timezone.now())
+	added_on = models.DateTimeField(default=timezone.now)
 	isCompleted = models.BooleanField(default=False)
 	completed_on = models.DateTimeField(null=True, blank=True)
+
+	@property
+	def ellipses_link(self):
+		if not self.link: return
+		return f"{self.link[:30]}{'...' if len(self.link) > 30 else ''}"
 
 	class Meta:
 		verbose_name_plural = "tracker"
@@ -62,7 +67,12 @@ class todo(models.Model):
 	reminder = models.DateTimeField(null=True, blank=True)
 	isCompleted = models.BooleanField(default=False)
 	completed_on = models.DateTimeField(null=True, blank=True)
-	added_on = models.DateTimeField(default=timezone.now())
+	added_on = models.DateTimeField(default=timezone.now)
+
+	@property
+	def ellipses_notes(self) -> str:
+		if not self.notes: return ''
+		return f"{self.notes[:30]}{'...' if len(self.notes) > 30 else ''}"
 
 	class Meta:
 		verbose_name_plural = "todo"
