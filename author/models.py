@@ -14,6 +14,9 @@ class IntroLinks(models.Model):
     label = models.CharField(max_length=250)
     url = models.URLField(max_length=1000)
 
+    class Meta:
+        verbose_name_plural = "IntroLinks"
+
 
 class Intro(models.Model):
     first_name = models.CharField(max_length=250)
@@ -47,7 +50,7 @@ class CertificateType(DefaultEnum):
 
 
 class Education(models.Model):
-    School = models.CharField(max_length=250)
+    school = models.CharField(max_length=250)
     certificate_title = models.CharField(max_length=250)
     certificate_type = models.CharField(max_length=250, choices=CertificateType.key_value_pairs())
     other_certificate_type = models.CharField(
@@ -57,6 +60,9 @@ class Education(models.Model):
     end_date = models.DateField()
     city = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = "Education"
 
     def clean(self):
         self.validate_certificate_type()
