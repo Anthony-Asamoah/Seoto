@@ -1,17 +1,22 @@
 from django.contrib import admin
 
-from .models import Message, Stack, Education, JobExperience, Intro
+from .models import Message, Stack, Education, JobExperience, Intro, IntroLinks
+
+
+class IntroLinksInline(admin.TabularInline):
+    model = IntroLinks
 
 
 @admin.register(Intro)
 class IntroAdmin(admin.ModelAdmin):
+    inlines = (IntroLinksInline,)
     list_display = (
-        "id",
         "email",
         "first_name",
         "last_name",
         "phone",
         "country",
+        "id",
     )
     list_display_links = list_display
     ordering = ('id',)
@@ -20,12 +25,12 @@ class IntroAdmin(admin.ModelAdmin):
 @admin.register(Education)
 class EducationAdmin(admin.ModelAdmin):
     list_display = (
-        "id",
         "school",
         "certificate_title",
         "certificate_type",
         "start_date",
         "end_date",
+        "id",
     )
     list_display_links = list_display
     ordering = ('id',)
@@ -34,11 +39,11 @@ class EducationAdmin(admin.ModelAdmin):
 @admin.register(JobExperience)
 class JobExperienceAdmin(admin.ModelAdmin):
     list_display = (
-        "id",
         "job_title",
         "employer",
         "start_date",
         "end_date",
+        "id",
     )
     list_display_links = list_display
     ordering = ('id',)

@@ -13,9 +13,16 @@ from utils.enums import DefaultEnum
 class IntroLinks(models.Model):
     label = models.CharField(max_length=250)
     url = models.URLField(max_length=1000)
+    reference = models.ForeignKey(
+        "Intro",
+        on_delete=models.CASCADE, related_name="links"
+    )
 
     class Meta:
         verbose_name_plural = "IntroLinks"
+
+    def __str__(self):
+        return self.label
 
 
 class Intro(models.Model):
@@ -26,10 +33,15 @@ class Intro(models.Model):
     country = models.CharField(max_length=250, null=True, blank=True)
     city = models.CharField(max_length=250, null=True, blank=True)
     nationality = models.CharField(max_length=250, null=True, blank=True)
-    date_of_birth = models.CharField(max_length=250, null=True, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
     profile_image = models.ImageField(upload_to='author/profile_picture')
     about = models.TextField(blank=True, null=True)
-    links = models.ManyToManyField("IntroLinks")
+
+    class Meta:
+        verbose_name_plural = "Intro"
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
 
 
 class CertificateType(DefaultEnum):
@@ -60,9 +72,11 @@ class Education(models.Model):
     end_date = models.DateField()
     city = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    order = models.PositiveSmallIntegerField(default=1, blank=True)
 
     class Meta:
         verbose_name_plural = "Education"
+        ordering = ["order"]
 
     def clean(self):
         self.validate_certificate_type()
@@ -84,6 +98,7 @@ class JobExperience(models.Model):
     end_date = models.DateField()
     city = models.CharField(max_length=250, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
+    order = models.PositiveSmallIntegerField(default=1, blank=True)
 
     def __str__(self):
         return self.job_title
