@@ -1,0 +1,248 @@
+<!-- blog/templates/blog/base.html -->
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}| Blog{% endblock %}
+
+{% block style %}
+    <style>
+
+        .blog-div header h1 {
+            margin: 0;
+        }
+
+        .blog-div nav ul {
+            display: flex;
+            list-style: none;
+            padding: 0;
+        }
+
+        .blog-div nav li {
+            margin-right: 20px;
+        }
+
+        .blog-div nav a {
+            text-decoration: none;
+            color: #333;
+        }
+
+        .blog-div .post {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 20px;
+        }
+
+        .blog-div .post h2 {
+            margin-bottom: 5px;
+        }
+
+        .blog-div .post-meta {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .post-privacy {
+            display: inline-block;
+            font-size: 0.8em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 10px;
+        }
+
+        .post-privacy.public {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+
+        .post-privacy.private {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+
+        .tags-container {
+            margin-top: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            background-color: #f1f1f1;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .tag:hover {
+            background-color: #e0e0e0;
+        }
+
+        /* Markdown styling */
+        .markdown-content {
+            line-height: 1.8;
+        }
+
+        .markdown-content h1,
+        .markdown-content h2,
+        .markdown-content h3,
+        .markdown-content h4 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+        }
+
+        .markdown-content p {
+            margin-bottom: 1em;
+        }
+
+        .markdown-content ul,
+        .markdown-content ol {
+            margin-bottom: 1em;
+            padding-left: 2em;
+        }
+
+        .markdown-content blockquote {
+            border-left: 4px solid #ddd;
+            padding-left: 1em;
+            color: #666;
+            margin-left: 0;
+        }
+
+        .markdown-content pre {
+            background-color: #f5f5f5;
+            padding: 1em;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .markdown-content code {
+            background-color: #f5f5f5;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .markdown-content img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .markdown-content hr {
+            border: 0;
+            border-top: 1px solid #ddd;
+            margin: 2em 0;
+        }
+
+        .markdown-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+
+        .markdown-content th,
+        .markdown-content td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .markdown-content th {
+            background-color: #f5f5f5;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        select[multiple] {
+            height: auto;
+            min-height: 100px;
+        }
+
+        .checkbox-field {
+            display: flex;
+            align-items: center;
+        }
+
+        .checkbox-field input {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        .checkbox-field label {
+            font-weight: normal;
+        }
+
+        .help-text {
+            margin-top: 5px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        button, .button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        button:hover, .button:hover {
+            background-color: #45a049;
+        }
+
+        .button-secondary {
+            background-color: #f1f1f1;
+            color: #333;
+        }
+
+        .button-secondary:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="blog-div">
+            <h1 class="mt-1">The Blog Space</h1>
+            <nav>
+                <ul>
+                    <li><a href="{% url 'blog-explore' %}">Read</a></li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'post-create' %}">Write</a></li>
+                        <li><a href="{% url 'manage-tags' %}">Manage Tags</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        <div class="main">
+            {% block window %}{% endblock %}
+        </div>
+    {% block pagination %}{% endblock %}
+    </div>
+{% endblock %}

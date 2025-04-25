@@ -1,0 +1,53 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}- {{ author.username }} Posts{% endblock %}
+
+{% block window %}
+    <div class="header">
+        <h2>Posts by {{ author.username }}</h2>
+    </div>
+
+    {% if posts %}
+        {% for post in posts %}
+            <hr />
+            <article class="post">
+                <h2>
+                    <a href="{% url 'post-detail' post.pk %}">{{ post.title }}</a>
+                    {% if post.is_public %}
+                        <span class="post-privacy public">Public</span>
+                    {% else %}
+                        <span class="post-privacy private">Private</span>
+                    {% endif %}
+                </h2>
+                <div class="post-meta">
+                    Posted by {{ post.author }} on {{ post.date_posted|date:"F d, Y" }}
+                </div>
+
+                <!-- Tags -->
+                {% if post.tag_list %}
+                    <div class="tags-container">
+                        Tags:
+                        {% for tag in post.tag_list %}
+                            <a href="{% url 'tag-posts' tag.id %}" class="tag">{{ tag.label }}</a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="post-content markdown-content">
+                    {{ post.content_html|safe|truncatewords_html:50 }}
+                    <a href="{% url 'post-detail' post.pk %}">Read More</a>
+                </div>
+
+                {% if user.is_authenticated and user == post.author %}
+                    <div class="post-actions">
+                        <a href="{% url 'post-edit' post.pk %}" class="button button-secondary">Edit Post</a>
+                    </div>
+                {% endif %}
+            </article>
+        {% endfor %}
+    {% else %}
+        <p>No posts found with this tag.</p>
+    {% endif %}
+
+    <a href="{% url 'blog-explore' %}" class="button button-secondary">&larr; Back to Home</a>
+{% endblock %}
