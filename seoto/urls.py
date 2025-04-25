@@ -27,6 +27,7 @@ urlpatterns = [
       path('flip_a_coin', Coin.as_view(), name='flip_a_coin'),
       # Login required
       path('jotter/', include('jotter.urls')),
+      path('blog/', include('blog.urls')),
 
   ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

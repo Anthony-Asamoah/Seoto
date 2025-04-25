@@ -1,0 +1,75 @@
+<!-- blog/templates/blog/manage_tags.html -->
+{% extends 'blog/base.html' %}
+
+{% block title %}- Manage Tags{% endblock %}
+
+{% block window %}
+    <div class="header">
+        <h2>Manage Tags</h2>
+    </div>
+
+    <div class="create-tag-form">
+        <h3>Create New Tag</h3>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="tag_label">Tag Label:</label>
+                <input type="text" id="tag_label" name="tag_label" required>
+            </div>
+            <button type="submit">Create Tag</button>
+        </form>
+    </div>
+
+    <div class="tags-list">
+        <h3>Existing Tags</h3>
+        {% if tags %}
+            <table>
+                <thead>
+                <tr>
+                    <th>Tag</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for tag in tags %}
+                    <tr>
+                        <td>{{ tag.label }}</td>
+                        <td>
+                            <a href="{% url 'tag-posts' tag.id %}" class="button button-secondary">View Posts</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No tags have been created yet.</p>
+        {% endif %}
+    </div>
+
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f5f5f5;
+        }
+
+        .create-tag-form {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+    </style>
+
+    <a href="{% url 'blog-explore' %}" class="button button-secondary">&larr; Back to Posts</a>
+{% endblock %}
