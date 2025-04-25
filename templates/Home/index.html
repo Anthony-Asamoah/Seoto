@@ -196,6 +196,20 @@
                             </div>
                         </a>
                     </div>
+                    <div class="card mb-3" onmouseenter="show(10)" onmouseleave="hide(10)">
+                        <a href="{% url 'blog-explore' %}">
+                            <img src="{% static 'img/blog-app-icon.png' %}" class="card-img-top" alt="Icon">
+                            <div class="card-body">
+                                <h5 class="card-title">Blog</h5>
+                                <div class="info" id="info10">
+                                <span class="card-text">
+                                    Knowledge is power!<br />
+                                    Write. Share. Inspire.
+                                </span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
                     <div class="card mb-3" id="card" onmouseenter="show(1)" onmouseleave="hide(1)">
                         <a href="{% url 'foodie' %}">
                             <img src="{% static 'img/food-app-icon.jpg' %}" class="card-img-top" alt="Icon">

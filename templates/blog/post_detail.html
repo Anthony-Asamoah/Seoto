@@ -1,0 +1,59 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}- {{ post.title }}{% endblock %}
+
+{% block window %}
+    <article class="post">
+        <h2>
+            {{ post.title }}
+            {% if post.is_public %}
+                <span class="post-privacy public">Public</span>
+            {% else %}
+                <span class="post-privacy private">Private</span>
+            {% endif %}
+        </h2>
+        <div class="post-meta">
+            Posted by {{ post.author }} on {{ post.date_posted|date:"F d, Y" }}
+        </div>
+
+        <!-- Tags -->
+        {% if post.tag_list %}
+            <div class="tags-container">
+                Tags:
+                {% for tag in post.tag_list %}
+                    <a href="{% url 'tag-posts' tag.id %}" class="tag">{{ tag.label }}</a>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <hr/>
+
+        <div class="post-content markdown-content">
+            {{ post.content_html|safe }}
+        </div>
+        <hr/>
+
+        {% if user.is_authenticated and user == post.author %}
+            <div class="post-actions">
+                <a href="{% url 'post-edit' post.pk %}" class="button button-secondary">Edit Post</a>
+            </div>
+        {% endif %}
+    </article>
+
+    {% if not post.is_public %}
+        <div class="access-info">
+            <h3>Access Information</h3>
+            <p>This post is private and can only be viewed by:</p>
+            <ul>
+                <li>The author ({{ post.author }})</li>
+                {% if post.allowed_users.all %}
+                    <li>Specific allowed users</li>
+                {% endif %}
+                {% if post.allowed_groups.all %}
+                    <li>Members of specific groups</li>
+                {% endif %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <a href="{% url 'blog-explore' %}" class="button button-secondary">&larr; Back to Posts</a>
+{% endblock %}

@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'throw_a_die',
     'flip_a_coin',
     'jotter',
+    'blog',
 
     # Django default apps
     'django.contrib.admin',

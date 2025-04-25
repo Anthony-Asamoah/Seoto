@@ -1,0 +1,102 @@
+<!-- blog/templates/blog/create_post.html -->
+{% extends 'blog/base.html' %}
+
+{% block title %}- New Post{% endblock %}
+
+{% block window %}
+    <div class="header">
+        <h2>Create New Post</h2>
+        <p>Write your post using Markdown for rich formatting.</p>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.title.id_for_label }}">Title:</label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="error">{{ form.title.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.content.id_for_label }}">Content:</label>
+            {{ form.content }}
+            {% if form.content.errors %}
+                <div class="error">{{ form.content.errors }}</div>
+            {% endif %}
+            <div class="help-text">
+                {{ form.content.help_text|safe }}
+            </div>
+        </div>
+
+        <div class="form-group checkbox-field">
+            {{ form.is_public }}
+            <label for="{{ form.is_public.id_for_label }}">Make post public</label>
+            <div class="help-text">
+                {{ form.is_public.help_text }}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.tags.id_for_label }}">Tags:</label>
+            {{ form.tags }}
+            {% if form.tags.errors %}
+                <div class="error">{{ form.tags.errors }}</div>
+            {% endif %}
+            <div class="help-text">
+                {{ form.tags.help_text }}
+            </div>
+        </div>
+
+        <div class="privacy-settings" id="privacySettings">
+            <h3>Privacy Settings</h3>
+            <p>If the post is not public, you can specify who can view it:</p>
+
+            <div class="form-group">
+                <label for="{{ form.allowed_groups.id_for_label }}">Allow Groups:</label>
+                {{ form.allowed_groups }}
+                {% if form.allowed_groups.errors %}
+                    <div class="error">{{ form.allowed_groups.errors }}</div>
+                {% endif %}
+                <div class="help-text">
+                    {{ form.allowed_groups.help_text }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.allowed_users.id_for_label }}">Allow Users:</label>
+                {{ form.allowed_users }}
+                {% if form.allowed_users.errors %}
+                    <div class="error">{{ form.allowed_users.errors }}</div>
+                {% endif %}
+                <div class="help-text">
+                    {{ form.allowed_users.help_text }}
+                </div>
+            </div>
+        </div>
+
+        <button type="submit">Publish Post</button>
+    </form>
+
+    <script>
+        // Toggle privacy settings visibility based on is_public checkbox
+        const isPublicCheckbox = document.getElementById('{{ form.is_public.id_for_label }}');
+        const privacySettings = document.getElementById('privacySettings');
+
+        function updatePrivacySettings() {
+            if (isPublicCheckbox.checked) {
+                privacySettings.style.display = 'none';
+            } else {
+                privacySettings.style.display = 'block';
+            }
+        }
+
+        isPublicCheckbox.addEventListener('change', updatePrivacySettings);
+        // Run once on page load
+        updatePrivacySettings();
+    </script>
+
+    <a href="{% url 'blog-explore' %}" style="display: block; margin-top: 20px;">&larr; Back to Posts</a>
+{% endblock %}
