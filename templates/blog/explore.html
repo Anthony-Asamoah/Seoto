@@ -26,7 +26,7 @@
     {% if page_obj %}
         {% for post in page_obj %}
             <hr/>
-            <article class="media content-section">
+            <article class="media article-listing">
                 <div class="media-body">
                     <div class="article-metadata">
                         <a class="mr-2" href="{% url 'author-posts' post.author.username %}">{{ post.author }}</a>

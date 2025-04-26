@@ -1,4 +1,3 @@
-<!-- blog/templates/blog/manage_tags.html -->
 {% extends 'blog/base.html' %}
 
 {% block title %}- Manage Tags{% endblock %}
@@ -6,6 +5,7 @@
 {% block window %}
     <div class="header">
         <h2>Manage Tags</h2>
+        <hr/>
     </div>
 
     <div class="create-tag-form">
@@ -16,7 +16,7 @@
                 <label for="tag_label">Tag Label:</label>
                 <input type="text" id="tag_label" name="tag_label" required>
             </div>
-            <button type="submit">Create Tag</button>
+            <button type="submit" class="btn btn-success">Create Tag</button>
         </form>
     </div>
 
@@ -35,7 +35,7 @@
                     <tr>
                         <td>{{ tag.label }}</td>
                         <td>
-                            <a href="{% url 'tag-posts' tag.id %}" class="button button-secondary">View Posts</a>
+                            <a href="{% url 'tag-posts' tag.id %}" class="btn btn-secondary">View Posts</a>
                         </td>
                     </tr>
                 {% endfor %}

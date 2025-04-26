@@ -169,7 +169,7 @@ def manage_tags(request):
     )
 
     if request.method == 'POST':
-        tag_label = request.POST.get('tag_label', '').strip()
+        tag_label = request.POST.get('tag_label', '').strip().capitalize()
         if tag_label:
             tag, created = PostTags.objects.get_or_create(label=tag_label)
             if created: return redirect('manage-tags')

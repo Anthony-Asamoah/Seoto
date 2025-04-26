@@ -10,7 +10,7 @@
     {% if posts %}
         {% for post in posts %}
             <hr />
-            <article class="post">
+            <article class="post article-listing">
                 <h2>
                     <a href="{% url 'post-detail' post.pk %}">{{ post.title }}</a>
                     {% if post.is_public %}
@@ -35,19 +35,20 @@
 
                 <div class="post-content markdown-content">
                     {{ post.content_html|safe|truncatewords_html:50 }}
-                    <a href="{% url 'post-detail' post.pk %}">Read More</a>
+                    <a href="{% url 'post-detail' post.pk %}" class="btn btn-outline-primary">Read More</a>
                 </div>
 
                 {% if user.is_authenticated and user == post.author %}
                     <div class="post-actions">
-                        <a href="{% url 'post-edit' post.pk %}" class="button button-secondary">Edit Post</a>
+                        <a href="{% url 'post-edit' post.pk %}" class="btn btn-secondary mt-2">Edit Post</a>
                     </div>
                 {% endif %}
             </article>
         {% endfor %}
     {% else %}
+        <hr />
         <p>No posts found with this tag.</p>
     {% endif %}
 
-    <a href="{% url 'blog-explore' %}" class="button button-secondary">&larr; Back to Home</a>
+    <a href="{% url 'blog-explore' %}" style="display: block; margin-top: 20px;">&larr; Back to Posts</a>
 {% endblock %}
