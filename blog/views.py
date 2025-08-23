@@ -1,4 +1,5 @@
 import markdown
+from django.contrib.admin.templatetags.admin_list import results
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
@@ -6,9 +7,11 @@ from django.db.models import Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 
+from utils.paginator import apply_pagination
 from .forms import PostForm
 from .models import Post, PostTags, PostReadGroup
 
+RESULTS_PER_PAGE = 5
 
 def explore(request):
     if request.user.is_authenticated:
@@ -41,10 +44,7 @@ def explore(request):
     if tag_filter: posts = posts.filter(tags__label=tag_filter)
 
     posts = posts.order_by('-date_posted')
-
-    paginator = Paginator(posts, 5)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
 
     # Convert markdown to HTML for post previews
     for post in page_obj:
@@ -195,7 +195,8 @@ def tag_posts(request, tag_id):
         posts = Post.objects.filter(tags=tag, is_public=True).order_by('-date_posted')
 
     # Convert markdown to HTML for post previews
-    for post in posts:
+    page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
+    for post in page_obj:
         post.content_html = markdown.markdown(
             post.content,
             extensions=['extra', 'codehilite']
@@ -204,7 +205,7 @@ def tag_posts(request, tag_id):
 
     context = {
         'tag': tag,
-        'posts': posts
+        'page_obj': page_obj
     }
     return render(request, 'blog/tag_posts.html', context)
 
@@ -225,8 +226,10 @@ def author_posts(request, username):
     else:
         posts = Post.objects.filter(author=author, is_public=True).order_by('-date_posted')
 
+    print(posts)
     # Convert markdown to HTML for post previews
-    for post in posts:
+    page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
+    for post in page_obj:
         post.content_html = markdown.markdown(
             post.content,
             extensions=['extra', 'codehilite']
@@ -235,6 +238,6 @@ def author_posts(request, username):
 
     context = {
         'author': author,
-        'posts': posts
+        'page_obj': page_obj
     }
     return render(request, 'blog/author_posts.html', context)
