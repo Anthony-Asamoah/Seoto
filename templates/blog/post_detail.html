@@ -31,20 +31,24 @@
         </div>
         <hr/>
 
-        {% if user.is_authenticated %}
-            <div class="post-actions">
-                {% if user == post.author %}
-                    <a href="{% url 'post-edit' post.pk %}" class="btn btn-secondary">Edit Post</a>
-                {% endif %}
-
+        <div class="post-actions">
+            <button type="button" class="btn btn-outline-secondary" data-bs-container="body" data-bs-toggle="popover"
+                    data-bs-placement="top"
+                    data-bs-content="Link copied!"
+                    onclick="copyUrl()"
+            >
+                Share
+            </button>
+            {% if user.is_authenticated and user == post.author %}
+                <a href="{% url 'post-edit' post.pk %}" class="btn btn-secondary">Edit Post</a>
+            {% endif %}
+            {% if user.is_authenticated %}
                 <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createComment"
                         data-bs-whatever="@mdo">
                     Comment Privately
                 </button>
-
-
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </article>
     {% if not post.is_public %}
         <div class="access-info mt-3">
@@ -106,4 +110,20 @@
     </div>
 
 
+{% endblock %}
+
+{% block script %}
+    <script>
+        const copyUrl = async () => {
+            const url = window.location.href;
+            await navigator.clipboard.writeText(url);
+            const popover = new bootstrap.Popover(document.querySelector('[data-bs-toggle="popover"]'), {
+                trigger: 'manual'
+            });
+            popover.show();
+            setTimeout(() => {
+                popover.hide();
+            }, 1000);
+        }
+    </script>
 {% endblock %}
