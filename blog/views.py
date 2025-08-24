@@ -57,11 +57,15 @@ def explore(request):
     # Get all tags for the filter dropdown
     all_tags = PostTags.objects.all()
 
+    # Get popular tags
+    popular_tags = PostTags.objects.all().order_by('-hits')[:5]
+
     context = {
         'page_obj': page_obj,
         'search_query': search_query,
         'tag_filter': tag_filter,
         'all_tags': all_tags,
+        'popular_tags': popular_tags
     }
     return render(request, 'blog/explore.html', context)
 
@@ -92,6 +96,7 @@ def post_detail(request, pk):
     # Get tags for display
     post.tag_list = post.tags.all()
 
+    PostTags.increment_hits(ids=list(post.tag_list.values_list('id', flat=True)))
     return render(request, 'blog/post_detail.html', {'post': post})
 
 
@@ -140,6 +145,8 @@ def create_post(request):
         all_groups = PostReadGroup.objects.all()
     else:
         all_groups = PostReadGroup.objects.filter(users=request.user)
+
+    PostTags.increment_hits(ids=list(all_tags.values_list('id', flat=True)))
 
     return render(request, 'blog/create_post.html', {
         'form': form,
@@ -215,6 +222,9 @@ def tag_posts(request, tag_id):
 
     # Convert markdown to HTML for post previews
     page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
+
+    tag.increment_hits(ids=[tag.id])
+
     for post in page_obj:
         post.content_html = markdown.markdown(
             post.content,

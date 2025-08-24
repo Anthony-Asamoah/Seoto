@@ -1,4 +1,6 @@
 # blog/models.py
+from typing import List
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
@@ -15,8 +17,9 @@ class PostTags(models.Model):
         verbose_name_plural = "Post Tags"
 
     @staticmethod
-    def increment_hits(pk: int):
-        PostTags.objects.filter(pk=pk).update(hits=models.F('hits') + 1)
+    def increment_hits(ids: List[int] = None):
+        if not ids: return
+        PostTags.objects.filter(pk__in=ids).update(hits=models.F('hits') + 1)
 
 
 class PostReadGroup(models.Model):
