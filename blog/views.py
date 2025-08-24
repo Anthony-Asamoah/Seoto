@@ -1,17 +1,16 @@
 import markdown
-from django.contrib.admin.templatetags.admin_list import results
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 
 from utils.paginator import apply_pagination
 from .forms import PostForm
-from .models import Post, PostTags, PostReadGroup
+from .models import Post, PostTags, PostReadGroup, PostComment
 
 RESULTS_PER_PAGE = 5
+
 
 def explore(request):
     if request.user.is_authenticated:
@@ -68,7 +67,7 @@ def explore(request):
 
 
 def post_detail(request, pk):
-    post = get_object_or_404(Post, pk=pk)
+    post = get_object_or_404(Post.objects.prefetch_related('comments'), pk=pk)
 
     # Check if the user has access to this post
     if not post.is_public:
@@ -84,7 +83,6 @@ def post_detail(request, pk):
 
         if not has_access:
             return HttpResponseForbidden("You don't have permission to view this post.")
-
     # Convert markdown to HTML
     post.content_html = markdown.markdown(
         post.content,
@@ -95,6 +93,27 @@ def post_detail(request, pk):
     post.tag_list = post.tags.all()
 
     return render(request, 'blog/post_detail.html', {'post': post})
+
+
+@login_required
+def comment_privately(request, pk):
+    if request.method == 'POST':
+        post = get_object_or_404(Post, pk=pk)
+        comment = request.POST.get('comment', '').strip()
+        if comment: post.comments.create(author=request.user, content=comment)
+
+    return redirect('post-detail', pk=pk)
+
+
+@login_required
+def delete_comment(request, post_pk, comment_pk):
+    if request.method == 'GET':
+        comment = get_object_or_404(PostComment, pk=comment_pk)
+        if not request.user == comment.author: return HttpResponseForbidden(
+            "You don't have permission to delete this comment."
+        )
+        comment.delete()
+    return redirect('post-detail', pk=post_pk)
 
 
 @login_required
