@@ -1,4 +1,5 @@
 import markdown
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
@@ -8,6 +9,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from utils.paginator import apply_pagination
 from .forms import PostForm
 from .models import Post, PostTags, PostReadGroup, PostComment
+from .utils import trigger_author_comment_notification
 
 RESULTS_PER_PAGE = 5
 
@@ -105,7 +107,10 @@ def comment_privately(request, pk):
     if request.method == 'POST':
         post = get_object_or_404(Post, pk=pk)
         comment = request.POST.get('comment', '').strip()
-        if comment: post.comments.create(author=request.user, content=comment)
+        if comment:
+            comment = post.comments.create(author=request.user, content=comment)
+            trigger_author_comment_notification(comment, post)
+            messages.success(request, 'The author has been notified of your comment.')
 
     return redirect('post-detail', pk=pk)
 

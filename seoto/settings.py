@@ -30,6 +30,7 @@ DEBUG = Env.bool('DEBUG')
 SECURE_SSL_REDIRECT = not DEBUG
 
 ALLOWED_HOSTS = Env.tuple('ALLOWED_HOSTS')
+APP_DOMAIN = Env.str('APP_DOMAIN')
 
 # Application definition
 INSTALLED_APPS = [
