@@ -8,6 +8,8 @@ from django.contrib import messages
 
 import logging
 
+from .utils import trigger_user_onboarded_email
+
 
 def register(request):
     if request.method == 'POST':
@@ -15,7 +17,14 @@ def register(request):
         if form.is_valid():
             form.cleaned_data['first_name'] = form.cleaned_data['first_name'].title()
             form.cleaned_data['last_name'] = form.cleaned_data['last_name'].title()
-            form.save()
+            user = form.save()
+            messages.success(request, "Registration Complete")
+
+            try:
+                trigger_user_onboarded_email(user)
+            except:
+                logging.exception("Failed to send user onboarding email")
+
             return redirect('login')
     else:
         form = RegisterForm()
