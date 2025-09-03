@@ -7,16 +7,40 @@
         .header {
             text-align: center;
         }
+
         .main {
             max-width: 600px;
             margin: auto;
         }
+
         .button {
             text-align: right;
             margin: 0 15px;
-            font-family: Roboto;
+            font-family: Roboto, serif;
         }
 
+        .password-toggle {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6c757d;
+            user-select: none;
+            font-size: 14px;
+        }
+
+        .toggle-password:hover {
+            color: #495057;
+        }
+
+        .password-input {
+            padding-right: 40px !important;
+        }
     </style>
     {% include 'partials/_form_style_bootstrap.html' %}
 {% endblock %}
@@ -29,31 +53,59 @@
         </div>
         <div class="main">
             <div class="form">
-              <form method="post">
-                {% csrf_token %}
-                {% for field in form %}
-                  <div class="form-group">
-                    <div class="form-row">
-                        <div class="col-sm-3">
-                            <label for="{{ field.id_for_label }}">{{ field.label_tag }}</label>
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="form-group">
+                            <div class="form-row">
+                                <div class="col-sm-3">
+                                    <label for="{{ field.id_for_label }}">{{ field.label_tag }}</label>
+                                </div>
+                                <div class="col-md-9">
+                                    {% if field.name == 'password1' or field.name == 'password2' %}
+                                        <div class="password-toggle">
+                                            {{ field }}
+                                            <span class="toggle-password"
+                                                  onclick="togglePassword('{{ field.id_for_label }}')">
+                                        <i id="{{ field.id_for_label }}_icon" class="fas fa-eye"></i>
+                                    </span>
+                                        </div>
+                                    {% else %}
+                                        {{ field }}
+                                    {% endif %}
+                                    {% if field.help_text %}
+                                        <small id="{{ field.id_for_label }}Help"
+                                               class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% for error in field.errors %}
+                                        <small class="form-text text-danger">{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-9">
-                            {{ field }}
-                            {% if field.help_text %}
-                              <small id="{{ field.id_for_label }}Help" class="form-text text-muted">{{ field.help_text }}</small>
-                            {% endif %}
-                            {% for error in field.errors %}
-                              <small class="form-text text-danger">{{ error }}</small>
-                            {% endfor %}
-                        </div>
+                    {% endfor %}
+                    <div class="button">
+                        <button class="btn btn-success" type="submit">Register</button>
                     </div>
-                  </div>
-                {% endfor %}
-              <div class="button">
-                  <button class="btn btn-success" type="submit">Register</button>
-              </div>
-              </form>
+                </form>
             </div>
         </div>
     </div>
+
+    <script>
+        function togglePassword(fieldId) {
+            const passwordField = document.getElementById(fieldId);
+            const toggleIcon = document.getElementById(fieldId + '_icon');
+
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+    </script>
 {% endblock %}

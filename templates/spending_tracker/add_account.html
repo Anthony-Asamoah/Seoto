@@ -1,0 +1,157 @@
+<!-- Additional template: templates/spending_tracker/add_account.html -->
+{% extends 'base.html' %}
+
+{% block title %}- Add Account{% endblock %}
+
+{% block style %}
+    <style>
+        .form-card {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-option {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .mode-option.selected {
+            border-color: #007bff !important;
+            background-color: #d5def4;
+        }
+
+        .mode-option:active {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+
+        .mode-option:hover {
+            border-color: #adb5bd;
+        }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <h1>Add New Account</h1>
+    </div>
+
+    <div class="main">
+        <div class="form-card">
+            <form method="post" id="accountForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <div class="mode-selector">
+                        <div class="mode-option checking" data-mode="checking">
+                            <div class="fs-3 mb-2">🏦</div>
+                            <div class="fw-bold">Checking</div>
+                            <small class="text-muted">Daily expenses</small>
+                        </div>
+                        <div class="mode-option savings" data-mode="savings">
+                            <div class="fs-3 mb-2">💰</div>
+                            <div class="fw-bold">Savings</div>
+                            <small class="text-muted">Money saved</small>
+                        </div>
+                        <div class="mode-option credit_card" data-mode="credit_card">
+                            <div class="fs-3 mb-2">💳</div>
+                            <div class="fw-bold">Card</div>
+                            <small class="text-muted">Credit spending</small>
+                        </div>
+                        <div class="mode-option cash" data-mode="cash">
+                            <div class="fs-3 mb-2">💵</div>
+                            <div class="fw-bold">Cash</div>
+                            <small class="text-muted">Physical money</small>
+                        </div>
+                    </div>
+                    {{ form.account_type.as_hidden }}
+                </div>
+
+                <div class="mb-3">
+                    <input type="text" class="form-control" placeholder="Name" name="name" required>
+                    {% if form.name.errors %}
+                        <div class="text-danger small">{{ form.name.errors.0 }}</div>
+                    {% endif %}
+                    <small class="form-text text-muted">Give your account a descriptive name</small>
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.balance.id_for_label }}" class="form-label">Starting Balance *</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="text" class="form-control" name="balance" value="0.00" required>
+                    </div>
+                    {% if form.balance.errors %}
+                        <div class="text-danger small">{{ form.balance.errors.0 }}</div>
+                    {% endif %}
+                    <small class="form-text text-muted">Enter the current/opening balance of this account</small>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'spending_tracker:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-plus"></i> Create Account
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mode selection functionality
+            const modeOptions = document.querySelectorAll('.mode-option');
+            const modeInput = document.getElementById('id_mode');
+
+            modeOptions.forEach(option => {
+                option.addEventListener('click', function () {
+                    // Remove selected class from all options
+                    modeOptions.forEach(opt => opt.classList.remove('selected'));
+
+                    // Add selected class to clicked option
+                    this.classList.add('selected');
+
+                    // Update hidden input value
+                    modeInput.value = this.dataset.mode;
+                });
+            });
+
+            // Set initial selection if form has errors and mode was already selected
+            if (modeInput.value) {
+                document.querySelector(`[data-mode="${modeInput.value}"]`).classList.add('selected');
+            }
+
+            // Form validation
+            document.getElementById('accountForm').addEventListener('submit', function (e) {
+                if (!modeInput.value) {
+                    e.preventDefault();
+                    alert('Please select an account type (checking, savings, etc.)');
+                    return false;
+                }
+            });
+        });
+    </script>
+{% endblock %}
+

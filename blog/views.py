@@ -1,13 +1,17 @@
 import markdown
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 
+from utils.paginator import apply_pagination
 from .forms import PostForm
-from .models import Post, PostTags, PostReadGroup
+from .models import Post, PostTags, PostReadGroup, PostComment
+from .utils import trigger_author_comment_notification
+
+RESULTS_PER_PAGE = 5
 
 
 def explore(request):
@@ -41,10 +45,7 @@ def explore(request):
     if tag_filter: posts = posts.filter(tags__label=tag_filter)
 
     posts = posts.order_by('-date_posted')
-
-    paginator = Paginator(posts, 5)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
 
     # Convert markdown to HTML for post previews
     for post in page_obj:
@@ -58,17 +59,21 @@ def explore(request):
     # Get all tags for the filter dropdown
     all_tags = PostTags.objects.all()
 
+    # Get popular tags
+    popular_tags = PostTags.objects.all().order_by('-hits')[:5]
+
     context = {
         'page_obj': page_obj,
         'search_query': search_query,
         'tag_filter': tag_filter,
         'all_tags': all_tags,
+        'popular_tags': popular_tags
     }
     return render(request, 'blog/explore.html', context)
 
 
 def post_detail(request, pk):
-    post = get_object_or_404(Post, pk=pk)
+    post = get_object_or_404(Post.objects.prefetch_related('comments'), pk=pk)
 
     # Check if the user has access to this post
     if not post.is_public:
@@ -84,7 +89,6 @@ def post_detail(request, pk):
 
         if not has_access:
             return HttpResponseForbidden("You don't have permission to view this post.")
-
     # Convert markdown to HTML
     post.content_html = markdown.markdown(
         post.content,
@@ -94,7 +98,32 @@ def post_detail(request, pk):
     # Get tags for display
     post.tag_list = post.tags.all()
 
+    PostTags.increment_hits(ids=list(post.tag_list.values_list('id', flat=True)))
     return render(request, 'blog/post_detail.html', {'post': post})
+
+
+@login_required
+def comment_privately(request, pk):
+    if request.method == 'POST':
+        post = get_object_or_404(Post, pk=pk)
+        comment = request.POST.get('comment', '').strip()
+        if comment:
+            comment = post.comments.create(author=request.user, content=comment)
+            trigger_author_comment_notification(comment, post)
+            messages.success(request, 'The author has been notified of your comment.')
+
+    return redirect('post-detail', pk=pk)
+
+
+@login_required
+def delete_comment(request, post_pk, comment_pk):
+    if request.method == 'GET':
+        comment = get_object_or_404(PostComment, pk=comment_pk)
+        if not request.user == comment.author: return HttpResponseForbidden(
+            "You don't have permission to delete this comment."
+        )
+        comment.delete()
+    return redirect('post-detail', pk=post_pk)
 
 
 @login_required
@@ -121,6 +150,8 @@ def create_post(request):
         all_groups = PostReadGroup.objects.all()
     else:
         all_groups = PostReadGroup.objects.filter(users=request.user)
+
+    PostTags.increment_hits(ids=list(all_tags.values_list('id', flat=True)))
 
     return render(request, 'blog/create_post.html', {
         'form': form,
@@ -195,7 +226,11 @@ def tag_posts(request, tag_id):
         posts = Post.objects.filter(tags=tag, is_public=True).order_by('-date_posted')
 
     # Convert markdown to HTML for post previews
-    for post in posts:
+    page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
+
+    tag.increment_hits(ids=[tag.id])
+
+    for post in page_obj:
         post.content_html = markdown.markdown(
             post.content,
             extensions=['extra', 'codehilite']
@@ -204,7 +239,7 @@ def tag_posts(request, tag_id):
 
     context = {
         'tag': tag,
-        'posts': posts
+        'page_obj': page_obj
     }
     return render(request, 'blog/tag_posts.html', context)
 
@@ -225,8 +260,10 @@ def author_posts(request, username):
     else:
         posts = Post.objects.filter(author=author, is_public=True).order_by('-date_posted')
 
+    print(posts)
     # Convert markdown to HTML for post previews
-    for post in posts:
+    page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
+    for post in page_obj:
         post.content_html = markdown.markdown(
             post.content,
             extensions=['extra', 'codehilite']
@@ -235,6 +272,6 @@ def author_posts(request, username):
 
     context = {
         'author': author,
-        'posts': posts
+        'page_obj': page_obj
     }
     return render(request, 'blog/author_posts.html', context)

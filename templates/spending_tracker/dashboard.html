@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% block title %} - Spending Dashboard {% endblock %}
+
+{% block style %}
+    <style>
+        .stats-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .income {
+            color: #27ae60 !important;
+        }
+
+        .expense {
+            color: #e74c3c !important;
+        }
+
+        .balance {
+            color: #3498db !important;
+        }
+
+        .account-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .transaction-item {
+            background: white;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-left: 3px solid transparent;
+        }
+
+        .transaction-item.income {
+            border-left-color: #27ae60;
+        }
+
+        .transaction-item.expense {
+            border-left-color: #e74c3c;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <h1>Expense & Income</h1>
+    </div>
+
+    <div class="main container">
+        <!-- Financial Overview -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card text-center">
+                    <div class="stat-value balance">${{ total_balance|floatformat:2 }}</div>
+                    <div class="stat-label">Total Balance</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card text-center">
+                    <div class="stat-value income">+${{ monthly_income|floatformat:2 }}</div>
+                    <div class="stat-label">Monthly Income</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card text-center">
+                    <div class="stat-value expense">-${{ monthly_expense|floatformat:2 }}</div>
+                    <div class="stat-label">Monthly Expenses</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="stats-card text-center">
+                    <div class="stat-value {% if net_monthly >= 0 %}income{% else %}expense{% endif %}">
+                        {% if net_monthly >= 0 %}+{% endif %}&dollar;{{ net_monthly|floatformat:2 }}
+                    </div>
+                    <div class="stat-label">Net Monthly</div>
+                </div>
+            </div>
+        </div>
+        <div class="quick-actions">
+            <a href="{% url 'spending_tracker:reports' %}" class="btn btn-outline-primary btn-sm">Detailed Analysis</a>
+            <a href="{% url 'spending_tracker:transaction_list' %}" class="btn btn-outline-primary btn-sm">Transaction
+                History</a>
+        </div>
+        <hr/>
+
+        <div class="row">
+            <!-- Accounts Overview -->
+            <div class="col-lg-6">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>📊 Your Accounts</h3>
+                    <a href="{% url 'spending_tracker:add_account' %}" class="btn btn-outline-primary btn-sm">Add
+                        Account</a>
+                </div>
+
+                {% for account in accounts %}
+                    <div class="account-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ account.name }}</h6>
+                                <small class="text-muted">{{ account.transactions.count }} transactions</small>
+                            </div>
+                            <div class="mb-3">
+                                <p class="">Balance: {{ account.balance }}</p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Accounts Overview -->
+            <div class="col-lg-6">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>💳 Recent Transactions</h3>
+                    <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-outline-primary btn-sm">Transact</a>
+                </div>
+
+                {% for transaction in recent_transactions %}
+                    <div class="account-card"
+                         style="border-left: 4px solid {% if transaction.mode == 'INCOME' %} Green {% else %} Red {% endif %};">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ transaction }}</h6>
+                                <small class="text-muted">{{ transactions.reference }} </small>
+                            </div>
+                            <div class="mb-3">
+                                {% for tag in transaction.tags.all %}
+                                    <button class="btn-sm btn-secondary btn">Tags: {{ tag.label }}</button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+{% endblock %}

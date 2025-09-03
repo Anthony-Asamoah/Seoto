@@ -1,7 +1,6 @@
 {% extends 'blog/base.html' %}
 
 {% block title %}- {{ post.title }}{% endblock %}
-
 {% block window %}
     <article class="post">
         <h2>
@@ -32,13 +31,25 @@
         </div>
         <hr/>
 
-        {% if user.is_authenticated and user == post.author %}
-            <div class="post-actions">
+        <div class="post-actions">
+            <button type="button" class="btn btn-outline-secondary" data-bs-container="body" data-bs-toggle="popover"
+                    data-bs-placement="top"
+                    data-bs-content="Link copied!"
+                    onclick="copyUrl()"
+            >
+                Share
+            </button>
+            {% if user.is_authenticated and user == post.author %}
                 <a href="{% url 'post-edit' post.pk %}" class="btn btn-secondary">Edit Post</a>
-            </div>
-        {% endif %}
+            {% endif %}
+            {% if user.is_authenticated %}
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createComment"
+                        data-bs-whatever="@mdo">
+                    Comment Privately
+                </button>
+            {% endif %}
+        </div>
     </article>
-
     {% if not post.is_public %}
         <div class="access-info mt-3">
             <h3>Access Information</h3>
@@ -56,4 +67,62 @@
     {% endif %}
 
     <a href="{% url 'blog-explore' %}" style="display: block; margin-top: 20px;">&larr; Back to Posts</a>
+
+    <!-- Comments -->
+    {% if post.comments.all and user == post.author %}
+        <div class="comments mt-2" style="background-color: white; padding: 20px;">
+            <h4>Comments</h4>
+            {% for comment in post.comments.all %}
+                <hr/>
+                <div class="comment">
+                    <p><strong>@{{ comment.author.username }}</strong> on {{ comment.date_posted|date:"F d, Y" }}</p>
+                    <p>{{ comment.content }}</p>
+                    <a href="{% url 'delete-comment' post_pk=post.pk comment_pk=comment.pk %}" methods="delete"
+                       class="btn btn-warning btn-sm">Delete</a>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="modal fade" data-bs-backdrop="static" id="createComment" tabindex="-1" aria-labelledby="createCommentLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form method="post" action="{% url 'comment-privately' post.pk %}">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="createCommentLabel">Comment Privately</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Leave a comment that can only be seen by you and the author.
+                        {% csrf_token %}
+                        <div class="mb-3 mt-3">
+                            <textarea class="form-control" id="comment" name="comment" placeholder="Enter text here"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-warning" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Post</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+{% endblock %}
+
+{% block script %}
+    <script>
+        const copyUrl = async () => {
+            const url = window.location.href;
+            await navigator.clipboard.writeText(url);
+            const popover = new bootstrap.Popover(document.querySelector('[data-bs-toggle="popover"]'), {
+                trigger: 'manual'
+            });
+            popover.show();
+            setTimeout(() => {
+                popover.hide();
+            }, 1000);
+        }
+    </script>
 {% endblock %}

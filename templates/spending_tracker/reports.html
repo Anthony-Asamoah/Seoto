@@ -1,0 +1,458 @@
+{% load static %}
+{{ trend_data|json_script:"trend-data" }}
+{{ json_expense_categories|json_script:"expense-categories-data" }}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Seoto - Financial Reports</title>
+
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'img/logo.ico' %}">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .navbar-brand {
+            padding: 0 15px;
+            transition: 0.1s ease;
+        }
+
+        .navbar-brand:hover {
+            font-weight: 300;
+        }
+
+        .crumb {
+            text-decoration: none;
+            color: #175a9c;
+            transition: 0.3s ease;
+        }
+
+        .crumb:hover {
+            text-decoration: underline;
+            font-weight: 400;
+            margin-left: 5px;
+        }
+
+        #message {
+            text-align: center;
+        }
+
+        body {
+            margin-bottom: 100px;
+        }
+
+        .header {
+        {# Window load effects #} transition: .5s ease;
+            opacity: 0;
+            padding: 0;
+        {# End of effects #}
+        }
+
+        .main {
+        {# Window load effects #} transition: .5s ease;
+            opacity: 0;
+            padding: 30px;
+        {# End of effects #} background-color: whitesmoke;
+        }
+
+        .header h1 {
+            text-align: center;
+        }
+
+        footer {
+            position: fixed;
+            width: 100%;
+            height: 50px;
+            bottom: 0;
+            left: 0;
+            overflow: hidden;
+            text-align: center;
+            background-color: whitesmoke;
+        }
+
+        .footer {
+            font-family: monospace;
+            margin-top: 12px;
+        }
+
+        @media screen and (max-width: 481px) {
+            footer {
+                font-size: 12px;
+                height: 25px;
+            }
+
+            .footer {
+                margin-top: 4px;
+            }
+
+            h1, h2 {
+                font-size: 1.5em;
+            }
+
+            h3, h4 {
+                font-size: 1.3em;
+            }
+
+            h5, h6 {
+                font-size: 1.2em;
+            }
+        }
+
+        .report-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 6px;
+            color: #6c757d;
+        }
+
+        .period-selector {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #007bff;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+
+</head>
+<body>
+{% include 'partials/_nav.html' %}
+{% include 'partials/_messages.html' %}
+
+
+<div class="header">
+    <h1><a href="{% url 'spending_tracker:dashboard' %}" class="crumb">Expense & Income</a> - Reports</h1>
+</div>
+
+<div class="main container">
+    <!-- Period Selector -->
+    <div class="period-selector">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0">Reporting Period</h5>
+            </div>
+            <div class="col-md-6">
+                <div class="btn-group float-end" role="group">
+                    <input type="radio" class="btn-check" name="period" id="period-week" autocomplete="off"
+                           onclick="SetDateFilter('week')"
+                           {% if period == 'week' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="period-week">This Week</label>
+
+                    <input type="radio" class="btn-check" name="period" id="period-month" autocomplete="off"
+                           onclick="SetDateFilter('month')"
+                           {% if period == 'month' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="period-month">This Month</label>
+
+                    <input type="radio" class="btn-check" name="period" id="period-year" autocomplete="off"
+                           onclick="SetDateFilter('year')"
+                           {% if period == 'year' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="period-year">This Year</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Cards -->
+    <div class="metric-grid">
+        <div class="metric-card" style="border-left-color: #27ae60;">
+            <div class="metric-value" style="color: #27ae60;">+${{ total_income }}</div>
+            <div class="metric-label">Total Income</div>
+        </div>
+        <div class="metric-card" style="border-left-color: #e74c3c;">
+            <div class="metric-value" style="color: #e74c3c;">-${{ total_expenses }}</div>
+            <div class="metric-label">Total Expenses</div>
+        </div>
+        <div class="metric-card" style="border-left-color: #3498db;">
+            <div class="metric-value" style="color: #3498db;">+${{ net_income }}</div>
+            <div class="metric-label">Net Income</div>
+        </div>
+        <div class="metric-card" style="border-left-color: #f39c12;">
+            <div class="metric-value" style="color: #f39c12;">{{ savings_rate }}%</div>
+            <div class="metric-label">Savings Rate</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row">
+        <!-- Income vs Expenses Chart -->
+        <div class="col-lg-8">
+            <div class="report-card">
+                <h5 class="mb-3">📈 Income vs Expenses Trend</h5>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Category Breakdown -->
+        <div class="col-lg-4">
+            <div class="report-card">
+                <h5 class="mb-3">🏷️ Expense Categories</h5>
+                <div class="chart-container">
+                    <div class="pie-chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <div class="category-list mt-3" id="categoryList">
+                        <!-- Category list will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Income & Expense Sources -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="report-card">
+                <h5 class="mb-3">💰 Top Income Sources</h5>
+                <div class="list-group list-group-flush">
+                    {% for income in income_categories %}
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>{{ income.category__label }}</span>
+                            <span class="fw-bold text-success">+${{ income.total | floatformat:2 }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="report-card">
+                <h5 class="mb-3">💸 Top Expense Categories</h5>
+                <div class="list-group list-group-flush">
+                    {% for expense in expense_categories %}
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>{{ expense.category__label }}</span>
+                            <span class="fw-bold text-danger">-${{ expense.total | floatformat:2 }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Performance -->
+    <div class="report-card">
+        <h5 class="mb-3">🏦 Account Performance</h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                <tr>
+                    <th>Account</th>
+                    <th>Starting Balance</th>
+                    <th>Total Income</th>
+                    <th>Total Expenses</th>
+                    <th>Current Balance</th>
+                    <th>Change</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in account_performance %}
+                    <tr>
+                        <td><strong>{{ row.account }}</strong></td>
+                        <td>${{ row.starting_balance }}</td>
+                        <td class="text-success">+${{ row.income }}</td>
+                        <td class="text-danger">-${{ row.expenses }}</td>
+                        <td><strong>${{ row.current_balance }}</strong></td>
+                        <td class="text-success">+${{ row.net_change }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/@popperjs/core@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    SetDateFilter = (period) => {
+        window.location.href = `{% url 'spending_tracker:reports' %}?period=${period}`;
+    }
+
+    function initCharts() {
+        // Category chart
+        const expenseCategoryData = JSON.parse(document.getElementById("expense-categories-data").textContent);
+        // Extract values
+        const expenseLabels = expenseCategoryData.map(item => item.label);
+        const expenseTotal = expenseCategoryData.map(item => item.total);
+        const expenseCount = expenseCategoryData.map(item => item.count);
+
+        const categoryCanvas = document.getElementById('categoryChart');
+        if (categoryCanvas) {
+            const ctxCategory = categoryCanvas.getContext('2d');
+            new Chart(ctxCategory, {
+                type: 'bar',
+                data: {
+                    labels: expenseLabels,
+                    datasets: [{
+                        label: 'categories',
+                        data: expenseTotal,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {beginAtZero: true}
+                    }
+                }
+            });
+        }
+        // trend chart
+        // Parse JSON into JS array
+        const trendData = JSON.parse(document.getElementById("trend-data").textContent);
+
+        // Extract values
+        const labels = trendData.map(item => item.date);
+        const incomes = trendData.map(item => item.income);
+        const expenses = trendData.map(item => item.expenses);
+
+        const canvas = document.getElementById('trendChart');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            const data = {
+                labels: labels,
+                datasets: [{
+                    label: 'Income',
+                    data: incomes,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'Expense',
+                    data: expenses,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1
+                }],
+            };
+
+            const config = {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: false,
+                                text: 'Time'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Amount'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 4,
+                            hoverRadius: 6
+                        }
+                    }
+                }
+            };
+
+            const myChart = new Chart(ctx, config);
+
+        }
+
+    }
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Animation function
+        function show() {
+            let canvas = document.querySelector('.main');
+            let head = document.querySelector('.header');
+
+            if (canvas) {
+                canvas.style.opacity = '1';
+                canvas.style.padding = '20px';
+            }
+            if (head) {
+                head.style.opacity = '1';
+                head.style.padding = '5px';
+            }
+        }
+
+        // Trigger animation after a delay
+        setTimeout(show, 250);
+
+        // Optional: Add debug logging for modal (Bootstrap 5 syntax)
+        const myModal = document.getElementById('myModal');
+        if (myModal) {
+            myModal.addEventListener('show.bs.modal', function (event) {
+                console.log('Modal is about to show');
+            });
+
+            myModal.addEventListener('shown.bs.modal', function (event) {
+                console.log('Modal is now visible');
+            });
+        }
+
+        initCharts()
+    });
+</script>
+{% include 'partials/_footer.html' %}
+
+</body>
+</html>
