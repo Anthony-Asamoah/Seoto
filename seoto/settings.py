@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'flip_a_coin',
     'jotter',
     'blog',
+    'spending_tracker',
 
     # Django default apps
     'django.contrib.admin',

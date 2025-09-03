@@ -28,6 +28,7 @@ urlpatterns = [
       # Login required
       path('jotter/', include('jotter.urls')),
       path('blog/', include('blog.urls')),
+      path('spending_tracker/', include('spending_tracker.urls')),
 
   ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
