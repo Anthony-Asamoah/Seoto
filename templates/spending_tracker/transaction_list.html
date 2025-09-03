@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% block title %}- Transactions{% endblock %}
+
+{% block style %}
+<style>
+    .filter-card {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .transaction-row {
+        background: white;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 8px;
+        border-left: 4px solid #dee2e6;
+        transition: all 0.2s ease;
+    }
+    .transaction-row:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transform: translateY(-1px);
+    }
+    .transaction-row.income {
+        border-left-color: #27ae60;
+    }
+    .transaction-row.expense {
+        border-left-color: #e74c3c;
+    }
+    .amount-display {
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    .income-amount {
+        color: #27ae60;
+    }
+    .expense-amount {
+        color: #e74c3c;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1><a href="{% url 'spending_tracker:dashboard' %}" class="crumb">Expense & Income</a> | History</h1>
+</div>
+
+<div class="main container">
+    <!-- Filters -->
+    <div class="filter-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Transaction Type</label>
+                <select name="mode" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="INCOME" {% if request.GET.mode == 'INCOME' %}selected{% endif %}>Income</option>
+                    <option value="EXPENSE" {% if request.GET.mode == 'EXPENSE' %}selected{% endif %}>Expense</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-select">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Account</label>
+                <select name="account" class="form-select">
+                    <option value="">All Accounts</option>
+                    {% for account in accounts %}
+                    <option value="{{ account.id }}" {% if request.GET.account == account.id|stringformat:"s" %}selected{% endif %}>
+                        {{ account.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">Filter</button>
+                    <a href="{% url 'spending_tracker:transaction_list' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Add Transaction Button -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>
+            {% if request.GET.mode %}
+                {{ request.GET.mode|capfirst }} Transactions
+            {% else %}
+                All Transactions
+            {% endif %}
+            <span class="badge bg-primary">{{ transactions.count }}</span>
+        </h4>
+        <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-success">
+            <i class="fas fa-plus"></i> New Transaction
+        </a>
+    </div>
+
+    <!-- Transactions List -->
+    {% for transaction in page_obj %}
+    <div class="transaction-row {{ transaction.mode }}" style="border-left: 4px solid {% if transaction.mode == 'INCOME' %} Green {% else %} Red {% endif %};">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <div class="d-flex align-items-center">
+                    <div class="me-2">
+                        {% if transaction.mode == 'INCOME' %}
+                        <span class="fs-4">💰</span>
+                        {% else %}
+                        <span class="fs-4">💸</span>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="fw-bold">{{ transaction.get_mode_display }}</div>
+                        <small class="text-muted">{{ transaction.time|date:"M d, Y" }}</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="fw-bold">{{ transaction.category.label|default:"Uncategorized" }}</div>
+                <small class="text-muted">{{ transaction.account.name }}</small>
+            </div>
+
+            <div class="col-md-4">
+                {% if transaction.details %}
+                <div class="mb-1">{{ transaction.details|truncatechars:80 }}</div>
+                {% endif %}
+                {% if transaction.reference %}
+                <small class="text-muted">Ref: {{ transaction.reference }}</small>
+                {% endif %}
+                {% if transaction.tags.exists %}
+                <div class="mt-1">
+                    {% for tag in transaction.tags.all %}
+                    <span class="badge bg-secondary me-1">{{ tag.label }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-md-2 text-end">
+                <div class="amount-display {% if transaction.mode == 'INCOME' %}income-amount{% else %}expense-amount{% endif %}">
+                    {% if transaction.mode == 'INCOME' %}+{% else %}-{% endif %}
+                    {{ transaction.currency }} {{ transaction.amount|floatformat:2 }}
+                </div>
+                <small class="text-muted">{{ transaction.time|time:"H:i" }}</small>
+            </div>
+
+            <div class="col-md-1 text-end">
+                <a class="btn btn-outline-secondary" href="{% url 'spending_tracker:delete_transaction' transaction.id %}">Reverse</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="alert alert-info text-center">
+        <i class="fas fa-info-circle mb-3 fs-1"></i>
+        <h4>No transactions found</h4>
+        <p>{% if request.GET %}Try adjusting your filters or{% endif %}
+           <a href="{% url 'spending_tracker:add_transaction' %}">add your first transaction</a> to get started!
+        </p>
+    </div>
+    {% endfor %}
+</div>
+
+    {% if page_obj.has_other_pages %}
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if tag_filter %}&tag={{ tag_filter }}{% endif %}">&laquo;
+                            First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page=
+                                   {{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}
+                            {% endif %}
+                            {% if tag_filter %}&tag={{ tag_filter }}
+                            {% endif %}">
+                            Previous</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">&laquo; First</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">Previous</a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <a class="page-link" href="#">{{ num }} <span class="sr-only">(current)</span></a>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page={{ num }}
+                                {% if search_query %}&search={{ search_query }}
+                                {% endif %}
+                                {% if tag_filter %}&tag={{ tag_filter }}
+                                {% endif %}">{{ num }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}
+                        {% if search_query %}&search={{ search_query }}
+                        {% endif %}
+                        {% if tag_filter %}&tag={{ tag_filter }}
+                        {% endif %}">Next
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=
+                            {{ page_obj.paginator.num_pages }}
+                            {% if search_query %}&search={{ search_query }}
+                            {% endif %}
+                            {% if tag_filter %}&tag={{ tag_filter }}
+                            {% endif %}">Last
+                            &raquo;</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">Next</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">Last &raquo;</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+
+{% endblock %}

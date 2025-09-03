@@ -22,6 +22,14 @@
             </div>
         </form>
     </div>
+    <div class="popular-tags">
+        {% if popular_tags %}
+            <h5>Trending...</h5>
+            {% for tag in popular_tags %}
+                <a href="{% url 'tag-posts' tag.id %}" class="btn btn-outline-secondary btn-sm">{{ tag.label }}</a>
+            {% endfor %}
+        {% endif %}
+    </div>
 
     {% if page_obj %}
         {% for post in page_obj %}
