@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}| Foodie Config{% endblock %}
+
+{% block style %}
+    <style>
+        .nav-links a { margin-right: 8px; }
+        .meal-list { max-width: 900px; margin: 0 auto; }
+        .meal-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .meal-item label { margin-left: 8px; flex: 1; }
+        .subtitle { color: #777; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="header container">
+            <h1>Configure your menu{% if mealtime %} for {{ mealtime_readable }}{% endif %}</h1>
+            <hr />
+            <p class="subtitle">Select which meals should appear for each time of day.</p>
+            <div class="nav-links">
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_config_time' 'breakfast' %}">Breakfast</a>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_config_time' 'brunch' %}">Brunch</a>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_config_time' 'lunch' %}">Lunch</a>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_config_time' 'dinner' %}">Dinner</a>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_config_time' 'extra' %}">Extra</a>
+            </div>
+        </div>
+
+        {% if mealtime %}
+            <div class="meal-list">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for m in meals %}
+                        <div class="meal-item">
+                            <input type="checkbox" id="meal_{{ m.id }}" name="selected_meals" value="{{ m.id }}" {% if m.id in selected_ids %}checked{% endif %}>
+                            <label for="meal_{{ m.id }}">{{ m.name }}</label>
+                            {% if m.description %}<small class="text-muted">{{ m.description|truncatechars:80 }}</small>{% endif %}
+                        </div>
+                    {% empty %}
+                        <p>No meals found. Please add meals in admin.</p>
+                    {% endfor %}
+                    <div class="mt-3">
+                        <button class="btn btn-primary" type="submit">Save</button>
+                        <a class="btn btn-secondary" href="{% url 'foodie' %}">Back</a>
+                    </div>
+                </form>
+            </div>
+        {% else %}
+            <div class="container">
+                <p>Choose a time above to configure its menu.</p>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        // no-op
+    </script>
+{% endblock %}
