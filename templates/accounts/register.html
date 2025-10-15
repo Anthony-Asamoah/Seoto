@@ -41,6 +41,27 @@
         .password-input {
             padding-right: 40px !important;
         }
+
+        .form-actions {
+            text-align: center;
+        }
+
+        .register-btn {
+            font-family: "Poppins", sans-serif;
+            font-weight: 600;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .btn-text {
+            display: inline-block;
+            opacity: 1;
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .btn-text.fade-out {
+            opacity: 0;
+        }
     </style>
     {% include 'partials/_form_style_bootstrap.html' %}
 {% endblock %}
@@ -58,10 +79,14 @@
                     {% for field in form %}
                         <div class="form-group">
                             <div class="form-row">
-                                <div class="col-sm-3">
-                                    <label for="{{ field.id_for_label }}">{{ field.label_tag }}</label>
+                                <div class="col-sm-5">
+                                    {% if field.name == 'username' %}
+                                        <label for="{{ field.id_for_label }}">Set your username</label>
+                                    {% else %}
+                                        <label for="{{ field.id_for_label }}">{{ field.label_tag }}</label>
+                                    {% endif %}
                                 </div>
-                                <div class="col-md-9">
+                                <div class="col-md">
                                     {% if field.name == 'password1' or field.name == 'password2' %}
                                         <div class="password-toggle">
                                             {{ field }}
@@ -69,6 +94,14 @@
                                                   onclick="togglePassword('{{ field.id_for_label }}')">
                                         <i id="{{ field.id_for_label }}_icon" class="fas fa-eye"></i>
                                     </span>
+                                        </div>
+                                    {% elif field.name == 'username' %}
+                                        <div class="input-group mb-3">
+                                            <span class="input-group-text" id="basic-addon1">@</span>
+                                            <input type="text" class="form-control"
+                                                   aria-label="username" aria-describedby="basic-addon1"
+                                                   name="username"
+                                            >
                                         </div>
                                     {% else %}
                                         {{ field }}
@@ -84,8 +117,10 @@
                             </div>
                         </div>
                     {% endfor %}
-                    <div class="button">
-                        <button class="btn btn-success" type="submit">Register</button>
+                    <div class="button form-actions mt-3">
+                        <button class="btn btn-success register-btn" type="submit">
+                            <span class="btn-text" id="btnText">Begin</span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -107,5 +142,60 @@
                 toggleIcon.classList.add('fa-eye');
             }
         }
+
+        const ctaTitles = [
+            // 🔥 Action-Oriented (Dynamic)
+            "Enter",
+            "Proceed",
+            "Advance",
+            "Begin",
+            "Dive In",
+            "Step In",
+            "Move Forward",
+            "Engage",
+            "Launch",
+            "Ascend",
+
+            // 💫 Thematic / Stylized
+            "Initiate",
+            "Unfold",
+            "Awaken",
+            "Commence",
+            "Ignite",
+            "Emerge",
+            "Embark",
+            "Break In",
+            "Rise",
+            "Unveil",
+
+            // 🧭 Mysterious / Immersive
+            "Enter the Realm",
+            "Begin Descent",
+            "Step Inside",
+            "Take the Leap",
+            "Cross Over",
+            "Unlock the Gate",
+            "Join the Descent",
+            "Open the Path"
+        ];
+
+        // Animate button text with word slideshow
+        let currentIndex = 0;
+        const btnText = document.getElementById('btnText');
+
+        function animateButtonText() {
+            // Fade out
+            btnText.classList.add('fade-out');
+
+            // After fade out completes, change text and fade in
+            setTimeout(() => {
+                currentIndex = (currentIndex + 1) % ctaTitles.length;
+                btnText.textContent = ctaTitles[currentIndex];
+                btnText.classList.remove('fade-out');
+            }, 500); // Match CSS transition duration
+        }
+
+        // Start animation loop (every 3 seconds)
+        setInterval(animateButtonText, 2500);
     </script>
 {% endblock %}
