@@ -1,14 +1,14 @@
 from django import forms
 
-from .models import Transaction, Account
+from .models import Transaction, Account, Category
 
 
 class TransactionForm(forms.ModelForm):
     class Meta:
         model = Transaction
-        fields = ['mode', 'amount', 'currency', 'details', 'reference', 'account', 'category', 'tags']
+        fields = ['mode', 'amount', 'currency', 'details', 'reference', 'account', 'category', 'tags', 'transaction_time']
         widgets = {
-            'created_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'transaction_time': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'details': forms.Textarea(attrs={'rows': 3}),
             'tags': forms.CheckboxSelectMultiple(),
         }
@@ -19,6 +19,7 @@ class TransactionForm(forms.ModelForm):
 
         if user:
             self.fields['account'].queryset = Account.objects.filter(user=user)
+            self.fields['category'].queryset = Category.objects.filter(user=user)
 
 
 class AccountForm(forms.ModelForm):
@@ -27,4 +28,13 @@ class AccountForm(forms.ModelForm):
         fields = ['name', 'balance', 'account_type']
         widgets = {
             'balance': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
+        }
+
+
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['label', 'description']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 2}),
         }

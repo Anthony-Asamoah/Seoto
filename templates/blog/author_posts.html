@@ -47,7 +47,7 @@
         {% endfor %}
     {% else %}
         <hr/>
-        <p>No posts found with this tag.</p>
+        <p>You have no posts. <a href="{% url 'post-create' %}" class="first-post"><button class="first-post btn btn-outline-secondary">Create one</button></a> to find it here...</p>
     {% endif %}
 
     <a href="{% url 'blog-explore' %}" style="display: block; margin-top: 20px;">&larr; Back to Posts</a>

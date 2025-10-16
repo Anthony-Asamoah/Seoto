@@ -12,7 +12,7 @@
                 {% if user.first_name %}
                     | {{ user.first_name | title }}
                 {% else %}
-                    | {{ user.username | title }}
+                    | @{{ user.username | title }}
                 {% endif %}
             </a>
         {% else %}

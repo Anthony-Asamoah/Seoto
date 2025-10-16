@@ -135,28 +135,15 @@ def create_post(request):
             post.author = request.user
             post.save()
 
-            # Handle M2M relationships after save
-            form.save_m2m()  # This saves the tags field
+            # Tags are now handled in the form's save method
+            form.save(commit=True)
 
             return redirect('post-detail', pk=post.pk)
     else:
         form = PostForm()
 
-    # Get all available tags for UI
-    all_tags = PostTags.objects.all()
-
-    # Get all available read groups for UI
-    if request.user.is_staff:
-        all_groups = PostReadGroup.objects.all()
-    else:
-        all_groups = PostReadGroup.objects.filter(users=request.user)
-
-    PostTags.increment_hits(ids=list(all_tags.values_list('id', flat=True)))
-
     return render(request, 'blog/create_post.html', {
-        'form': form,
-        'all_tags': all_tags,
-        'all_groups': all_groups
+        'form': form
     })
 
 
@@ -176,20 +163,9 @@ def edit_post(request, pk):
     else:
         form = PostForm(instance=post)
 
-    # Get all available tags for UI
-    all_tags = PostTags.objects.all()
-
-    # Get all available read groups for UI
-    if request.user.is_staff:
-        all_groups = PostReadGroup.objects.all()
-    else:
-        all_groups = PostReadGroup.objects.filter(users=request.user)
-
     return render(request, 'blog/edit_post.html', {
         'form': form,
-        'post': post,
-        'all_tags': all_tags,
-        'all_groups': all_groups
+        'post': post
     })
 
 
@@ -200,10 +176,14 @@ def manage_tags(request):
     )
 
     if request.method == 'POST':
-        tag_label = request.POST.get('tag_label', '').strip().capitalize()
+        tag_label = request.POST.get('tag_label', '').strip().lower()
         if tag_label:
             tag, created = PostTags.objects.get_or_create(label=tag_label)
-            if created: return redirect('manage-tags')
+            if created:
+                messages.success(request, f'Tag "{tag_label}" created successfully.')
+            else:
+                messages.info(request, f'Tag "{tag_label}" already exists.')
+            return redirect('manage-tags')
 
     tags = PostTags.objects.all().order_by('label')
     return render(request, 'blog/manage_tags.html', {'tags': tags})
@@ -260,7 +240,6 @@ def author_posts(request, username):
     else:
         posts = Post.objects.filter(author=author, is_public=True).order_by('-date_posted')
 
-    print(posts)
     # Convert markdown to HTML for post previews
     page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
     for post in page_obj:
@@ -275,3 +254,92 @@ def author_posts(request, username):
         'page_obj': page_obj
     }
     return render(request, 'blog/author_posts.html', context)
+
+
+@login_required
+def manage_read_groups(request):
+    """Manage read groups - list and create"""
+    if request.method == 'POST':
+        group_label = request.POST.get('group_label', '').strip()
+        if group_label:
+            # Check if user already has a group with this name
+            existing = PostReadGroup.objects.filter(author=request.user, label=group_label).exists()
+            if not existing:
+                group = PostReadGroup.objects.create(label=group_label, author=request.user)
+                messages.success(request, f'Read group "{group_label}" created successfully. Add members below.')
+                return redirect('edit-read-group', group_id=group.id)
+            else:
+                messages.warning(request, f'You already have a read group named "{group_label}".')
+                return redirect('manage-read-groups')
+
+    # Get user's read groups
+    groups = PostReadGroup.objects.filter(author=request.user).order_by('label')
+    return render(request, 'blog/manage_read_groups.html', {'groups': groups})
+
+
+@login_required
+def edit_read_group(request, group_id):
+    """Edit a specific read group - manage members"""
+    group = get_object_or_404(PostReadGroup, id=group_id, author=request.user)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'add_user':
+            username = request.POST.get('username', '').strip()
+            if username:
+                try:
+                    # Case-insensitive username lookup
+                    user = User.objects.get(username__iexact=username)
+                    if user not in group.users.all():
+                        group.users.add(user)
+                        messages.success(request, f'User "@{user.username}" added to group.')
+                    else:
+                        messages.warning(request, f'User "@{user.username}" is already in this group.')
+                except User.DoesNotExist:
+                    messages.error(request, f'User "{username}" does not exist.')
+
+        elif action == 'remove_user':
+            user_id = request.POST.get('user_id')
+            if user_id:
+                user = get_object_or_404(User, id=user_id)
+                group.users.remove(user)
+                messages.success(request, f'User "{user.username}" removed from group.')
+
+        elif action == 'rename':
+            new_label = request.POST.get('group_label', '').strip()
+            if new_label and new_label != group.label:
+                # Check if user already has another group with this name
+                existing = PostReadGroup.objects.filter(
+                    author=request.user,
+                    label=new_label
+                ).exclude(id=group.id).exists()
+
+                if not existing:
+                    group.label = new_label
+                    group.save()
+                    messages.success(request, f'Group renamed to "{new_label}".')
+                else:
+                    messages.warning(request, f'You already have a read group named "{new_label}".')
+
+        return redirect('edit-read-group', group_id=group.id)
+
+    context = {
+        'group': group,
+        'all_users': User.objects.exclude(id=request.user.id).order_by('username')
+    }
+    return render(request, 'blog/edit_read_group.html', context)
+
+
+@login_required
+def delete_read_group(request, group_id):
+    """Delete a read group"""
+    group = get_object_or_404(PostReadGroup, id=group_id, author=request.user)
+
+    if request.method == 'POST':
+        group_label = group.label
+        group.delete()
+        messages.success(request, f'Read group "{group_label}" deleted successfully.')
+        return redirect('manage-read-groups')
+
+    return render(request, 'blog/delete_read_group.html', {'group': group})

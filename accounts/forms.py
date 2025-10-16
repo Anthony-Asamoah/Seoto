@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
 
 class RegisterForm(UserCreationForm):
@@ -10,7 +11,7 @@ class RegisterForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2',)
+        fields = ('first_name', 'last_name', 'email', 'username', 'password1', 'password2',)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -26,3 +27,15 @@ class RegisterForm(UserCreationForm):
             'class': 'form-control password-input',
             'id': 'password2'
         })
+
+    def clean_username(self):
+        """Validate username is unique (case-insensitive)"""
+        username = self.cleaned_data.get('username')
+
+        # Check if username exists with case-insensitive search
+        if User.objects.filter(username__iexact=username).exists():
+            raise ValidationError(
+                'A user with that username already exists (note: usernames are case-insensitive).'
+            )
+
+        return username
