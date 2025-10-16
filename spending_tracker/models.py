@@ -12,7 +12,12 @@ class Tag(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tags')
 
     def __str__(self):
-        return self.label
+        return self.label.title()
+
+    def save(self, *args, **kwargs):
+        """Ensure label is saved in lowercase"""
+        self.label = self.label.lower().strip()
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['label']
@@ -102,6 +107,7 @@ class Transaction(models.Model):
 
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
+    transaction_time = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.get_mode_display()}: {self.currency} {self.amount} - {self.account.name}"

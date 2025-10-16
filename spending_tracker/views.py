@@ -7,7 +7,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 
 from utils.paginator import apply_pagination
-from .forms import TransactionForm, AccountForm
+from .forms import TransactionForm, AccountForm, CategoryForm
 from .models import Account, Transaction, Category, Tag
 
 
@@ -104,15 +104,33 @@ def transaction_list(request):
 def add_transaction(request):
     """Add new transaction"""
     if request.method == 'POST':
-        form = TransactionForm(request.POST, user=request.user)
+        # Get the tags input before form validation
+        tags_input = request.POST.get('tags_input', '').strip()
+
+        # Create a mutable copy of POST data
+        post_data = request.POST.copy()
+        # Remove tags from the form data as we'll handle them separately
+        post_data.pop('tags', None)
+
+        form = TransactionForm(post_data, user=request.user)
 
         if form.is_valid():
             transaction = form.save()
+
+            # Handle comma-separated tags
+            if tags_input:
+                tag_labels = [tag.strip().lower() for tag in tags_input.split(',') if tag.strip()]
+                for tag_label in tag_labels:
+                    tag, created = Tag.objects.get_or_create(
+                        label=tag_label,
+                        defaults={'user': request.user}
+                    )
+                    transaction.tags.add(tag)
+
             messages.success(request, 'Transaction added successfully!')
             return redirect('spending_tracker:transaction_list')
         else:
-            print(form.errors)
-            messages.error(request, 'Kindly review the form.')
+            messages.error(request, 'Invalid data provided.')
     else:
         form = TransactionForm(user=request.user)
 
@@ -124,7 +142,7 @@ def add_transaction(request):
     form.fields['account'].initial = default_account.id
     all_currency = [i[0] for i in Transaction.CURRENCY_CHOICES]
     all_accounts = Account.objects.filter(user=request.user)
-    user_category = Category.objects.all()
+    user_category = Category.objects.filter(user=request.user)
     user_tags = list(Tag.objects.filter(user=request.user))
     context = {
         'form': form,
@@ -158,6 +176,36 @@ def add_tag(request):
             messages.success(request, 'Tag added successfully!')
         else:
             messages.error(request, 'Please enter a tag or label.')
+    return redirect('spending_tracker:add_transaction')
+
+
+@login_required
+def add_category(request):
+    """Add new category from transaction page"""
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save(commit=False)
+            category.user = request.user
+            category.save()
+            messages.success(request, f'Category "{category.label}" created successfully!')
+        else:
+            messages.error(request, 'Please correct the errors.')
+    return redirect('spending_tracker:add_transaction')
+
+
+@login_required
+def add_account_quick(request):
+    """Add new account from transaction page"""
+    if request.method == 'POST':
+        form = AccountForm(request.POST)
+        if form.is_valid():
+            account = form.save(commit=False)
+            account.user = request.user
+            account.save()
+            messages.success(request, f'Account "{account.name}" created successfully!')
+        else:
+            messages.error(request, 'Please correct the errors.')
     return redirect('spending_tracker:add_transaction')
 
 
@@ -337,7 +385,6 @@ def reports(request):
     #             (current_month_income - last_month_income) / last_month_income * 100) if last_month_income > 0 else 0
     # expense_change = ((
     #                               current_month_expenses - last_month_expenses) / last_month_expenses * 100) if last_month_expenses > 0 else 0
-
 
     context = {
         'period': period,
