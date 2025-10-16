@@ -26,6 +26,11 @@
             color: #333;
         }
 
+        .blog-div nav a:hover {
+            text-decoration: underline;
+            color: #175a9c;
+        }
+
         .blog-div .post {
             margin-bottom: 30px;
             border-bottom: 1px solid #ddd;
@@ -218,6 +223,9 @@
             color: #00695f;
         }
 
+        .is-public-help-text {
+            font-weight: normal;
+        }
     </style>
 {% endblock %}
 
@@ -227,10 +235,16 @@
             <h1 class="mt-1">The Blog Space</h1>
             <nav>
                 <ul>
-                    <li><a href="{% url 'blog-explore' %}">Read</a></li>
+                    <li><a href="{% url 'blog-explore' %}" class="in-app-nav">Read</a></li>
                     {% if user.is_authenticated %}
-                        <li><a href="{% url 'post-create' %}">Write</a></li>
-                        <li><a href="{% url 'manage-tags' %}">Manage Tags</a></li>
+                        <li><a href="{% url 'post-create' %}" class="in-app-nav">Write</a></li>
+                        <li><a href="{% url 'author-posts' username=user.username %}" class="in-app-nav">Mine</a></li>
+                        <li><a href="{% url 'manage-read-groups' %}" class="in-app-nav">Groups</a></li>
+                    {% else %}
+                        <li><a href="{% url 'login' %}" class="in-app-nav">Write</a></li>
+                    {% endif %}
+                    {% if user.is_superuser or user.is_staff %}
+                        <li><a href="{% url 'manage-tags' %}" class="in-app-nav">Manage Tags</a></li>
                     {% endif %}
                 </ul>
             </nav>
