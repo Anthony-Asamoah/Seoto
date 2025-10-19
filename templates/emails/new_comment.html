@@ -1,0 +1,35 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}New Comment on "{{ post.title }}"{% endblock %}
+
+{% block header %}New Comment Notification{% endblock %}
+
+{% block content %}
+    <h2>New comment on your post</h2>
+
+    <p>You've received a new comment on your post <strong>"{{ post.title }}"</strong>.</p>
+
+    <div class="highlight-box">
+        <p style="margin: 0;"><strong>Comment from:</strong> {{ comment.author.username }}</p>
+        <p style="margin: 15px 0 0 0;"><strong>Comment:</strong></p>
+        <div style="margin-top: 10px; padding: 15px; background-color: white; border-radius: 4px; color: #102854;">
+            {{ comment.content }}
+        </div>
+    </div>
+
+    <p><strong>Post Details:</strong></p>
+    <ul>
+        <li>Title: {{ post.title }}</li>
+        <li>Published: {{ post.created_at|date:"F d, Y" }}</li>
+    </ul>
+
+    <center>
+        <a href="{{ post_url }}" class="button">View Comment</a>
+    </center>
+
+    <div class="divider"></div>
+
+    <p style="font-size: 14px; color: #666;">
+        This is an automated notification to keep you updated on your blog activity.
+    </p>
+{% endblock %}
