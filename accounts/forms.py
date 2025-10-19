@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm, PasswordResetForm, SetPasswordForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
@@ -54,3 +54,53 @@ class RegisterForm(UserCreationForm):
             )
 
         return username
+
+
+class CustomPasswordChangeForm(PasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+
+        # Add specific attributes for password fields to enable toggle functionality
+        self.fields['old_password'].widget.attrs.update({
+            'class': 'form-control password-input',
+            'id': 'id_old_password'
+        })
+        self.fields['new_password1'].widget.attrs.update({
+            'class': 'form-control password-input',
+            'id': 'id_new_password1'
+        })
+        self.fields['new_password2'].widget.attrs.update({
+            'class': 'form-control password-input',
+            'id': 'id_new_password2'
+        })
+
+
+class CustomPasswordResetForm(PasswordResetForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+
+        self.fields['email'].widget.attrs.update({
+            'id': 'id_email',
+            'placeholder': 'Enter your email address'
+        })
+
+
+class CustomSetPasswordForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+
+        # Add specific attributes for password fields to enable toggle functionality
+        self.fields['new_password1'].widget.attrs.update({
+            'class': 'form-control password-input',
+            'id': 'id_new_password1'
+        })
+        self.fields['new_password2'].widget.attrs.update({
+            'class': 'form-control password-input',
+            'id': 'id_new_password2'
+        })
