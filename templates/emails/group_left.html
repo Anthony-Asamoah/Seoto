@@ -1,0 +1,29 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}User Left Your Read Group{% endblock %}
+
+{% block header %}Group Update Notification{% endblock %}
+
+{% block content %}
+    <h2>A member left your read group</h2>
+
+    <p>Hello {{ group_owner.first_name|default:group_owner.username }},</p>
+
+    <p><strong>{{ user.username }}</strong> has left your read group.</p>
+
+    <div class="highlight-box">
+        <p style="margin: 0;"><strong>Group Details:</strong></p>
+        <p style="margin: 10px 0 0 0;">Group Name: <strong>{{ group.label }}</strong></p>
+        <p style="margin: 5px 0 0 0;">Remaining Members: <strong>{{ group.users.count }} user{{ group.users.count|pluralize }}</strong></p>
+    </div>
+
+    <p>{{ user.username }} will no longer have access to private posts shared with this group.</p>
+
+    <center>
+        <a href="{{ app_domain }}{% url 'edit-read-group' group.id %}" class="button">Manage Group</a>
+    </center>
+
+    <div class="divider"></div>
+
+    <p>Best regards,<br><strong style="color: #00695f;">The Seoto Team</strong></p>
+{% endblock %}

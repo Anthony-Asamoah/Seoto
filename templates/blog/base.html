@@ -239,7 +239,8 @@
                     {% if user.is_authenticated %}
                         <li><a href="{% url 'post-create' %}" class="in-app-nav">Write</a></li>
                         <li><a href="{% url 'author-posts' username=user.username %}" class="in-app-nav">Mine</a></li>
-                        <li><a href="{% url 'manage-read-groups' %}" class="in-app-nav">Groups</a></li>
+                        <li><a href="{% url 'manage-read-groups' %}" class="in-app-nav">My Groups</a></li>
+                        <li><a href="{% url 'my-read-groups' %}" class="in-app-nav">Memberships</a></li>
                     {% else %}
                         <li><a href="{% url 'login' %}" class="in-app-nav">Write</a></li>
                     {% endif %}
