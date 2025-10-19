@@ -15,7 +15,13 @@ urlpatterns = [
 		views.PasswordChangeDoneView.as_view(template_name='accounts/password_changed.html'),
 		name="password_change_done",
 	),
-	path("password_reset/", views.PasswordResetView.as_view(template_name='accounts/password_reset.html', form_class=CustomPasswordResetForm), name="password_reset"),
+	path("password_reset/", views.PasswordResetView.as_view(
+		template_name='accounts/password_reset.html',
+		form_class=CustomPasswordResetForm,
+		email_template_name='emails/password_reset_body.txt',
+		html_email_template_name='emails/password_reset.html',
+		subject_template_name='emails/password_reset_subject.txt'
+	), name="password_reset"),
 	path(
 		"password_reset/done/",
 		views.PasswordResetDoneView.as_view(template_name='accounts/password_sent.html'),
