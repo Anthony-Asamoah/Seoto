@@ -3,11 +3,31 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
+
+
+class UserPreferences(models.Model):
+    """User preferences for spending tracker"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='spending_preferences')
+    default_currency = models.CharField(max_length=3, default='GHS', choices=[
+        ('GHS', 'GHS'),
+        ('USD', 'USD'),
+        ('EUR', 'EUR'),
+        ('GBP', 'GBP'),
+    ])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username}'s preferences"
+
+    class Meta:
+        verbose_name_plural = "User Preferences"
 
 
 class Tag(models.Model):
     """Tags for categorizing transactions"""
-    label = models.CharField(max_length=50, unique=True)
+    label = models.CharField(max_length=50, unique=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tags')
 
@@ -21,11 +41,14 @@ class Tag(models.Model):
 
     class Meta:
         ordering = ['label']
+        indexes = [
+            models.Index(fields=['user', 'label']),
+        ]
 
 
 class Category(models.Model):
     """Categories for organizing transactions"""
-    label = models.CharField(max_length=100, unique=True)
+    label = models.CharField(max_length=100, unique=True, db_index=True)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='categories')
@@ -36,6 +59,9 @@ class Category(models.Model):
     class Meta:
         ordering = ['label']
         verbose_name_plural = "Categories"
+        indexes = [
+            models.Index(fields=['user', 'label']),
+        ]
 
 
 class Account(models.Model):
@@ -47,7 +73,7 @@ class Account(models.Model):
         ('CREDIT_CARD', 'CREDIT_CARD'),
         ('CASH', 'CASH'),
     ]
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, db_index=True)
     account_type = models.CharField(max_length=100, default='SAVINGS', choices=ACCOUNT_TYPE_CHOICES)
     balance = models.DecimalField(
         max_digits=12,
@@ -55,7 +81,7 @@ class Account(models.Model):
         default=Decimal('0.00'),
         validators=[MinValueValidator(Decimal('0.00'))]
     )
-    is_default = models.BooleanField(default=False)
+    is_default = models.BooleanField(default=False, db_index=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='accounts')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -65,6 +91,10 @@ class Account(models.Model):
     class Meta:
         ordering = ['name']
         unique_together = ['name', 'user']
+        indexes = [
+            models.Index(fields=['user', 'name']),
+            models.Index(fields=['user', 'is_default']),
+        ]
 
     @staticmethod
     def gain_income(pk, amount):
@@ -90,24 +120,24 @@ class Transaction(models.Model):
         ('GBP', 'GBP'),
     ]
 
-    mode = models.CharField(max_length=10, choices=MODE_CHOICES)
+    mode = models.CharField(max_length=10, choices=MODE_CHOICES, db_index=True)
     amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         validators=[MinValueValidator(Decimal('0.01'))]
     )
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='GHS')
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='GHS', db_index=True)
     details = models.TextField(blank=True, null=True)
     reference = models.CharField(max_length=100, blank=True, null=True)
 
     # Foreign keys
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions')
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     tags = models.ManyToManyField(Tag, blank=True)
 
     # Timestamps
-    created_at = models.DateTimeField(auto_now_add=True)
-    transaction_time = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    transaction_time = models.DateTimeField(default=timezone.now, db_index=True)
 
     def __str__(self):
         return f"{self.get_mode_display()}: {self.currency} {self.amount} - {self.account.name}"
@@ -134,4 +164,11 @@ class Transaction(models.Model):
         super().delete(*args, **kwargs)
 
     class Meta:
-        ordering = ['-created_at', 'account__name', 'amount', 'reference']
+        ordering = ['-transaction_time', 'account__name', 'amount', 'reference']
+        indexes = [
+            models.Index(fields=['-transaction_time', 'mode']),
+            models.Index(fields=['account', '-transaction_time']),
+            models.Index(fields=['category', '-transaction_time']),
+            models.Index(fields=['mode', '-transaction_time', 'account']),
+            models.Index(fields=['-transaction_time', 'account', 'mode']),
+        ]

@@ -162,8 +162,12 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="{{ form.transaction_time.id_for_label }}" class="form-label">
+                        {{ form.transaction_time.label }}
+                        <span class="text-danger">*</span>
+                    </label>
                     {{ form.transaction_time }}
-                    <small class="form-text text-muted">When did this transaction occur?</small>
+                    <small class="form-text text-muted">{{ form.transaction_time.help_text }}</small>
                     {% if form.transaction_time.errors %}
                         <div class="text-danger small">{{ form.transaction_time.errors.0 }}</div>
                     {% endif %}
@@ -172,6 +176,7 @@
                 <div class="form-group">
                     <label for="tags_input" class="form-label">Tags</label>
                     <input type="text" class="form-control" name="tags_input" id="tags_input"
+                           value="{{ preserved_tags_input }}"
                            placeholder="Enter tags separated by commas (e.g., groceries, weekly, essential)">
                     <small class="form-text text-muted">Existing: {% for tag in tags %}{{ tag }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
                 </div>
@@ -194,7 +199,7 @@
     <div class="modal fade" id="addAccount" tabindex="-1" aria-labelledby="addAccountLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <form method="post" action="{% url 'spending_tracker:add_account_quick' %}">
+                <form method="post" action="{% url 'spending_tracker:add_account_quick' %}" id="addAccountForm">
                     {% csrf_token %}
                     <div class="modal-header">
                         <h5 class="modal-title" id="addAccountLabel">Add New Account</h5>
@@ -232,7 +237,7 @@
     <div class="modal fade" id="addCategory" tabindex="-1" aria-labelledby="addCategoryLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <form method="post" action="{% url 'spending_tracker:add_category' %}">
+                <form method="post" action="{% url 'spending_tracker:add_category' %}" id="addCategoryForm">
                     {% csrf_token %}
                     <div class="modal-header">
                         <h5 class="modal-title" id="addCategoryLabel">Add New Category</h5>
@@ -291,6 +296,39 @@
                     alert('Please select a transaction type (Income or Expense)');
                     return false;
                 }
+            });
+
+            // Copy transaction form data to modal forms when they're opened
+            function copyTransactionDataToModalForm(modalForm) {
+                const transactionForm = document.getElementById('transactionForm');
+                const formData = new FormData(transactionForm);
+
+                // Remove any previously added hidden fields
+                modalForm.querySelectorAll('.transaction-data-field').forEach(field => field.remove());
+
+                // Add all transaction form fields as hidden inputs to the modal form
+                for (let [key, value] of formData.entries()) {
+                    // Skip CSRF token as modal form has its own
+                    if (key !== 'csrfmiddlewaretoken') {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.name = key;
+                        hiddenInput.value = value;
+                        hiddenInput.className = 'transaction-data-field';
+                        modalForm.appendChild(hiddenInput);
+                    }
+                }
+            }
+
+            // Add event listeners for modal open events
+            document.getElementById('addAccount').addEventListener('show.bs.modal', function () {
+                const modalForm = document.getElementById('addAccountForm');
+                copyTransactionDataToModalForm(modalForm);
+            });
+
+            document.getElementById('addCategory').addEventListener('show.bs.modal', function () {
+                const modalForm = document.getElementById('addCategoryForm');
+                copyTransactionDataToModalForm(modalForm);
             });
         });
     </script>

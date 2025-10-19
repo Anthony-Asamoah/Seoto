@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %} - Delete Category{% endblock %}
+
+{% block style %}
+    <style>
+        .delete-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .warning-card {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .category-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .category-stats {
+            text-align: right;
+        }
+
+        .stat-item {
+            margin: 5px 0;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        .form-section label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .transfer-option {
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .transfer-option:hover {
+            border-color: #adb5bd;
+            background: #f8f9fa;
+        }
+
+        .transfer-option input[type="radio"] {
+            margin-right: 10px;
+        }
+
+        .transfer-option.selected {
+            border-color: #007bff;
+            background: #e7f3ff;
+        }
+
+        .btn-danger {
+            min-width: 150px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="delete-container">
+        <div class="header">
+            <h1>
+                <a href="{% url 'spending_tracker:config' %}" class="text-decoration-none">Configuration</a>
+                - Delete Category
+            </h1>
+            <hr>
+        </div>
+
+        <div class="info-card">
+            <h3>Category to Delete</h3>
+            <div class="category-info">
+                <div>
+                    <div class="category-name">{{ category.label }}</div>
+                    {% if category.description %}
+                        <small class="text-muted">{{ category.description }}</small>
+                    {% endif %}
+                </div>
+                <div class="category-stats">
+                    <div class="stat-item">
+                        <strong>{{ category.transaction_count }}</strong> transaction{{ category.transaction_count|pluralize }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if category.transaction_count > 0 %}
+            <div class="warning-card">
+                <h4><i class="fas fa-exclamation-circle"></i> Transfer Required</h4>
+                <p>
+                    This category has <strong>{{ category.transaction_count }} transaction{{ category.transaction_count|pluralize }}</strong>.
+                    You must choose how to handle {{ category.transaction_count|pluralize:"this transaction,these transactions" }} before deletion.
+                </p>
+            </div>
+
+            <div class="info-card">
+                <form method="post" id="deleteCategoryForm">
+                    {% csrf_token %}
+                    <div class="form-section">
+                        <label>
+                            <i class="fas fa-exchange-alt"></i> Choose Action:
+                        </label>
+
+                        <div class="transfer-option" onclick="selectOption('transfer')">
+                            <input type="radio" name="action" value="transfer" id="action_transfer" required>
+                            <label for="action_transfer" class="mb-0">
+                                <strong>Transfer to another category</strong>
+                                <small class="d-block text-muted">
+                                    Reassign all transactions to a different category
+                                </small>
+                            </label>
+                        </div>
+
+                        <div class="transfer-option" onclick="selectOption('uncategorized')">
+                            <input type="radio" name="action" value="uncategorized" id="action_uncategorized">
+                            <label for="action_uncategorized" class="mb-0">
+                                <strong>Mark as Uncategorized</strong>
+                                <small class="d-block text-muted">
+                                    Remove category assignment from all transactions
+                                </small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-section" id="transferCategorySection" style="display: none;">
+                        <label for="transfer_to">
+                            Transfer To:
+                        </label>
+                        <select name="transfer_to" id="transfer_to" class="form-control">
+                            <option value="">Select a category...</option>
+                            {% for cat in other_categories %}
+                                <option value="{{ cat.pk }}">
+                                    {{ cat.label }}
+                                    {% if cat.description %}
+                                        - {{ cat.description|truncatechars:50 }}
+                                    {% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">
+                            All transactions from "{{ category.label }}" will be reassigned to the selected category.
+                        </small>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'spending_tracker:config' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Delete Category
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {% else %}
+            <div class="info-card">
+                <div class="warning-card">
+                    <h4><i class="fas fa-info-circle"></i> Confirmation Required</h4>
+                    <p class="mb-0">
+                        This category has no transactions. Are you sure you want to delete it?
+                        This action cannot be undone.
+                    </p>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'spending_tracker:config' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Delete Category
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        function selectOption(option) {
+            // Remove selected class from all options
+            document.querySelectorAll('.transfer-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+
+            // Add selected class to clicked option
+            const clickedOption = event.currentTarget;
+            clickedOption.classList.add('selected');
+
+            // Show/hide transfer category section based on selection
+            const transferSection = document.getElementById('transferCategorySection');
+            const transferSelect = document.getElementById('transfer_to');
+
+            if (option === 'transfer') {
+                transferSection.style.display = 'block';
+                transferSelect.required = true;
+            } else {
+                transferSection.style.display = 'none';
+                transferSelect.required = false;
+                transferSelect.value = '';
+            }
+        }
+
+        // Form validation
+        document.getElementById('deleteCategoryForm').addEventListener('submit', function(e) {
+            const action = document.querySelector('input[name="action"]:checked');
+
+            if (!action) {
+                e.preventDefault();
+                alert('Please select an action for the transactions.');
+                return false;
+            }
+
+            if (action.value === 'transfer') {
+                const transferTo = document.getElementById('transfer_to').value;
+                if (!transferTo) {
+                    e.preventDefault();
+                    alert('Please select a category to transfer the transactions to.');
+                    return false;
+                }
+            }
+        });
+    </script>
+{% endblock %}

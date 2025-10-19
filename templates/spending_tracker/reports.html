@@ -45,17 +45,16 @@
         }
 
         .header {
-        {# Window load effects #} transition: .5s ease;
+            transition: .5s ease;
             opacity: 0;
             padding: 0;
-        {# End of effects #}
         }
 
         .main {
-        {# Window load effects #} transition: .5s ease;
+            transition: .5s ease;
             opacity: 0;
             padding: 30px;
-        {# End of effects #} background-color: whitesmoke;
+            background-color: whitesmoke;
         }
 
         .header h1 {
@@ -110,13 +109,14 @@
         }
 
         .chart-container {
+            position: relative;
             height: 300px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f8f9fa;
-            border-radius: 6px;
-            color: #6c757d;
+            padding: 15px;
+        }
+
+        .pie-chart-container {
+            max-height: 300px;
+            position: relative;
         }
 
         .period-selector {
@@ -168,29 +168,55 @@
 </div>
 
 <div class="main container">
-    <!-- Period Selector -->
     <div class="period-selector">
-        <div class="row align-items-center">
-            <div class="col-md-6">
-                <h5 class="mb-0">Reporting Period</h5>
-            </div>
-            <div class="col-md-6">
-                <div class="btn-group float-end" role="group">
+        <div class="row align-items-center mb-3">
+            <div class="col-md-12">
+                <h5 class="mb-3">Reporting Period</h5>
+                <div class="btn-group w-100" role="group">
                     <input type="radio" class="btn-check" name="period" id="period-week" autocomplete="off"
-                           onclick="SetDateFilter('week')"
+                           onclick="setDateFilter('week')"
                            {% if period == 'week' %}checked{% endif %}>
-                    <label class="btn btn-outline-primary" for="period-week">This Week</label>
+                    <label class="btn btn-outline-primary" for="period-week">Week</label>
 
                     <input type="radio" class="btn-check" name="period" id="period-month" autocomplete="off"
-                           onclick="SetDateFilter('month')"
+                           onclick="setDateFilter('month')"
                            {% if period == 'month' %}checked{% endif %}>
-                    <label class="btn btn-outline-primary" for="period-month">This Month</label>
+                    <label class="btn btn-outline-primary" for="period-month">Month</label>
 
                     <input type="radio" class="btn-check" name="period" id="period-year" autocomplete="off"
-                           onclick="SetDateFilter('year')"
+                           onclick="setDateFilter('year')"
                            {% if period == 'year' %}checked{% endif %}>
-                    <label class="btn btn-outline-primary" for="period-year">This Year</label>
+                    <label class="btn btn-outline-primary" for="period-year">Year</label>
+
+                    <input type="radio" class="btn-check" name="period" id="period-all-time" autocomplete="off"
+                           onclick="setDateFilter('all_time')"
+                           {% if period == 'all_time' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="period-all-time">All Time</label>
+
+                    <input type="radio" class="btn-check" name="period" id="period-custom" autocomplete="off"
+                           {% if period == 'custom' %}checked{% endif %}>
+                    <label class="btn btn-outline-primary" for="period-custom">Custom</label>
                 </div>
+            </div>
+        </div>
+
+        <div class="row" id="customDateRange" style="{% if period != 'custom' %}display: none;{% endif %}">
+            <div class="col-md-12">
+                <form method="get" action="{% url 'spending_tracker:reports' %}" class="row g-2">
+                    <div class="col-md-5">
+                        <label for="start_date" class="form-label small">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date"
+                               value="{{ start_date }}" required>
+                    </div>
+                    <div class="col-md-5">
+                        <label for="end_date" class="form-label small">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date"
+                               value="{{ end_date }}" required>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Apply</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -198,15 +224,17 @@
     <!-- Top Cards -->
     <div class="metric-grid">
         <div class="metric-card" style="border-left-color: #27ae60;">
-            <div class="metric-value" style="color: #27ae60;">+${{ total_income }}</div>
+            <div class="metric-value" style="color: #27ae60;">+{{ currency_symbol }}{{ total_income }}</div>
             <div class="metric-label">Total Income</div>
         </div>
         <div class="metric-card" style="border-left-color: #e74c3c;">
-            <div class="metric-value" style="color: #e74c3c;">-${{ total_expenses }}</div>
+            <div class="metric-value" style="color: #e74c3c;">-{{ currency_symbol }}{{ total_expenses }}</div>
             <div class="metric-label">Total Expenses</div>
         </div>
-        <div class="metric-card" style="border-left-color: #3498db;">
-            <div class="metric-value" style="color: #3498db;">+${{ net_income }}</div>
+        <div class="metric-card" style="{% if net_income >= 0 %}border-left-color: #27ae60;{% else %}border-left-color: #e74c3c;{% endif %}">
+            <div class="metric-value" style="{% if net_income >= 0 %}color: #27ae60;{% else %}color: #e74c3c;{% endif %}">
+                {% if net_income >= 0 %}+{% endif %}{{ currency_symbol }}{{ net_income }}
+            </div>
             <div class="metric-label">Net Income</div>
         </div>
         <div class="metric-card" style="border-left-color: #f39c12;">
@@ -232,12 +260,7 @@
             <div class="report-card">
                 <h5 class="mb-3">🏷️ Expense Categories</h5>
                 <div class="chart-container">
-                    <div class="pie-chart-container">
-                        <canvas id="categoryChart"></canvas>
-                    </div>
-                    <div class="category-list mt-3" id="categoryList">
-                        <!-- Category list will be populated by JavaScript -->
-                    </div>
+                    <canvas id="categoryChart"></canvas>
                 </div>
             </div>
         </div>
@@ -249,12 +272,18 @@
             <div class="report-card">
                 <h5 class="mb-3">💰 Top Income Sources</h5>
                 <div class="list-group list-group-flush">
-                    {% for income in income_categories %}
-                        <div class="list-group-item d-flex justify-content-between">
-                            <span>{{ income.category__label }}</span>
-                            <span class="fw-bold text-success">+${{ income.total | floatformat:2 }}</span>
+                    {% if income_categories %}
+                        {% for income in income_categories %}
+                            <div class="list-group-item d-flex justify-content-between">
+                                <span>{{ income.category_label|default:"Uncategorized" }}</span>
+                                <span class="fw-bold text-success">+{{ currency_symbol }}{{ income.total | floatformat:2 }}</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="list-group-item text-center text-muted">
+                            No income transactions for this period
                         </div>
-                    {% endfor %}
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -263,12 +292,18 @@
             <div class="report-card">
                 <h5 class="mb-3">💸 Top Expense Categories</h5>
                 <div class="list-group list-group-flush">
-                    {% for expense in expense_categories %}
-                        <div class="list-group-item d-flex justify-content-between">
-                            <span>{{ expense.category__label }}</span>
-                            <span class="fw-bold text-danger">-${{ expense.total | floatformat:2 }}</span>
+                    {% if expense_categories %}
+                        {% for expense in expense_categories %}
+                            <div class="list-group-item d-flex justify-content-between">
+                                <span>{{ expense.category_label|default:"Uncategorized" }}</span>
+                                <span class="fw-bold text-danger">-{{ currency_symbol }}{{ expense.total | floatformat:2 }}</span>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="list-group-item text-center text-muted">
+                            No expense transactions for this period
                         </div>
-                    {% endfor %}
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -290,16 +325,25 @@
                 </tr>
                 </thead>
                 <tbody>
-                {% for row in account_performance %}
+                {% if account_performance %}
+                    {% for row in account_performance %}
+                        <tr>
+                            <td><strong>{{ row.account }}</strong></td>
+                            <td>{{ currency_symbol }}{{ row.starting_balance }}</td>
+                            <td class="text-success">+{{ currency_symbol }}{{ row.income }}</td>
+                            <td class="text-danger">-{{ currency_symbol }}{{ row.expenses }}</td>
+                            <td><strong>{{ currency_symbol }}{{ row.current_balance }}</strong></td>
+                            <td {% if row.net_change >= 0 %}class="text-success"
+                                {% else %}class="text-danger"{% endif %}>
+                                {% if row.net_change >= 0 %}+{% endif %}{{ currency_symbol }}{{ row.net_change }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
                     <tr>
-                        <td><strong>{{ row.account }}</strong></td>
-                        <td>${{ row.starting_balance }}</td>
-                        <td class="text-success">+${{ row.income }}</td>
-                        <td class="text-danger">-${{ row.expenses }}</td>
-                        <td><strong>${{ row.current_balance }}</strong></td>
-                        <td class="text-success">+${{ row.net_change }}</td>
+                        <td colspan="6" class="text-center text-muted">No accounts found</td>
                     </tr>
-                {% endfor %}
+                {% endif %}
                 </tbody>
             </table>
         </div>
@@ -307,149 +351,163 @@
 </div>
 
 
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/@popperjs/core@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    SetDateFilter = (period) => {
+    const setDateFilter = (period) => {
         window.location.href = `{% url 'spending_tracker:reports' %}?period=${period}`;
-    }
+    };
 
-    function initCharts() {
-        // Category chart
+    // Get currency symbol from context
+    const currencySymbol = '{{ currency_symbol|safe }}';
+
+    const initCharts = () => {
         const expenseCategoryData = JSON.parse(document.getElementById("expense-categories-data").textContent);
-        // Extract values
-        const expenseLabels = expenseCategoryData.map(item => item.label);
-        const expenseTotal = expenseCategoryData.map(item => item.total);
-        const expenseCount = expenseCategoryData.map(item => item.count);
+        const expenseLabels = expenseCategoryData.map(item => item.label || 'Uncategorized');
+        const expenseTotal = expenseCategoryData.map(item => parseFloat(item.total) || 0);
 
         const categoryCanvas = document.getElementById('categoryChart');
-        if (categoryCanvas) {
+        if (categoryCanvas && expenseLabels.length > 0) {
             const ctxCategory = categoryCanvas.getContext('2d');
+
+            const colors = [
+                'rgba(255, 99, 132, 0.8)', 'rgba(54, 162, 235, 0.8)', 'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 159, 64, 0.8)',
+                'rgba(199, 199, 199, 0.8)', 'rgba(83, 102, 255, 0.8)', 'rgba(255, 99, 255, 0.8)',
+                'rgba(50, 205, 50, 0.8)'
+            ];
+
             new Chart(ctxCategory, {
-                type: 'bar',
+                type: 'doughnut',
                 data: {
                     labels: expenseLabels,
                     datasets: [{
-                        label: 'categories',
+                        label: 'Expense Amount',
                         data: expenseTotal,
-                        borderWidth: 1
+                        backgroundColor: colors.slice(0, expenseLabels.length),
+                        borderColor: colors.slice(0, expenseLabels.length).map(c => c.replace('0.8', '1')),
+                        borderWidth: 2
                     }]
                 },
                 options: {
-                    scales: {
-                        y: {beginAtZero: true}
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {padding: 10, font: {size: 11}}
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    let label = context.label || '';
+                                    if (label) label += ': ';
+                                    label += currencySymbol + context.parsed.toFixed(2);
+                                    return label;
+                                }
+                            }
+                        }
                     }
                 }
             });
         }
-        // trend chart
-        // Parse JSON into JS array
-        const trendData = JSON.parse(document.getElementById("trend-data").textContent);
 
-        // Extract values
+        const trendData = JSON.parse(document.getElementById("trend-data").textContent);
         const labels = trendData.map(item => item.date);
         const incomes = trendData.map(item => item.income);
         const expenses = trendData.map(item => item.expenses);
 
-        const canvas = document.getElementById('trendChart');
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            const data = {
-                labels: labels,
-                datasets: [{
-                    label: 'Income',
-                    data: incomes,
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
-                }, {
-                    label: 'Expense',
-                    data: expenses,
-                    borderColor: 'rgb(255, 99, 132)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderWidth: 2,
-                    fill: false,
-                    tension: 0.1
-                }],
-            };
+        const trendCanvas = document.getElementById('trendChart');
+        if (trendCanvas && labels.length > 0) {
+            const ctx = trendCanvas.getContext('2d');
 
-            const config = {
+            new Chart(ctx, {
                 type: 'line',
-                data: data,
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: incomes,
+                            borderColor: 'rgb(39, 174, 96)',
+                            backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Expenses',
+                            data: expenses,
+                            borderColor: 'rgb(231, 76, 60)',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
+                },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
+                    interaction: {intersect: false, mode: 'index'},
+                    plugins: {
+                        legend: {position: 'top'},
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    return context.dataset.label + ': ' + currencySymbol + context.parsed.y.toFixed(2);
+                                }
+                            }
+                        }
                     },
                     scales: {
-                        x: {
-                            title: {
-                                display: false,
-                                text: 'Time'
-                            }
-                        },
+                        x: {grid: {display: false}},
                         y: {
-                            title: {
-                                display: true,
-                                text: 'Amount'
-                            },
-                            beginAtZero: true
+                            title: {display: true, text: 'Amount (' + currencySymbol + ')'},
+                            beginAtZero: true,
+                            ticks: {
+                                callback: (value) => currencySymbol + value.toFixed(0)
+                            }
                         }
                     },
                     elements: {
-                        point: {
-                            radius: 4,
-                            hoverRadius: 6
-                        }
+                        point: {radius: 4, hoverRadius: 6}
                     }
                 }
-            };
-
-            const myChart = new Chart(ctx, config);
-
-        }
-
-    }
-
-
-    document.addEventListener('DOMContentLoaded', function () {
-        // Animation function
-        function show() {
-            let canvas = document.querySelector('.main');
-            let head = document.querySelector('.header');
-
-            if (canvas) {
-                canvas.style.opacity = '1';
-                canvas.style.padding = '20px';
-            }
-            if (head) {
-                head.style.opacity = '1';
-                head.style.padding = '5px';
-            }
-        }
-
-        // Trigger animation after a delay
-        setTimeout(show, 250);
-
-        // Optional: Add debug logging for modal (Bootstrap 5 syntax)
-        const myModal = document.getElementById('myModal');
-        if (myModal) {
-            myModal.addEventListener('show.bs.modal', function (event) {
-                console.log('Modal is about to show');
-            });
-
-            myModal.addEventListener('shown.bs.modal', function (event) {
-                console.log('Modal is now visible');
             });
         }
+    };
 
-        initCharts()
+    document.addEventListener('DOMContentLoaded', () => {
+        const main = document.querySelector('.main');
+        const header = document.querySelector('.header');
+
+        setTimeout(() => {
+            if (main) {
+                main.style.opacity = '1';
+                main.style.padding = '20px';
+            }
+            if (header) {
+                header.style.opacity = '1';
+                header.style.padding = '5px';
+            }
+        }, 250);
+
+        document.getElementById('period-custom').addEventListener('click', () => {
+            document.getElementById('customDateRange').style.display = 'block';
+        });
+
+        ['period-week', 'period-month', 'period-year', 'period-all-time'].forEach(id => {
+            const elem = document.getElementById(id);
+            if (elem) {
+                elem.addEventListener('click', () => {
+                    document.getElementById('customDateRange').style.display = 'none';
+                });
+            }
+        });
+
+        initCharts();
     });
 </script>
 {% include 'partials/_footer.html' %}

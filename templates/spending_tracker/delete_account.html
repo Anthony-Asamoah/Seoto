@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %} - Delete Account{% endblock %}
+
+{% block style %}
+    <style>
+        .delete-container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .warning-card {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .danger-card {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .account-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .account-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .account-stats {
+            text-align: right;
+        }
+
+        .stat-item {
+            margin: 5px 0;
+        }
+
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        .form-section label {
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .btn-danger {
+            min-width: 150px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="delete-container">
+        <div class="header">
+            <h1>
+                <a href="{% url 'spending_tracker:config' %}" class="text-decoration-none">Configuration</a>
+                - Delete Account
+            </h1>
+            <hr>
+        </div>
+
+        {% if only_account %}
+            <div class="danger-card">
+                <h4><i class="fas fa-exclamation-triangle"></i> Cannot Delete</h4>
+                <p class="mb-0">
+                    This is your only account. You must have at least one account to track transactions.
+                    Please create another account before deleting this one.
+                </p>
+            </div>
+
+            <div class="mt-4">
+                <a href="{% url 'spending_tracker:config' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Configuration
+                </a>
+            </div>
+        {% else %}
+            <div class="info-card">
+                <h3>Account to Delete</h3>
+                <div class="account-info">
+                    <div>
+                        <div class="account-name">{{ account.name }}</div>
+                        <small class="text-muted">{{ account.get_account_type_display }}</small>
+                    </div>
+                    <div class="account-stats">
+                        <div class="stat-item">
+                            <strong>{{ account.transaction_count }}</strong> transaction{{ account.transaction_count|pluralize }}
+                        </div>
+                        <div class="stat-item text-muted">
+                            Balance: ${{ account.balance }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if account.transaction_count > 0 %}
+                <div class="warning-card">
+                    <h4><i class="fas fa-exclamation-circle"></i> Transfer Required</h4>
+                    <p>
+                        This account has <strong>{{ account.transaction_count }} transaction{{ account.transaction_count|pluralize }}</strong>.
+                        You must transfer {{ account.transaction_count|pluralize:"this transaction,these transactions" }} to another account before deletion.
+                    </p>
+                    <p class="mb-0">
+                        <strong>Note:</strong> The balance will not be automatically transferred.
+                        Only the transaction records will be moved to the selected account.
+                    </p>
+                </div>
+
+                <div class="info-card">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-section">
+                            <label for="transfer_to">
+                                <i class="fas fa-exchange-alt"></i> Transfer Transactions To:
+                            </label>
+                            <select name="transfer_to" id="transfer_to" class="form-control" required>
+                                <option value="">Select an account...</option>
+                                {% for acc in other_accounts %}
+                                    <option value="{{ acc.pk }}">
+                                        {{ acc.name }} ({{ acc.get_account_type_display }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                All transactions from "{{ account.name }}" will be reassigned to the selected account.
+                            </small>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'spending_tracker:config' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Transfer & Delete Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            {% else %}
+                <div class="info-card">
+                    <div class="warning-card">
+                        <h4><i class="fas fa-info-circle"></i> Confirmation Required</h4>
+                        <p class="mb-0">
+                            This account has no transactions. Are you sure you want to delete it?
+                            This action cannot be undone.
+                        </p>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'spending_tracker:config' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Delete Account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}
