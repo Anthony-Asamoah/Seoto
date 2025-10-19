@@ -1,0 +1,74 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}- Leave Read Group{% endblock %}
+
+{% block window %}
+    <div class="header">
+        <h2>Leave Read Group</h2>
+        <hr/>
+    </div>
+
+    <div class="confirmation-box">
+        <h3>Are you sure you want to leave this group?</h3>
+        <div class="group-info">
+            <p><strong>Group Name:</strong> {{ group.label }}</p>
+            <p><strong>Owner:</strong> @{{ group.author.username }}</p>
+            <p><strong>Members:</strong> {{ group.users.count }} user{{ group.users.count|pluralize }}</p>
+        </div>
+
+        <div class="warning">
+            <p><strong>Note:</strong> After leaving, you will no longer have access to private posts shared with this group. The group owner will be notified of your departure.</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Yes, Leave Group</button>
+            <a href="{% url 'my-read-groups' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+
+    <style>
+        .confirmation-box {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 30px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .group-info {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+
+        .group-info p {
+            margin: 8px 0;
+        }
+
+        .warning {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+            border-radius: 5px;
+        }
+
+        .warning p {
+            margin: 0;
+            color: #004085;
+        }
+
+        form {
+            margin-top: 20px;
+        }
+
+        .btn {
+            margin-right: 10px;
+            padding: 10px 20px;
+        }
+    </style>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Removed from Read Group{% endblock %}
+
+{% block header %}Group Membership Update{% endblock %}
+
+{% block content %}
+    <h2>You've been removed from a read group</h2>
+
+    <p>Hello {{ user.first_name|default:user.username }},</p>
+
+    <p><strong>{{ group_owner.username }}</strong> has removed you from their read group on Seoto.</p>
+
+    <div class="accent-box">
+        <p style="margin: 0;"><strong>Group Details:</strong></p>
+        <p style="margin: 10px 0 0 0;">Group Name: <strong>{{ group.label }}</strong></p>
+        <p style="margin: 5px 0 0 0;">Owner: <strong>{{ group_owner.username }}</strong></p>
+    </div>
+
+    <p>You will no longer have access to private posts that were shared with this group.</p>
+
+    <center>
+        <a href="{{ app_domain }}{% url 'blog-explore' %}" class="button">Explore Public Posts</a>
+    </center>
+
+    <div class="divider"></div>
+
+    <p>Best regards,<br><strong style="color: #00695f;">The Seoto Team</strong></p>
+{% endblock %}

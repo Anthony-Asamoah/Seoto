@@ -1,3 +1,4 @@
+import logging
 import markdown
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -9,7 +10,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from utils.paginator import apply_pagination
 from .forms import PostForm
 from .models import Post, PostTags, PostReadGroup, PostComment
-from .utils import trigger_author_comment_notification
+from .utils import (
+    trigger_author_comment_notification,
+    notify_user_added_to_group,
+    notify_user_removed_from_group,
+    notify_owner_user_left_group
+)
 
 RESULTS_PER_PAGE = 5
 
@@ -294,6 +300,11 @@ def edit_read_group(request, group_id):
                     if user not in group.users.all():
                         group.users.add(user)
                         messages.success(request, f'User "@{user.username}" added to group.')
+                        # Send notification to the added user
+                        try:
+                            notify_user_added_to_group(user, group)
+                        except:
+                            logging.warning(f'Failed to send notification to {user.username}')
                     else:
                         messages.warning(request, f'User "@{user.username}" is already in this group.')
                 except User.DoesNotExist:
@@ -305,6 +316,11 @@ def edit_read_group(request, group_id):
                 user = get_object_or_404(User, id=user_id)
                 group.users.remove(user)
                 messages.success(request, f'User "{user.username}" removed from group.')
+                # Send notification to the removed user
+                try:
+                    notify_user_removed_from_group(user, group)
+                except:
+                    logging.warning(f'Failed to send notification to {user.username}')
 
         elif action == 'rename':
             new_label = request.POST.get('group_label', '').strip()
@@ -343,3 +359,48 @@ def delete_read_group(request, group_id):
         return redirect('manage-read-groups')
 
     return render(request, 'blog/delete_read_group.html', {'group': group})
+
+
+@login_required
+def my_read_groups(request):
+    """View groups that the user is a member of (not owner)"""
+    # Get groups where the user is a member (but not the author)
+    groups = PostReadGroup.objects.filter(users=request.user).exclude(author=request.user).order_by('label')
+
+    # Annotate each group with post count
+    for group in groups:
+        group.post_count = group.allowed_posts.count()
+
+    return render(request, 'blog/my_read_groups.html', {'groups': groups})
+
+
+@login_required
+def leave_read_group(request, group_id):
+    """Leave a read group"""
+    group = get_object_or_404(PostReadGroup, id=group_id)
+
+    # Check if user is actually in this group
+    if request.user not in group.users.all():
+        messages.error(request, 'You are not a member of this group.')
+        return redirect('my-read-groups')
+
+    # Prevent owner from leaving their own group
+    if group.author == request.user:
+        messages.error(request, 'You cannot leave a group you own. Delete it instead.')
+        return redirect('manage-read-groups')
+
+    if request.method == 'POST':
+        group_label = group.label
+        group_owner = group.author
+        group.users.remove(request.user)
+        messages.success(request, f'You have left the group "{group_label}".')
+
+        # Notify group owner
+        try:
+            notify_owner_user_left_group(request.user, group)
+        except:
+            logging.warning(f'Failed to notify {group_owner.username} about {request.user.username} leaving')
+
+        return redirect('my-read-groups')
+
+    return render(request, 'blog/leave_read_group.html', {'group': group})
