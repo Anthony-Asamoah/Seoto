@@ -1,14 +1,21 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
+import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, Count
+from django.db import models as django_models
+from django.db.models import Sum, Count, Q, Value, CharField, Prefetch
+from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, Coalesce
+from django.db.transaction import atomic
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 
 from utils.paginator import apply_pagination
 from .forms import TransactionForm, AccountForm, CategoryForm
-from .models import Account, Transaction, Category, Tag
+from .models import Account, Transaction, Category, Tag, UserPreferences
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -20,22 +27,20 @@ def dashboard(request):
     ).select_related('account', 'category').prefetch_related('tags')[:10]
 
     # Calculate totals
-    total_balance = user_accounts.aggregate(
-        total=Sum('balance')
-    )['total'] or 0
+    total_balance = user_accounts.aggregate(total=Sum('balance'))['total'] or 0
 
     # Monthly income/expense
     current_month = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     monthly_income = Transaction.objects.filter(
         account__user=request.user,
         mode='INCOME',
-        created_at__gte=current_month
+        transaction_time__gte=current_month
     ).aggregate(total=Sum('amount'))['total'] or 0
 
     monthly_expense = Transaction.objects.filter(
         account__user=request.user,
         mode='EXPENSE',
-        created_at__gte=current_month
+        transaction_time__gte=current_month
     ).aggregate(total=Sum('amount'))['total'] or 0
 
     context = {
@@ -103,6 +108,10 @@ def transaction_list(request):
 @login_required
 def add_transaction(request):
     """Add new transaction"""
+    # Check if there's preserved form data in session
+    preserved_data = request.session.pop('transaction_form_data', None)
+    preserved_tags = request.session.pop('transaction_tags_input', None)
+
     if request.method == 'POST':
         # Get the tags input before form validation
         tags_input = request.POST.get('tags_input', '').strip()
@@ -128,18 +137,28 @@ def add_transaction(request):
                     transaction.tags.add(tag)
 
             messages.success(request, 'Transaction added successfully!')
+            # Clear any preserved data
+            request.session.pop('transaction_form_data', None)
+            request.session.pop('transaction_tags_input', None)
             return redirect('spending_tracker:transaction_list')
         else:
             messages.error(request, 'Invalid data provided.')
     else:
-        form = TransactionForm(user=request.user)
+        # If there's preserved data from session, use it
+        if preserved_data:
+            form = TransactionForm(preserved_data, user=request.user)
+        else:
+            form = TransactionForm(user=request.user)
 
     default_account = Account.objects.filter(user=request.user).first()
     if not default_account:
         messages.warning(request, 'No accounts found. Please add an account first.')
         return redirect('spending_tracker:add_account')
 
-    form.fields['account'].initial = default_account.id
+    # Only set default account if no data is being preserved
+    if not preserved_data and not form.is_bound:
+        form.fields['account'].initial = default_account.id
+
     all_currency = [i[0] for i in Transaction.CURRENCY_CHOICES]
     all_accounts = Account.objects.filter(user=request.user)
     user_category = Category.objects.filter(user=request.user)
@@ -150,7 +169,8 @@ def add_transaction(request):
         'all_currency': all_currency,
         'all_accounts': all_accounts,
         'all_category': user_category,
-        'tags': user_tags
+        'tags': user_tags,
+        'preserved_tags_input': preserved_tags or ''
     }
     return render(request, 'spending_tracker/add_transaction.html', context)
 
@@ -170,6 +190,16 @@ def delete_transaction(request, pk):
 def add_tag(request):
     """Add new tag"""
     if request.method == 'POST':
+        # Preserve transaction form data before processing
+        transaction_data = {}
+        for key, value in request.POST.items():
+            if key not in ['csrfmiddlewaretoken', 'label'] and not key.startswith('tag_'):
+                transaction_data[key] = value
+
+        if transaction_data:
+            request.session['transaction_form_data'] = transaction_data
+            request.session['transaction_tags_input'] = request.POST.get('tags_input', '')
+
         tag = request.POST.get('label', '').strip().title()
         if tag:
             Tag.objects.create(label=tag, user=request.user)
@@ -183,6 +213,16 @@ def add_tag(request):
 def add_category(request):
     """Add new category from transaction page"""
     if request.method == 'POST':
+        # Preserve transaction form data before processing
+        transaction_data = {}
+        for key, value in request.POST.items():
+            if key not in ['csrfmiddlewaretoken', 'label', 'description'] and not key.startswith('category_'):
+                transaction_data[key] = value
+
+        if transaction_data:
+            request.session['transaction_form_data'] = transaction_data
+            request.session['transaction_tags_input'] = request.POST.get('tags_input', '')
+
         form = CategoryForm(request.POST)
         if form.is_valid():
             category = form.save(commit=False)
@@ -198,6 +238,16 @@ def add_category(request):
 def add_account_quick(request):
     """Add new account from transaction page"""
     if request.method == 'POST':
+        # Preserve transaction form data before processing
+        transaction_data = {}
+        for key, value in request.POST.items():
+            if key not in ['csrfmiddlewaretoken', 'name', 'balance', 'account_type'] and not key.startswith('account_'):
+                transaction_data[key] = value
+
+        if transaction_data:
+            request.session['transaction_form_data'] = transaction_data
+            request.session['transaction_tags_input'] = request.POST.get('tags_input', '')
+
         form = AccountForm(request.POST)
         if form.is_valid():
             account = form.save(commit=False)
@@ -225,73 +275,135 @@ def account_detail(request, pk):
 @login_required
 def reports(request):
     """Financial reports and analytics"""
-    # Get period parameter
     period = request.GET.get('period', 'month')
+    custom_start = request.GET.get('start_date')
+    custom_end = request.GET.get('end_date')
 
-    # Calculate date ranges
     now = timezone.now()
-    if period == 'week':
+
+    # Get user preferences for currency
+    preferences, created = UserPreferences.objects.get_or_create(
+        user=request.user,
+        defaults={'default_currency': 'GHS'}
+    )
+
+    # Currency symbol mapping
+    CURRENCY_SYMBOLS = {
+        'GHS': '₵',
+        'USD': '$',
+        'EUR': '€',
+        'GBP': '£',
+    }
+
+    user_currency = preferences.default_currency
+    currency_symbol = CURRENCY_SYMBOLS.get(user_currency, user_currency)
+
+    logger.info(f"=== REPORTS VIEW CALLED ===")
+    logger.info(f"User: {request.user.username}")
+    logger.info(f"Currency: {user_currency} ({currency_symbol})")
+    logger.info(f"Period: {period}")
+    logger.info(f"Custom dates: {custom_start} to {custom_end}")
+
+    if custom_start and custom_end:
+        try:
+            start_date = datetime.strptime(custom_start, '%Y-%m-%d')
+            start_date = timezone.make_aware(start_date.replace(hour=0, minute=0, second=0))
+            end_date = datetime.strptime(custom_end, '%Y-%m-%d')
+            end_date = timezone.make_aware(end_date.replace(hour=23, minute=59, second=59))
+            period_name = f'{custom_start} to {custom_end}'
+            period = 'custom'
+        except ValueError:
+            start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_date = now
+            period_name = 'This Month'
+            period = 'month'
+    elif period == 'week':
         start_date = now - timedelta(days=7)
+        end_date = now
         period_name = 'This Week'
     elif period == 'year':
         start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_date = now
         period_name = 'This Year'
-    else:  # default to month
+    elif period == 'all_time':
+        first_transaction = Transaction.objects.filter(account__user=request.user).order_by('transaction_time').first()
+        start_date = first_transaction.transaction_time if first_transaction else now
+        end_date = now
+        period_name = 'All Time'
+    else:
         start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_date = now
         period_name = 'This Month'
 
-    # Get user's transactions for the period
-    transactions = Transaction.objects.filter(
+    logger.info(f"Date range: {start_date} to {end_date}")
+    logger.info(f"Period name: {period_name}")
+
+    base_transactions = Transaction.objects.filter(
         account__user=request.user,
-        created_at__gte=start_date
+        transaction_time__gte=start_date,
+        transaction_time__lte=end_date
     ).select_related('account', 'category')
 
-    # Calculate key metrics
-    total_income = transactions.filter(mode='INCOME').aggregate(
-        total=Sum('amount'))['total'] or 0
-    total_expenses = transactions.filter(mode='EXPENSE').aggregate(
-        total=Sum('amount'))['total'] or 0
+    transaction_count = base_transactions.count()
+    logger.info(f"Found {transaction_count} transactions in date range")
+
+    if transaction_count > 0:
+        sample_transaction = base_transactions.first()
+        logger.info(f"Sample transaction: {sample_transaction.mode} {sample_transaction.amount} on {sample_transaction.transaction_time}")
+
+    aggregated_data = base_transactions.aggregate(
+        total_income=Sum('amount', filter=Q(mode='INCOME')),
+        total_expenses=Sum('amount', filter=Q(mode='EXPENSE')),
+        transaction_count=Count('id')
+    )
+
+    total_income = aggregated_data['total_income'] or 0
+    total_expenses = aggregated_data['total_expenses'] or 0
     net_income = total_income - total_expenses
 
-    # Calculate savings rate
-    savings_rate = 0
-    if total_income > 0:
-        savings_rate = (net_income / total_income) * 100
+    logger.info(f"Aggregated data: Income=${total_income}, Expenses=${total_expenses}, Net=${net_income}")
 
-    # Category breakdown for expenses
-    expense_categories = transactions.filter(mode='EXPENSE').values(
-        'category__label'
+    savings_rate = (net_income / total_income * 100) if total_income > 0 else 0
+
+    expense_categories = base_transactions.filter(mode='EXPENSE').values(
+        category_label=Coalesce('category__label', Value('Uncategorized'))
     ).annotate(
         total=Sum('amount'),
         count=Count('id')
     ).order_by('-total')[:10]
 
-    json_expense_categories = [dict(
-        label=record.get('category__label'),
-        total=record.get('total'),
-        count=record.get('count'),
-    ) for record in expense_categories]
+    json_expense_categories = [
+        {'label': record['category_label'], 'total': float(record['total']), 'count': record['count']}
+        for record in expense_categories
+    ]
 
-    # Income sources breakdown
-    income_categories = transactions.filter(mode='INCOME').values(
-        'category__label'
+    income_categories = base_transactions.filter(mode='INCOME').values(
+        category_label=Coalesce('category__label', Value('Uncategorized'))
     ).annotate(
         total=Sum('amount'),
         count=Count('id')
     ).order_by('-total')[:10]
 
-    # Account performance
-    user_accounts = Account.objects.filter(user=request.user)
+    user_accounts = Account.objects.filter(user=request.user).prefetch_related(
+        Prefetch(
+            'transactions',
+            queryset=base_transactions,
+            to_attr='period_transactions'
+        )
+    )
+
+    account_stats = base_transactions.values('account').annotate(
+        income=Sum('amount', filter=Q(mode='INCOME')),
+        expenses=Sum('amount', filter=Q(mode='EXPENSE'))
+    )
+
+    account_stats_dict = {stat['account']: stat for stat in account_stats}
+
     account_performance = []
-
     for account in user_accounts:
-        account_transactions = transactions.filter(account=account)
-        account_income = account_transactions.filter(mode='INCOME').aggregate(
-            total=Sum('amount'))['total'] or 0
-        account_expenses = account_transactions.filter(mode='EXPENSE').aggregate(
-            total=Sum('amount'))['total'] or 0
-
-        # Calculate starting balance (current balance - net transactions)
+        stats = account_stats_dict.get(account.id, {'income': 0, 'expenses': 0})
+        account_income = stats.get('income') or 0
+        account_expenses = stats.get('expenses') or 0
         net_change = account_income - account_expenses
         starting_balance = account.balance - net_change
 
@@ -304,92 +416,268 @@ def reports(request):
             'current_balance': round(account.balance, 2),
         })
 
-    # Daily/Weekly trend data for charts
-    trend_data = []
-    if period == 'week':
-        # Daily data for the week
-        for i in range(7):
-            date = start_date + timedelta(days=i)
-            day_transactions = transactions.filter(
-                created_at__date=date.date()
-            )
-            daily_income = day_transactions.filter(mode='INCOME').aggregate(
-                total=Sum('amount'))['total'] or 0
-            daily_expenses = day_transactions.filter(mode='EXPENSE').aggregate(
-                total=Sum('amount'))['total'] or 0
+    days_diff = (end_date - start_date).days
+    logger.info(f"Days difference: {days_diff}")
 
+    # Determine granularity based on period type
+    if period == 'week':
+        logger.info("Processing WEEKLY trend data (daily granularity)")
+        # Weekly filter: show each day of the week
+        trend_results = base_transactions.annotate(
+            period=TruncDate('transaction_time')
+        ).values('period').annotate(
+            income=Sum('amount', filter=Q(mode='INCOME')),
+            expenses=Sum('amount', filter=Q(mode='EXPENSE'))
+        ).order_by('period')
+
+        logger.info(f"Raw trend results count: {len(list(trend_results))}")
+
+        # Create dict for quick lookup
+        results_dict = {result['period']: result for result in trend_results}
+
+        # Generate all days in the range up to current date
+        trend_data = []
+        current = start_date.date()
+        end = min(end_date.date(), now.date())
+
+        logger.info(f"Generating daily data from {current} to {end}")
+
+        while current <= end:
+            result = results_dict.get(current, {})
             trend_data.append({
-                'date': date.strftime('%a, %b %d'),
-                'income': float(daily_income),
-                'expenses': float(daily_expenses),
+                'date': current.strftime('%a, %b %d'),
+                'income': float(result.get('income') or 0),
+                'expenses': float(result.get('expenses') or 0)
             })
-    else:
-        # Weekly data for month/year
-        current_date = start_date
+            current += timedelta(days=1)
+
+        logger.info(f"Generated {len(trend_data)} daily data points")
+        if trend_data:
+            logger.info(f"First data point: {trend_data[0]}")
+            logger.info(f"Last data point: {trend_data[-1]}")
+
+    elif period == 'month':
+        logger.info("Processing MONTHLY trend data (weekly granularity)")
+        # Monthly filter: show each week in the month
+        trend_results = base_transactions.annotate(
+            period=TruncWeek('transaction_time')
+        ).values('period').annotate(
+            income=Sum('amount', filter=Q(mode='INCOME')),
+            expenses=Sum('amount', filter=Q(mode='EXPENSE'))
+        ).order_by('period')
+
+        logger.info(f"Raw trend results count: {len(list(trend_results))}")
+
+        # Create dict for quick lookup
+        results_dict = {result['period']: result for result in trend_results}
+
+        # Generate all weeks in the month up to current date
+        trend_data = []
+        current = start_date
+        end = min(end_date, now)
         week_num = 1
 
-        while current_date <= now:
-            week_end = min(current_date + timedelta(days=6), now)
-            week_transactions = transactions.filter(
-                created_at__range=[current_date, week_end]
-            )
-            weekly_income = week_transactions.filter(mode='INCOME').aggregate(
-                total=Sum('amount'))['total'] or 0
-            weekly_expenses = week_transactions.filter(mode='EXPENSE').aggregate(
-                total=Sum('amount'))['total'] or 0
+        # Get week start (Monday) for start_date
+        from django.db.models.functions import TruncWeek as TruncWeekFunc
+        current_week_start = current - timedelta(days=current.weekday())
 
+        logger.info(f"Generating weekly data from {current_week_start.date()} (week start)")
+
+        while current_week_start <= end:
+            # Only include if week start is within our period
+            if current_week_start >= start_date or (current_week_start + timedelta(days=6)) >= start_date:
+                week_date = current_week_start.date()
+                result = results_dict.get(week_date, {})
+
+                # Only add week if it contains dates in our range and up to current date
+                week_end = current_week_start + timedelta(days=6)
+                if current_week_start <= end:
+                    trend_data.append({
+                        'date': f"Week {week_num}",
+                        'income': float(result.get('income') or 0),
+                        'expenses': float(result.get('expenses') or 0)
+                    })
+                    week_num += 1
+
+            current_week_start += timedelta(days=7)
+
+        logger.info(f"Generated {len(trend_data)} weekly data points")
+        if trend_data:
+            logger.info(f"First data point: {trend_data[0]}")
+            logger.info(f"Last data point: {trend_data[-1]}")
+
+    elif period == 'year':
+        logger.info("Processing YEARLY trend data (monthly granularity)")
+        # Yearly filter: show each month in the year
+        trend_results = base_transactions.annotate(
+            period=TruncMonth('transaction_time')
+        ).values('period').annotate(
+            income=Sum('amount', filter=Q(mode='INCOME')),
+            expenses=Sum('amount', filter=Q(mode='EXPENSE'))
+        ).order_by('period')
+
+        logger.info(f"Raw trend results count: {len(list(trend_results))}")
+
+        # Create dict for quick lookup
+        results_dict = {result['period']: result for result in trend_results}
+
+        # Generate all months in the year up to current month
+        trend_data = []
+        current = start_date.replace(day=1)
+        end = min(end_date, now)
+
+        logger.info(f"Generating monthly data from {current.strftime('%b %Y')} to {end.strftime('%b %Y')}")
+
+        while current <= end:
+            month_date = current.date()
+            result = results_dict.get(month_date, {})
             trend_data.append({
-                'date': f'Week {week_num}',
-                'income': float(weekly_income),
-                'expenses': float(weekly_expenses),
+                'date': current.strftime('%b %Y'),
+                'income': float(result.get('income') or 0),
+                'expenses': float(result.get('expenses') or 0)
             })
 
-            current_date += timedelta(days=7)
-            week_num += 1
+            # Move to next month
+            if current.month == 12:
+                current = current.replace(year=current.year + 1, month=1)
+            else:
+                current = current.replace(month=current.month + 1)
 
-            if len(trend_data) >= 12:  # Limit to prevent too much data
-                break
+        logger.info(f"Generated {len(trend_data)} monthly data points")
+        if trend_data:
+            logger.info(f"First data point: {trend_data[0]}")
+            logger.info(f"Last data point: {trend_data[-1]}")
 
-    # Monthly comparison (for context)
-    # current_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    # last_month = (current_month - timedelta(days=1)).replace(day=1)
+    else:
+        logger.info(f"Processing CUSTOM filter with {days_diff} days difference")
+        # Custom filter: dynamic granularity based on range
+        if days_diff <= 7:
+            logger.info("Custom: Using daily granularity (≤7 days)")
+            # Less than 7 days: show by day
+            trend_results = base_transactions.annotate(
+                period=TruncDate('transaction_time')
+            ).values('period').annotate(
+                income=Sum('amount', filter=Q(mode='INCOME')),
+                expenses=Sum('amount', filter=Q(mode='EXPENSE'))
+            ).order_by('period')
 
-    # current_month_income = Transaction.objects.filter(
-    #     account__user=request.user,
-    #     mode='INCOME',
-    #     created_at__gte=current_month
-    # ).aggregate(total=Sum('amount'))['total'] or 0
+            results_dict = {result['period']: result for result in trend_results}
 
-    # last_month_income = Transaction.objects.filter(
-    #     account__user=request.user,
-    #     mode='INCOME',
-    #     created_at__gte=last_month,
-    #     created_at__lt=current_month
-    # ).aggregate(total=Sum('amount'))['total'] or 0
+            trend_data = []
+            current = start_date.date()
+            end = min(end_date.date(), now.date())
 
-    # current_month_expenses = Transaction.objects.filter(
-    #     account__user=request.user,
-    #     mode='EXPENSE',
-    #     created_at__gte=current_month
-    # ).aggregate(total=Sum('amount'))['total'] or 0
+            while current <= end:
+                result = results_dict.get(current, {})
+                trend_data.append({
+                    'date': current.strftime('%a, %b %d'),
+                    'income': float(result.get('income') or 0),
+                    'expenses': float(result.get('expenses') or 0)
+                })
+                current += timedelta(days=1)
 
-    # last_month_expenses = Transaction.objects.filter(
-    #     account__user=request.user,
-    #     mode='EXPENSE',
-    #     created_at__gte=last_month,
-    #     created_at__lt=current_month
-    # ).aggregate(total=Sum('amount'))['total'] or 0
+        elif days_diff <= 31:
+            logger.info("Custom: Using weekly granularity (8-31 days)")
+            # 8-31 days: show by week
+            trend_results = base_transactions.annotate(
+                period=TruncWeek('transaction_time')
+            ).values('period').annotate(
+                income=Sum('amount', filter=Q(mode='INCOME')),
+                expenses=Sum('amount', filter=Q(mode='EXPENSE'))
+            ).order_by('period')
 
-    # Calculate month-over-month changes
-    # income_change = (
-    #             (current_month_income - last_month_income) / last_month_income * 100) if last_month_income > 0 else 0
-    # expense_change = ((
-    #                               current_month_expenses - last_month_expenses) / last_month_expenses * 100) if last_month_expenses > 0 else 0
+            results_dict = {result['period']: result for result in trend_results}
+
+            trend_data = []
+            current = start_date - timedelta(days=start_date.weekday())
+            end = min(end_date, now)
+            week_num = 1
+
+            while current <= end:
+                if current >= start_date or (current + timedelta(days=6)) >= start_date:
+                    week_date = current.date()
+                    result = results_dict.get(week_date, {})
+
+                    if current <= end:
+                        trend_data.append({
+                            'date': f"Week {week_num}",
+                            'income': float(result.get('income') or 0),
+                            'expenses': float(result.get('expenses') or 0)
+                        })
+                        week_num += 1
+
+                current += timedelta(days=7)
+
+        elif days_diff <= 1095:  # ~3 years
+            logger.info("Custom: Using monthly granularity (32 days - 3 years)")
+            # 32 days - 3 years: show by month
+            trend_results = base_transactions.annotate(
+                period=TruncMonth('transaction_time')
+            ).values('period').annotate(
+                income=Sum('amount', filter=Q(mode='INCOME')),
+                expenses=Sum('amount', filter=Q(mode='EXPENSE'))
+            ).order_by('period')
+
+            results_dict = {result['period']: result for result in trend_results}
+
+            trend_data = []
+            current = start_date.replace(day=1)
+            end = min(end_date, now)
+
+            while current <= end:
+                month_date = current.date()
+                result = results_dict.get(month_date, {})
+                trend_data.append({
+                    'date': current.strftime('%b %Y'),
+                    'income': float(result.get('income') or 0),
+                    'expenses': float(result.get('expenses') or 0)
+                })
+
+                if current.month == 12:
+                    current = current.replace(year=current.year + 1, month=1)
+                else:
+                    current = current.replace(month=current.month + 1)
+
+        else:
+            logger.info("Custom: Using yearly granularity (>3 years)")
+            # More than 3 years: show by year
+            from django.db.models.functions import ExtractYear
+
+            trend_results = base_transactions.annotate(
+                year=ExtractYear('transaction_time')
+            ).values('year').annotate(
+                income=Sum('amount', filter=Q(mode='INCOME')),
+                expenses=Sum('amount', filter=Q(mode='EXPENSE'))
+            ).order_by('year')
+
+            results_dict = {result['year']: result for result in trend_results}
+
+            trend_data = []
+            current_year = start_date.year
+            end_year = min(end_date.year, now.year)
+
+            while current_year <= end_year:
+                result = results_dict.get(current_year, {})
+                trend_data.append({
+                    'date': str(current_year),
+                    'income': float(result.get('income') or 0),
+                    'expenses': float(result.get('expenses') or 0)
+                })
+                current_year += 1
+
+            logger.info(f"Generated {len(trend_data)} yearly data points")
+
+    logger.info(f"=== REPORTS VIEW COMPLETE ===")
+    logger.info(f"Final trend_data count: {len(trend_data)}")
+    logger.info(f"Expense categories count: {len(json_expense_categories)}")
+    logger.info(f"Income categories count: {len(list(income_categories))}")
+    logger.info(f"Account performance count: {len(account_performance)}")
 
     context = {
         'period': period,
         'period_name': period_name,
-        'start_date': start_date,
+        'start_date': start_date.strftime('%Y-%m-%d') if start_date else '',
+        'end_date': end_date.strftime('%Y-%m-%d') if end_date else '',
         'total_income': round(total_income, 2),
         'total_expenses': round(total_expenses, 2),
         'net_income': round(net_income, 2),
@@ -399,12 +687,205 @@ def reports(request):
         'income_categories': income_categories,
         'trend_data': trend_data,
         'account_performance': account_performance,
-        # 'current_month_income': current_month_income,
-        # 'last_month_income': last_month_income,
-        # 'current_month_expenses': current_month_expenses,
-        # 'last_month_expenses': last_month_expenses,
-        # 'income_change': round(income_change, 1),
-        # 'expense_change': round(expense_change, 1),
-        # 'transaction_count': transactions.count(),
+        'currency_symbol': currency_symbol,
+        'user_currency': user_currency,
     }
     return render(request, 'spending_tracker/reports.html', context)
+
+
+# Configuration and Management Views
+@login_required
+def config(request):
+    """Configuration page for user preferences, accounts, and categories"""
+    # Get or create user preferences
+    preferences, created = UserPreferences.objects.get_or_create(
+        user=request.user,
+        defaults={'default_currency': 'GHS'}
+    )
+
+    if request.method == 'POST':
+        # Handle preference updates
+        new_currency = request.POST.get('default_currency')
+        if new_currency and new_currency in dict(Transaction.CURRENCY_CHOICES):
+            preferences.default_currency = new_currency
+            preferences.save()
+            messages.success(request, 'Preferences updated successfully!')
+            return redirect('spending_tracker:config')
+
+    # Get user accounts with transaction counts
+    accounts = Account.objects.filter(user=request.user).annotate(
+        transaction_count=Count('transactions')
+    ).order_by('name')
+
+    # Get user categories with transaction counts
+    categories = Category.objects.filter(user=request.user).annotate(
+        transaction_count=Count('transactions')
+    ).order_by('label')
+
+    context = {
+        'preferences': preferences,
+        'accounts': accounts,
+        'categories': categories,
+        'currency_choices': Transaction.CURRENCY_CHOICES,
+    }
+    return render(request, 'spending_tracker/config.html', context)
+
+
+@login_required
+def edit_account(request, pk):
+    """Edit an existing account"""
+    account = get_object_or_404(Account.objects.prefetch_related(
+        'transactions'
+    ).annotate(
+        transaction_count=Count('transactions')
+    ), id=pk, user=request.user)
+
+    if request.method == 'POST':
+        form = AccountForm(request.POST, instance=account)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Account "{account.name}" updated successfully!')
+            return redirect('spending_tracker:config')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = AccountForm(instance=account)
+
+    context = {
+        'form': form,
+        'account': account,
+    }
+    return render(request, 'spending_tracker/edit_account.html', context)
+
+
+@login_required
+def delete_account(request, pk):
+    """Delete an account with option to transfer transactions"""
+    account = get_object_or_404(Account, id=pk, user=request.user)
+    transaction_count = account.transactions.count()
+
+    # Check if this is the only account
+    user_accounts_count = Account.objects.filter(user=request.user).count()
+    if user_accounts_count == 1:
+        messages.error(request, 'Cannot delete your only account. Create another account first.')
+        return redirect('spending_tracker:config')
+
+    if request.method == 'POST':
+        transfer_to_id = request.POST.get('transfer_to')
+
+        if transaction_count > 0:
+            if not transfer_to_id:
+                messages.error(request, 'Please select an account to transfer transactions to.')
+                return redirect('spending_tracker:delete_account', pk=pk)
+
+            transfer_account = get_object_or_404(Account, id=transfer_to_id, user=request.user)
+
+            if transfer_account.id == account.id:
+                messages.error(request, 'Cannot transfer to the same account.')
+                return redirect('spending_tracker:delete_account', pk=pk)
+
+            # Transfer all transactions
+            with transaction.atomic():
+                account.transactions.update(account=transfer_account)
+                account.delete()
+
+            messages.success(request,
+                f'Account "{account.name}" deleted and {transaction_count} '
+                f'transaction(s) transferred to "{transfer_account.name}".')
+        else:
+            account.delete()
+            messages.success(request, f'Account "{account.name}" deleted successfully!')
+
+        return redirect('spending_tracker:config')
+
+    # Get other accounts for transfer option
+    other_accounts = Account.objects.filter(user=request.user).exclude(id=pk)
+
+    context = {
+        'account': account,
+        'transaction_count': transaction_count,
+        'other_accounts': other_accounts,
+    }
+    return render(request, 'spending_tracker/delete_account.html', context)
+
+
+@login_required
+def edit_category(request, pk):
+    """Edit an existing category"""
+    category = get_object_or_404(Category.objects.prefetch_related(
+        'transactions'
+    ).annotate(
+        transaction_count=Count('transactions')
+    ), id=pk, user=request.user)
+
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Category "{category.label}" updated successfully!')
+            return redirect('spending_tracker:config')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = CategoryForm(instance=category)
+
+    context = {
+        'form': form,
+        'category': category,
+    }
+    return render(request, 'spending_tracker/edit_category.html', context)
+
+
+@login_required
+def delete_category(request, pk):
+    """Delete a category with option to transfer transactions"""
+    category = get_object_or_404(Category, id=pk, user=request.user)
+    transaction_count = category.transactions.count()
+
+    if request.method == 'POST':
+        transfer_to_id = request.POST.get('transfer_to')
+
+        if transaction_count > 0:
+            if not transfer_to_id:
+                # Allow setting to None (Uncategorized)
+                if request.POST.get('set_uncategorized') == 'yes':
+                    with atomic():
+                        category.transactions.update(category=None)
+                        category.delete()
+                    messages.success(request,
+                        f'Category "{category.label}" deleted and {transaction_count} '
+                        f'transaction(s) set to Uncategorized.')
+                    return redirect('spending_tracker:config')
+                else:
+                    messages.error(request, 'Please select a category to transfer transactions to or mark them as Uncategorized.')
+                    return redirect('spending_tracker:delete_category', pk=pk)
+
+            transfer_category = get_object_or_404(Category, id=transfer_to_id, user=request.user)
+
+            if transfer_category.id == category.id:
+                messages.error(request, 'Cannot transfer to the same category.')
+                return redirect('spending_tracker:delete_category', pk=pk)
+
+            # Transfer all transactions
+            with atomic():
+                category.transactions.update(category=transfer_category)
+                category.delete()
+
+            messages.success(request,
+                f'Category "{category.label}" deleted and {transaction_count} '
+                f'transaction(s) transferred to "{transfer_category.label}".')
+        else:
+            category.delete()
+            messages.success(request, f'Category "{category.label}" deleted successfully!')
+
+        return redirect('spending_tracker:config')
+
+    # Get other categories for transfer option
+    other_categories = Category.objects.filter(user=request.user).exclude(id=pk)
+
+    context = {
+        'category': category,
+        'transaction_count': transaction_count,
+        'other_categories': other_categories,
+    }
+    return render(request, 'spending_tracker/delete_category.html', context)

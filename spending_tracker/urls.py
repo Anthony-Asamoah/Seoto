@@ -15,4 +15,11 @@ urlpatterns = [
     path('accounts/quick-add/', views.add_account_quick, name='add_account_quick'),
     path('accounts/<int:pk>/', views.account_detail, name='account_detail'),
     path('reports/', views.reports, name='reports'),
+
+    # Configuration and Management
+    path('config/', views.config, name='config'),
+    path('accounts/<int:pk>/edit/', views.edit_account, name='edit_account'),
+    path('accounts/<int:pk>/delete/', views.delete_account, name='delete_account'),
+    path('categories/<int:pk>/edit/', views.edit_category, name='edit_category'),
+    path('categories/<int:pk>/delete/', views.delete_category, name='delete_category'),
 ]
