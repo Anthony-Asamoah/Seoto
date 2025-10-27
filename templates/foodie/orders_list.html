@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}| Orders{% endblock %}
+
+{% block style %}
+    <style>
+        /* Keep styles minimal and scoped to this page */
+        .order-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .order-toggle .chev {
+            display: inline-block;
+            transition: transform .2s ease;
+            margin-right: .25rem;
+            color: #6c757d;
+        }
+
+        tr.order-row[aria-expanded="true"] .chev {
+            transform: rotate(90deg);
+            color: #495057;
+        }
+
+        /* Hidden details row shown when expanded */
+        tr.order-details {
+            display: none;
+        }
+
+        tr.order-details.show {
+            display: table-row;
+        }
+
+
+        .details-card {
+            background: #f8f9fa;
+            border: 1px dashed #dee2e6;
+            border-radius: .5rem;
+            padding: .75rem 1rem;
+        }
+
+        .status-pills .badge {
+            margin-right: .25rem;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header container">
+        <h1>What's Cooking</h1>
+        <hr/>
+    </div>
+    <div class="main">
+        <div class="container px-0 px-md-2">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Your Meal Orders</h5>
+                    <a href="{% url 'foodie_order_new' %}" class="btn btn-primary btn-sm">
+                        <i class="fa fa-plus me-1"></i> New Order
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if orders %}
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th style="width:36px"></th>
+                                    <th>When</th>
+                                    <th>Meal</th>
+                                    <th>From</th>
+                                    <th class="text-center">Qty</th>
+                                    <th>Status</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for o in orders %}
+                                    <!-- Clickable summary row -->
+                                    <tr class="order-row order-toggle" role="button"
+                                        aria-expanded="false" aria-controls="order-{{ o.id }}-details"
+                                        data-target="order-{{ o.id }}-details">
+                                        <td class="text-muted">
+                                            <i class="fa fa-chevron-right chev" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Toggle details</span>
+                                        </td>
+                                        <td>{{ o.date_ordered|timesince }} ago</td>
+                                        <td>{{ o.meal }} <span class="visible-price"> - GHS {{ o.price }}</span></td>
+                                        <td>{{ o.location }}</td>
+                                        <td class="text-center">{{ o.quantity }}</td>
+                                        <td>
+                                            {% if o.not_available %}
+                                                <span class="badge text-bg-danger order-status">Not available</span>
+                                            {% elif o.is_delivered %}
+                                                <span class="badge text-bg-success order-status">Delivered</span>
+                                            {% elif o.is_purchased %}
+                                                <span class="badge text-bg-info order-status">Purchased</span>
+                                            {% elif o.is_confirmed %}
+                                                <span class="badge text-bg-secondary order-status">Confirmed</span>
+                                            {% else %}
+                                                <span class="badge text-bg-warning order-status">Pending</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <!-- Hidden details row -->
+                                    <tr id="order-{{ o.id }}-details" class="order-details">
+                                        <td></td>
+                                        <td colspan="5">
+                                            <div class="details-card">
+                                                <div class="row g-2">
+                                                    <div class="col-9 col-md-9">
+                                                        <div class="invisible-price">
+                                                            <div class="col-12 col-md-12 mb-2">
+                                                                <div class="small text-muted">Price</div>
+                                                                <div>{{ o.price }}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="date-ordered mb-2">
+                                                            <div class="small text-muted">Ordered</div>
+                                                            <div>{{ o.date_ordered }}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-3 col-md-3">
+                                                        <div class="small text-muted">Stage</div>
+                                                        <div class="status-pills">
+                                                            <span class="hidden-order-status-na badge {% if o.not_available %}text-bg-danger{% else %}text-bg-light text-muted border{% endif %}">
+                                                                {% if o.not_available %}Not {% endif %}available
+                                                            </span>
+                                                            <span class="hidden-order-status-confirmed badge {% if o.is_confirmed %}text-bg-secondary{% else %}text-bg-light text-muted border{% endif %}">Confirmed</span>
+                                                            <span class="hidden-order-status-purchased badge {% if o.is_purchased %}text-bg-info{% else %}text-bg-light text-muted border{% endif %}">Purchased</span>
+                                                            <span class="hidden-order-status-delivered badge {% if o.is_delivered %}text-bg-success{% else %}text-bg-light text-muted border{% endif %}">Delivered</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12 col-md-3 text-md-end mb-2">
+                                                        {% if o.not_available %}
+                                                            <a href="{% url 'foodie_order_edit' o.id %}"
+                                                               class="btn btn-outline-primary btn-sm mt-md-0">
+                                                                <i class="fa fa-pen"></i> Edit Order
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                                <div class="row g-2">
+                                                    <div class="col-12 col-md-6">
+                                                        <div class="small text-muted">Details/Notes</div>
+                                                        <div>{{ o.details|default:'—' }}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">You have not placed any orders yet.</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{% url 'foodie' %}" class="btn btn-link">Back to Foodie</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        (function () {
+            function toggleRow(row) {
+                var targetId = row.getAttribute('data-target');
+                if (!targetId) return;
+                var details = document.getElementById(targetId);
+                if (!details) return;
+                var expanded = row.getAttribute('aria-expanded') === 'true';
+                row.setAttribute('aria-expanded', String(!expanded));
+                details.classList.toggle('show', !expanded);
+            }
+
+            let is_price_hidden = false
+            const togglePriceVisibility = () => {
+                if (is_price_hidden) document.querySelector('.visible-price').style.display = 'block';
+                else document.querySelector('.visible-price').style.display = 'none';
+
+                if (!is_price_hidden) document.querySelector('.invisible-price').style.display = 'block';
+                else document.querySelector('.invisible-price').style.display = 'none';
+
+                is_price_hidden = !is_price_hidden;
+            }
+
+            document.addEventListener('click', function (e) {
+                var t = e.target;
+                var row = t.closest && t.closest('tr.order-row');
+                if (row) toggleRow(row);
+                togglePriceVisibility();
+            });
+            document.addEventListener('keydown', function (e) {
+                if ((e.key === 'Enter' || e.key === ' ') && e.target && e.target.closest) {
+                    var row = e.target.closest('tr.order-row');
+                    if (row) {
+                        e.preventDefault();
+                        toggleRow(row);
+                    }
+                }
+            });
+        })();
+
+        // Helper to show a Bootstrap alert in the orders card
+        function showAlert(text, level) {
+            level = level || 'info';
+            var container = document.querySelector('.card-body') || document.body;
+            var alert = document.createElement('div');
+            alert.className = 'alert alert-' + level + ' alert-dismissible fade show mt-2';
+            alert.setAttribute('role', 'alert');
+            alert.innerText = text;
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn-close';
+            btn.setAttribute('data-bs-dismiss', 'alert');
+            btn.setAttribute('aria-label', 'Close');
+            alert.appendChild(btn);
+            container.prepend(alert);
+        }
+
+        // If we asked for a reload with a pending message, show it now
+        (function() {
+            try {
+                var pending = localStorage.getItem('foodie_alert');
+                if (pending) {
+                    showAlert(pending, 'info');
+                    localStorage.removeItem('foodie_alert');
+                }
+            } catch (e) { /* ignore storage errors */ }
+        })();
+
+        function changeStatus(status) {
+            let element = document.querySelector('.order-status')
+            switch (status) {
+                case 'not_available':
+                    document.querySelector('.hidden-order-status-na').className = 'hidden-order-status-na badge text-bg-danger';
+                    element.className = 'badge text-bg-danger order-status';
+                    element.textContent = 'Not available';
+                    try {
+                        var message = 'An item in your order is not available. You can edit the order now.';
+                        localStorage.setItem('foodie_alert', message);
+                    } catch (e) {}
+                    // Delay reload to allow backend state/context to update
+                    setTimeout(function () { location.reload(true); }, 1500);
+                    break;
+                case 'confirmed':
+                    document.querySelector('.hidden-order-status-confirmed').className = 'hidden-order-status-confirmed badge text-bg-secondary';
+                    element.className = 'badge text-bg-secondary order-status';
+                    element.textContent = 'Confirmed';
+                    break;
+                case 'purchased':
+                    document.querySelector('.hidden-order-status-purchased').className = 'hidden-order-status-purchased badge text-bg-info';
+                    element.className = 'badge text-bg-info order-status';
+                    element.textContent = 'Purchased';
+                    break;
+                case 'delivered':
+                    document.querySelector('.hidden-order-status-delivered').className = 'hidden-order-status-delivered badge text-bg-success';
+                    element.className = 'badge text-bg-success order-status';
+                    element.textContent = 'Delivered';
+                    break;
+            }
+        }
+
+        // WebSocket notifications for Foodie
+        (function () {
+            if (!('WebSocket' in window)) return;
+            var isAuth = true; // page requires auth already
+            if (!isAuth) return;
+            var proto = (window.location.protocol === 'https:') ? 'wss' : 'ws';
+            var wsUrl = proto + '://' + window.location.host + '/ws/foodie/';
+            try {
+                var sock = new WebSocket(wsUrl);
+                sock.onmessage = function (evt) {
+                    try {
+                        var data = JSON.parse(evt.data);
+                        var event = data.event;
+                        var payload = data.payload || {};
+                        var text = '';
+                        switch (event) {
+                            case 'order.created':
+                                text = 'Order placed: ' + (payload.meal || '') + ' x' + (payload.quantity || '');
+                                break;
+                            case 'order.not_available':
+                                changeStatus('not_available')
+                                break;
+                            case 'order.updated_pending':
+                                break;
+                            case 'order.confirmed':
+                                text = `Your ${(payload.meal || '')} order was confirmed.`;
+                                changeStatus('confirmed')
+                                break;
+                            case 'order.purchased':
+                                text = `Your ${(payload.meal || '')} order was purchased.`;
+                                changeStatus('purchased')
+                                break;
+                            case 'order.delivered':
+                                text = `Your ${(payload.meal || '')} order was delivered.`;
+                                changeStatus('delivered')
+                                break;
+                            default:
+                                text = 'Order update received.';
+                        }
+                        if (text) {
+                            var container = document.querySelector('.card-body') || document.body;
+                            var alert = document.createElement('div');
+                            alert.className = 'alert alert-info alert-dismissible fade show mt-2';
+                            alert.setAttribute('role', 'alert');
+                            alert.innerText = text;
+                            var btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'btn-close';
+                            btn.setAttribute('data-bs-dismiss', 'alert');
+                            btn.setAttribute('aria-label', 'Close');
+                            alert.appendChild(btn);
+                            container.prepend(alert);
+                        }
+                        console.log('Foodie WS:', data);
+                    } catch (e) {
+                        console.warn('WS parse error', e);
+                    }
+                };
+                sock.onopen = function () {
+                    console.log('Foodie WebSocket connected');
+                };
+                sock.onclose = function () {
+                    console.log('Foodie WebSocket closed');
+                };
+                sock.onerror = function () {
+                    console.log('Foodie WebSocket error');
+                };
+            } catch (e) {
+                console.warn('WS init failed', e);
+            }
+        })();
+    </script>
+{% endblock %}
