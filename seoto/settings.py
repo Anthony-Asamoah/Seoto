@@ -35,11 +35,15 @@ APP_DOMAIN = Env.str('APP_DOMAIN')
 
 # Application definition
 INSTALLED_APPS = [
+    # Third-party
+    'daphne',
+    'channels',
+
     # My apps
     'accounts',
     'author',
     'home',
-    'foodie',
+    'foodie.apps.FoodieConfig',
     'interest_calc',
     'rhymes',
     'throw_a_die',
@@ -86,6 +90,14 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'seoto.wsgi.application'
+ASGI_APPLICATION = 'seoto.asgi.application'
+
+# Channels (in-memory layer for now)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 # Database
 DATABASES = {
