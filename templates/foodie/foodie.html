@@ -183,11 +183,6 @@
                        class="configure-link">
                         <button class="btn btn-outline-secondary btn-sm">Configure</button>
                     </a>
-                    {% if can_order %}
-                        <a href="{% url 'foodie_orders' %}">
-                            <button class="btn btn-outline-success btn-sm">Place Order</button>
-                        </a>
-                    {% endif %}
                 </div>
             {% endif %}
             {% if option_1 or option_2 %}
