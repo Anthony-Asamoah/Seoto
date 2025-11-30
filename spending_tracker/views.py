@@ -273,6 +273,41 @@ def account_detail(request, pk):
 
 
 @login_required
+def accounts_list(request):
+    """List all accounts with statistics"""
+    accounts = Account.objects.filter(user=request.user).annotate(
+        transaction_count=Count('transactions'),
+        total_income=Sum('transactions__amount', filter=Q(transactions__mode='INCOME')),
+        total_expenses=Sum('transactions__amount', filter=Q(transactions__mode='EXPENSE'))
+    ).order_by('-balance')
+
+    # Calculate total balance across all accounts
+    total_balance = accounts.aggregate(total=Sum('balance'))['total'] or 0
+
+    # Prepare account statistics
+    account_stats = []
+    for account in accounts:
+        income = account.total_income or 0
+        expenses = account.total_expenses or 0
+        net_flow = income - expenses
+
+        account_stats.append({
+            'account': account,
+            'transaction_count': account.transaction_count,
+            'total_income': income,
+            'total_expenses': expenses,
+            'net_flow': net_flow,
+        })
+
+    context = {
+        'accounts': accounts,
+        'account_stats': account_stats,
+        'total_balance': total_balance,
+    }
+    return render(request, 'spending_tracker/accounts_list.html', context)
+
+
+@login_required
 def reports(request):
     """Financial reports and analytics"""
     period = request.GET.get('period', 'month')
@@ -299,17 +334,17 @@ def reports(request):
     user_currency = preferences.default_currency
     currency_symbol = CURRENCY_SYMBOLS.get(user_currency, user_currency)
 
-    logger.info(f"\n{'='*80}")
-    logger.info(f"=== REPORTS VIEW CALLED ===")
-    logger.info(f"{'='*80}")
-    logger.info(f"User: {request.user.username}")
-    logger.info(f"Currency: {user_currency} ({currency_symbol})")
-    logger.info(f"REQUEST PARAMS:")
-    logger.info(f"  - period: {period}")
-    logger.info(f"  - modifier: {modifier}")
-    logger.info(f"  - start_date: {custom_start}")
-    logger.info(f"  - end_date: {custom_end}")
-    logger.info(f"  - All GET params: {dict(request.GET)}")
+    logger.debug(f"\n{'='*80}")
+    logger.debug(f"=== REPORTS VIEW CALLED ===")
+    logger.debug(f"{'='*80}")
+    logger.debug(f"User: {request.user.username}")
+    logger.debug(f"Currency: {user_currency} ({currency_symbol})")
+    logger.debug(f"REQUEST PARAMS:")
+    logger.debug(f"  - period: {period}")
+    logger.debug(f"  - modifier: {modifier}")
+    logger.debug(f"  - start_date: {custom_start}")
+    logger.debug(f"  - end_date: {custom_end}")
+    logger.debug(f"  - All GET params: {dict(request.GET)}")
 
     if custom_start and custom_end:
         try:
@@ -420,13 +455,13 @@ def reports(request):
             end_date = now
             period_name = 'This Month'
 
-    logger.info(f"\nDATE RANGE CALCULATED:")
-    logger.info(f"  - Period: {period}")
-    logger.info(f"  - Modifier: {modifier}")
-    logger.info(f"  - Period Name: {period_name}")
-    logger.info(f"  - Start: {start_date}")
-    logger.info(f"  - End: {end_date}")
-    logger.info(f"  - Days Difference: {(end_date - start_date).days}")
+    logger.debug(f"\nDATE RANGE CALCULATED:")
+    logger.debug(f"  - Period: {period}")
+    logger.debug(f"  - Modifier: {modifier}")
+    logger.debug(f"  - Period Name: {period_name}")
+    logger.debug(f"  - Start: {start_date}")
+    logger.debug(f"  - End: {end_date}")
+    logger.debug(f"  - Days Difference: {(end_date - start_date).days}")
 
     base_transactions = Transaction.objects.filter(
         account__user=request.user,
@@ -435,16 +470,16 @@ def reports(request):
     ).select_related('account', 'category')
 
     transaction_count = base_transactions.count()
-    logger.info(f"\nTRANSACTIONS FOUND:")
-    logger.info(f"  - Total transactions: {transaction_count}")
+    logger.debug(f"\nTRANSACTIONS FOUND:")
+    logger.debug(f"  - Total transactions: {transaction_count}")
 
     if transaction_count > 0:
         sample_transaction = base_transactions.first()
-        logger.info(f"  - Sample transaction: {sample_transaction.mode} {sample_transaction.amount} on {sample_transaction.transaction_time}")
+        logger.debug(f"  - Sample transaction: {sample_transaction.mode} {sample_transaction.amount} on {sample_transaction.transaction_time}")
         income_count = base_transactions.filter(mode='INCOME').count()
         expense_count = base_transactions.filter(mode='EXPENSE').count()
-        logger.info(f"  - Income transactions: {income_count}")
-        logger.info(f"  - Expense transactions: {expense_count}")
+        logger.debug(f"  - Income transactions: {income_count}")
+        logger.debug(f"  - Expense transactions: {expense_count}")
     else:
         logger.warning(f"  - WARNING: No transactions found in this date range!")
 
@@ -458,11 +493,11 @@ def reports(request):
     total_expenses = aggregated_data['total_expenses'] or 0
     net_income = total_income - total_expenses
 
-    logger.info(f"\nAGGREGATED DATA:")
-    logger.info(f"  - Total Income: {currency_symbol}{total_income}")
-    logger.info(f"  - Total Expenses: {currency_symbol}{total_expenses}")
-    logger.info(f"  - Net Income: {currency_symbol}{net_income}")
-    logger.info(f"  - Transaction Count: {aggregated_data['transaction_count']}")
+    logger.debug(f"\nAGGREGATED DATA:")
+    logger.debug(f"  - Total Income: {currency_symbol}{total_income}")
+    logger.debug(f"  - Total Expenses: {currency_symbol}{total_expenses}")
+    logger.debug(f"  - Net Income: {currency_symbol}{net_income}")
+    logger.debug(f"  - Transaction Count: {aggregated_data['transaction_count']}")
 
     savings_rate = (net_income / total_income * 100) if total_income > 0 else 0
 
@@ -518,11 +553,11 @@ def reports(request):
         })
 
     days_diff = (end_date - start_date).days
-    logger.info(f"Days difference: {days_diff}")
+    logger.debug(f"Days difference: {days_diff}")
 
     # Determine granularity based on period type
     if period == 'week':
-        logger.info("Processing WEEKLY trend data (daily granularity)")
+        logger.debug("Processing WEEKLY trend data (daily granularity)")
         # Weekly filter: show each day of the week
         trend_results = base_transactions.annotate(
             period=TruncDate('transaction_time')
@@ -531,7 +566,7 @@ def reports(request):
             expenses=Sum('amount', filter=Q(mode='EXPENSE'))
         ).order_by('period')
 
-        logger.info(f"Raw trend results count: {len(list(trend_results))}")
+        logger.debug(f"Raw trend results count: {len(list(trend_results))}")
 
         # Create dict for quick lookup
         results_dict = {result['period']: result for result in trend_results}
@@ -541,7 +576,7 @@ def reports(request):
         current = start_date.date()
         end = min(end_date.date(), now.date())
 
-        logger.info(f"Generating daily data from {current} to {end}")
+        logger.debug(f"Generating daily data from {current} to {end}")
 
         while current <= end:
             result = results_dict.get(current, {})
@@ -552,13 +587,13 @@ def reports(request):
             })
             current += timedelta(days=1)
 
-        logger.info(f"Generated {len(trend_data)} daily data points")
+        logger.debug(f"Generated {len(trend_data)} daily data points")
         if trend_data:
-            logger.info(f"First data point: {trend_data[0]}")
-            logger.info(f"Last data point: {trend_data[-1]}")
+            logger.debug(f"First data point: {trend_data[0]}")
+            logger.debug(f"Last data point: {trend_data[-1]}")
 
     elif period == 'month':
-        logger.info("Processing MONTHLY trend data (weekly granularity)")
+        logger.debug("Processing MONTHLY trend data (weekly granularity)")
         # Monthly filter: show each week in the month
         trend_results = base_transactions.annotate(
             period=TruncWeek('transaction_time')
@@ -567,7 +602,7 @@ def reports(request):
             expenses=Sum('amount', filter=Q(mode='EXPENSE'))
         ).order_by('period')
 
-        logger.info(f"Raw trend results count: {len(list(trend_results))}")
+        logger.debug(f"Raw trend results count: {len(list(trend_results))}")
 
         # Create dict for quick lookup - convert datetime to date for consistent keys
         results_dict = {}
@@ -575,7 +610,7 @@ def reports(request):
             # TruncWeek returns datetime, convert to date for key
             key = result['period'].date() if hasattr(result['period'], 'date') else result['period']
             results_dict[key] = result
-            logger.info(f"  - Week {key}: Income={result.get('income', 0)}, Expenses={result.get('expenses', 0)}")
+            logger.debug(f"  - Week {key}: Income={result.get('income', 0)}, Expenses={result.get('expenses', 0)}")
 
         # Generate all weeks in the month up to current date
         trend_data = []
@@ -587,7 +622,7 @@ def reports(request):
         from django.db.models.functions import TruncWeek as TruncWeekFunc
         current_week_start = current - timedelta(days=current.weekday())
 
-        logger.info(f"Generating weekly data from {current_week_start.date()} (week start)")
+        logger.debug(f"Generating weekly data from {current_week_start.date()} (week start)")
 
         while current_week_start <= end:
             # Only include if week start is within our period
@@ -605,18 +640,18 @@ def reports(request):
                         'income': income_val,
                         'expenses': expense_val
                     })
-                    logger.info(f"  - Week {week_num}: Income={income_val}, Expenses={expense_val}, Found in results={week_date in results_dict}")
+                    logger.debug(f"  - Week {week_num}: Income={income_val}, Expenses={expense_val}, Found in results={week_date in results_dict}")
                     week_num += 1
 
             current_week_start += timedelta(days=7)
 
-        logger.info(f"Generated {len(trend_data)} weekly data points")
+        logger.debug(f"Generated {len(trend_data)} weekly data points")
         if trend_data:
-            logger.info(f"First data point: {trend_data[0]}")
-            logger.info(f"Last data point: {trend_data[-1]}")
+            logger.debug(f"First data point: {trend_data[0]}")
+            logger.debug(f"Last data point: {trend_data[-1]}")
 
     elif period == 'year':
-        logger.info("Processing YEARLY trend data (monthly granularity)")
+        logger.debug("Processing YEARLY trend data (monthly granularity)")
         # Yearly filter: show each month in the year
         trend_results = base_transactions.annotate(
             period=TruncMonth('transaction_time')
@@ -625,7 +660,7 @@ def reports(request):
             expenses=Sum('amount', filter=Q(mode='EXPENSE'))
         ).order_by('period')
 
-        logger.info(f"Raw trend results count: {len(list(trend_results))}")
+        logger.debug(f"Raw trend results count: {len(list(trend_results))}")
 
         # Create dict for quick lookup - convert datetime to date for consistent keys
         results_dict = {}
@@ -633,14 +668,14 @@ def reports(request):
             # TruncMonth returns datetime, convert to date for key
             key = result['period'].date() if hasattr(result['period'], 'date') else result['period']
             results_dict[key] = result
-            logger.info(f"  - Month {key}: Income={result.get('income', 0)}, Expenses={result.get('expenses', 0)}")
+            logger.debug(f"  - Month {key}: Income={result.get('income', 0)}, Expenses={result.get('expenses', 0)}")
 
         # Generate all months in the year up to current month
         trend_data = []
         current = start_date.replace(day=1)
         end = min(end_date, now)
 
-        logger.info(f"Generating monthly data from {current.strftime('%b %Y')} to {end.strftime('%b %Y')}")
+        logger.debug(f"Generating monthly data from {current.strftime('%b %Y')} to {end.strftime('%b %Y')}")
 
         while current <= end:
             month_date = current.date()
@@ -654,7 +689,7 @@ def reports(request):
                 'expenses': expense_val
             })
 
-            logger.info(f"  - {current.strftime('%b %Y')}: Income={income_val}, Expenses={expense_val}, Found in results={month_date in results_dict}")
+            logger.debug(f"  - {current.strftime('%b %Y')}: Income={income_val}, Expenses={expense_val}, Found in results={month_date in results_dict}")
 
             # Move to next month
             if current.month == 12:
@@ -662,16 +697,16 @@ def reports(request):
             else:
                 current = current.replace(month=current.month + 1)
 
-        logger.info(f"Generated {len(trend_data)} monthly data points")
+        logger.debug(f"Generated {len(trend_data)} monthly data points")
         if trend_data:
-            logger.info(f"First data point: {trend_data[0]}")
-            logger.info(f"Last data point: {trend_data[-1]}")
+            logger.debug(f"First data point: {trend_data[0]}")
+            logger.debug(f"Last data point: {trend_data[-1]}")
 
     else:
-        logger.info(f"Processing CUSTOM filter with {days_diff} days difference")
+        logger.debug(f"Processing CUSTOM filter with {days_diff} days difference")
         # Custom filter: dynamic granularity based on range
         if days_diff < 35:  # Less than 5 weeks
-            logger.info("Custom: Using daily granularity (<35 days / 5 weeks)")
+            logger.debug("Custom: Using daily granularity (<35 days / 5 weeks)")
             # Less than 5 weeks: show by day
             trend_results = base_transactions.annotate(
                 period=TruncDate('transaction_time')
@@ -696,7 +731,7 @@ def reports(request):
                 current += timedelta(days=1)
 
         elif days_diff < 180:  # Less than 6 months
-            logger.info("Custom: Using weekly granularity (35-179 days / 5 weeks - 6 months)")
+            logger.debug("Custom: Using weekly granularity (35-179 days / 5 weeks - 6 months)")
             # 35-179 days: show by week
             trend_results = base_transactions.annotate(
                 period=TruncWeek('transaction_time')
@@ -732,7 +767,7 @@ def reports(request):
                 current += timedelta(days=7)
 
         elif days_diff <= 1095:  # Up to 3 years
-            logger.info("Custom: Using monthly granularity (180-1095 days / 6 months - 3 years)")
+            logger.debug("Custom: Using monthly granularity (180-1095 days / 6 months - 3 years)")
             # 180 days - 3 years: show by month
             trend_results = base_transactions.annotate(
                 period=TruncMonth('transaction_time')
@@ -766,7 +801,7 @@ def reports(request):
                     current = current.replace(month=current.month + 1)
 
         else:
-            logger.info("Custom: Using yearly granularity (>1095 days / >3 years)")
+            logger.debug("Custom: Using yearly granularity (>1095 days / >3 years)")
             # More than 3 years: show by year
             from django.db.models.functions import ExtractYear
 
@@ -792,19 +827,19 @@ def reports(request):
                 })
                 current_year += 1
 
-            logger.info(f"Generated {len(trend_data)} yearly data points")
+            logger.debug(f"Generated {len(trend_data)} yearly data points")
 
-    logger.info(f"\nFINAL CONTEXT DATA:")
-    logger.info(f"  - Trend data points: {len(trend_data)}")
+    logger.debug(f"\nFINAL CONTEXT DATA:")
+    logger.debug(f"  - Trend data points: {len(trend_data)}")
     if trend_data and len(trend_data) > 0:
-        logger.info(f"    - First point: {trend_data[0]}")
-        logger.info(f"    - Last point: {trend_data[-1]}")
-    logger.info(f"  - Expense categories: {len(json_expense_categories)}")
-    logger.info(f"  - Income categories: {len(list(income_categories))}")
-    logger.info(f"  - Account performance rows: {len(account_performance)}")
-    logger.info(f"{'='*80}")
-    logger.info(f"=== REPORTS VIEW COMPLETE ===")
-    logger.info(f"{'='*80}\n")
+        logger.debug(f"    - First point: {trend_data[0]}")
+        logger.debug(f"    - Last point: {trend_data[-1]}")
+    logger.debug(f"  - Expense categories: {len(json_expense_categories)}")
+    logger.debug(f"  - Income categories: {len(list(income_categories))}")
+    logger.debug(f"  - Account performance rows: {len(account_performance)}")
+    logger.debug(f"{'='*80}")
+    logger.debug(f"=== REPORTS VIEW COMPLETE ===")
+    logger.debug(f"{'='*80}\n")
 
     context = {
         'period': period,
@@ -919,7 +954,7 @@ def delete_account(request, pk):
                 return redirect('spending_tracker:delete_account', pk=pk)
 
             # Transfer all transactions
-            with transaction.atomic():
+            with atomic():
                 account.transactions.update(account=transfer_account)
                 account.delete()
 
