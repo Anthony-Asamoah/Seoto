@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 
-
 {% block title %}- Add Transaction{% endblock %}
 
 {% block style %}
@@ -10,7 +9,7 @@
             border-radius: 8px;
             padding: 30px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
         }
 
@@ -18,210 +17,334 @@
             margin-bottom: 1.5rem;
         }
 
-        .required-field::after {
-            content: " *";
-            color: #e74c3c;
+        /* Mode Selection Styles */
+        .mode-selection-container {
+            max-width: 600px;
+            margin: 0 auto;
         }
 
-        .mode-selector {
-            display: flex;
-            gap: 10px;
+        .mode-choice-card {
+            background: white;
+            border: 3px solid #dee2e6;
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: block;
+        }
+
+        .mode-choice-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            text-decoration: none;
+        }
+
+        .mode-choice-card.income {
+            border-color: #27ae60;
+        }
+
+        .mode-choice-card.income:hover {
+            background-color: #d5f4e6;
+            border-color: #229954;
+        }
+
+        .mode-choice-card.expense {
+            border-color: #e74c3c;
+        }
+
+        .mode-choice-card.expense:hover {
+            background-color: #fdeaea;
+            border-color: #c0392b;
+        }
+
+        .mode-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+
+        .mode-title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .mode-description {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        /* Mode Indicator */
+        .mode-indicator {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
             margin-bottom: 20px;
         }
 
-        .mode-option {
-            flex: 1;
-            padding: 15px;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            background: white;
-        }
-
-        .mode-option.selected {
-            border-color: #27ae60;
-            background-color: #f8f9fa;
-        }
-
-        .mode-option:hover {
-            border-color: #adb5bd;
-        }
-
-        .mode-option.income.selected {
-            border-color: #27ae60;
+        .mode-indicator.income {
             background-color: #d5f4e6;
+            color: #27ae60;
+            border: 2px solid #27ae60;
         }
 
-        .mode-option.expense.selected {
-            border-color: #e74c3c;
+        .mode-indicator.expense {
             background-color: #fdeaea;
+            color: #e74c3c;
+            border: 2px solid #e74c3c;
         }
     </style>
 {% endblock %}
 
 {% block content %}
     <div class="header">
-        <h1>Transact</h1>
+        <h1>
+            <a href="{% url 'spending_tracker:dashboard' %}" class="crumb">Expense & Income</a> -
+            {% if show_mode_selection %}
+                Choose Transaction Type
+            {% else %}
+                Add {{ mode|title }}
+            {% endif %}
+        </h1>
     </div>
 
     <div class="main">
-        <div class="form-card">
-            <form method="post" id="transactionForm">
-                {% csrf_token %}
+        {% if show_mode_selection %}
+            <!-- Step 1: Mode Selection -->
+            <div class="mode-selection-container">
+                <h3 class="text-center mb-4">What type of transaction would you like to add?</h3>
 
-                <!-- Transaction Mode Selection -->
-                <div class="form-group">
-                    <div class="mode-selector">
-                        <div class="mode-option income" data-mode="INCOME">
-                            <div class="fs-4 mb-2">💰</div>
-                            <div class="fw-bold">Income</div>
-                            <small class="text-muted">Money received</small>
-                        </div>
-                        <div class="mode-option expense" data-mode="EXPENSE">
-                            <div class="fs-4 mb-2">💸</div>
-                            <div class="fw-bold">Expense</div>
-                            <small class="text-muted">Money spent</small>
-                        </div>
-                    </div>
-                    {{ form.mode.as_hidden }}
-                </div>
+                <a href="{% url 'spending_tracker:add_transaction' %}?mode=INCOME" class="mode-choice-card income">
+                    <div class="mode-icon">💰</div>
+                    <div class="mode-title">Income</div>
+                    <div class="mode-description">Record money received</div>
+                    <p class="text-muted mt-3 mb-0">Salary, freelance payments, gifts, and other earnings</p>
+                </a>
 
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <select name="currency" class="form-control">
-                                {% for currency in all_currency %}
-                                    <option value="{{ currency }}"
-                                            {% if currency == tag_filter %}selected{% endif %}>{{ currency }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="form-group">
-                            <input type="number" class="form-control" name="amount" step="0.01" placeholder="Amount">
-                            {% if form.amount.errors %}
-                                <div class="text-danger small">{{ form.amount.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+                <a href="{% url 'spending_tracker:add_transaction' %}?mode=EXPENSE" class="mode-choice-card expense">
+                    <div class="mode-icon">💸</div>
+                    <div class="mode-title">Expense</div>
+                    <div class="mode-description">Record money spent</div>
+                    <p class="text-muted mt-3 mb-0">Bills, groceries, entertainment, and other purchases</p>
+                </a>
 
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <div class="input-group">
-                                <select name="account" class="form-control">
-                                    <option selected>Choose an account...</option>
-                                    {% for account in all_accounts %}
-                                        <option value="{{ account.pk }}"
-                                                {% if account == tag_filter %}selected{% endif %}>{{ account.name }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                        data-bs-target="#addAccount">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                            {% if form.account.errors %}
-                                <div class="text-danger small">{{ form.account.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <div class="input-group">
-                                <select name="category" class="form-control">
-                                    <option value="">Choose a category...</option>
-                                    {% for category in all_category %}
-                                        <option value="{{ category.pk }}">{{ category.label }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
-                                        data-bs-target="#addCategory">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                            {% if form.category.errors %}
-                                <div class="text-danger small">{{ form.category.errors.0 }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <textarea class="form-control" name="details" rows="3">Description</textarea>
-                    <small class="form-text text-muted">Optional details about this transaction</small>
-                </div>
-
-                <div class="form-group">
-                    <input type="text" class="form-control" name="reference" placeholder="Reference">
-                    <small class="form-text text-muted">Optional reference number, code or label</small>
-                </div>
-
-                <div class="form-group">
-                    <label for="{{ form.transaction_time.id_for_label }}" class="form-label">
-                        {{ form.transaction_time.label }}
-                        <span class="text-danger">*</span>
-                    </label>
-                    {{ form.transaction_time }}
-                    <small class="form-text text-muted">{{ form.transaction_time.help_text }}</small>
-                    {% if form.transaction_time.errors %}
-                        <div class="text-danger small">{{ form.transaction_time.errors.0 }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="form-group">
-                    <label for="tags_input" class="form-label">Tags</label>
-                    <input type="text" class="form-control" name="tags_input" id="tags_input"
-                           value="{{ preserved_tags_input }}"
-                           placeholder="Enter tags separated by commas (e.g., groceries, weekly, essential)">
-                    <small class="form-text text-muted">Existing: {% for tag in tags %}{{ tag }}{% if not forloop.last %}, {% endif %}{% endfor %}</small>
-                </div>
-
-                <hr class="my-4">
-
-                <div class="d-flex justify-content-between">
+                <div class="text-center mt-4">
                     <a href="{% url 'spending_tracker:dashboard' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Cancel
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
                     </a>
-                    <button type="submit" class="btn btn-primary px-4">
-                        <i class="fas fa-save"></i> Save Transaction
-                    </button>
                 </div>
-            </form>
-        </div>
+            </div>
+
+        {% else %}
+            <!-- Step 2: Transaction Form -->
+            <div class="form-card">
+                <!-- Mode Indicator -->
+                <div class="text-center">
+                    <span class="mode-indicator {{ mode|lower }}">
+                        {% if mode == 'INCOME' %}
+                            💰 Recording Income
+                        {% else %}
+                            💸 Recording Expense
+                        {% endif %}
+                    </span>
+                </div>
+
+                <form method="post" id="transactionForm">
+                    {% csrf_token %}
+                    {{ form.mode.as_hidden }}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Account <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <select name="account" class="form-control" required>
+                                        <option value="">Choose an account...</option>
+                                        {% for account in all_accounts %}
+                                            <option value="{{ account.pk }}"
+                                                    {% if preserved_data.account and preserved_data.account|stringformat:"s" == account.pk|stringformat:"s" %}selected
+                                                    {% elif not preserved_data.account and account == default_account %}selected{% endif %}>
+                                                {{ account.name }} ({{ account.currency_symbol }}{{ account.balance }})
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                            data-bs-target="#addAccount">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                {% if form.account.errors %}
+                                    <div class="text-danger small">{{ form.account.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    Category
+                                    <i class="fas fa-info-circle text-muted"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-placement="top"
+                                       title="Categories are the primary way to organize and classify your transactions. They help you group similar transactions together (e.g., Groceries, Rent, Utilities, Salary) for better analysis and reporting. Use categories to understand your spending patterns and create budgets."
+                                       style="cursor: help; font-size: 0.9em;"></i>
+                                </label>
+                                <div class="input-group">
+                                    <select name="category" class="form-control">
+                                        <option value="">Choose a category...</option>
+                                        {% for category in all_category %}
+                                            <option value="{{ category.pk }}"
+                                                    {% if preserved_data.category and preserved_data.category|stringformat:"s" == category.pk|stringformat:"s" %}selected{% endif %}>
+                                                {{ category.label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                                            data-bs-target="#addCategory">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                {% if form.category.errors %}
+                                    <div class="text-danger small">{{ form.category.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label class="form-label">Currency</label>
+                                <select name="currency" class="form-control">
+                                    {% for currency in all_currency %}
+                                        <option value="{{ currency }}"
+                                                {% if preserved_data.currency and preserved_data.currency == currency %}selected
+                                                {% elif not preserved_data.currency and currency == 'GHS' %}selected{% endif %}>
+                                            {{ currency }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label class="form-label">Amount <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="amount" step="0.01"
+                                       placeholder="0.00" value="{{ preserved_data.amount|default:'' }}" required>
+                                {% if form.amount.errors %}
+                                    <div class="text-danger small">{{ form.amount.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            {% if mode == 'INCOME' %}
+                                Source / Description
+                            {% else %}
+                                Purpose / Description
+                            {% endif %}
+                        </label>
+                        <textarea class="form-control" name="details" rows="3"
+                                  placeholder="{% if mode == 'INCOME' %}e.g., Salary from Company X, Freelance project, Gift from family...{% else %}e.g., Grocery shopping at Supermarket, Monthly rent payment, Utility bills...{% endif %}">{{ preserved_data.details|default:'' }}</textarea>
+                        <small class="form-text text-muted">Optional details about this transaction</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            {% if mode == 'INCOME' %}
+                                Payment Reference
+                            {% else %}
+                                Receipt / Invoice Number
+                            {% endif %}
+                        </label>
+                        <input type="text" class="form-control" name="reference"
+                               value="{{ preserved_data.reference|default:'' }}"
+                               placeholder="{% if mode == 'INCOME' %}e.g., Transfer ID, Check number, Payment code...{% else %}e.g., Invoice #12345, Receipt code, Transaction ID...{% endif %}">
+                        <small class="form-text text-muted">Optional reference number or code</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.transaction_time.id_for_label }}" class="form-label">
+                            Transaction Date & Time <span class="text-danger">*</span>
+                        </label>
+                        {{ form.transaction_time }}
+                        <small class="form-text text-muted">When did this transaction occur?</small>
+                        {% if form.transaction_time.errors %}
+                            <div class="text-danger small">{{ form.transaction_time.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="tags_input" class="form-label">
+                            Tags
+                            <i class="fas fa-info-circle text-muted"
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
+                               title="Tags provide an extra, flexible way to label and find your transactions. Unlike categories (which are structured), tags are free-form keywords that help you search and filter transactions in multiple ways. For example, tag a transaction as 'urgent', 'recurring', or 'gift' to quickly find related transactions later. You can apply multiple tags to a single transaction."
+                               style="cursor: help; font-size: 0.9em;"></i>
+                        </label>
+                        <input type="text" class="form-control" name="tags_input" id="tags_input"
+                               value="{{ preserved_tags_input }}"
+                               placeholder="{% if mode == 'INCOME' %}e.g., salary, bonus, freelance, investment{% else %}e.g., food, transport, bills, entertainment{% endif %}">
+                        <small class="form-text text-muted">
+                            Enter tags separated by commas |
+                            Existing: {% for tag in tags %}{{ tag }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                        </small>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fas fa-save"></i> Save {{ mode|title }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {% endif %}
     </div>
 
     <!-- Add Account Modal -->
     <div class="modal fade" id="addAccount" tabindex="-1" aria-labelledby="addAccountLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog">
             <div class="modal-content">
-                <form method="post" action="{% url 'spending_tracker:add_account_quick' %}" id="addAccountForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addAccountLabel">Quick Add Account</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'spending_tracker:add_account_quick' %}">
                     {% csrf_token %}
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addAccountLabel">Add New Account</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
+                    <!-- Preserve transaction form data -->
+                    <input type="hidden" name="mode" id="preserve_mode" value="{{ mode }}">
+                    <input type="hidden" name="amount" id="preserve_amount">
+                    <input type="hidden" name="currency" id="preserve_currency">
+                    <input type="hidden" name="details" id="preserve_details">
+                    <input type="hidden" name="reference" id="preserve_reference">
+                    <input type="hidden" name="category" id="preserve_category">
+                    <input type="hidden" name="tags_input" id="preserve_tags">
+                    <input type="hidden" name="transaction_time" id="preserve_time">
+
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="account_name" class="form-label">Account Name</label>
-                            <input class="form-control" id="account_name" name="name" placeholder="e.g., Main Checking" type="text" required>
+                            <label for="account_name" class="form-label">Account Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="account_name" name="name" required>
                         </div>
                         <div class="mb-3">
                             <label for="account_type" class="form-label">Account Type</label>
                             <select class="form-control" id="account_type" name="account_type">
                                 <option value="SAVINGS">Savings</option>
-                                <option value="CHECKING" selected>Checking</option>
+                                <option value="CHECKING">Checking</option>
                                 <option value="CREDIT_CARD">Credit Card</option>
                                 <option value="CASH">Cash</option>
                             </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="account_balance" class="form-label">Initial Balance</label>
-                            <input class="form-control" id="account_balance" name="balance" placeholder="0.00" type="number" step="0.01" min="0" value="0.00">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -235,22 +358,32 @@
 
     <!-- Add Category Modal -->
     <div class="modal fade" id="addCategory" tabindex="-1" aria-labelledby="addCategoryLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog">
             <div class="modal-content">
-                <form method="post" action="{% url 'spending_tracker:add_category' %}" id="addCategoryForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCategoryLabel">Quick Add Category</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" action="{% url 'spending_tracker:add_category' %}">
                     {% csrf_token %}
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addCategoryLabel">Add New Category</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
+                    <!-- Preserve transaction form data -->
+                    <input type="hidden" name="mode" id="preserve_cat_mode" value="{{ mode }}">
+                    <input type="hidden" name="amount" id="preserve_cat_amount">
+                    <input type="hidden" name="currency" id="preserve_cat_currency">
+                    <input type="hidden" name="account" id="preserve_cat_account">
+                    <input type="hidden" name="details" id="preserve_cat_details">
+                    <input type="hidden" name="reference" id="preserve_cat_reference">
+                    <input type="hidden" name="tags_input" id="preserve_cat_tags">
+                    <input type="hidden" name="transaction_time" id="preserve_cat_time">
+
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="category_label" class="form-label">Category Name</label>
-                            <input class="form-control" id="category_label" name="label" placeholder="e.g., Groceries" type="text" required>
+                            <label for="category_label" class="form-label">Category Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="category_label" name="label" required>
                         </div>
                         <div class="mb-3">
-                            <label for="category_description" class="form-label">Description (Optional)</label>
-                            <textarea class="form-control" id="category_description" name="description" rows="2" placeholder="Brief description of this category"></textarea>
+                            <label for="category_description" class="form-label">Description</label>
+                            <textarea class="form-control" id="category_description" name="description" rows="2"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -262,74 +395,79 @@
         </div>
     </div>
 
-{% endblock %}
-
-{% block script %}
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Mode selection functionality
-            const modeOptions = document.querySelectorAll('.mode-option');
-            const modeInput = document.getElementById('id_mode');
-
-            modeOptions.forEach(option => {
-                option.addEventListener('click', function () {
-                    // Remove selected class from all options
-                    modeOptions.forEach(opt => opt.classList.remove('selected'));
-
-                    // Add selected class to clicked option
-                    this.classList.add('selected');
-
-                    // Update hidden input value
-                    modeInput.value = this.dataset.mode;
-                });
+        // Initialize Bootstrap tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
             });
 
-            // Set initial selection if form has errors and mode was already selected
-            if (modeInput.value) {
-                document.querySelector(`[data-mode="${modeInput.value}"]`).classList.add('selected');
-            }
+            // Log if form was loaded with preserved data
+            {% if preserved_data %}
+            {#console.log('🔄 Form loaded with preserved data from session');#}
+            {#console.log('📦 Preserved fields: {{ preserved_data|length }} field(s)');#}
+            {#console.log('📝 Current form values:');#}
+            {#console.log('  - Account:', document.querySelector('[name="account"]')?.value);#}
+            {#console.log('  - Category:', document.querySelector('[name="category"]')?.value);#}
+            {#console.log('  - Currency:', document.querySelector('[name="currency"]')?.value);#}
+            {#console.log('  - Amount:', document.querySelector('[name="amount"]')?.value);#}
+            {#console.log('  - Details:', document.querySelector('[name="details"]')?.value);#}
+            {#console.log('  - Reference:', document.querySelector('[name="reference"]')?.value);#}
+            {#console.log('  - Tags:', document.querySelector('[name="tags_input"]')?.value);#}
+            {#console.log('  - Transaction time:', document.querySelector('[name="transaction_time"]')?.value);#}
+            {% else %}
+            {#console.log('📄 Form loaded fresh (no preserved data)');#}
+            {% endif %}
+        });
 
-            // Form validation
-            document.getElementById('transactionForm').addEventListener('submit', function (e) {
-                if (!modeInput.value) {
-                    e.preventDefault();
-                    alert('Please select a transaction type (Income or Expense)');
-                    return false;
-                }
-            });
+        // Preserve form data when opening modals
+        document.querySelector('[data-bs-target="#addAccount"]')?.addEventListener('click', function() {
+            {#console.log('🏦 Opening Add Account modal - preserving form data...');#}
+            const formData = {
+                amount: document.querySelector('[name="amount"]').value,
+                currency: document.querySelector('[name="currency"]').value,
+                details: document.querySelector('[name="details"]').value,
+                reference: document.querySelector('[name="reference"]').value,
+                category: document.querySelector('[name="category"]').value,
+                tags_input: document.querySelector('[name="tags_input"]').value,
+                transaction_time: document.querySelector('[name="transaction_time"]').value
+            };
+            {#console.log('📋 Form data to preserve:', formData);#}
 
-            // Copy transaction form data to modal forms when they're opened
-            function copyTransactionDataToModalForm(modalForm) {
-                const transactionForm = document.getElementById('transactionForm');
-                const formData = new FormData(transactionForm);
+            document.getElementById('preserve_amount').value = formData.amount;
+            document.getElementById('preserve_currency').value = formData.currency;
+            document.getElementById('preserve_details').value = formData.details;
+            document.getElementById('preserve_reference').value = formData.reference;
+            document.getElementById('preserve_category').value = formData.category;
+            document.getElementById('preserve_tags').value = formData.tags_input;
+            document.getElementById('preserve_time').value = formData.transaction_time;
 
-                // Remove any previously added hidden fields
-                modalForm.querySelectorAll('.transaction-data-field').forEach(field => field.remove());
+            {#console.log('✅ Form data preserved in hidden fields');#}
+        });
 
-                // Add all transaction form fields as hidden inputs to the modal form
-                for (let [key, value] of formData.entries()) {
-                    // Skip CSRF token as modal form has its own
-                    if (key !== 'csrfmiddlewaretoken') {
-                        const hiddenInput = document.createElement('input');
-                        hiddenInput.type = 'hidden';
-                        hiddenInput.name = key;
-                        hiddenInput.value = value;
-                        hiddenInput.className = 'transaction-data-field';
-                        modalForm.appendChild(hiddenInput);
-                    }
-                }
-            }
+        document.querySelector('[data-bs-target="#addCategory"]')?.addEventListener('click', function() {
+            {#console.log('📁 Opening Add Category modal - preserving form data...');#}
+            const formData = {
+                amount: document.querySelector('[name="amount"]').value,
+                currency: document.querySelector('[name="currency"]').value,
+                account: document.querySelector('[name="account"]').value,
+                details: document.querySelector('[name="details"]').value,
+                reference: document.querySelector('[name="reference"]').value,
+                tags_input: document.querySelector('[name="tags_input"]').value,
+                transaction_time: document.querySelector('[name="transaction_time"]').value
+            };
+            {#console.log('📋 Form data to preserve:', formData);#}
 
-            // Add event listeners for modal open events
-            document.getElementById('addAccount').addEventListener('show.bs.modal', function () {
-                const modalForm = document.getElementById('addAccountForm');
-                copyTransactionDataToModalForm(modalForm);
-            });
+            document.getElementById('preserve_cat_amount').value = formData.amount;
+            document.getElementById('preserve_cat_currency').value = formData.currency;
+            document.getElementById('preserve_cat_account').value = formData.account;
+            document.getElementById('preserve_cat_details').value = formData.details;
+            document.getElementById('preserve_cat_reference').value = formData.reference;
+            document.getElementById('preserve_cat_tags').value = formData.tags_input;
+            document.getElementById('preserve_cat_time').value = formData.transaction_time;
 
-            document.getElementById('addCategory').addEventListener('show.bs.modal', function () {
-                const modalForm = document.getElementById('addCategoryForm');
-                copyTransactionDataToModalForm(modalForm);
-            });
+            {#console.log('✅ Form data preserved in hidden fields');#}
         });
     </script>
 {% endblock %}

@@ -1,13 +1,13 @@
-from datetime import timedelta, datetime
 import logging
+from datetime import timedelta, datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db import models as django_models
-from django.db.models import Sum, Count, Q, Value, CharField, Prefetch
+from django.db.models import Sum, Count, Q, Value, Prefetch
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, Coalesce
 from django.db.transaction import atomic
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.utils import timezone
 
 from utils.paginator import apply_pagination
@@ -107,11 +107,26 @@ def transaction_list(request):
 
 @login_required
 def add_transaction(request):
-    """Add new transaction"""
+    """Add new transaction - Multi-step: mode selection then form"""
+    # Get mode from query parameter
+    mode = request.GET.get('mode', '').upper()
+
     # Check if there's preserved form data in session
     preserved_data = request.session.pop('transaction_form_data', None)
     preserved_tags = request.session.pop('transaction_tags_input', None)
 
+    if preserved_data:
+        logger.debug(
+            f"Retrieved preserved transaction data from session: mode={request.session.get('transaction_mode')}, fields={list(preserved_data.keys())}")
+
+    # Step 1: Show mode selection if no mode specified
+    if not mode or mode not in ['INCOME', 'EXPENSE']:
+        logger.debug("No mode specified, showing mode selection page")
+        return render(request, 'spending_tracker/add_transaction.html', {
+            'show_mode_selection': True
+        })
+
+    # Step 2: Show form for selected mode
     if request.method == 'POST':
         # Get the tags input before form validation
         tags_input = request.POST.get('tags_input', '').strip()
@@ -140,14 +155,19 @@ def add_transaction(request):
             # Clear any preserved data
             request.session.pop('transaction_form_data', None)
             request.session.pop('transaction_tags_input', None)
+            request.session.pop('transaction_mode', None)
+            logger.debug("Transaction saved successfully, cleared preserved data from session")
             return redirect('spending_tracker:transaction_list')
         else:
             messages.error(request, 'Invalid data provided.')
+            logger.warning(f"Transaction form validation failed: {form.errors}")
     else:
         # If there's preserved data from session, use it
         if preserved_data:
+            logger.debug(f"Using preserved data to populate form with {len(preserved_data)} fields")
             form = TransactionForm(preserved_data, user=request.user)
         else:
+            logger.debug("No preserved data, creating empty form")
             form = TransactionForm(user=request.user)
 
     default_account = Account.objects.filter(user=request.user).first()
@@ -158,6 +178,8 @@ def add_transaction(request):
     # Only set default account if no data is being preserved
     if not preserved_data and not form.is_bound:
         form.fields['account'].initial = default_account.id
+        # Pre-set the mode
+        form.fields['mode'].initial = mode
 
     all_currency = [i[0] for i in Transaction.CURRENCY_CHOICES]
     all_accounts = Account.objects.filter(user=request.user)
@@ -165,12 +187,15 @@ def add_transaction(request):
     user_tags = list(Tag.objects.filter(user=request.user))
     context = {
         'form': form,
+        'mode': mode,
+        'show_mode_selection': False,
         'default_account': default_account,
         'all_currency': all_currency,
         'all_accounts': all_accounts,
         'all_category': user_category,
         'tags': user_tags,
-        'preserved_tags_input': preserved_tags or ''
+        'preserved_tags_input': preserved_tags or '',
+        'preserved_data': preserved_data or {}
     }
     return render(request, 'spending_tracker/add_transaction.html', context)
 
@@ -215,6 +240,8 @@ def add_category(request):
     if request.method == 'POST':
         # Preserve transaction form data before processing
         transaction_data = {}
+        mode = request.POST.get('mode', 'EXPENSE')  # Get the mode from form
+
         for key, value in request.POST.items():
             if key not in ['csrfmiddlewaretoken', 'label', 'description'] and not key.startswith('category_'):
                 transaction_data[key] = value
@@ -222,6 +249,8 @@ def add_category(request):
         if transaction_data:
             request.session['transaction_form_data'] = transaction_data
             request.session['transaction_tags_input'] = request.POST.get('tags_input', '')
+            request.session['transaction_mode'] = mode
+            logger.debug(f"Preserved transaction data: mode={mode}, fields={list(transaction_data.keys())}")
 
         form = CategoryForm(request.POST)
         if form.is_valid():
@@ -229,9 +258,14 @@ def add_category(request):
             category.user = request.user
             category.save()
             messages.success(request, f'Category "{category.label}" created successfully!')
+            logger.debug(f"Category created: {category.label}")
         else:
             messages.error(request, 'Please correct the errors.')
-    return redirect('spending_tracker:add_transaction')
+            logger.warning(f"Category form errors: {form.errors}")
+
+    # Redirect back to transaction form with mode parameter
+    saved_mode = request.session.get('transaction_mode', 'EXPENSE')
+    return redirect(f"{reverse('spending_tracker:add_transaction')}?mode={saved_mode}")
 
 
 @login_required
@@ -240,6 +274,8 @@ def add_account_quick(request):
     if request.method == 'POST':
         # Preserve transaction form data before processing
         transaction_data = {}
+        mode = request.POST.get('mode', 'EXPENSE')  # Get the mode from form
+
         for key, value in request.POST.items():
             if key not in ['csrfmiddlewaretoken', 'name', 'balance', 'account_type'] and not key.startswith('account_'):
                 transaction_data[key] = value
@@ -247,6 +283,8 @@ def add_account_quick(request):
         if transaction_data:
             request.session['transaction_form_data'] = transaction_data
             request.session['transaction_tags_input'] = request.POST.get('tags_input', '')
+            request.session['transaction_mode'] = mode
+            logger.debug(f"Preserved transaction data: mode={mode}, fields={list(transaction_data.keys())}")
 
         form = AccountForm(request.POST)
         if form.is_valid():
@@ -254,9 +292,14 @@ def add_account_quick(request):
             account.user = request.user
             account.save()
             messages.success(request, f'Account "{account.name}" created successfully!')
+            logger.debug(f"Account created: {account.name}")
         else:
             messages.error(request, 'Please correct the errors.')
-    return redirect('spending_tracker:add_transaction')
+            logger.warning(f"Account form errors: {form.errors}")
+
+    # Redirect back to transaction form with mode parameter
+    saved_mode = request.session.get('transaction_mode', 'EXPENSE')
+    return redirect(f"{reverse('spending_tracker:add_transaction')}?mode={saved_mode}")
 
 
 @login_required
@@ -334,9 +377,9 @@ def reports(request):
     user_currency = preferences.default_currency
     currency_symbol = CURRENCY_SYMBOLS.get(user_currency, user_currency)
 
-    logger.debug(f"\n{'='*80}")
+    logger.debug(f"\n{'=' * 80}")
     logger.debug(f"=== REPORTS VIEW CALLED ===")
-    logger.debug(f"{'='*80}")
+    logger.debug(f"{'=' * 80}")
     logger.debug(f"User: {request.user.username}")
     logger.debug(f"Currency: {user_currency} ({currency_symbol})")
     logger.debug(f"REQUEST PARAMS:")
@@ -446,7 +489,9 @@ def reports(request):
                 start_month = now.month - 3
                 start_year = now.year
 
-            start_date = now.replace(year=start_year, month=start_month, day=1, hour=0, minute=0, second=0, microsecond=0)
+            start_date = now.replace(
+                year=start_year, month=start_month, day=1,
+                hour=0, minute=0, second=0, microsecond=0)
             end_date = now
             period_name = 'Last 3 Months'
         else:
@@ -475,7 +520,8 @@ def reports(request):
 
     if transaction_count > 0:
         sample_transaction = base_transactions.first()
-        logger.debug(f"  - Sample transaction: {sample_transaction.mode} {sample_transaction.amount} on {sample_transaction.transaction_time}")
+        logger.debug(
+            f"  - Sample transaction: {sample_transaction.mode} {sample_transaction.amount} on {sample_transaction.transaction_time}")
         income_count = base_transactions.filter(mode='INCOME').count()
         expense_count = base_transactions.filter(mode='EXPENSE').count()
         logger.debug(f"  - Income transactions: {income_count}")
@@ -619,7 +665,6 @@ def reports(request):
         week_num = 1
 
         # Get week start (Monday) for start_date
-        from django.db.models.functions import TruncWeek as TruncWeekFunc
         current_week_start = current - timedelta(days=current.weekday())
 
         logger.debug(f"Generating weekly data from {current_week_start.date()} (week start)")
@@ -640,7 +685,8 @@ def reports(request):
                         'income': income_val,
                         'expenses': expense_val
                     })
-                    logger.debug(f"  - Week {week_num}: Income={income_val}, Expenses={expense_val}, Found in results={week_date in results_dict}")
+                    logger.debug(
+                        f"  - Week {week_num}: Income={income_val}, Expenses={expense_val}, Found in results={week_date in results_dict}")
                     week_num += 1
 
             current_week_start += timedelta(days=7)
@@ -670,7 +716,7 @@ def reports(request):
             results_dict[key] = result
             logger.debug(f"  - Month {key}: Income={result.get('income', 0)}, Expenses={result.get('expenses', 0)}")
 
-        # Generate all months in the year up to current month
+        # Generate all months in the year up to the current month
         trend_data = []
         current = start_date.replace(day=1)
         end = min(end_date, now)
@@ -689,7 +735,8 @@ def reports(request):
                 'expenses': expense_val
             })
 
-            logger.debug(f"  - {current.strftime('%b %Y')}: Income={income_val}, Expenses={expense_val}, Found in results={month_date in results_dict}")
+            logger.debug(
+                f"  - {current.strftime('%b %Y')}: Income={income_val}, Expenses={expense_val}, Found in results={month_date in results_dict}")
 
             # Move to next month
             if current.month == 12:
@@ -837,9 +884,9 @@ def reports(request):
     logger.debug(f"  - Expense categories: {len(json_expense_categories)}")
     logger.debug(f"  - Income categories: {len(list(income_categories))}")
     logger.debug(f"  - Account performance rows: {len(account_performance)}")
-    logger.debug(f"{'='*80}")
+    logger.debug(f"{'=' * 80}")
     logger.debug(f"=== REPORTS VIEW COMPLETE ===")
-    logger.debug(f"{'='*80}\n")
+    logger.debug(f"{'=' * 80}\n")
 
     context = {
         'period': period,
@@ -959,8 +1006,8 @@ def delete_account(request, pk):
                 account.delete()
 
             messages.success(request,
-                f'Account "{account.name}" deleted and {transaction_count} '
-                f'transaction(s) transferred to "{transfer_account.name}".')
+                             f'Account "{account.name}" deleted and {transaction_count} '
+                             f'transaction(s) transferred to "{transfer_account.name}".')
         else:
             account.delete()
             messages.success(request, f'Account "{account.name}" deleted successfully!')
@@ -1022,11 +1069,12 @@ def delete_category(request, pk):
                         category.transactions.update(category=None)
                         category.delete()
                     messages.success(request,
-                        f'Category "{category.label}" deleted and {transaction_count} '
-                        f'transaction(s) set to Uncategorized.')
+                                     f'Category "{category.label}" deleted and {transaction_count} '
+                                     f'transaction(s) set to Uncategorized.')
                     return redirect('spending_tracker:config')
                 else:
-                    messages.error(request, 'Please select a category to transfer transactions to or mark them as Uncategorized.')
+                    messages.error(request,
+                                   'Please select a category to transfer transactions to or mark them as Uncategorized.')
                     return redirect('spending_tracker:delete_category', pk=pk)
 
             transfer_category = get_object_or_404(Category, id=transfer_to_id, user=request.user)
@@ -1041,8 +1089,8 @@ def delete_category(request, pk):
                 category.delete()
 
             messages.success(request,
-                f'Category "{category.label}" deleted and {transaction_count} '
-                f'transaction(s) transferred to "{transfer_category.label}".')
+                             f'Category "{category.label}" deleted and {transaction_count} '
+                             f'transaction(s) transferred to "{transfer_category.label}".')
         else:
             category.delete()
             messages.success(request, f'Category "{category.label}" deleted successfully!')
