@@ -276,6 +276,7 @@ def account_detail(request, pk):
 def reports(request):
     """Financial reports and analytics"""
     period = request.GET.get('period', 'month')
+    modifier = request.GET.get('modifier', 'this')  # this, last, last_three
     custom_start = request.GET.get('start_date')
     custom_end = request.GET.get('end_date')
 
@@ -298,11 +299,17 @@ def reports(request):
     user_currency = preferences.default_currency
     currency_symbol = CURRENCY_SYMBOLS.get(user_currency, user_currency)
 
+    logger.info(f"\n{'='*80}")
     logger.info(f"=== REPORTS VIEW CALLED ===")
+    logger.info(f"{'='*80}")
     logger.info(f"User: {request.user.username}")
     logger.info(f"Currency: {user_currency} ({currency_symbol})")
-    logger.info(f"Period: {period}")
-    logger.info(f"Custom dates: {custom_start} to {custom_end}")
+    logger.info(f"REQUEST PARAMS:")
+    logger.info(f"  - period: {period}")
+    logger.info(f"  - modifier: {modifier}")
+    logger.info(f"  - start_date: {custom_start}")
+    logger.info(f"  - end_date: {custom_end}")
+    logger.info(f"  - All GET params: {dict(request.GET)}")
 
     if custom_start and custom_end:
         try:
@@ -317,26 +324,109 @@ def reports(request):
             end_date = now
             period_name = 'This Month'
             period = 'month'
+            modifier = 'this'
     elif period == 'week':
-        start_date = now - timedelta(days=7)
-        end_date = now
-        period_name = 'This Week'
+        if modifier == 'this':
+            # Current week (Monday to today)
+            start_date = now - timedelta(days=now.weekday())
+            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = now
+            period_name = 'This Week'
+        elif modifier == 'last':
+            # Last week (Monday to Sunday)
+            last_monday = now - timedelta(days=now.weekday() + 7)
+            start_date = last_monday.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = (last_monday + timedelta(days=6)).replace(hour=23, minute=59, second=59, microsecond=999999)
+            period_name = 'Last Week'
+        elif modifier == 'last_three':
+            # Last 3 weeks
+            start_date = now - timedelta(days=21)
+            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = now
+            period_name = 'Last 3 Weeks'
+        else:
+            # Default to this week
+            start_date = now - timedelta(days=now.weekday())
+            start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = now
+            period_name = 'This Week'
     elif period == 'year':
-        start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-        end_date = now
-        period_name = 'This Year'
+        if modifier == 'this':
+            # Current year (Jan 1 to today)
+            start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_date = now
+            period_name = 'This Year'
+        elif modifier == 'last':
+            # Last year (full year)
+            last_year = now.year - 1
+            start_date = now.replace(year=last_year, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_date = now.replace(year=last_year, month=12, day=31, hour=23, minute=59, second=59, microsecond=999999)
+            period_name = f'{last_year}'
+        elif modifier == 'last_three':
+            # Last 3 years
+            three_years_ago = now.year - 3
+            start_date = now.replace(year=three_years_ago, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_date = now
+            period_name = f'Last 3 Years'
+        else:
+            # Default to this year
+            start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_date = now
+            period_name = 'This Year'
     elif period == 'all_time':
         first_transaction = Transaction.objects.filter(account__user=request.user).order_by('transaction_time').first()
         start_date = first_transaction.transaction_time if first_transaction else now
         end_date = now
         period_name = 'All Time'
-    else:
-        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        end_date = now
-        period_name = 'This Month'
+    else:  # month
+        if modifier == 'this':
+            # Current month (1st to today)
+            start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_date = now
+            period_name = 'This Month'
+        elif modifier == 'last':
+            # Last month (full month)
+            if now.month == 1:
+                last_month_date = now.replace(year=now.year - 1, month=12, day=1)
+            else:
+                last_month_date = now.replace(month=now.month - 1, day=1)
 
-    logger.info(f"Date range: {start_date} to {end_date}")
-    logger.info(f"Period name: {period_name}")
+            start_date = last_month_date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+            # Get last day of last month
+            if last_month_date.month == 12:
+                next_month = last_month_date.replace(year=last_month_date.year + 1, month=1, day=1)
+            else:
+                next_month = last_month_date.replace(month=last_month_date.month + 1, day=1)
+
+            end_date = (next_month - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
+            period_name = last_month_date.strftime('%B %Y')
+        elif modifier == 'last_three':
+            # Last 3 months
+            if now.month <= 3:
+                months_back = now.month - 1
+                start_month = 12 - (2 - months_back)
+                start_year = now.year - 1
+            else:
+                start_month = now.month - 3
+                start_year = now.year
+
+            start_date = now.replace(year=start_year, month=start_month, day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_date = now
+            period_name = 'Last 3 Months'
+        else:
+            # Default to this month
+            start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_date = now
+            period_name = 'This Month'
+
+    logger.info(f"\nDATE RANGE CALCULATED:")
+    logger.info(f"  - Period: {period}")
+    logger.info(f"  - Modifier: {modifier}")
+    logger.info(f"  - Period Name: {period_name}")
+    logger.info(f"  - Start: {start_date}")
+    logger.info(f"  - End: {end_date}")
+    logger.info(f"  - Days Difference: {(end_date - start_date).days}")
 
     base_transactions = Transaction.objects.filter(
         account__user=request.user,
@@ -345,11 +435,18 @@ def reports(request):
     ).select_related('account', 'category')
 
     transaction_count = base_transactions.count()
-    logger.info(f"Found {transaction_count} transactions in date range")
+    logger.info(f"\nTRANSACTIONS FOUND:")
+    logger.info(f"  - Total transactions: {transaction_count}")
 
     if transaction_count > 0:
         sample_transaction = base_transactions.first()
-        logger.info(f"Sample transaction: {sample_transaction.mode} {sample_transaction.amount} on {sample_transaction.transaction_time}")
+        logger.info(f"  - Sample transaction: {sample_transaction.mode} {sample_transaction.amount} on {sample_transaction.transaction_time}")
+        income_count = base_transactions.filter(mode='INCOME').count()
+        expense_count = base_transactions.filter(mode='EXPENSE').count()
+        logger.info(f"  - Income transactions: {income_count}")
+        logger.info(f"  - Expense transactions: {expense_count}")
+    else:
+        logger.warning(f"  - WARNING: No transactions found in this date range!")
 
     aggregated_data = base_transactions.aggregate(
         total_income=Sum('amount', filter=Q(mode='INCOME')),
@@ -361,7 +458,11 @@ def reports(request):
     total_expenses = aggregated_data['total_expenses'] or 0
     net_income = total_income - total_expenses
 
-    logger.info(f"Aggregated data: Income=${total_income}, Expenses=${total_expenses}, Net=${net_income}")
+    logger.info(f"\nAGGREGATED DATA:")
+    logger.info(f"  - Total Income: {currency_symbol}{total_income}")
+    logger.info(f"  - Total Expenses: {currency_symbol}{total_expenses}")
+    logger.info(f"  - Net Income: {currency_symbol}{net_income}")
+    logger.info(f"  - Transaction Count: {aggregated_data['transaction_count']}")
 
     savings_rate = (net_income / total_income * 100) if total_income > 0 else 0
 
@@ -468,8 +569,13 @@ def reports(request):
 
         logger.info(f"Raw trend results count: {len(list(trend_results))}")
 
-        # Create dict for quick lookup
-        results_dict = {result['period']: result for result in trend_results}
+        # Create dict for quick lookup - convert datetime to date for consistent keys
+        results_dict = {}
+        for result in trend_results:
+            # TruncWeek returns datetime, convert to date for key
+            key = result['period'].date() if hasattr(result['period'], 'date') else result['period']
+            results_dict[key] = result
+            logger.info(f"  - Week {key}: Income={result.get('income', 0)}, Expenses={result.get('expenses', 0)}")
 
         # Generate all weeks in the month up to current date
         trend_data = []
@@ -488,15 +594,18 @@ def reports(request):
             if current_week_start >= start_date or (current_week_start + timedelta(days=6)) >= start_date:
                 week_date = current_week_start.date()
                 result = results_dict.get(week_date, {})
+                income_val = float(result.get('income') or 0)
+                expense_val = float(result.get('expenses') or 0)
 
                 # Only add week if it contains dates in our range and up to current date
                 week_end = current_week_start + timedelta(days=6)
                 if current_week_start <= end:
                     trend_data.append({
                         'date': f"Week {week_num}",
-                        'income': float(result.get('income') or 0),
-                        'expenses': float(result.get('expenses') or 0)
+                        'income': income_val,
+                        'expenses': expense_val
                     })
+                    logger.info(f"  - Week {week_num}: Income={income_val}, Expenses={expense_val}, Found in results={week_date in results_dict}")
                     week_num += 1
 
             current_week_start += timedelta(days=7)
@@ -518,8 +627,13 @@ def reports(request):
 
         logger.info(f"Raw trend results count: {len(list(trend_results))}")
 
-        # Create dict for quick lookup
-        results_dict = {result['period']: result for result in trend_results}
+        # Create dict for quick lookup - convert datetime to date for consistent keys
+        results_dict = {}
+        for result in trend_results:
+            # TruncMonth returns datetime, convert to date for key
+            key = result['period'].date() if hasattr(result['period'], 'date') else result['period']
+            results_dict[key] = result
+            logger.info(f"  - Month {key}: Income={result.get('income', 0)}, Expenses={result.get('expenses', 0)}")
 
         # Generate all months in the year up to current month
         trend_data = []
@@ -531,11 +645,16 @@ def reports(request):
         while current <= end:
             month_date = current.date()
             result = results_dict.get(month_date, {})
+            income_val = float(result.get('income') or 0)
+            expense_val = float(result.get('expenses') or 0)
+
             trend_data.append({
                 'date': current.strftime('%b %Y'),
-                'income': float(result.get('income') or 0),
-                'expenses': float(result.get('expenses') or 0)
+                'income': income_val,
+                'expenses': expense_val
             })
+
+            logger.info(f"  - {current.strftime('%b %Y')}: Income={income_val}, Expenses={expense_val}, Found in results={month_date in results_dict}")
 
             # Move to next month
             if current.month == 12:
@@ -551,9 +670,9 @@ def reports(request):
     else:
         logger.info(f"Processing CUSTOM filter with {days_diff} days difference")
         # Custom filter: dynamic granularity based on range
-        if days_diff <= 7:
-            logger.info("Custom: Using daily granularity (≤7 days)")
-            # Less than 7 days: show by day
+        if days_diff < 35:  # Less than 5 weeks
+            logger.info("Custom: Using daily granularity (<35 days / 5 weeks)")
+            # Less than 5 weeks: show by day
             trend_results = base_transactions.annotate(
                 period=TruncDate('transaction_time')
             ).values('period').annotate(
@@ -576,9 +695,9 @@ def reports(request):
                 })
                 current += timedelta(days=1)
 
-        elif days_diff <= 31:
-            logger.info("Custom: Using weekly granularity (8-31 days)")
-            # 8-31 days: show by week
+        elif days_diff < 180:  # Less than 6 months
+            logger.info("Custom: Using weekly granularity (35-179 days / 5 weeks - 6 months)")
+            # 35-179 days: show by week
             trend_results = base_transactions.annotate(
                 period=TruncWeek('transaction_time')
             ).values('period').annotate(
@@ -586,7 +705,11 @@ def reports(request):
                 expenses=Sum('amount', filter=Q(mode='EXPENSE'))
             ).order_by('period')
 
-            results_dict = {result['period']: result for result in trend_results}
+            # Create dict for quick lookup - convert datetime to date for consistent keys
+            results_dict = {}
+            for result in trend_results:
+                key = result['period'].date() if hasattr(result['period'], 'date') else result['period']
+                results_dict[key] = result
 
             trend_data = []
             current = start_date - timedelta(days=start_date.weekday())
@@ -608,9 +731,9 @@ def reports(request):
 
                 current += timedelta(days=7)
 
-        elif days_diff <= 1095:  # ~3 years
-            logger.info("Custom: Using monthly granularity (32 days - 3 years)")
-            # 32 days - 3 years: show by month
+        elif days_diff <= 1095:  # Up to 3 years
+            logger.info("Custom: Using monthly granularity (180-1095 days / 6 months - 3 years)")
+            # 180 days - 3 years: show by month
             trend_results = base_transactions.annotate(
                 period=TruncMonth('transaction_time')
             ).values('period').annotate(
@@ -618,7 +741,11 @@ def reports(request):
                 expenses=Sum('amount', filter=Q(mode='EXPENSE'))
             ).order_by('period')
 
-            results_dict = {result['period']: result for result in trend_results}
+            # Create dict for quick lookup - convert datetime to date for consistent keys
+            results_dict = {}
+            for result in trend_results:
+                key = result['period'].date() if hasattr(result['period'], 'date') else result['period']
+                results_dict[key] = result
 
             trend_data = []
             current = start_date.replace(day=1)
@@ -639,7 +766,7 @@ def reports(request):
                     current = current.replace(month=current.month + 1)
 
         else:
-            logger.info("Custom: Using yearly granularity (>3 years)")
+            logger.info("Custom: Using yearly granularity (>1095 days / >3 years)")
             # More than 3 years: show by year
             from django.db.models.functions import ExtractYear
 
@@ -667,14 +794,21 @@ def reports(request):
 
             logger.info(f"Generated {len(trend_data)} yearly data points")
 
+    logger.info(f"\nFINAL CONTEXT DATA:")
+    logger.info(f"  - Trend data points: {len(trend_data)}")
+    if trend_data and len(trend_data) > 0:
+        logger.info(f"    - First point: {trend_data[0]}")
+        logger.info(f"    - Last point: {trend_data[-1]}")
+    logger.info(f"  - Expense categories: {len(json_expense_categories)}")
+    logger.info(f"  - Income categories: {len(list(income_categories))}")
+    logger.info(f"  - Account performance rows: {len(account_performance)}")
+    logger.info(f"{'='*80}")
     logger.info(f"=== REPORTS VIEW COMPLETE ===")
-    logger.info(f"Final trend_data count: {len(trend_data)}")
-    logger.info(f"Expense categories count: {len(json_expense_categories)}")
-    logger.info(f"Income categories count: {len(list(income_categories))}")
-    logger.info(f"Account performance count: {len(account_performance)}")
+    logger.info(f"{'='*80}\n")
 
     context = {
         'period': period,
+        'modifier': modifier,
         'period_name': period_name,
         'start_date': start_date.strftime('%Y-%m-%d') if start_date else '',
         'end_date': end_date.strftime('%Y-%m-%d') if end_date else '',
