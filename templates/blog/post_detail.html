@@ -69,22 +69,60 @@
     <a href="{% url 'blog-explore' %}" style="display: block; margin-top: 20px;">&larr; Back to Posts</a>
 
     <!-- Comments -->
-    {% if post.comments.all and user == post.author %}
+    {% if user == post.author and post.comments.all %}
+        <!-- Author view: see all comments with per-comment toggle buttons -->
         <div class="comments mt-2" style="background-color: white; padding: 20px;">
             <h4>Comments</h4>
             {% for comment in post.comments.all %}
                 <hr/>
                 <div class="comment">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div style="flex: 1;">
+                            <p><strong>@{{ comment.author.username }}</strong> on {{ comment.date_posted|date:"F d, Y" }}</p>
+                            <p>{{ comment.content }}</p>
+                        </div>
+                        <div class="comment-actions" style="display: flex; gap: 5px; margin-left: 10px;">
+                            <form method="post" action="{% url 'toggle-comment-visibility' post_pk=post.pk comment_pk=comment.pk %}" style="display: inline;">
+                                {% csrf_token %}
+                                {% if comment.is_visible %}
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Hide this comment from readers">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                                            <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+                                            <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+                                        </svg>
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Show this comment to readers">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-slash-fill" viewBox="0 0 16 16">
+                                            <path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7 7 0 0 0 2.79-.588M5.21 3.088A7 7 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474z"/>
+                                            <path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12z"/>
+                                        </svg>
+                                    </button>
+                                {% endif %}
+                            </form>
+                            <a href="{% url 'delete-comment' post_pk=post.pk comment_pk=comment.pk %}" methods="delete"
+                               class="btn btn-warning btn-sm">Delete</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% elif user.is_authenticated and visible_comments %}
+        <!-- Non-author view: see only visible comments -->
+        <div class="comments mt-2" style="background-color: white; padding: 20px;">
+            <h4>Comments</h4>
+            {% for comment in visible_comments %}
+                <hr/>
+                <div class="comment">
                     <p><strong>@{{ comment.author.username }}</strong> on {{ comment.date_posted|date:"F d, Y" }}</p>
                     <p>{{ comment.content }}</p>
-                    <a href="{% url 'delete-comment' post_pk=post.pk comment_pk=comment.pk %}" methods="delete"
-                       class="btn btn-warning btn-sm">Delete</a>
                 </div>
             {% endfor %}
         </div>
     {% endif %}
 
-    <div class="modal fade" data-bs-backdrop="static" id="createComment" tabindex="-1" aria-labelledby="createCommentLabel" aria-hidden="true">
+    <div class="modal fade" data-bs-backdrop="static" id="createComment" tabindex="-1"
+         aria-labelledby="createCommentLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <form method="post" action="{% url 'comment-privately' post.pk %}">
@@ -96,7 +134,8 @@
                         Leave a comment that can only be seen by you and the author.
                         {% csrf_token %}
                         <div class="mb-3 mt-3">
-                            <textarea class="form-control" id="comment" name="comment" placeholder="Enter text here"></textarea>
+                            <textarea class="form-control" id="comment" name="comment"
+                                      placeholder="Enter text here"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">

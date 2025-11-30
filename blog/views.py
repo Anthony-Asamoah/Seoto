@@ -1,4 +1,5 @@
 import logging
+
 import markdown
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -104,8 +105,16 @@ def post_detail(request, pk):
     # Get tags for display
     post.tag_list = post.tags.all()
 
+    # Get comment visibility info
+    visible_comments = post.comments.filter(is_visible=True)
+    has_visible_comments = visible_comments.exists()
+
     PostTags.increment_hits(ids=list(post.tag_list.values_list('id', flat=True)))
-    return render(request, 'blog/post_detail.html', {'post': post})
+    return render(request, 'blog/post_detail.html', {
+        'post': post,
+        'visible_comments': visible_comments,
+        'has_visible_comments': has_visible_comments
+    })
 
 
 @login_required
@@ -129,6 +138,29 @@ def delete_comment(request, post_pk, comment_pk):
             "You don't have permission to delete this comment."
         )
         comment.delete()
+    return redirect('post-detail', pk=post_pk)
+
+
+@login_required
+def toggle_comment_visibility(request, post_pk, comment_pk):
+    """Toggle visibility of a specific comment (only for post author)"""
+    comment = get_object_or_404(PostComment, pk=comment_pk, post_id=post_pk)
+    post = comment.post
+
+    # Only post author can toggle comment visibility
+    if request.user != post.author:
+        return HttpResponseForbidden("You don't have permission to toggle comment visibility.")
+
+    if request.method == 'POST':
+        # Toggle the comment's visibility
+        comment.is_visible = not comment.is_visible
+        comment.save()
+
+        if comment.is_visible:
+            messages.success(request, 'Comment is now visible to readers.')
+        else:
+            messages.success(request, 'Comment is now hidden from readers.')
+
     return redirect('post-detail', pk=post_pk)
 
 
