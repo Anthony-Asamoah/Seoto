@@ -84,6 +84,83 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
+
+        .transaction-card {
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            overflow: hidden;
+        }
+
+        .transaction-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .transaction-summary {
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .transaction-icon {
+            font-size: 1.5rem;
+            margin-right: 10px;
+        }
+
+        .transaction-info {
+            flex: 1;
+        }
+
+        .transaction-amount {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .transaction-details {
+            padding: 0 15px 15px 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .detail-row {
+            padding: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .detail-label {
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: #2c3e50;
+        }
+
+        .chevron-icon {
+            transition: transform 0.3s ease;
+            font-size: 1.2rem;
+            color: #6c757d;
+        }
+
+        .transaction-card[aria-expanded="true"] .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .tag-badge {
+            display: inline-block;
+            background: #e9ecef;
+            color: #495057;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
     </style>
 {% endblock %}
 
@@ -163,25 +240,96 @@
                 {% endfor %}
             </div>
 
-            <!-- Accounts Overview -->
+            <!-- Recent Transactions -->
             <div class="col-lg-6">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3>💳 Recent Transactions</h3>
+                    <h3 class="section-header" onclick="window.location.href='{% url 'spending_tracker:transaction_list' %}'">
+                        💳 Recent Transactions
+                    </h3>
                     <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-outline-primary btn-sm">Transact</a>
                 </div>
 
                 {% for transaction in recent_transactions %}
-                    <div class="account-card"
-                         style="border-left: 4px solid {% if transaction.mode == 'INCOME' %} Green {% else %} Red {% endif %};">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="mb-1">{{ transaction }}</h6>
-                                <small class="text-muted">{{ transactions.reference }} </small>
+                    <div class="transaction-card"
+                         style="border-left: 4px solid {% if transaction.mode == 'INCOME' %}#27ae60{% else %}#e74c3c{% endif %};"
+                         data-bs-toggle="collapse"
+                         data-bs-target="#transaction-{{ transaction.id }}"
+                         aria-expanded="false">
+
+                        <!-- Summary (Always Visible) -->
+                        <div class="transaction-summary">
+                            <div class="d-flex align-items-center flex-grow-1">
+                                <span class="transaction-icon">
+                                    {% if transaction.mode == 'INCOME' %}💰{% else %}💸{% endif %}
+                                </span>
+                                <div class="transaction-info">
+                                    <div class="fw-bold">
+                                        {% if transaction.category %}
+                                            {{ transaction.category.label }}
+                                        {% else %}
+                                            {% if transaction.mode == 'INCOME' %}Income{% else %}Expense{% endif %}
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ transaction.account.name }} • {{ transaction.transaction_time|date:"M d, Y" }}
+                                    </small>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                {% for tag in transaction.tags.all %}
-                                    <button class="btn-sm btn-secondary btn">Tags: {{ tag.label }}</button>
-                                {% endfor %}
+                            <div class="d-flex align-items-center">
+                                <span class="transaction-amount me-2 {% if transaction.mode == 'INCOME' %}income{% else %}expense{% endif %}">
+                                    {% if transaction.mode == 'INCOME' %}+{% else %}-{% endif %}{{ transaction.account.currency_symbol }}{{ transaction.amount|floatformat:2 }}
+                                </span>
+                                <i class="fas fa-chevron-down chevron-icon"></i>
+                            </div>
+                        </div>
+
+                        <!-- Details (Collapsible) -->
+                        <div class="collapse" id="transaction-{{ transaction.id }}">
+                            <div class="transaction-details">
+                                <div class="detail-row">
+                                    <span class="detail-label">Account:</span>
+                                    <span class="detail-value">{{ transaction.account.name }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Category:</span>
+                                    <span class="detail-value">
+                                        {% if transaction.category %}
+                                            {{ transaction.category.label }}
+                                        {% else %}
+                                            <em>Uncategorized</em>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Amount:</span>
+                                    <span class="detail-value">{{ transaction.account.currency_symbol }}{{ transaction.amount|floatformat:2 }} {{ transaction.currency }}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Date & Time:</span>
+                                    <span class="detail-value">{{ transaction.transaction_time|date:"D, M d, Y - g:i A" }}</span>
+                                </div>
+                                {% if transaction.details %}
+                                    <div class="detail-row">
+                                        <span class="detail-label">Details:</span>
+                                        <span class="detail-value">{{ transaction.details }}</span>
+                                    </div>
+                                {% endif %}
+                                {% if transaction.reference %}
+                                    <div class="detail-row">
+                                        <span class="detail-label">Reference:</span>
+                                        <span class="detail-value">{{ transaction.reference }}</span>
+                                    </div>
+                                {% endif %}
+                                {% if transaction.tags.all %}
+                                    <div class="detail-row">
+                                        <span class="detail-label">Tags:</span>
+                                        <span class="detail-value">
+                                            {% for tag in transaction.tags.all %}
+                                                <span class="tag-badge">{{ tag.label }}</span>
+                                            {% endfor %}
+                                        </span>
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -193,8 +341,24 @@
     <!-- Chart.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        {% if accounts.count > 2 %}
         document.addEventListener('DOMContentLoaded', () => {
+            // Handle transaction card chevron rotation
+            document.querySelectorAll('.transaction-card').forEach(card => {
+                const collapseTarget = card.getAttribute('data-bs-target');
+                if (collapseTarget) {
+                    const collapseElement = document.querySelector(collapseTarget);
+                    if (collapseElement) {
+                        collapseElement.addEventListener('show.bs.collapse', () => {
+                            card.setAttribute('aria-expanded', 'true');
+                        });
+                        collapseElement.addEventListener('hide.bs.collapse', () => {
+                            card.setAttribute('aria-expanded', 'false');
+                        });
+                    }
+                }
+            });
+
+            {% if accounts.count > 2 %}
             // Account balance chart data
             const accountNames = [
                 {% for account in accounts %}
@@ -264,7 +428,7 @@
                     }
                 }
             });
+            {% endif %}
         });
-        {% endif %}
     </script>
 {% endblock %}
