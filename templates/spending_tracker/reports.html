@@ -324,6 +324,13 @@
     <!-- Account Performance -->
     <div class="report-card">
         <h5 class="mb-3">🏦 Account Performance</h5>
+
+        {% if account_performance %}
+            <div class="mb-4">
+                <canvas id="accountPerformanceChart" style="max-height: 300px;"></canvas>
+            </div>
+        {% endif %}
+
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead class="table-light">
@@ -366,15 +373,15 @@
     let selectedPeriod = '{{ period }}';
     let selectedModifier = '{{ modifier }}';
 
-    console.log('='.repeat(80));
-    console.log('REPORTS PAGE LOADED');
-    console.log('='.repeat(80));
-    console.log('Initial State:');
-    console.log('  - Period:', selectedPeriod);
-    console.log('  - Modifier:', selectedModifier);
-    console.log('  - Period Name:', '{{ period_name }}');
-    console.log('  - Start Date:', '{{ start_date }}');
-    console.log('  - End Date:', '{{ end_date }}');
+    {#console.log('='.repeat(80));#}
+    {#console.log('REPORTS PAGE LOADED');#}
+    {#console.log('='.repeat(80));#}
+    {#console.log('Initial State:');#}
+    {#console.log('  - Period:', selectedPeriod);#}
+    {#console.log('  - Modifier:', selectedModifier);#}
+    {#console.log('  - Period Name:', '{{ period_name }}');#}
+    {#console.log('  - Start Date:', '{{ start_date }}');#}
+    {#console.log('  - End Date:', '{{ end_date }}');#}
 
     const applyFilter = () => {
         let url;
@@ -382,12 +389,12 @@
             url = `{% url 'spending_tracker:reports' %}?period=all_time`;
         } else if (selectedPeriod === 'custom') {
             // Custom date range handled by form
-            console.log('Custom period - form submission required');
+            {#console.log('Custom period - form submission required');#}
             return;
         } else {
             url = `{% url 'spending_tracker:reports' %}?period=${selectedPeriod}&modifier=${selectedModifier}`;
         }
-        console.log('Navigating to:', url);
+        {#console.log('Navigating to:', url);#}
         window.location.href = url;
     };
 
@@ -413,10 +420,10 @@
     const currencySymbol = '{{ currency_symbol|safe }}';
 
     const initCharts = () => {
-        console.log('\nINITIALIZING CHARTS:');
+        {#console.log('\nINITIALIZING CHARTS:');#}
 
         const expenseCategoryData = JSON.parse(document.getElementById("expense-categories-data").textContent);
-        console.log('  - Expense categories data:', expenseCategoryData);
+        {#console.log('  - Expense categories data:', expenseCategoryData);#}
         const expenseLabels = expenseCategoryData.map(item => item.label || 'Uncategorized');
         const expenseTotal = expenseCategoryData.map(item => parseFloat(item.total) || 0);
 
@@ -467,20 +474,20 @@
         }
 
         const trendData = JSON.parse(document.getElementById("trend-data").textContent);
-        console.log('  - Trend data:', trendData);
-        console.log('  - Trend data points count:', trendData.length);
+        {#console.log('  - Trend data:', trendData);#}
+        {#console.log('  - Trend data points count:', trendData.length);#}
 
         const labels = trendData.map(item => item.date);
         const incomes = trendData.map(item => item.income);
         const expenses = trendData.map(item => item.expenses);
 
-        console.log('  - Chart labels:', labels);
-        console.log('  - Income data:', incomes);
-        console.log('  - Expense data:', expenses);
+        {#console.log('  - Chart labels:', labels);#}
+        {#console.log('  - Income data:', incomes);#}
+        {#console.log('  - Expense data:', expenses);#}
 
         const trendCanvas = document.getElementById('trendChart');
         if (trendCanvas && labels.length > 0) {
-            console.log('  - Creating trend chart...');
+            {#console.log('  - Creating trend chart...');#}
             const ctx = trendCanvas.getContext('2d');
 
             new Chart(ctx, {
@@ -537,13 +544,127 @@
                     }
                 }
             });
-            console.log('  - Trend chart created successfully');
+            {#console.log('  - Trend chart created successfully');#}
         } else {
             console.warn('  - Trend chart NOT created. Canvas exists:', !!trendCanvas, 'Labels count:', labels.length);
         }
 
-        console.log('Charts initialization complete');
-        console.log('='.repeat(80));
+        // Account Performance Chart
+        const accountPerfCanvas = document.getElementById('accountPerformanceChart');
+        if (accountPerfCanvas) {
+            {#console.log('  - Creating account performance chart...');#}
+
+            const accountPerformanceData = [
+                {% for row in account_performance %}
+                {
+                    name: '{{ row.account.name|escapejs }}',
+                    starting: {{ row.starting_balance }},
+                    income: {{ row.income }},
+                    expenses: {{ row.expenses }},
+                    current: {{ row.current_balance }},
+                    netChange: {{ row.net_change }}
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ];
+
+            const accountNames = accountPerformanceData.map(acc => acc.name);
+            const currentBalances = accountPerformanceData.map(acc => acc.current);
+            const netChanges = accountPerformanceData.map(acc => acc.netChange);
+
+            const ctxAcctPerf = accountPerfCanvas.getContext('2d');
+            new Chart(ctxAcctPerf, {
+                type: 'bar',
+                data: {
+                    labels: accountNames,
+                    datasets: [
+                        {
+                            label: 'Current Balance',
+                            data: currentBalances,
+                            backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            borderWidth: 2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Net Change (Period)',
+                            data: netChanges,
+                            backgroundColor: netChanges.map(val =>
+                                val >= 0 ? 'rgba(39, 174, 96, 0.7)' : 'rgba(231, 76, 60, 0.7)'
+                            ),
+                            borderColor: netChanges.map(val =>
+                                val >= 0 ? 'rgba(39, 174, 96, 1)' : 'rgba(231, 76, 60, 1)'
+                            ),
+                            borderWidth: 2,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Account Balances & Period Performance',
+                            font: {
+                                size: 15,
+                                weight: 'bold'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    const label = context.dataset.label || '';
+                                    const value = context.parsed.y;
+                                    return label + ': ' + currencySymbol + value.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Current Balance (' + currencySymbol + ')'
+                            },
+                            ticks: {
+                                callback: (value) => currencySymbol + value.toFixed(0)
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Net Change (' + currencySymbol + ')'
+                            },
+                            ticks: {
+                                callback: (value) => currencySymbol + value.toFixed(0)
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            {#console.log('  - Account performance chart created successfully');#}
+        }
+
+        {#console.log('Charts initialization complete');#}
+        {#console.log('='.repeat(80));#}
     };
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -569,9 +690,9 @@
                     const period = id.replace('period-', '').replace(/-/g, '_');
                     selectedPeriod = period;
 
-                    console.log('\n--- PERIOD BUTTON CLICKED ---');
-                    console.log('Period changed to:', period);
-                    console.log('Current modifier:', selectedModifier);
+                    {#console.log('\n--- PERIOD BUTTON CLICKED ---');#}
+                    {#console.log('Period changed to:', period);#}
+                    {#console.log('Current modifier:', selectedModifier);#}
 
                     // Show/hide custom date range
                     if (period === 'custom') {
@@ -584,7 +705,7 @@
 
                     // Apply filter immediately (except for custom which uses form)
                     if (period !== 'custom') {
-                        console.log('Applying filter with period:', period, 'modifier:', selectedModifier);
+                        {#console.log('Applying filter with period:', period, 'modifier:', selectedModifier);#}
                         applyFilter();
                     }
                 });
@@ -599,13 +720,13 @@
                     const modifier = id.replace('modifier-', '').replace(/-/g, '_');
                     selectedModifier = modifier;
 
-                    console.log('\n--- MODIFIER BUTTON CLICKED ---');
-                    console.log('Modifier changed to:', modifier);
-                    console.log('Current period:', selectedPeriod);
+                    {#console.log('\n--- MODIFIER BUTTON CLICKED ---');#}
+                    {#console.log('Modifier changed to:', modifier);#}
+                    {#console.log('Current period:', selectedPeriod);#}
 
                     // Apply filter immediately if not custom
                     if (selectedPeriod !== 'custom' && selectedPeriod !== 'all_time') {
-                        console.log('Applying filter with period:', selectedPeriod, 'modifier:', modifier);
+                        {#console.log('Applying filter with period:', selectedPeriod, 'modifier:', modifier);#}
                         applyFilter();
                     }
                 });
