@@ -155,6 +155,43 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
+        .chart-empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 250px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .chart-empty-state .emoji {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .chart-empty-state .message {
+            font-size: 1.1rem;
+            color: #5a6c7d;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
     </style>
 
 </head>
@@ -263,6 +300,10 @@
                 <h5 class="mb-3">📈 Income vs Expenses Trend</h5>
                 <div class="chart-container">
                     <canvas id="trendChart"></canvas>
+                    <div id="trendChartEmpty" class="chart-empty-state" style="display: none;">
+                        <div class="emoji">📊</div>
+                        <div class="message">Start adding transactions to see your financial trends come to life!</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -273,6 +314,10 @@
                 <h5 class="mb-3">🏷️ Expense Categories</h5>
                 <div class="chart-container">
                     <canvas id="categoryChart"></canvas>
+                    <div id="categoryChartEmpty" class="chart-empty-state" style="display: none;">
+                        <div class="emoji">🎯</div>
+                        <div class="message">Track your expenses to unlock your spending insights!</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -471,6 +516,13 @@
                     }
                 }
             });
+            // Hide empty state, show chart
+            document.getElementById('categoryChartEmpty').style.display = 'none';
+            categoryCanvas.style.display = 'block';
+        } else {
+            // Show empty state, hide chart
+            document.getElementById('categoryChartEmpty').style.display = 'flex';
+            if (categoryCanvas) categoryCanvas.style.display = 'none';
         }
 
         const trendData = JSON.parse(document.getElementById("trend-data").textContent);
@@ -545,8 +597,13 @@
                 }
             });
             {#console.log('  - Trend chart created successfully');#}
+            // Hide empty state, show chart
+            document.getElementById('trendChartEmpty').style.display = 'none';
+            trendCanvas.style.display = 'block';
         } else {
-            console.warn('  - Trend chart NOT created. Canvas exists:', !!trendCanvas, 'Labels count:', labels.length);
+            // Show empty state, hide chart
+            document.getElementById('trendChartEmpty').style.display = 'flex';
+            if (trendCanvas) trendCanvas.style.display = 'none';
         }
 
         // Account Performance Chart
