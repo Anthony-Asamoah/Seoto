@@ -7,6 +7,7 @@ urlpatterns = [
     path('post/<int:pk>/', views.post_detail, name='post-detail'),
     path('post/<int:pk>/comment/', views.comment_privately, name='comment-privately'),
     path('post/<int:post_pk>/comment/<int:comment_pk>/', views.delete_comment, name='delete-comment'),
+    path('post/<int:post_pk>/comment/<int:comment_pk>/toggle/', views.toggle_comment_visibility, name='toggle-comment-visibility'),
     path('post/new/', views.create_post, name='post-create'),
     path('post/<int:pk>/edit/', views.edit_post, name='post-edit'),
     path('tags/', views.manage_tags, name='manage-tags'),

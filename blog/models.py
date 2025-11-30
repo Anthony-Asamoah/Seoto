@@ -56,6 +56,7 @@ class PostComment(models.Model):
     content = models.TextField()
     date_posted = models.DateTimeField(default=timezone.now)
     edited = models.BooleanField(default=False)
+    is_visible = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.author.username} - {self.post.title}"
