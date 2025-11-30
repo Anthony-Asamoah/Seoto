@@ -172,30 +172,42 @@
         <div class="row align-items-center mb-3">
             <div class="col-md-12">
                 <h5 class="mb-3">Reporting Period</h5>
-                <div class="btn-group w-100" role="group">
+                <!-- Period Selection Row -->
+                <div class="btn-group w-100 mb-2" role="group">
                     <input type="radio" class="btn-check" name="period" id="period-week" autocomplete="off"
-                           onclick="setDateFilter('week')"
                            {% if period == 'week' %}checked{% endif %}>
                     <label class="btn btn-outline-primary" for="period-week">Week</label>
 
                     <input type="radio" class="btn-check" name="period" id="period-month" autocomplete="off"
-                           onclick="setDateFilter('month')"
                            {% if period == 'month' %}checked{% endif %}>
                     <label class="btn btn-outline-primary" for="period-month">Month</label>
 
                     <input type="radio" class="btn-check" name="period" id="period-year" autocomplete="off"
-                           onclick="setDateFilter('year')"
                            {% if period == 'year' %}checked{% endif %}>
                     <label class="btn btn-outline-primary" for="period-year">Year</label>
 
                     <input type="radio" class="btn-check" name="period" id="period-all-time" autocomplete="off"
-                           onclick="setDateFilter('all_time')"
                            {% if period == 'all_time' %}checked{% endif %}>
                     <label class="btn btn-outline-primary" for="period-all-time">All Time</label>
 
                     <input type="radio" class="btn-check" name="period" id="period-custom" autocomplete="off"
                            {% if period == 'custom' %}checked{% endif %}>
                     <label class="btn btn-outline-primary" for="period-custom">Custom</label>
+                </div>
+
+                <!-- Modifier Selection Row -->
+                <div class="btn-group w-100" role="group" id="modifier-group">
+                    <input type="radio" class="btn-check" name="modifier" id="modifier-this" autocomplete="off"
+                           {% if modifier == 'this' %}checked{% endif %}>
+                    <label class="btn btn-outline-secondary" for="modifier-this">This</label>
+
+                    <input type="radio" class="btn-check" name="modifier" id="modifier-last" autocomplete="off"
+                           {% if modifier == 'last' %}checked{% endif %}>
+                    <label class="btn btn-outline-secondary" for="modifier-last">Last</label>
+
+                    <input type="radio" class="btn-check" name="modifier" id="modifier-last-three" autocomplete="off"
+                           {% if modifier == 'last_three' %}checked{% endif %}>
+                    <label class="btn btn-outline-secondary" for="modifier-last-three">Last Three</label>
                 </div>
             </div>
         </div>
@@ -321,7 +333,6 @@
                     <th>Total Income</th>
                     <th>Total Expenses</th>
                     <th>Current Balance</th>
-                    <th>Change</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -333,15 +344,11 @@
                             <td class="text-success">+{{ currency_symbol }}{{ row.income }}</td>
                             <td class="text-danger">-{{ currency_symbol }}{{ row.expenses }}</td>
                             <td><strong>{{ currency_symbol }}{{ row.current_balance }}</strong></td>
-                            <td {% if row.net_change >= 0 %}class="text-success"
-                                {% else %}class="text-danger"{% endif %}>
-                                {% if row.net_change >= 0 %}+{% endif %}{{ currency_symbol }}{{ row.net_change }}
-                            </td>
                         </tr>
                     {% endfor %}
                 {% else %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted">No accounts found</td>
+                        <td colspan="5" class="text-center text-muted">No accounts found</td>
                     </tr>
                 {% endif %}
                 </tbody>
@@ -355,15 +362,61 @@
 <script src="https://unpkg.com/@popperjs/core@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const setDateFilter = (period) => {
-        window.location.href = `{% url 'spending_tracker:reports' %}?period=${period}`;
+    // Track selected period and modifier
+    let selectedPeriod = '{{ period }}';
+    let selectedModifier = '{{ modifier }}';
+
+    console.log('='.repeat(80));
+    console.log('REPORTS PAGE LOADED');
+    console.log('='.repeat(80));
+    console.log('Initial State:');
+    console.log('  - Period:', selectedPeriod);
+    console.log('  - Modifier:', selectedModifier);
+    console.log('  - Period Name:', '{{ period_name }}');
+    console.log('  - Start Date:', '{{ start_date }}');
+    console.log('  - End Date:', '{{ end_date }}');
+
+    const applyFilter = () => {
+        let url;
+        if (selectedPeriod === 'all_time') {
+            url = `{% url 'spending_tracker:reports' %}?period=all_time`;
+        } else if (selectedPeriod === 'custom') {
+            // Custom date range handled by form
+            console.log('Custom period - form submission required');
+            return;
+        } else {
+            url = `{% url 'spending_tracker:reports' %}?period=${selectedPeriod}&modifier=${selectedModifier}`;
+        }
+        console.log('Navigating to:', url);
+        window.location.href = url;
+    };
+
+    const updateModifierState = () => {
+        const modifierGroup = document.getElementById('modifier-group');
+        const modifierInputs = modifierGroup.querySelectorAll('input[type="radio"]');
+
+        // Disable modifiers for all_time and custom
+        if (selectedPeriod === 'all_time' || selectedPeriod === 'custom') {
+            modifierInputs.forEach(input => {
+                input.disabled = true;
+                input.parentElement.classList.add('disabled');
+            });
+        } else {
+            modifierInputs.forEach(input => {
+                input.disabled = false;
+                input.parentElement.classList.remove('disabled');
+            });
+        }
     };
 
     // Get currency symbol from context
     const currencySymbol = '{{ currency_symbol|safe }}';
 
     const initCharts = () => {
+        console.log('\nINITIALIZING CHARTS:');
+
         const expenseCategoryData = JSON.parse(document.getElementById("expense-categories-data").textContent);
+        console.log('  - Expense categories data:', expenseCategoryData);
         const expenseLabels = expenseCategoryData.map(item => item.label || 'Uncategorized');
         const expenseTotal = expenseCategoryData.map(item => parseFloat(item.total) || 0);
 
@@ -414,12 +467,20 @@
         }
 
         const trendData = JSON.parse(document.getElementById("trend-data").textContent);
+        console.log('  - Trend data:', trendData);
+        console.log('  - Trend data points count:', trendData.length);
+
         const labels = trendData.map(item => item.date);
         const incomes = trendData.map(item => item.income);
         const expenses = trendData.map(item => item.expenses);
 
+        console.log('  - Chart labels:', labels);
+        console.log('  - Income data:', incomes);
+        console.log('  - Expense data:', expenses);
+
         const trendCanvas = document.getElementById('trendChart');
         if (trendCanvas && labels.length > 0) {
+            console.log('  - Creating trend chart...');
             const ctx = trendCanvas.getContext('2d');
 
             new Chart(ctx, {
@@ -476,7 +537,13 @@
                     }
                 }
             });
+            console.log('  - Trend chart created successfully');
+        } else {
+            console.warn('  - Trend chart NOT created. Canvas exists:', !!trendCanvas, 'Labels count:', labels.length);
         }
+
+        console.log('Charts initialization complete');
+        console.log('='.repeat(80));
     };
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -494,18 +561,59 @@
             }
         }, 250);
 
-        document.getElementById('period-custom').addEventListener('click', () => {
-            document.getElementById('customDateRange').style.display = 'block';
-        });
-
-        ['period-week', 'period-month', 'period-year', 'period-all-time'].forEach(id => {
+        // Set up period button event listeners
+        ['period-week', 'period-month', 'period-year', 'period-all-time', 'period-custom'].forEach(id => {
             const elem = document.getElementById(id);
             if (elem) {
-                elem.addEventListener('click', () => {
-                    document.getElementById('customDateRange').style.display = 'none';
+                elem.addEventListener('change', () => {
+                    const period = id.replace('period-', '').replace(/-/g, '_');
+                    selectedPeriod = period;
+
+                    console.log('\n--- PERIOD BUTTON CLICKED ---');
+                    console.log('Period changed to:', period);
+                    console.log('Current modifier:', selectedModifier);
+
+                    // Show/hide custom date range
+                    if (period === 'custom') {
+                        document.getElementById('customDateRange').style.display = 'block';
+                    } else {
+                        document.getElementById('customDateRange').style.display = 'none';
+                    }
+
+                    updateModifierState();
+
+                    // Apply filter immediately (except for custom which uses form)
+                    if (period !== 'custom') {
+                        console.log('Applying filter with period:', period, 'modifier:', selectedModifier);
+                        applyFilter();
+                    }
                 });
             }
         });
+
+        // Set up modifier button event listeners
+        ['modifier-this', 'modifier-last', 'modifier-last-three'].forEach(id => {
+            const elem = document.getElementById(id);
+            if (elem) {
+                elem.addEventListener('change', () => {
+                    const modifier = id.replace('modifier-', '').replace(/-/g, '_');
+                    selectedModifier = modifier;
+
+                    console.log('\n--- MODIFIER BUTTON CLICKED ---');
+                    console.log('Modifier changed to:', modifier);
+                    console.log('Current period:', selectedPeriod);
+
+                    // Apply filter immediately if not custom
+                    if (selectedPeriod !== 'custom' && selectedPeriod !== 'all_time') {
+                        console.log('Applying filter with period:', selectedPeriod, 'modifier:', modifier);
+                        applyFilter();
+                    }
+                });
+            }
+        });
+
+        // Initialize modifier state
+        updateModifierState();
 
         initCharts();
     });
