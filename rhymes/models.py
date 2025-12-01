@@ -1,6 +1,3 @@
-import os.path
-
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -29,10 +26,40 @@ class Rhyme(models.Model):
         queryset.update(word_count=word_count, rhyme=rhyme, text=text)
         return queryset.first()
 
-    def write_to_file(self, filename='rhymes.txt'):
-        path = os.path.join(settings.MEDIA_ROOT, filename)
-        with open(path, 'w') as file:
-            file.write(f'''{'Rhyme Db'.rjust(60)}\n{'Powered by Python & Wine'.rjust(60)}\n\n''')
-            file.write(f'({self.word_count}) Words that rhyme with "{self.rhyme.lower()}"\n\n')
-            file.write(f'{self.text}\n')
-            file.write((''.center(60, '-')))
+    def generate_file_content(self):
+        """Generate formatted file content as a string without writing to disk."""
+        content = []
+
+        # Header with border
+        content.append('=' * 80)
+        content.append('RHYME DATABASE'.center(80))
+        content.append('Powered by Python & Wine'.center(80))
+        content.append('=' * 80)
+        content.append('')
+
+        # User and generation info
+        content.append(f'Generated for: {self.user.username} ({self.user.email})')
+        content.append(f'Date: {self.timestamp.strftime("%B %d, %Y at %I:%M %p")}')
+        content.append('-' * 80)
+        content.append('')
+
+        # Search query and results
+        content.append(f'SEARCH QUERY: "{self.rhyme.lower()}"')
+        content.append(f'RESULTS: {self.word_count} word(s) found')
+        content.append('')
+        content.append('=' * 80)
+        content.append('')
+
+        # Words list
+        content.append('MATCHING WORDS:')
+        content.append('')
+        content.append(self.text)
+        content.append('')
+
+        # Footer
+        content.append('=' * 80)
+        content.append('Thank you for using Rhyme Database!'.center(80))
+        content.append('Visit us at seoto.com for more tools'.center(80))
+        content.append('=' * 80)
+
+        return '\n'.join(content)
