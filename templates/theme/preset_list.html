@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Browse Themes - Seoto{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>Browse Themes</h2>
+            <p class="text-muted">Discover and apply themes created by our community and team</p>
+            <hr>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="btn-group" role="group">
+                <a href="?filter=all" class="btn btn-{% if filter_type == 'all' %}primary{% else %}outline-primary{% endif %}">All Themes</a>
+                <a href="?filter=official" class="btn btn-{% if filter_type == 'official' %}primary{% else %}outline-primary{% endif %}">Official</a>
+                <a href="?filter=community" class="btn btn-{% if filter_type == 'community' %}primary{% else %}outline-primary{% endif %}">Community</a>
+                <a href="?filter=featured" class="btn btn-{% if filter_type == 'featured' %}primary{% else %}outline-primary{% endif %}">Featured</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Themes Grid -->
+    <div class="row">
+        {% if themes %}
+            {% for theme in themes %}
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            {{ theme.name }}
+                        </h5>
+                        <div class="mb-2">
+                            {% if theme.is_official %}
+                                <span class="badge bg-primary">Official</span>
+                            {% else %}
+                                <span class="badge bg-success">Community</span>
+                            {% endif %}
+                            {% if theme.is_featured %}
+                                <span class="badge bg-warning">Featured</span>
+                            {% endif %}
+                        </div>
+
+                        <p class="card-text small text-muted">{{ theme.description|truncatewords:10 }}</p>
+
+                        <!-- Color swatches -->
+                        <div class="d-flex gap-1 mb-3">
+                            <div style="width: 35px; height: 35px; background-color: {{ theme.primary_color }}; border: 1px solid #ddd; border-radius: 4px;" title="Primary"></div>
+                            <div style="width: 35px; height: 35px; background-color: {{ theme.secondary_color }}; border: 1px solid #ddd; border-radius: 4px;" title="Secondary"></div>
+                            <div style="width: 35px; height: 35px; background-color: {{ theme.background_color }}; border: 1px solid #ddd; border-radius: 4px;" title="Background"></div>
+                        </div>
+
+                        <!-- Rating -->
+                        <div class="mb-3">
+                            <i class="fas fa-star text-warning"></i>
+                            <span class="small">
+                                {{ theme.average_rating|default:"No ratings" }}
+                                {% if theme.rating_count %}<span class="text-muted">({{ theme.rating_count }})</span>{% endif %}
+                            </span>
+                        </div>
+
+                        <!-- Creator -->
+                        <p class="small text-muted mb-3">
+                            By {{ theme.created_by.username }}
+                        </p>
+
+                        <!-- Actions -->
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'theme:preset_detail' theme.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            {% if user.is_authenticated %}
+                                <a href="{% url 'theme:apply_preset' theme.id %}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-check"></i> Apply
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No themes found for this filter. Try a different filter or check back later!
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Back to Theme Home -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            {% if user.is_authenticated %}
+                <a href="{% url 'theme:theme_home' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Theme Home
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

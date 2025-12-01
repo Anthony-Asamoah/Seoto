@@ -30,7 +30,13 @@ urlpatterns = [
       path('blog/', include('blog.urls')),
       path('spending_tracker/', include('spending_tracker.urls')),
 
-  ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+  ]
+
+# Only include theme URLs if feature is enabled
+if settings.IS_THEME_ENABLED:
+    urlpatterns.append(path('theme/', include('theme.urls')))
+
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler404 = error404
 handler500 = error500
