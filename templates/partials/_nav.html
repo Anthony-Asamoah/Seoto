@@ -22,6 +22,9 @@
         <div class="navbar-nav">
             <a class="nav-item nav-link active" href="{% url 'index' %}">Home</a>
             {% if user.is_authenticated %}
+                {% if IS_THEME_ENABLED %}
+                    <a class="nav-item nav-link" href="{% url 'theme:theme_home' %}">Theme</a>
+                {% endif %}
                 <form method="POST" action="{% url 'logout' %}" style="display: inline;">
                     {% csrf_token %}
                     <button type="submit" class="nav-item nav-link btn">Logout</button>

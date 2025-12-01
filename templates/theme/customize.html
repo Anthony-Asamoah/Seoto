@@ -1,0 +1,340 @@
+{% extends 'base.html' %}
+
+{% block title %}Customize Theme - Seoto{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 px-4">
+    <div class="row">
+        <div class="col-md-7 pe-4 ps-4">
+            <h2>Customize Your Theme</h2>
+            <p class="text-muted">Create your own unique color scheme with 20 customizable colors</p>
+            <hr>
+
+            <form method="post" id="customizeForm">
+                {% csrf_token %}
+
+                <!-- Base Colors Section -->
+                <h4 class="mt-4 mb-3">Base Colors</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.custom_primary_color.id_for_label }}" class="form-label">
+                            {{ form.custom_primary_color.label }}
+                        </label>
+                        <div class="input-group">
+                            {{ form.custom_primary_color }}
+                            <input type="text" class="form-control" id="primary_hex" value="{{ current_colors.primary_color }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.custom_secondary_color.id_for_label }}" class="form-label">
+                            {{ form.custom_secondary_color.label }}
+                        </label>
+                        <div class="input-group">
+                            {{ form.custom_secondary_color }}
+                            <input type="text" class="form-control" id="secondary_hex" value="{{ current_colors.secondary_color }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.custom_background_color.id_for_label }}" class="form-label">
+                            {{ form.custom_background_color.label }}
+                        </label>
+                        <div class="input-group">
+                            {{ form.custom_background_color }}
+                            <input type="text" class="form-control" id="background_hex" value="{{ current_colors.background_color }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.custom_text_color.id_for_label }}" class="form-label">
+                            {{ form.custom_text_color.label }}
+                        </label>
+                        <div class="input-group">
+                            {{ form.custom_text_color }}
+                            <input type="text" class="form-control" id="text_hex" value="{{ current_colors.text_color }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.custom_text_head_color.id_for_label }}" class="form-label">
+                            {{ form.custom_text_head_color.label }}
+                        </label>
+                        <div class="input-group">
+                            {{ form.custom_text_head_color }}
+                            <input type="text" class="form-control" id="text_head_hex" value="{{ current_colors.text_head_color }}" readonly>
+                        </div>
+                        <small class="form-text">Used for headings and labels</small>
+                    </div>
+                </div>
+
+                <!-- Navbar Colors Section -->
+                <h4 class="mt-4 mb-3">Navbar Colors</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.custom_navbar_bg.id_for_label }}" class="form-label">
+                            {{ form.custom_navbar_bg.label }}
+                        </label>
+                        <div class="input-group">
+                            {{ form.custom_navbar_bg }}
+                            <input type="text" class="form-control" id="navbar_bg_hex" value="{{ current_colors.navbar_bg }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.custom_navbar_text.id_for_label }}" class="form-label">
+                            {{ form.custom_navbar_text.label }}
+                        </label>
+                        <div class="input-group">
+                            {{ form.custom_navbar_text }}
+                            <input type="text" class="form-control" id="navbar_text_hex" value="{{ current_colors.navbar_text }}" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Button Colors Section -->
+                <h4 class="mt-4 mb-3">Button Colors</h4>
+                <div class="row">
+                    <!-- Success -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Success Button BG</label>
+                        <div class="input-group">
+                            {{ form.custom_btn_success_bg }}
+                            <input type="text" class="form-control" id="btn_success_bg_hex" value="{{ current_colors.btn_success_bg }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Success Button Text</label>
+                        <div class="input-group">
+                            {{ form.custom_btn_success_text }}
+                            <input type="text" class="form-control" id="btn_success_text_hex" value="{{ current_colors.btn_success_text }}" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Danger -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Danger Button BG</label>
+                        <div class="input-group">
+                            {{ form.custom_btn_danger_bg }}
+                            <input type="text" class="form-control" id="btn_danger_bg_hex" value="{{ current_colors.btn_danger_bg }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Danger Button Text</label>
+                        <div class="input-group">
+                            {{ form.custom_btn_danger_text }}
+                            <input type="text" class="form-control" id="btn_danger_text_hex" value="{{ current_colors.btn_danger_text }}" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Warning -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Warning Button BG</label>
+                        <div class="input-group">
+                            {{ form.custom_btn_warning_bg }}
+                            <input type="text" class="form-control" id="btn_warning_bg_hex" value="{{ current_colors.btn_warning_bg }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Warning Button Text</label>
+                        <div class="input-group">
+                            {{ form.custom_btn_warning_text }}
+                            <input type="text" class="form-control" id="btn_warning_text_hex" value="{{ current_colors.btn_warning_text }}" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Info -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Info Button BG</label>
+                        <div class="input-group">
+                            {{ form.custom_btn_info_bg }}
+                            <input type="text" class="form-control" id="btn_info_bg_hex" value="{{ current_colors.btn_info_bg }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Info Button Text</label>
+                        <div class="input-group">
+                            {{ form.custom_btn_info_text }}
+                            <input type="text" class="form-control" id="btn_info_text_hex" value="{{ current_colors.btn_info_text }}" readonly>
+                        </div>
+                    </div>
+
+                    <!-- Secondary -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Secondary Button BG</label>
+                        <div class="input-group">
+                            {{ form.custom_btn_secondary_bg }}
+                            <input type="text" class="form-control" id="btn_secondary_bg_hex" value="{{ current_colors.btn_secondary_bg }}" readonly>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Secondary Button Text</label>
+                        <div class="input-group">
+                            {{ form.custom_btn_secondary_text }}
+                            <input type="text" class="form-control" id="btn_secondary_text_hex" value="{{ current_colors.btn_secondary_text }}" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Colors Section -->
+                <h4 class="mt-4 mb-3">Card Colors</h4>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Card Background</label>
+                        <div class="input-group">
+                            {{ form.custom_card_bg_color }}
+                            <input type="text" class="form-control" id="card_bg_hex" value="{{ current_colors.card_bg_color }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Card Header BG</label>
+                        <div class="input-group">
+                            {{ form.custom_card_header_bg_color }}
+                            <input type="text" class="form-control" id="card_header_bg_hex" value="{{ current_colors.card_header_bg_color }}" readonly>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Card Text</label>
+                        <div class="input-group">
+                            {{ form.custom_card_text_color }}
+                            <input type="text" class="form-control" id="card_text_hex" value="{{ current_colors.card_text_color }}" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 mb-5">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save"></i> Save Custom Theme
+                    </button>
+                    <a href="{% url 'theme:theme_home' %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Live Preview Panel -->
+        <div class="col-md-5">
+            <div class="sticky-top" style="top: 20px;">
+                <h4 class="mb-3">Live Preview</h4>
+
+                <!-- Preview Container with Page Background -->
+                <div id="preview-page" style="border: 2px solid #ddd; border-radius: 8px; padding: 20px; min-height: 600px;">
+                    <!-- Navbar Preview -->
+                    <div id="preview-navbar" style="padding: 12px; margin: -20px -20px 20px -20px; border-radius: 6px 6px 0 0;">
+                        <span id="preview-navbar-text" style="font-weight: bold;">Navigation Bar</span>
+                    </div>
+
+                    <!-- Main Card (Middle Card - reflects page card) -->
+                    <div id="preview-card" style="border: 1px solid #ddd; border-radius: 8px; overflow: hidden; margin-bottom: 20px;">
+                        <!-- Card Header -->
+                        <div id="preview-card-header" style="padding: 12px;">
+                            <h5 id="preview-card-title" style="margin: 0;">Card Header Title</h5>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div id="preview-card-body" style="padding: 15px;">
+                            <h6 id="preview-heading">Sample Heading (h6)</h6>
+                            <p id="preview-paragraph" style="margin-bottom: 12px;">
+                                This is body text. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                            </p>
+
+                            <label id="preview-label" style="font-weight: 600; display: block; margin-bottom: 4px;">Form Label:</label>
+                            <small id="preview-help-text" style="display: block; margin-bottom: 15px; opacity: 0.7;">This is help text for form fields</small>
+
+                            <!-- Button Previews -->
+                            <div class="mb-2">
+                                <button id="preview-btn-success" type="button" style="border: none; padding: 6px 12px; border-radius: 4px; margin-right: 5px; margin-bottom: 5px; font-size: 14px;">
+                                    Success
+                                </button>
+                                <button id="preview-btn-danger" type="button" style="border: none; padding: 6px 12px; border-radius: 4px; margin-right: 5px; margin-bottom: 5px; font-size: 14px;">
+                                    Danger
+                                </button>
+                                <button id="preview-btn-warning" type="button" style="border: none; padding: 6px 12px; border-radius: 4px; margin-right: 5px; margin-bottom: 5px; font-size: 14px;">
+                                    Warning
+                                </button>
+                                <button id="preview-btn-info" type="button" style="border: none; padding: 6px 12px; border-radius: 4px; margin-right: 5px; margin-bottom: 5px; font-size: 14px;">
+                                    Info
+                                </button>
+                                <button id="preview-btn-secondary" type="button" style="border: none; padding: 6px 12px; border-radius: 4px; margin-bottom: 5px; font-size: 14px;">
+                                    Secondary
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info small mt-3">
+                        <i class="fas fa-info-circle"></i> Colors update in real-time as you select them!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Define all color mappings
+    const colorMappings = [
+        { picker: 'id_custom_primary_color', hex: 'primary_hex' },
+        { picker: 'id_custom_secondary_color', hex: 'secondary_hex' },
+        { picker: 'id_custom_background_color', hex: 'background_hex', preview: 'preview-page', property: 'backgroundColor' },
+        { picker: 'id_custom_text_color', hex: 'text_hex', preview: ['preview-paragraph', 'preview-help-text'], property: 'color' },
+        { picker: 'id_custom_text_head_color', hex: 'text_head_hex', preview: ['preview-heading', 'preview-card-title', 'preview-label'], property: 'color' },
+        { picker: 'id_custom_navbar_bg', hex: 'navbar_bg_hex', preview: 'preview-navbar', property: 'backgroundColor' },
+        { picker: 'id_custom_navbar_text', hex: 'navbar_text_hex', preview: 'preview-navbar-text', property: 'color' },
+        { picker: 'id_custom_btn_success_bg', hex: 'btn_success_bg_hex', preview: 'preview-btn-success', property: 'backgroundColor' },
+        { picker: 'id_custom_btn_success_text', hex: 'btn_success_text_hex', preview: 'preview-btn-success', property: 'color' },
+        { picker: 'id_custom_btn_danger_bg', hex: 'btn_danger_bg_hex', preview: 'preview-btn-danger', property: 'backgroundColor' },
+        { picker: 'id_custom_btn_danger_text', hex: 'btn_danger_text_hex', preview: 'preview-btn-danger', property: 'color' },
+        { picker: 'id_custom_btn_warning_bg', hex: 'btn_warning_bg_hex', preview: 'preview-btn-warning', property: 'backgroundColor' },
+        { picker: 'id_custom_btn_warning_text', hex: 'btn_warning_text_hex', preview: 'preview-btn-warning', property: 'color' },
+        { picker: 'id_custom_btn_info_bg', hex: 'btn_info_bg_hex', preview: 'preview-btn-info', property: 'backgroundColor' },
+        { picker: 'id_custom_btn_info_text', hex: 'btn_info_text_hex', preview: 'preview-btn-info', property: 'color' },
+        { picker: 'id_custom_btn_secondary_bg', hex: 'btn_secondary_bg_hex', preview: 'preview-btn-secondary', property: 'backgroundColor' },
+        { picker: 'id_custom_btn_secondary_text', hex: 'btn_secondary_text_hex', preview: 'preview-btn-secondary', property: 'color' },
+        { picker: 'id_custom_card_bg_color', hex: 'card_bg_hex', preview: 'preview-card-body', property: 'backgroundColor' },
+        { picker: 'id_custom_card_header_bg_color', hex: 'card_header_bg_hex', preview: 'preview-card-header', property: 'backgroundColor' },
+        { picker: 'id_custom_card_text_color', hex: 'card_text_hex', preview: 'preview-card-body', property: 'color' },
+    ];
+
+    colorMappings.forEach(function(mapping) {
+        const pickerElement = document.getElementById(mapping.picker);
+        const hexElement = document.getElementById(mapping.hex);
+
+        if (pickerElement && hexElement) {
+            // Set initial preview if specified
+            if (mapping.preview) {
+                const previewElements = Array.isArray(mapping.preview) ? mapping.preview : [mapping.preview];
+                previewElements.forEach(previewId => {
+                    const previewElement = document.getElementById(previewId);
+                    if (previewElement && mapping.property) {
+                        previewElement.style[mapping.property] = pickerElement.value;
+                    }
+                });
+            }
+
+            // Update on change
+            pickerElement.addEventListener('input', function() {
+                hexElement.value = this.value.toUpperCase();
+
+                if (mapping.preview && mapping.property) {
+                    const previewElements = Array.isArray(mapping.preview) ? mapping.preview : [mapping.preview];
+                    previewElements.forEach(previewId => {
+                        const previewElement = document.getElementById(previewId);
+                        if (previewElement) {
+                            previewElement.style[mapping.property] = this.value;
+                        }
+                    });
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

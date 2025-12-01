@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'jotter',
     'blog',
     'spending_tracker',
+    'theme',
 
     # Django default apps
     'django.contrib.admin',
@@ -80,6 +81,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'theme.context_processors.theme_css',
             ],
         },
     },
@@ -149,6 +151,10 @@ EMAIL_PORT = Env.int('EMAIL_PORT')
 EMAIL_HOST_USER = Env.str('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = Env.str('EMAIL_PASSWORD')
 EMAIL_USE_TLS = Env.bool('EMAIL_USE_TLS')
+DEFAULT_FROM_EMAIL = Env.str('EMAIL_HOST_USER')
+
+# Theme feature flag
+IS_THEME_ENABLED = Env.bool('IS_THEME_ENABLED', default=False)
 
 # Accounts config
 LOGIN_REDIRECT_URL = 'index'
