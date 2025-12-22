@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}| {% if is_edit %}Edit Order{% else %}New Order{% endif %}{% endblock %}
+
+{% block style %}
+    {% include 'partials/_form_style_bootstrap.html' %}
+{% endblock %}
+
+{% block content %}
+    <div class="container py-4">
+        <div class="header">
+            <h2 class="mb-3">{% if is_edit %}Edit Meal Order{% else %}Place a Meal Order{% endif %}</h2>
+            <p class="text-muted">{% if is_edit %}Adjust your meal and quantity below. Saving will set the order back to Pending.{% else %}Select a meal and quantity to create a new order.{% endif %}</p>
+        </div>
+        <div class="main" style="max-width: 600px; margin: auto;">
+            <form method="post" novalidate>
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="form-group mb-2">
+                        <div class="form-row row align-items-center">
+                            <div class="col-sm-2">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            </div>
+                            <div class="col-md">
+                                {{ field }}
+                                {% if field.help_text %}
+                                    <br><small id="{{ field.id_for_label }}Help"
+                                           class="form-text text-muted">{{ field.help_text }}</small>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="text-danger small">{{ field.errors|striptags }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                <div class="form-actions mt-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">{% if is_edit %}Save Changes{% else %}Submit Order{% endif %}</button>
+                    <a href="{% url 'foodie_orders' %}" class="btn btn-link">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}
