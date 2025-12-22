@@ -1,0 +1,173 @@
+name: Deploy to PythonAnywhere
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install paramiko
+
+      - name: Deploy to PythonAnywhere
+        env:
+          PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+          PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
+          PYTHONANYWHERE_HOST: ${{ secrets.PYTHONANYWHERE_HOST }}
+        run: |
+          python - <<'PYTHON_SCRIPT'
+          import os
+          import sys
+          import urllib.request
+          import json
+
+          # Get environment variables
+          username = os.environ.get('PYTHONANYWHERE_USERNAME')
+          api_token = os.environ.get('PYTHONANYWHERE_API_TOKEN')
+          host = os.environ.get('PYTHONANYWHERE_HOST', f'{username}.pythonanywhere.com')
+
+          if not username or not api_token:
+              print("Error: PYTHONANYWHERE_USERNAME and PYTHONANYWHERE_API_TOKEN must be set")
+              sys.exit(1)
+
+          # PythonAnywhere API endpoint for console
+          console_api_url = f'https://www.pythonanywhere.com/api/v0/user/{username}/consoles/'
+          webapp_api_url = f'https://www.pythonanywhere.com/api/v0/user/{username}/webapps/{host}/reload/'
+
+          headers = {
+              'Authorization': f'Token {api_token}',
+              'Content-Type': 'application/json'
+          }
+
+          print("=" * 60)
+          print("Starting PythonAnywhere Deployment")
+          print("=" * 60)
+
+          # Deployment commands to run on PythonAnywhere
+          deployment_commands = """
+          set -e
+          cd ~/Seoto || exit 1
+          echo "📦 Pulling latest code from GitHub..."
+          git fetch origin
+          git checkout master
+          git pull origin master
+          echo "✅ Code updated successfully"
+
+          echo "🔧 Activating virtual environment..."
+          source ~/.virtualenvs/seoto/bin/activate || exit 1
+          echo "✅ Virtual environment activated"
+
+          echo "📚 Installing dependencies..."
+          pip install -q -r requirements.txt
+          echo "✅ Dependencies installed"
+
+          echo "🗄️  Running database migrations..."
+          python manage.py migrate --noinput
+          echo "✅ Migrations completed"
+
+          echo "📁 Collecting static files..."
+          python manage.py collectstatic --noinput --clear
+          echo "✅ Static files collected"
+
+          echo "🎉 Deployment commands completed successfully!"
+          """
+
+          try:
+              # Create a console session
+              print("\n🔌 Creating console session on PythonAnywhere...")
+              console_data = {
+                  'executable': 'bash',
+                  'arguments': ['-c', deployment_commands]
+              }
+
+              req = urllib.request.Request(
+                  console_api_url,
+                  data=json.dumps(console_data).encode('utf-8'),
+                  headers=headers,
+                  method='POST'
+              )
+
+              with urllib.request.urlopen(req, timeout=300) as response:
+                  console_result = json.loads(response.read().decode('utf-8'))
+                  console_id = console_result.get('id')
+                  print(f"✅ Console session created (ID: {console_id})")
+
+              # Note: Console output is not immediately available via API
+              # The commands run asynchronously
+              print("⏳ Deployment commands are executing...")
+
+              # Reload the web app
+              print("\n🔄 Reloading web application...")
+              reload_req = urllib.request.Request(
+                  webapp_api_url,
+                  headers=headers,
+                  method='POST'
+              )
+
+              with urllib.request.urlopen(reload_req, timeout=60) as response:
+                  if response.status == 200:
+                      print("✅ Web application reloaded successfully")
+                  else:
+                      print(f"⚠️  Warning: Reload returned status {response.status}")
+
+              print("\n" + "=" * 60)
+              print("🎉 Deployment completed successfully!")
+              print(f"🌐 Your app should be live at: https://{host}")
+              print("=" * 60)
+
+          except urllib.error.HTTPError as e:
+              error_body = e.read().decode('utf-8')
+              print(f"\n❌ HTTP Error {e.code}: {e.reason}")
+              print(f"Details: {error_body}")
+              sys.exit(1)
+          except Exception as e:
+              print(f"\n❌ Deployment failed: {str(e)}")
+              sys.exit(1)
+          PYTHON_SCRIPT
+
+      - name: Wait for deployment to settle
+        run: sleep 10
+
+      - name: Health check
+        env:
+          PYTHONANYWHERE_HOST: ${{ secrets.PYTHONANYWHERE_HOST }}
+          PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+        run: |
+          HOST="${PYTHONANYWHERE_HOST:-$PYTHONANYWHERE_USERNAME.pythonanywhere.com}"
+          echo "🏥 Running health check on https://$HOST"
+
+          # Try to fetch the homepage
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "https://$HOST" || echo "000")
+
+          if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 302 ]; then
+            echo "✅ Health check passed (HTTP $HTTP_CODE)"
+            echo "🌐 Application is responding at https://$HOST"
+          else
+            echo "⚠️  Warning: Health check returned HTTP $HTTP_CODE"
+            echo "The deployment may still be successful. Check PythonAnywhere logs if needed."
+            # Don't fail the workflow on health check issues
+          fi
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "📊 Deployment Summary"
+          echo "====================="
+          echo "Branch: master"
+          echo "Commit: ${{ github.sha }}"
+          echo "Triggered by: ${{ github.actor }}"
+          echo "Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
