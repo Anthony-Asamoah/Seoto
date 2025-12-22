@@ -31,7 +31,7 @@ jobs:
           PYTHONANYWHERE_HOST: ${{ secrets.PYTHONANYWHERE_HOST }}
         run: |
           python - <<'PYTHON_SCRIPT'
-          import sys
+          import sys, os
           import httpx
           
           # Get environment variables
