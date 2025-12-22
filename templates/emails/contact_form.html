@@ -1,0 +1,32 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}{{ message.subject }}{% endblock %}
+
+{% block header %}Contact Form Submission{% endblock %}
+
+{% block content %}
+    <h2>{{ message.subject }}</h2>
+
+    <p>You've received a new message from your website contact form.</p>
+
+    <div class="accent-box">
+        <p style="margin: 0;"><strong>From:</strong> {{ message.name }}</p>
+        <p style="margin: 10px 0 0 0;"><strong>Email:</strong> <a href="mailto:{{ message.email }}">{{ message.email }}</a></p>
+        <p style="margin: 10px 0 0 0;"><strong>Submitted:</strong> {{ message.pretty_time }}</p>
+    </div>
+
+    <div class="highlight-box">
+        <p style="margin: 0;"><strong>Message:</strong></p>
+        <div style="margin-top: 10px; padding: 15px; background-color: white; border-radius: 4px; color: #102854; white-space: pre-wrap;">{{ message.message }}</div>
+    </div>
+
+    <center>
+        <a href="mailto:{{ message.email }}?subject=Re: {{ message.subject }}" class="button">Reply to {{ message.name }}</a>
+    </center>
+
+    <div class="divider"></div>
+
+    <p style="font-size: 14px; color: #666;">
+        This message was automatically forwarded from your website contact form.
+    </p>
+{% endblock %}

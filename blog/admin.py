@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Post, PostTags, PostReadGroup
+from .models import Post, PostTags, PostReadGroup, PostComment
 
 
 class PostAdmin(admin.ModelAdmin):
@@ -36,6 +36,14 @@ class PostReadGroupAdmin(admin.ModelAdmin):
     search_fields = ('label',)
 
 
+class PostCommentAdmin(admin.ModelAdmin):
+    list_display = ('post', 'author', 'date_posted', 'is_visible', 'edited')
+    list_filter = ('is_visible', 'date_posted', 'edited')
+    search_fields = ('content', 'author__username', 'post__title')
+    list_editable = ('is_visible',)
+
+
 admin.site.register(Post, PostAdmin)
 admin.site.register(PostTags, PostTagsAdmin)
 admin.site.register(PostReadGroup, PostReadGroupAdmin)
+admin.site.register(PostComment, PostCommentAdmin)

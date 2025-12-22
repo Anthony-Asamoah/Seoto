@@ -16,7 +16,6 @@ class RhymeDB:
 
         self._rhyme_string = rhyme_string
         self.validate()
-        self.rhyme_string = rhyme_string
         self.findall()
 
     def validate(self) -> None:
@@ -36,12 +35,12 @@ class RhymeDB:
         dictionary.close()
         temp = " ".join(all_text)
 
-        if ',' not in self.rhyme_string:
-            regex = re.compile(f'\\w*{self.rhyme_string.strip()}\\s')
+        if ',' not in self._rhyme_string:
+            regex = re.compile(f'\\w*{self._rhyme_string.strip()}\\s')
             data = sorted({i.title() for i in regex.findall(temp)})
-            if data: self._result[self.rhyme_string] = data
+            if data: self._result[self._rhyme_string] = data
         else:
-            rhyme_list = self.rhyme_string.split(',')
+            rhyme_list = self._rhyme_string.split(',')
             for item in rhyme_list:
                 item = item.strip()
                 regex = re.compile(f'\\w*{item}\\s')

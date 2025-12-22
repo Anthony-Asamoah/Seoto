@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Seoto{% endblock %}</title>
+    <style>
+        /* Reset styles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+        }
+
+        /* Main container */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+
+        /* Header */
+        .email-header {
+            background: linear-gradient(135deg, #00695f 0%, #003d38 100%);
+            padding: 30px 20px;
+            text-align: center;
+        }
+
+        .email-header h1 {
+            margin: 0;
+            color: #ffffff;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        /* Content */
+        .email-content {
+            padding: 40px 30px;
+            color: #102854;
+        }
+
+        .email-content h2 {
+            color: #00695f;
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        .email-content h3 {
+            color: #00695f;
+            font-size: 20px;
+            margin-top: 20px;
+            margin-bottom: 15px;
+        }
+
+        .email-content p {
+            margin: 15px 0;
+            color: #102854;
+            font-size: 16px;
+        }
+
+        .email-content a {
+            color: #00695f;
+            text-decoration: none;
+        }
+
+        .email-content a:hover {
+            color: #003d38;
+            text-decoration: underline;
+        }
+
+        /* Button styles */
+        .button {
+            display: inline-block;
+            padding: 14px 30px;
+            margin: 20px 0;
+            background-color: #00695f;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .button:hover {
+            background-color: #003d38;
+        }
+
+        .button-warning {
+            background-color: darkgoldenrod;
+        }
+
+        .button-warning:hover {
+            background-color: #996515;
+        }
+
+        /* Highlight box */
+        .highlight-box {
+            background-color: #f0f8f7;
+            border-left: 4px solid #00695f;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .accent-box {
+            background-color: #fffef0;
+            border-left: 4px solid darkgoldenrod;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        /* Footer */
+        .email-footer {
+            background-color: #102854;
+            padding: 30px 20px;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .email-footer p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #d9d9d9;
+        }
+
+        .email-footer a {
+            color: darkgoldenrod;
+            text-decoration: none;
+        }
+
+        .email-footer a:hover {
+            color: #ffffff;
+            text-decoration: underline;
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background-color: #d9d9d9;
+            margin: 30px 0;
+        }
+
+        /* Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-content {
+                padding: 30px 20px;
+            }
+
+            .email-header h1 {
+                font-size: 24px;
+            }
+
+            .email-content h2 {
+                font-size: 20px;
+            }
+
+            .button {
+                display: block;
+                width: 100%;
+                padding: 14px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table class="email-container" role="presentation" width="600" cellspacing="0" cellpadding="0" border="0">
+                    <!-- Header -->
+                    <tr>
+                        <td class="email-header">
+                            <h1>{% block header %}Seoto{% endblock %}</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td class="email-content">
+                            {% block content %}
+                            <!-- Email content goes here -->
+                            {% endblock %}
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td class="email-footer">
+                            {% block footer %}
+                            <p><strong>Seoto</strong></p>
+                            <p>Your personal web platform</p>
+                            <p style="margin-top: 15px;">
+                                <a href="{{ app_domain }}">Visit our website</a>
+                            </p>
+                            <p style="font-size: 12px; margin-top: 20px; color: #999;">
+                                This email was sent automatically. Please do not reply to this email.
+                            </p>
+                            {% endblock %}
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

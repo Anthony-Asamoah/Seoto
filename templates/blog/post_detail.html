@@ -1,5 +1,24 @@
 {% extends 'blog/base.html' %}
 
+{% block meta %}
+    <!-- Open Graph Meta Tags for Facebook/LinkedIn -->
+    <meta property="og:title" content="{{ post.title }}">
+    <meta property="og:description" content="{{ post.content|striptags|truncatewords:30 }}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Seoto Blog">
+    <meta property="article:author" content="{{ post.author.username }}">
+    <meta property="article:published_time" content="{{ post.date_posted|date:'c' }}">
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ post.title }}">
+    <meta name="twitter:description" content="{{ post.content|striptags|truncatewords:30 }}">
+
+    <!-- General Meta Description -->
+    <meta name="description" content="{{ post.content|striptags|truncatewords:30 }}">
+{% endblock %}
+
 {% block title %}- {{ post.title }}{% endblock %}
 {% block window %}
     <article class="post">
@@ -32,11 +51,7 @@
         <hr/>
 
         <div class="post-actions">
-            <button type="button" class="btn btn-outline-secondary" data-bs-container="body" data-bs-toggle="popover"
-                    data-bs-placement="top"
-                    data-bs-content="Link copied!"
-                    onclick="copyUrl()"
-            >
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#shareModal">
                 Share
             </button>
             {% if user.is_authenticated and user == post.author %}
@@ -69,22 +84,60 @@
     <a href="{% url 'blog-explore' %}" style="display: block; margin-top: 20px;">&larr; Back to Posts</a>
 
     <!-- Comments -->
-    {% if post.comments.all and user == post.author %}
+    {% if user == post.author and post.comments.all %}
+        <!-- Author view: see all comments with per-comment toggle buttons -->
         <div class="comments mt-2" style="background-color: white; padding: 20px;">
             <h4>Comments</h4>
             {% for comment in post.comments.all %}
                 <hr/>
                 <div class="comment">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div style="flex: 1;">
+                            <p><strong>@{{ comment.author.username }}</strong> on {{ comment.date_posted|date:"F d, Y" }}</p>
+                            <p>{{ comment.content }}</p>
+                        </div>
+                        <div class="comment-actions" style="display: flex; gap: 5px; margin-left: 10px;">
+                            <form method="post" action="{% url 'toggle-comment-visibility' post_pk=post.pk comment_pk=comment.pk %}" style="display: inline;">
+                                {% csrf_token %}
+                                {% if comment.is_visible %}
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Hide this comment from readers">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                                            <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+                                            <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+                                        </svg>
+                                    </button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary" title="Show this comment to readers">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-slash-fill" viewBox="0 0 16 16">
+                                            <path d="m10.79 12.912-1.614-1.615a3.5 3.5 0 0 1-4.474-4.474l-2.06-2.06C.938 6.278 0 8 0 8s3 5.5 8 5.5a7 7 0 0 0 2.79-.588M5.21 3.088A7 7 0 0 1 8 2.5c5 0 8 5.5 8 5.5s-.939 1.721-2.641 3.238l-2.062-2.062a3.5 3.5 0 0 0-4.474-4.474z"/>
+                                            <path d="M5.525 7.646a2.5 2.5 0 0 0 2.829 2.829zm4.95.708-2.829-2.83a2.5 2.5 0 0 1 2.829 2.829zm3.171 6-12-12 .708-.708 12 12z"/>
+                                        </svg>
+                                    </button>
+                                {% endif %}
+                            </form>
+                            <a href="{% url 'delete-comment' post_pk=post.pk comment_pk=comment.pk %}" methods="delete"
+                               class="btn btn-warning btn-sm">Delete</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% elif user.is_authenticated and visible_comments %}
+        <!-- Non-author view: see only visible comments -->
+        <div class="comments mt-2" style="background-color: white; padding: 20px;">
+            <h4>Comments</h4>
+            {% for comment in visible_comments %}
+                <hr/>
+                <div class="comment">
                     <p><strong>@{{ comment.author.username }}</strong> on {{ comment.date_posted|date:"F d, Y" }}</p>
                     <p>{{ comment.content }}</p>
-                    <a href="{% url 'delete-comment' post_pk=post.pk comment_pk=comment.pk %}" methods="delete"
-                       class="btn btn-warning btn-sm">Delete</a>
                 </div>
             {% endfor %}
         </div>
     {% endif %}
 
-    <div class="modal fade" data-bs-backdrop="static" id="createComment" tabindex="-1" aria-labelledby="createCommentLabel" aria-hidden="true">
+    <div class="modal fade" data-bs-backdrop="static" id="createComment" tabindex="-1"
+         aria-labelledby="createCommentLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <form method="post" action="{% url 'comment-privately' post.pk %}">
@@ -96,7 +149,8 @@
                         Leave a comment that can only be seen by you and the author.
                         {% csrf_token %}
                         <div class="mb-3 mt-3">
-                            <textarea class="form-control" id="comment" name="comment" placeholder="Enter text here"></textarea>
+                            <textarea class="form-control" id="comment" name="comment"
+                                      placeholder="Enter text here"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -108,21 +162,259 @@
         </div>
     </div>
 
+    <!-- Share Modal -->
+    <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shareModalLabel">Share this post</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Social Media Share -->
+                    <div class="mb-4">
+                        <div class="d-flex flex-wrap justify-content-center gap-2">
+                            <a href="#" id="shareTwitter" target="_blank" class="btn btn-outline-dark">
+                                <svg width="16" height="16" fill="currentColor" class="bi bi-twitter-x me-2" viewBox="0 0 16 16">
+                                    <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.6.75Zm-.86 13.028h1.36L4.323 2.145H2.865z"/>
+                                </svg>
+                                Twitter / X
+                            </a>
+                            <a href="#" id="shareFacebook" target="_blank" class="btn btn-outline-primary" onclick="shareFacebookWithText(event)">
+                                <svg width="16" height="16" fill="currentColor" class="bi bi-facebook me-2" viewBox="0 0 16 16">
+                                    <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951"/>
+                                </svg>
+                                Facebook
+                            </a>
+                            <small class="text-success text-center w-100" id="facebookFeedback" style="display: none;">✓ Text copied! Paste it when sharing</small>
+                            <a href="#" id="shareLinkedIn" target="_blank" class="btn btn-outline-primary" onclick="shareLinkedInWithText(event)">
+                                <svg width="16" height="16" fill="currentColor" class="bi bi-linkedin me-2" viewBox="0 0 16 16">
+                                    <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z"/>
+                                </svg>
+                                LinkedIn
+                            </a>
+                            <small class="text-success text-center w-100" id="linkedinFeedback" style="display: none;">✓ Text copied! Paste it when sharing</small>
+                            <a href="#" id="shareReddit" target="_blank" class="btn btn-outline-danger">
+                                <svg width="16" height="16" fill="currentColor" class="bi bi-reddit me-2" viewBox="0 0 16 16">
+                                    <path d="M6.167 8a.83.83 0 0 0-.83.83c0 .459.372.84.83.831a.831.831 0 0 0 0-1.661m1.843 3.647c.315 0 1.403-.038 1.976-.611a.23.23 0 0 0 0-.306.213.213 0 0 0-.306 0c-.353.363-1.126.487-1.67.487-.545 0-1.308-.124-1.671-.487a.213.213 0 0 0-.306 0 .213.213 0 0 0 0 .306c.564.563 1.652.61 1.977.61zm.992-2.807c0 .458.373.83.831.83s.83-.381.83-.83a.831.831 0 0 0-1.66 0z"/>
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.828-1.165c-.315 0-.602.124-.812.325-.801-.573-1.9-.945-3.121-.993l.534-2.501 1.738.372a.83.83 0 1 0 .83-.869.83.83 0 0 0-.744.468l-1.938-.41a.2.2 0 0 0-.153.028.2.2 0 0 0-.086.134l-.592 2.788c-1.24.038-2.358.41-3.17.992-.21-.2-.496-.324-.81-.324a1.163 1.163 0 0 0-.478 2.224q-.03.17-.029.353c0 1.795 2.091 3.256 4.669 3.256s4.668-1.451 4.668-3.256c0-.114-.01-.238-.029-.353.401-.181.688-.592.688-1.069 0-.65-.525-1.165-1.165-1.165"/>
+                                </svg>
+                                Reddit
+                            </a>
+                            <a href="#" id="shareWhatsApp" target="_blank" class="btn btn-outline-success">
+                                <svg width="16" height="16" fill="currentColor" class="bi bi-whatsapp me-2" viewBox="0 0 16 16">
+                                    <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
+                                </svg>
+                                WhatsApp
+                            </a>
+                            <a href="#" id="shareEmail" class="btn btn-outline-secondary">
+                                <svg width="16" height="16" fill="currentColor" class="bi bi-envelope me-2" viewBox="0 0 16 16">
+                                    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+                                </svg>
+                                Email
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Copy Link -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">Or copy Link</h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="postUrl" readonly>
+                            <button class="btn btn-primary" type="button" onclick="copyLink()">
+                                <svg width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"/>
+                                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z"/>
+                                </svg>
+                                Copy
+                            </button>
+                        </div>
+                        <small class="text-success" id="copyLinkFeedback" style="display: none;">Link copied!</small>
+                    </div>
+
+                    <!-- Embed Code -->
+                    <div>
+                        <h6 class="mb-3">Or embed</h6>
+                        <textarea class="form-control mb-2" id="embedCode" rows="12" readonly></textarea>
+                        <button class="btn btn-outline-primary w-100" type="button" onclick="copyEmbedCode()">
+                            <svg width="16" height="16" fill="currentColor" class="bi bi-code-square" viewBox="0 0 16 16">
+                                <path d="M14 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zM2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/>
+                                <path d="M6.854 4.646a.5.5 0 0 1 0 .708L4.207 8l2.647 2.646a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 0 1 .708 0m2.292 0a.5.5 0 0 0 0 .708L11.793 8l-2.647 2.646a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708 0"/>
+                            </svg>
+                            Copy
+                        </button>
+                        <small class="text-success" id="copyEmbedFeedback" style="display: none;">Embed code copied!</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 {% endblock %}
 
 {% block script %}
     <script>
-        const copyUrl = async () => {
+        // Initialize share URLs and embed code when modal is shown
+        document.getElementById('shareModal').addEventListener('show.bs.modal', function () {
             const url = window.location.href;
-            await navigator.clipboard.writeText(url);
-            const popover = new bootstrap.Popover(document.querySelector('[data-bs-toggle="popover"]'), {
-                trigger: 'manual'
-            });
-            popover.show();
-            setTimeout(() => {
-                popover.hide();
-            }, 1000);
+            const title = "{{ post.title|escapejs }}";
+            const author = "{{ post.author|escapejs }}";
+            const content = "{{ post.content|escapejs }}";
+
+            // Create excerpt from content (strip HTML/markdown and truncate)
+            const plainText = content
+                .replace(/<[^>]*>/g, '') // Remove HTML tags
+                .replace(/[#*_`~\[\]]/g, '') // Remove markdown formatting
+                .replace(/\n+/g, ' ') // Replace newlines with spaces
+                .trim();
+            const excerpt = plainText.length > 150
+                ? plainText.substring(0, 150).trim() + '...'
+                : plainText;
+
+            const encodedUrl = encodeURIComponent(url);
+
+            // Create fun, engaging share messages
+            const twitterText = `Check out this blog post: "${title}" 📖✨\n\n${excerpt}\n\nRead more:`;
+            const whatsAppText = `Hey! Check out this blog post I found! 🎯\n\n"${title}"\n\n${excerpt}\n\n`;
+            const redditTitle = `Check out: ${title}`;
+            const emailSubject = `Thought you'd enjoy: ${title} 💡`;
+            const emailBody = `Hey!\n\nI thought you might enjoy this blog post:\n\n"${title}"\n\n${excerpt}\n\nRead the full post here: ${url}\n\nEnjoy! 📚`;
+
+            // Set social media share links
+            // Twitter/X - supports custom text
+            document.getElementById('shareTwitter').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(twitterText)}&url=${encodedUrl}`;
+
+            // Facebook - only accepts URL, scrapes page for preview
+            document.getElementById('shareFacebook').href = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+
+            // LinkedIn - only accepts URL, scrapes page for preview
+            document.getElementById('shareLinkedIn').href = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+
+            // Reddit - supports title
+            document.getElementById('shareReddit').href = `https://reddit.com/submit?url=${encodedUrl}&title=${encodeURIComponent(redditTitle)}`;
+
+            // WhatsApp - supports custom text
+            document.getElementById('shareWhatsApp').href = `https://wa.me/?text=${encodeURIComponent(whatsAppText + url)}`;
+
+            // Email - supports subject and body
+            document.getElementById('shareEmail').href = `mailto:?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+
+            // Set URL in copy field
+            document.getElementById('postUrl').value = url;
+
+            // Generate and set embed code with excerpt
+            const embedCode = `<blockquote class="blog-post-embed">
+  <h4><a href="${url}" target="_blank">${title}</a></h4>
+  <p>${excerpt}</p>
+  <p>by ${author}</p>
+  <a href="${url}" target="_blank">Read full post</a>
+</blockquote>`;
+            document.getElementById('embedCode').value = embedCode;
+        });
+
+        // Copy link function
+        async function copyLink() {
+            const urlInput = document.getElementById('postUrl');
+            try {
+                await navigator.clipboard.writeText(urlInput.value);
+                const feedback = document.getElementById('copyLinkFeedback');
+                feedback.style.display = 'block';
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+        }
+
+        // Copy embed code function
+        async function copyEmbedCode() {
+            const embedTextarea = document.getElementById('embedCode');
+            try {
+                await navigator.clipboard.writeText(embedTextarea.value);
+                const feedback = document.getElementById('copyEmbedFeedback');
+                feedback.style.display = 'block';
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+        }
+
+        // Share to Facebook with copied text
+        async function shareFacebookWithText(event) {
+            event.preventDefault();
+            const url = window.location.href;
+            const title = "{{ post.title|escapejs }}";
+            const content = "{{ post.content|escapejs }}";
+
+            // Create excerpt
+            const plainText = content
+                .replace(/<[^>]*>/g, '')
+                .replace(/[#*_`~\[\]]/g, '')
+                .replace(/\n+/g, ' ')
+                .trim();
+            const excerpt = plainText.length > 150
+                ? plainText.substring(0, 150).trim() + '...'
+                : plainText;
+
+            const message = `Check out this blog post: "${title}"! 📖✨\n\n${excerpt}\n\n${url}`;
+
+            try {
+                await navigator.clipboard.writeText(message);
+                const feedback = document.getElementById('facebookFeedback');
+                feedback.style.display = 'block';
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 3000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+
+            // Open Facebook share dialog
+            const encodedUrl = encodeURIComponent(url);
+            const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+            window.open(facebookUrl, '_blank');
+            return false;
+        }
+
+        // Share to LinkedIn with copied text
+        async function shareLinkedInWithText(event) {
+            event.preventDefault();
+            const url = window.location.href;
+            const title = "{{ post.title|escapejs }}";
+            const content = "{{ post.content|escapejs }}";
+
+            // Create excerpt
+            const plainText = content
+                .replace(/<[^>]*>/g, '')
+                .replace(/[#*_`~\[\]]/g, '')
+                .replace(/\n+/g, ' ')
+                .trim();
+            const excerpt = plainText.length > 150
+                ? plainText.substring(0, 150).trim() + '...'
+                : plainText;
+
+            const message = `Check out this blog post: "${title}"! 💼✨\n\n${excerpt}\n\n${url}`;
+
+            try {
+                await navigator.clipboard.writeText(message);
+                const feedback = document.getElementById('linkedinFeedback');
+                feedback.style.display = 'block';
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 3000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+            }
+
+            // Open LinkedIn share dialog
+            const encodedUrl = encodeURIComponent(url);
+            const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+            window.open(linkedinUrl, '_blank');
+            return false;
         }
     </script>
 {% endblock %}

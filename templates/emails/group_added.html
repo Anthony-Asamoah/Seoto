@@ -1,0 +1,39 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Added to Read Group{% endblock %}
+
+{% block header %}Group Membership Notification{% endblock %}
+
+{% block content %}
+    <h2>You've been added to a read group</h2>
+
+    <p>Hello {{ user.first_name|default:user.username }},</p>
+
+    <p><strong>{{ group_owner.username }}</strong> has added you to their read group on Seoto.</p>
+
+    <div class="highlight-box">
+        <p style="margin: 0;"><strong>Group Details:</strong></p>
+        <p style="margin: 10px 0 0 0;">Group Name: <strong>{{ group.label }}</strong></p>
+        <p style="margin: 5px 0 0 0;">Owner: <strong>{{ group_owner.username }}</strong></p>
+        <p style="margin: 5px 0 0 0;">Members: <strong>{{ group.users.count }} user{{ group.users.count|pluralize }}</strong></p>
+    </div>
+
+    <p>Being in this group means you now have access to private posts that {{ group_owner.username }} has shared with this group.</p>
+
+    <center>
+        <a href="{{ app_domain }}{% url 'my-read-groups' %}" class="button">View My Groups</a>
+    </center>
+
+    <div class="accent-box">
+        <p style="margin: 0; font-size: 14px;">
+            <strong>Privacy Note:</strong>
+        </p>
+        <p style="margin: 10px 0 0 0; font-size: 14px;">
+            You can leave this group at any time by visiting your groups page.
+        </p>
+    </div>
+
+    <div class="divider"></div>
+
+    <p>Best regards,<br><strong style="color: #00695f;">The Seoto Team</strong></p>
+{% endblock %}

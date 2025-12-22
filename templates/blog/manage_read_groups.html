@@ -1,0 +1,105 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}- Manage Read Groups{% endblock %}
+
+{% block window %}
+    <div class="header">
+        <h2>Manage Read Groups</h2>
+        <p>Create and manage groups of users who can access your private posts.</p>
+        <p><a href="{% url 'my-read-groups' %}" class="btn btn-info btn-sm">View My Memberships</a></p>
+        <hr/>
+    </div>
+
+    <div class="create-group-form">
+        <h3>Create New Read Group</h3>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="group_label">Group Name:</label>
+                <input type="text" id="group_label" name="group_label" required placeholder="e.g., Close Friends, Family">
+            </div>
+            <button type="submit" class="btn btn-success">Create Group</button>
+        </form>
+    </div>
+
+    <div class="groups-list">
+        <h3>Your Read Groups</h3>
+        {% if groups %}
+            <table>
+                <thead>
+                <tr>
+                    <th>Group Name</th>
+                    <th>Members</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for group in groups %}
+                    <tr>
+                        <td><strong>{{ group.label }}</strong></td>
+                        <td>{{ group.users.count }} user{{ group.users.count|pluralize }}</td>
+                        <td>
+                            <a href="{% url 'edit-read-group' group.id %}" class="btn btn-primary btn-sm">Edit</a>
+                            <a href="{% url 'delete-read-group' group.id %}" class="btn btn-danger btn-sm">Delete</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No read groups have been created yet. Create one above to manage access to your private posts.</p>
+        {% endif %}
+    </div>
+
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f5f5f5;
+            font-weight: 600;
+        }
+
+        .create-group-form {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+    </style>
+
+    <a href="{% url 'blog-explore' %}" class="button button-secondary">&larr; Back to Posts</a>
+{% endblock %}

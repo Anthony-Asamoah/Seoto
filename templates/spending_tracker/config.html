@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+
+{% block title %} - Configuration{% endblock %}
+
+{% block style %}
+    <style>
+        .config-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .config-section {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .config-section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+
+        .item-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+        }
+
+        .item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .item-count {
+            color: #666;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-sm {
+            padding: 4px 12px;
+            font-size: 0.875rem;
+        }
+
+        .preference-group {
+            margin-bottom: 20px;
+        }
+
+        .preference-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .crumb {
+            text-decoration: none;
+            color: #175a9c;
+            transition: 0.3s ease;
+        }
+
+        .crumb:hover {
+            text-decoration: underline;
+            font-weight: 400;
+            margin-left: 5px;
+        }
+
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="config-container">
+        <div class="header">
+            <h1>
+                <a href="{% url 'spending_tracker:dashboard' %}" class="crumb">Expense & Income</a>
+                - Configuration
+            </h1>
+            <hr>
+        </div>
+
+        <!-- User Preferences Section -->
+        <div class="config-section">
+            <h2>User Preferences</h2>
+            <form method="post">
+                {% csrf_token %}
+                <div class="preference-group">
+                    <label for="default_currency">Default Currency</label>
+                    <select name="default_currency" id="default_currency" class="form-control" style="max-width: 200px;">
+                        {% for code, name in currency_choices %}
+                            <option value="{{ code }}" {% if preferences.default_currency == code %}selected{% endif %}>
+                                {{ code }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Save Preferences</button>
+            </form>
+        </div>
+
+        <!-- Account Management Section -->
+        <div class="config-section">
+            <h2>Account Management</h2>
+            <p class="text-muted">Manage your accounts. Deleting an account requires transferring its transactions to another account.</p>
+
+            {% if accounts %}
+                <ul class="item-list">
+                    {% for account in accounts %}
+                        <li class="item">
+                            <div class="item-info">
+                                <span class="item-name">{{ account.name }}</span>
+                                <span class="item-count">({{ account.transaction_count }} transaction{{ account.transaction_count|pluralize }})</span>
+                                <small class="text-muted d-block">{{ account.get_account_type_display }} - Balance: ${{ account.balance }}</small>
+                            </div>
+                            <div class="item-actions">
+                                <a href="{% url 'spending_tracker:edit_account' account.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="{% url 'spending_tracker:delete_account' account.pk %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">No accounts found. <a href="{% url 'spending_tracker:add_account' %}">Create one now</a>.</p>
+            {% endif %}
+
+            <div class="mt-3">
+                <a href="{% url 'spending_tracker:add_account' %}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Add New Account
+                </a>
+            </div>
+        </div>
+
+        <!-- Category Management Section -->
+        <div class="config-section">
+            <h2>Category Management</h2>
+            <p class="text-muted">Manage your transaction categories. Deleting a category requires transferring its transactions to another category or marking them as Uncategorized.</p>
+
+            {% if categories %}
+                <ul class="item-list">
+                    {% for category in categories %}
+                        <li class="item">
+                            <div class="item-info">
+                                <span class="item-name">{{ category.label }}</span>
+                                <span class="item-count">({{ category.transaction_count }} transaction{{ category.transaction_count|pluralize }})</span>
+                                {% if category.description %}
+                                    <small class="text-muted d-block">{{ category.description|truncatechars:80 }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="item-actions">
+                                <a href="{% url 'spending_tracker:edit_category' category.pk %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <a href="{% url 'spending_tracker:delete_category' category.pk %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i> Delete
+                                </a>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-muted">No categories found. Categories can be created when adding transactions.</p>
+            {% endif %}
+        </div>
+
+        <div class="mt-4">
+            <a href="{% url 'spending_tracker:dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+{% endblock %}

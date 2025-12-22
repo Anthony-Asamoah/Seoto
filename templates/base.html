@@ -8,14 +8,26 @@
 
     <title>Seoto {% block title %}{% endblock %}</title>
 
+    {% block meta %}{% endblock %}
+
     <link rel="shortcut icon" type="image/x-icon" href="{% static 'img/logo.ico' %}">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     {#    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">#}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    {# Theme CSS Variables #}
+    {{ user_theme_css|safe }}
+
     <style>
+
+        .navbar-home {
+            padding-left: 15px
+        }
+        .navbar-profile {
+            padding-right: 15px;
+        }
         .navbar-brand {
-            padding: 0 15px;
             transition: 0.1s ease;
         }
 
@@ -39,8 +51,19 @@
             text-align: center;
         }
 
+        html, body {
+            height: 100%;
+        }
+
         body {
-            margin-bottom: 100px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page-container {
+            flex: 1 0 auto;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
@@ -62,11 +85,9 @@
         }
 
         footer {
-            position: fixed;
+            flex-shrink: 0;
             width: 100%;
             height: 50px;
-            bottom: 0;
-            left: 0;
             overflow: hidden;
             text-align: center;
             background-color: whitesmoke;
@@ -103,9 +124,11 @@
     {% block style %}{% endblock %}
 </head>
 <body>
-{% include 'partials/_nav.html' %}
-{% include 'partials/_messages.html' %}
-{% block content %}{% endblock %}
+<div class="page-container">
+    {% include 'partials/_nav.html' %}
+    {% include 'partials/_messages.html' %}
+    {% block content %}{% endblock %}
+</div>
 {% include 'partials/_footer.html' %}
 
 

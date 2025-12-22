@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %} - Your Accounts {% endblock %}
+
+{% block style %}
+    <style>
+        .account-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #3498db;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .account-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .account-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .account-type {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            background: #ecf0f1;
+            color: #7f8c8d;
+            margin-left: 10px;
+        }
+
+        .account-balance {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #27ae60;
+        }
+
+        .account-stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .stat-item {
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .stat-value.income {
+            color: #27ae60;
+        }
+
+        .stat-value.expense {
+            color: #e74c3c;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+
+        .summary-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <h1><a href="{% url 'spending_tracker:dashboard' %}" class="crumb">Expense & Income</a> - Your Accounts</h1>
+    </div>
+
+    <div class="main container">
+        <!-- Summary Card -->
+        <div class="summary-card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="summary-label">Total Balance Across All Accounts</div>
+                    <div class="summary-value">${{ total_balance|floatformat:2 }}</div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'spending_tracker:add_account' %}" class="btn btn-light btn-lg">
+                        <i class="fas fa-plus"></i> Add New Account
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accounts List -->
+        {% if account_stats %}
+            <h4 class="mb-3">All Accounts ({{ account_stats|length }})</h4>
+
+            {% for stat in account_stats %}
+                <div class="account-card" onclick="window.location.href='{% url 'spending_tracker:transaction_list' %}?account={{ stat.account.id }}'">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="account-name">
+                                {{ stat.account.name }}
+                                <span class="account-type">{{ stat.account.account_type }}</span>
+                            </div>
+                            <small class="text-muted">
+                                {{ stat.transaction_count }} transaction{{ stat.transaction_count|pluralize }}
+                            </small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="account-balance">${{ stat.account.balance|floatformat:2 }}</div>
+                        </div>
+                    </div>
+
+                    <div class="account-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Income</div>
+                            <div class="stat-value income">+${{ stat.total_income|floatformat:2 }}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Total Expenses</div>
+                            <div class="stat-value expense">-${{ stat.total_expenses|floatformat:2 }}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Net Flow</div>
+                            <div class="stat-value {% if stat.net_flow >= 0 %}income{% else %}expense{% endif %}">
+                                {% if stat.net_flow >= 0 %}+{% endif %}${{ stat.net_flow|floatformat:2 }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <h5>No Accounts Yet</h5>
+                <p>You haven't created any accounts yet. Create your first account to start tracking your finances!</p>
+                <a href="{% url 'spending_tracker:add_account' %}" class="btn btn-primary">Create First Account</a>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -109,7 +109,10 @@
                         </div>
                         {% if user.is_authenticated %}
                             <div class="download mt-3">
-                                <a href="{% url 'rhymes_download' %}"><span class="btn btn-outline-primary">Save a copy</span></a>
+                                <form method="post" action="{% url 'rhymes_download' %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-primary">Save a copy</button>
+                                </form>
                             </div>
                         {% endif %}
                     </div>

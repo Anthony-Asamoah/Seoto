@@ -1,0 +1,35 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Welcome to Seoto{% endblock %}
+
+{% block header %}Welcome to Seoto{% endblock %}
+
+{% block content %}
+    <h2>Welcome {{ user.first_name }}!</h2>
+
+    <p>Your account has been successfully set up with the platform.</p>
+
+    <div class="highlight-box">
+        <p style="margin: 0;"><strong>Account Details:</strong></p>
+        <p style="margin: 10px 0 0 0;">Username: <strong>{{ user.username }}</strong></p>
+        <p style="margin: 5px 0 0 0;">Email: <strong>{{ user.email }}</strong></p>
+    </div>
+
+    <p>We're excited to have you as part of the Seoto community. Here are some things you can do to get started:</p>
+
+    <ul>
+        <li>Explore the platform and discover all its features</li>
+        <li>Update your profile with more information</li>
+        <li>Start creating and sharing content</li>
+    </ul>
+
+    <center>
+        <a href="{{ app_domain }}" class="button">Explore Seoto</a>
+    </center>
+
+    <div class="divider"></div>
+
+    <p>If you have any questions or need assistance, feel free to reach out to us.</p>
+
+    <p>Best regards,<br><strong style="color: #00695f;">The Seoto Team</strong></p>
+{% endblock %}

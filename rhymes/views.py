@@ -1,7 +1,6 @@
 import logging
-import os
+from io import BytesIO
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -11,6 +10,7 @@ from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
 
 from rhymes.models import Rhyme
 from rhymes.the_code import RhymeDB
@@ -36,8 +36,6 @@ class Rhymes(View):
             if request.user.is_authenticated and not helper.is_empty():
                 user: User = request.user
                 obj = Rhyme.create(user=user, rhyme=rhyme, text=helper.get_text(), word_count=helper.word_count())
-                obj.write_to_file(filename=f"{user.email}-rhymes.txt")
-                messages.success(request, 'File Saved')
         except InvalidInput as e:
             messages.error(request, str(e))
         except ValidationError as e:
@@ -50,10 +48,30 @@ class Rhymes(View):
 
     @staticmethod
     @login_required
+    @csrf_protect
     def download(request):
-        user: User = request.user
-        file_path = os.path.join(settings.MEDIA_ROOT, f'{user.email}-rhymes.txt')
-        if not os.path.exists(file_path):
-            messages.error(request, 'File Unavailable')
+        # Only allow POST requests for security
+        if request.method != 'POST':
+            messages.error(request, 'Invalid request method')
             return redirect('rhymes')
-        return FileResponse(open(file_path, 'rb'), as_attachment=True)
+
+        user: User = request.user
+
+        # Get the user's Rhyme record from database
+        try:
+            rhyme_obj = Rhyme.objects.get(user=user)
+        except Rhyme.DoesNotExist:
+            messages.error(request, 'No rhyme data available. Please generate a rhyme first.')
+            return redirect('rhymes')
+
+        # Generate file content on-the-fly
+        file_content = rhyme_obj.generate_file_content()
+
+        # Create in-memory file buffer
+        buffer = BytesIO()
+        buffer.write(file_content.encode('utf-8'))
+        buffer.seek(0)
+
+        # Return as downloadable file
+        filename = f'{user.email}-rhymes.txt'
+        return FileResponse(buffer, as_attachment=True, filename=filename)

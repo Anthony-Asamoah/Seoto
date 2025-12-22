@@ -1,8 +1,8 @@
 <nav class="navbar navbar-expand navbar-light bg-light d-flex justify-content-between">
     <div class="brand">
-        <a class="navbar-brand" href="{% url 'index' %}">Seoto</a>
+        <a class="navbar-brand navbar-home" href="{% url 'index' %}">Seoto</a>
         {% if user.is_authenticated %}
-            <a class="navbar-brand" href="
+            <a class="navbar-brand navbar-profile" href="
             {% if user.username in request.path_info %}
                 {% url 'index' %}
             {% else %}
@@ -12,16 +12,19 @@
                 {% if user.first_name %}
                     | {{ user.first_name | title }}
                 {% else %}
-                    | {{ user.username | title }}
+                    | @{{ user.username | title }}
                 {% endif %}
             </a>
         {% else %}
         {% endif %}
     </div>
-    <div class="links" id="links">
+    <div class="links" id="links" style="padding-right: 10px">
         <div class="navbar-nav">
             <a class="nav-item nav-link active" href="{% url 'index' %}">Home</a>
             {% if user.is_authenticated %}
+                {% if IS_THEME_ENABLED %}
+                    <a class="nav-item nav-link" href="{% url 'theme:theme_home' %}">Theme</a>
+                {% endif %}
                 <form method="POST" action="{% url 'logout' %}" style="display: inline;">
                     {% csrf_token %}
                     <button type="submit" class="nav-item nav-link btn">Logout</button>

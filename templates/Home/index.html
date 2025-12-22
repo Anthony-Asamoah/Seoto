@@ -10,6 +10,7 @@
             display: flex;
             justify-content: flex-start;
             flex-wrap: wrap;
+            gap: 10px;
         }
 
         .card {
@@ -92,16 +93,19 @@
 
         @media screen and (max-width: 481px) {
             .apps {
-                justify-content: space-evenly;
+                justify-content: center;
+                gap: 8px;
             }
 
             .card {
-                width: 140px;
+                width: calc(50% - 4px);
+                min-width: 140px;
+                max-width: 160px;
                 height: 300px;
             }
 
             .card:hover {
-                margin: 2px 8px;
+                margin: 2px 4px;
             }
 
             .card img {

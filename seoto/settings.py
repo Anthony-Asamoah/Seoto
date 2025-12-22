@@ -29,16 +29,21 @@ DEBUG = Env.bool('DEBUG')
 # Enforce HTTPS instead of HTTP
 SECURE_SSL_REDIRECT = not DEBUG
 
+CSRF_TRUSTED_ORIGINS = Env.tuple('CSRF_TRUSTED_ORIGINS')
 ALLOWED_HOSTS = Env.tuple('ALLOWED_HOSTS')
 APP_DOMAIN = Env.str('APP_DOMAIN')
 
 # Application definition
 INSTALLED_APPS = [
+    # Third-party
+    'daphne',
+    'channels',
+
     # My apps
     'accounts',
     'author',
     'home',
-    'foodie',
+    'foodie.apps.FoodieConfig',
     'interest_calc',
     'rhymes',
     'throw_a_die',
@@ -46,6 +51,7 @@ INSTALLED_APPS = [
     'jotter',
     'blog',
     'spending_tracker',
+    'theme',
 
     # Django default apps
     'django.contrib.admin',
@@ -79,12 +85,21 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'theme.context_processors.theme_css',
             ],
         },
     },
 ]
 
 WSGI_APPLICATION = 'seoto.wsgi.application'
+ASGI_APPLICATION = 'seoto.asgi.application'
+
+# Channels (in-memory layer for now)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 # Database
 DATABASES = {
@@ -148,6 +163,10 @@ EMAIL_PORT = Env.int('EMAIL_PORT')
 EMAIL_HOST_USER = Env.str('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = Env.str('EMAIL_PASSWORD')
 EMAIL_USE_TLS = Env.bool('EMAIL_USE_TLS')
+DEFAULT_FROM_EMAIL = Env.str('EMAIL_HOST_USER')
+
+# Theme feature flag
+IS_THEME_ENABLED = Env.bool('IS_THEME_ENABLED', default=False)
 
 # Accounts config
 LOGIN_REDIRECT_URL = 'index'

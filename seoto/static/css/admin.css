@@ -1,125 +1,246 @@
-/* global styles */
+/* Silver & Brown Admin Theme */
 
+/* Palette via CSS variables for easy tweaking */
+:root {
+    /* Silvers */
+    --silver-0: #f6f7f8; /* near white */
+    --silver-1: #eceff1;
+    --silver-2: #d9dde1;
+    --silver-3: #c0c0c0; /* classic silver */
+    --silver-4: #9aa3a8;
+
+    /* Browns */
+    --brown-1: #8d6e63; /* warm light brown */
+    --brown-2: #6d4c41; /* medium brown */
+    --brown-3: #5d4037; /* dark brown */
+    --brown-4: #3e2723; /* deepest brown */
+
+    /* Text */
+    --text-main: #1b1b1b;
+    --text-inv: #fafafa;
+
+    /* Components (light defaults) */
+    --header-bg: var(--brown-3);
+    --header-link: var(--silver-0);
+    --header-link-hover: var(--silver-2);
+    --breadcrumbs-bg: var(--silver-2);
+    --breadcrumbs-text: var(--brown-4);
+    --breadcrumbs-link-hover: var(--brown-2);
+    --module-header-bg: var(--silver-1);
+    --table-bg: #ffffff;
+    --button-bg: var(--brown-2);
+    --button-text: var(--silver-0);
+    --button-hover-bg: var(--brown-1);
+    --button-hover-text: #ffffff;
+}
+
+/* global styles */
 a:link, a:visited {
-    color: black;
-    transition: 0.5s ease;
+    color: var(--brown-3);
+    transition: color 0.25s ease, background-color 0.25s ease;
 }
 a:hover {
-    color: black;
+    color: var(--brown-4);
 }
 
-
-/* Header and Title*/
+/* Header and Title */
 #header {
-    background-color: whitesmoke;
+    background-color: var(--header-bg);
     height: 50px;
 }
 #branding h1 {
-    color:black;
+    color: var(--silver-0);
 }
 #user-tools {
-    color: black;
+    color: var(--header-link);
 }
 
 #header a:link {
-    color:darkslategrey;
-    transition: 0.3s ease;
+    color: var(--header-link);
+    transition: color 0.2s ease;
 }
 #header a:hover {
-    color: black;
+    color: var(--header-link-hover);
 }
 #header a:visited {
-    color: darkslategrey;
+    color: var(--header-link);
 }
-
 
 /* Breadcrumbs */
 div .content table {
-    background-color: white;
+    background-color: var(--table-bg);
     border-radius: 10px;
 }
 
 div .breadcrumbs {
-    background-color: #7e7e7e;
-    color: white;
-    transition: 0.3s ease;
+    background-color: var(--breadcrumbs-bg);
+    color: var(--breadcrumbs-text);
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 div.breadcrumbs a {
-    color: white;
+    color: var(--breadcrumbs-text);
 }
 div.breadcrumbs a:hover {
-    color: darkslategrey;
+    color: var(--breadcrumbs-link-hover);
 }
-
 
 /* Sidebar */
 .module h2, .module caption, .inline-group h2 {
-    background-color: whitesmoke;
+    background-color: var(--module-header-bg);
 }
 
-
+/* Dark mode overrides */
 @media (prefers-color-scheme: dark) {
+    :root {
+        --text-main: #eaecef;
+        --text-inv: #121212;
+
+        --header-bg: var(--brown-4);
+        --header-link: var(--silver-3);
+        --header-link-hover: #ffffff;
+        --breadcrumbs-bg: #2a201d; /* very dark brown */
+        --breadcrumbs-text: var(--silver-3);
+        --breadcrumbs-link-hover: #ffffff;
+        --module-header-bg: #2f2a28; /* muted dark */
+        --table-bg: #1e1a18; /* dark panel */
+        --button-bg: var(--silver-3); /* silver button on dark */
+        --button-text: #1f1412; /* dark brown-ish text */
+        --button-hover-bg: var(--silver-1);
+        --button-hover-text: #000;
+    }
+
     a:link, a:visited {
-        color: whitesmoke;
-        transition: 0.5s ease;
+        color: var(--silver-3);
+        transition: color 0.25s ease;
     }
     a:hover {
-        color:white;
+        color: #ffffff;
     }
 
     /* Sidebar */
     .module h2, .module caption, .inline-group h2 {
-        background-color: darkgray;
+        background-color: var(--module-header-bg);
     }
 
     /* Submit Form Buttons */
     .submit-row input {
-        background-color: whitesmoke;
-        color: black;
-        transition: 0.3s ease;
+        background-color: var(--button-bg);
+        color: var(--button-text);
+        border-color: transparent;
+        transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     .submit-row input:hover, .submit-row input.default {
-        background-color: #8a8a8a;
-        color: white;
-        transition: 0.3s ease;
+        background-color: var(--button-hover-bg);
+        color: var(--button-hover-text);
     }
 
     .submit-row input.default:hover {
-        background-color: whitesmoke;
-        color:black;
+        background-color: var(--button-bg);
+        color: var(--button-text);
     }
-
 }
+
+/* Light mode overrides */
 @media (prefers-color-scheme: light) {
+    :root {
+        --header-bg: var(--brown-3);
+        --header-link: var(--silver-0);
+        --header-link-hover: var(--silver-2);
+        --breadcrumbs-bg: var(--silver-2);
+        --breadcrumbs-text: var(--brown-4);
+        --breadcrumbs-link-hover: var(--brown-2);
+        --module-header-bg: var(--silver-1);
+        --table-bg: #ffffff;
+        --button-bg: var(--brown-2);
+        --button-text: var(--silver-0);
+        --button-hover-bg: var(--brown-1);
+        --button-hover-text: #ffffff;
+    }
+
     a:link, a:visited {
-        color: black;
-        transition: 0.5s ease;
+        color: var(--brown-3);
+        transition: color 0.25s ease;
     }
     a:hover {
-        color:black;
+        color: var(--brown-4);
     }
 
     /* Sidebar */
     .module h2, .module caption, .inline-group h2 {
-        background-color: darkgray;
+        background-color: var(--module-header-bg);
     }
 
     /* Submit Form Buttons */
     .submit-row input {
-        background-color: whitesmoke;
-        color: black;
-        transition: 0.3s ease;
+        background-color: var(--button-bg);
+        color: var(--button-text);
+        border-color: transparent;
+        transition: background-color 0.2s ease, color 0.2s ease;
     }
 
     .submit-row input:hover, .submit-row input.default {
-        background-color: #8a8a8a;
-        color: white;
-        transition: 0.3s ease;
+        background-color: var(--button-hover-bg);
+        color: var(--button-hover-text);
     }
 
     .submit-row input.default:hover {
-        background-color: whitesmoke;
-        color:black;
+        background-color: var(--button-bg);
+        color: var(--button-text);
+    }
+}
+
+/* Light mode readability enhancements */
+@media (prefers-color-scheme: light) {
+    /* Base text/background for better contrast */
+    body {
+        color: var(--text-main);
+        background: #f7f8fa;
+    }
+    body, input, select, textarea {
+        color: var(--text-main);
+    }
+
+    /* Breadcrumbs: clearer separation and weight */
+    div.breadcrumbs {
+        border-bottom: 1px solid var(--silver-3);
+        font-weight: 600;
+    }
+    div.breadcrumbs a { text-decoration: none; }
+
+    /* Tables: stronger headers, zebra rows, hover state */
+    table#result_list, .results, .inline-group table {
+        border: 1px solid var(--silver-2);
+    }
+    table#result_list thead th, .results thead th, .inline-group table thead th {
+        background: var(--silver-1);
+        color: var(--brown-4);
+        font-weight: 600;
+    }
+    table#result_list tbody tr:nth-child(even), .results tbody tr:nth-child(even), .inline-group table tbody tr:nth-child(even) {
+        background: #fbfcfe; /* very light silver */
+    }
+    table#result_list tbody tr:hover, .results tbody tr:hover, .inline-group table tbody tr:hover {
+        background: #eef2f5; /* hover highlight */
+    }
+
+    /* Form fields: clearer borders and focus ring */
+    input[type="text"], input[type="number"], input[type="email"], input[type="url"], input[type="search"],
+    input[type="password"], select, textarea {
+        border: 1px solid #b7bfc6;
+        background: #ffffff;
+        color: var(--text-main);
+    }
+    input:focus, select:focus, textarea:focus {
+        outline: 2px solid var(--brown-2);
+        outline-offset: 1px;
+        border-color: var(--brown-2);
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--brown-2) 20%, transparent);
+    }
+
+    /* Buttons: keep color but add visible focus */
+    .submit-row input:focus {
+        outline: 2px solid var(--brown-2);
+        outline-offset: 2px;
     }
 }
