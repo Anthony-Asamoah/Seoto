@@ -67,7 +67,7 @@ jobs:
           echo "✅ Code updated successfully"
           
           echo "🔧 Activating virtual environment..."
-          source ~/.virtualenvs/{directory}/bin/activate || exit 1
+          source ../.virtualenvs/{directory}/bin/activate || exit 1
           echo "✅ Virtual environment activated"
           
           echo "📚 Installing dependencies..."
