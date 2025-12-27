@@ -11,6 +11,7 @@ pendulum
 markdown
 channels
 daphne
-pywebpush==1.14.0
+pywebpush==2.1.2
 py-vapid==1.9.1
+cryptography>=42.0.0,<46.0.0
 Twisted[http2,tls]
