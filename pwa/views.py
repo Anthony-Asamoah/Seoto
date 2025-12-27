@@ -1,13 +1,15 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
-from django.utils import log
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import cache_control
 from pywebpush import webpush, WebPushException
 import json
+import logging
 import os
 from .models import PushSubscription, Notification
+
+logger = logging.getLogger(__name__)
 
 
 @require_http_methods(["GET"])
@@ -145,31 +147,45 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
         }
     }
 
-    # Send to all subscriptions
-    success_count = 0
-    for subscription in subscriptions:
+    # Workaround for py-vapid: save private key to temp file
+    # py-vapid 1.9.1 doesn't support loading PEM from string
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as f:
+        f.write(settings.VAPID_PRIVATE_KEY)
+        vapid_key_path = f.name
+
+    try:
+        # Send to all subscriptions
+        success_count = 0
+        for subscription in subscriptions:
+            try:
+                webpush(
+                    subscription_info=subscription.get_subscription_info(),
+                    data=json.dumps(payload),
+                    vapid_private_key=vapid_key_path,  # Pass file path instead of string
+                    vapid_claims={
+                        "sub": f"mailto:{settings.VAPID_ADMIN_EMAIL}"
+                    }
+                )
+                success_count += 1
+            except WebPushException as e:
+                logger.exception(f"Push failed for {subscription.endpoint}")
+                if e.response and e.response.status_code in [404, 410]:
+                    # Subscription no longer valid
+                    subscription.is_active = False
+                    subscription.save()
+
+        # Update notification record
+        if success_count > 0:
+            from django.utils import timezone
+            notification.sent = True
+            notification.sent_at = timezone.now()
+            notification.save()
+
+        return success_count
+    finally:
+        # Clean up temp file
         try:
-            webpush(
-                subscription_info=subscription.get_subscription_info(),
-                data=json.dumps(payload),
-                vapid_private_key=settings.VAPID_PRIVATE_KEY,
-                vapid_claims={
-                    "sub": f"mailto:{settings.VAPID_ADMIN_EMAIL}"
-                }
-            )
-            success_count += 1
-        except WebPushException as e:
-            log.exception(f"Push failed for {subscription.endpoint}")
-            if e.response and e.response.status_code in [404, 410]:
-                # Subscription no longer valid
-                subscription.is_active = False
-                subscription.save()
-
-    # Update notification record
-    if success_count > 0:
-        from django.utils import timezone
-        notification.sent = True
-        notification.sent_at = timezone.now()
-        notification.save()
-
-    return success_count
+            os.unlink(vapid_key_path)
+        except:
+            pass
