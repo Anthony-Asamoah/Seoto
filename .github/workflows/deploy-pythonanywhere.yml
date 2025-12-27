@@ -38,7 +38,9 @@ jobs:
           username = os.environ.get('PYTHONANYWHERE_USERNAME')
           api_token = os.environ.get('PYTHONANYWHERE_API_TOKEN')
           host = os.environ.get('PYTHONANYWHERE_HOST', f'{username}.pythonanywhere.com')
-
+          
+          print('host:', host)
+          
           if not username or not api_token:
               print("Error: PYTHONANYWHERE_USERNAME and PYTHONANYWHERE_API_TOKEN must be set")
               sys.exit(1)
