@@ -1,7 +1,7 @@
 // Service Worker for Seoto PWA
-// Version: 1.0.0
+// Version: 1.0.1
 
-const CACHE_VERSION = 'seoto-v1.0.0';
+const CACHE_VERSION = 'seoto-v1.0.1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
@@ -163,6 +163,7 @@ self.addEventListener('push', (event) => {
   if (event.data) {
     try {
       const payload = event.data.json();
+      console.log('[SW] Parsed payload:', payload);
       notificationData = {
         title: payload.title || notificationData.title,
         body: payload.body || notificationData.body,
@@ -170,6 +171,7 @@ self.addEventListener('push', (event) => {
         badge: payload.badge || notificationData.badge,
         data: payload.data || {}
       };
+      console.log('[SW] Notification data:', notificationData);
     } catch (error) {
       console.error('[SW] Failed to parse push payload:', error);
     }
@@ -184,6 +186,12 @@ self.addEventListener('push', (event) => {
       vibrate: [200, 100, 200],
       tag: 'seoto-notification',
       requireInteraction: false
+    })
+    .then(() => {
+      console.log('[SW] Notification displayed successfully');
+    })
+    .catch(error => {
+      console.error('[SW] Error showing notification:', error);
     })
   );
 });
