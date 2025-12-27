@@ -1,10 +1,41 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.cache import cache_control
 from pywebpush import webpush, WebPushException
 import json
+import os
 from .models import PushSubscription, Notification
+
+
+@require_http_methods(["GET"])
+@cache_control(max_age=0, no_cache=True, no_store=True, must_revalidate=True)
+def service_worker(request):
+    """Serve service worker from root path to allow site-wide scope"""
+    sw_path = os.path.join(settings.BASE_DIR, 'seoto', 'static', 'js', 'sw.js')
+    try:
+        with open(sw_path, 'r') as f:
+            sw_content = f.read()
+        response = HttpResponse(sw_content, content_type='application/javascript')
+        # Allow service worker to control the entire site
+        response['Service-Worker-Allowed'] = '/'
+        return response
+    except FileNotFoundError:
+        return HttpResponse('Service worker not found', status=404)
+
+
+@require_http_methods(["GET"])
+@cache_control(max_age=3600)
+def manifest(request):
+    """Serve manifest.json from root path"""
+    manifest_path = os.path.join(settings.BASE_DIR, 'seoto', 'static', 'manifest.json')
+    try:
+        with open(manifest_path, 'r') as f:
+            manifest_content = f.read()
+        return HttpResponse(manifest_content, content_type='application/manifest+json')
+    except FileNotFoundError:
+        return HttpResponse('Manifest not found', status=404)
 
 
 @require_http_methods(["GET"])
