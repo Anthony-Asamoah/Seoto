@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponse
+from django.utils import log
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.cache import cache_control
 from pywebpush import webpush, WebPushException
@@ -158,7 +159,7 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
             )
             success_count += 1
         except WebPushException as e:
-            print(f"Push failed for {subscription.endpoint}: {e}")
+            log.exception(f"Push failed for {subscription.endpoint}")
             if e.response and e.response.status_code in [404, 410]:
                 # Subscription no longer valid
                 subscription.is_active = False
