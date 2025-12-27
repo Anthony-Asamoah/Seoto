@@ -1,12 +1,14 @@
 import logging
+import json
 
 import markdown
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import Q
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
+from django.views.decorators.http import require_http_methods
 
 from utils.paginator import apply_pagination
 from .forms import PostForm
@@ -436,3 +438,41 @@ def leave_read_group(request, group_id):
         return redirect('my-read-groups')
 
     return render(request, 'blog/leave_read_group.html', {'group': group})
+
+
+@login_required
+@require_http_methods(["POST"])
+def create_post_api(request):
+    """API endpoint for creating posts (used by background sync)"""
+    try:
+        data = json.loads(request.body)
+
+        post = Post.objects.create(
+            author=request.user,
+            title=data.get('title'),
+            content=data.get('content'),
+            is_public=data.get('is_public', False)
+        )
+
+        # Send push notification to user
+        try:
+            from pwa.views import send_push_notification
+            send_push_notification(
+                user=request.user,
+                title='Post Published',
+                body=f'Your post "{post.title}" has been published',
+                url=f'/blog/post/{post.id}/'
+            )
+        except Exception as e:
+            logging.warning(f'Failed to send push notification: {e}')
+
+        return JsonResponse({
+            'success': True,
+            'id': post.id
+        })
+
+    except Exception as e:
+        logging.error(f'Failed to create post via API: {e}')
+        return JsonResponse({
+            'error': str(e)
+        }, status=500)

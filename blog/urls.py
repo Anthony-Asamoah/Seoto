@@ -18,4 +18,6 @@ urlpatterns = [
     path('read-groups/<int:group_id>/edit/', views.edit_read_group, name='edit-read-group'),
     path('read-groups/<int:group_id>/delete/', views.delete_read_group, name='delete-read-group'),
     path('read-groups/<int:group_id>/leave/', views.leave_read_group, name='leave-read-group'),
+    # Background Sync API
+    path('api/create/', views.create_post_api, name='create-post-api'),
 ]

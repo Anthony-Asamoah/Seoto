@@ -3,6 +3,7 @@ todo.txt
 security.py
 .env
 .idea/
+local_tools/
 /media/
 __pycache__/
 staticfiles/

@@ -1,11 +1,14 @@
 import logging
+import json
 from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.views import View
+from django.views.decorators.http import require_http_methods
 
 from .models import todo, tracker, todo_form, tracker_form
 from .validator import todo_form_validation, tracker_form_validation
@@ -119,3 +122,41 @@ class JotterView(View):
         item.save()
         messages.success(request, 'Item Completed')
         return redirect('jotter')
+
+
+@login_required
+@require_http_methods(["POST"])
+def create_todo_api(request):
+    """API endpoint for creating todos (used by background sync)"""
+    try:
+        data = json.loads(request.body)
+
+        new_todo = todo.objects.create(
+            user=request.user,
+            title=data.get('title'),
+            priority=data.get('priority', 'Low'),
+            notes=data.get('notes', '')
+        )
+
+        # Send push notification to user
+        try:
+            from pwa.views import send_push_notification
+            send_push_notification(
+                user=request.user,
+                title='Todo Created',
+                body=f'Your todo "{new_todo.title}" has been created',
+                url='/jotter/'
+            )
+        except Exception as e:
+            logging.warning(f'Failed to send push notification: {e}')
+
+        return JsonResponse({
+            'success': True,
+            'id': new_todo.id
+        })
+
+    except Exception as e:
+        logging.error(f'Failed to create todo via API: {e}')
+        return JsonResponse({
+            'error': str(e)
+        }, status=500)
