@@ -37,6 +37,12 @@
             <button id="install-button" class="nav-item nav-link btn" style="display: none;" title="Install Seoto as an app">
                 <i class="fas fa-download"></i> Install
             </button>
+            <!-- Notification Toggle Button (for authenticated users) -->
+            {% if user.is_authenticated %}
+            <button id="notification-toggle" class="nav-item nav-link btn" title="Enable push notifications" onclick="window.SeotoPWA.requestNotificationPermission()">
+                <i class="fas fa-bell"></i>
+            </button>
+            {% endif %}
         </div>
     </div>
 </nav>
