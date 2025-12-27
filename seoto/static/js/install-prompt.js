@@ -93,6 +93,14 @@
     // Clear dismissal flag since app is now installed
     localStorage.removeItem(DISMISS_KEY);
 
+    // Prompt for notification permission after installation
+    setTimeout(() => {
+      if (window.SeotoPWA && typeof window.SeotoPWA.requestNotificationPermission === 'function') {
+        console.log('Requesting notification permission after PWA installation...');
+        window.SeotoPWA.requestNotificationPermission();
+      }
+    }, 2000); // Wait 2 seconds after installation
+
     // Optional: Track installation event
     // You can add analytics tracking here if needed
   });
