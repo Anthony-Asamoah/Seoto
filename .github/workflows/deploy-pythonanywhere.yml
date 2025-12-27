@@ -67,7 +67,7 @@ jobs:
           echo "✅ Code updated successfully"
           
           echo "🔧 Activating virtual environment..."
-          source ../.virtualenvs/{directory}/bin/activate || exit 1
+          source ~/.virtualenvs/{directory}/bin/activate || exit 1
           echo "✅ Virtual environment activated"
           
           echo "📚 Installing dependencies..."
@@ -107,14 +107,28 @@ jobs:
               if not console_id:
                   print(f"Failed to launch console: {response.text}")
                   raise Exception("Failed to launch console")
-          
+
               print("⏳ Deployment commands are executing...")
-              # console_logs = httpx.get(
-              #     console_api_url + f'{console_id}/get_latest_output/',
-              #     headers=headers,
-              # )
-              # print(console_logs.text)
-          
+              print("Waiting 30 seconds for commands to complete...\n")
+
+              import time
+              time.sleep(30)
+
+              # Fetch console output
+              print("\n📋 Fetching deployment logs...\n")
+              print("=" * 60)
+              console_logs = httpx.get(
+                  console_api_url + f'{console_id}/get_latest_output/',
+                  headers=headers,
+              )
+
+              if console_logs.status_code == 200:
+                  output = console_logs.json().get('output', 'No output available')
+                  print(output)
+              else:
+                  print(f"⚠️  Failed to fetch console logs: {console_logs.status_code}")
+              print("=" * 60)
+
               # Reload the web app
               print("\n🔄 Reloading web application...")
               reload_response = httpx.post(
