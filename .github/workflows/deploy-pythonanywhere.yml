@@ -28,7 +28,6 @@ jobs:
         env:
           PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
           PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
-          PYTHONANYWHERE_HOST: ${{ secrets.PYTHONANYWHERE_HOST }}
         run: |
           python - <<'PYTHON_SCRIPT'
           import sys, os
@@ -37,9 +36,7 @@ jobs:
           # Get environment variables
           username = os.environ.get('PYTHONANYWHERE_USERNAME')
           api_token = os.environ.get('PYTHONANYWHERE_API_TOKEN')
-          host = os.environ.get('PYTHONANYWHERE_HOST', f'{username}.pythonanywhere.com')
-          
-          print('host:', host)
+          host = f'{username}.pythonanywhere.com'
           
           if not username or not api_token:
               print("Error: PYTHONANYWHERE_USERNAME and PYTHONANYWHERE_API_TOKEN must be set")
