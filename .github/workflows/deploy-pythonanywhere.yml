@@ -59,16 +59,15 @@ jobs:
           # Deployment commands to run on PythonAnywhere
           deployment_commands = f"""
           set -e
-          cd ~/Seoto || exit 1
+          cd tony48.pythonanywhere.com || exit 1
           echo "📦 Pulling latest code from GitHub..."
-          cd {host}
           git fetch origin
           git checkout master
           git pull origin master
           echo "✅ Code updated successfully"
           
           echo "🔧 Activating virtual environment..."
-          source ~/.virtualenvs/{host}/bin/activate || exit 1
+          source ~../.virtualenvs/tony48.pythonanywhere.com/bin/activate    || exit 1
           echo "✅ Virtual environment activated"
           
           echo "📚 Installing dependencies..."
