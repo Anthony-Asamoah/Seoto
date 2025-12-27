@@ -28,15 +28,17 @@ jobs:
         env:
           PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
           PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
+          APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
         run: |
           python - <<'PYTHON_SCRIPT'
           import sys, os
           import httpx
           
           # Get environment variables
+          host = os.environ.get('APP_DOMAIN')
           username = os.environ.get('PYTHONANYWHERE_USERNAME')
           api_token = os.environ.get('PYTHONANYWHERE_API_TOKEN')
-          host = f'{username}.pythonanywhere.com'
+          directory = f'{username}.pythonanywhere.com'
           
           if not username or not api_token:
               print("Error: PYTHONANYWHERE_USERNAME and PYTHONANYWHERE_API_TOKEN must be set")
@@ -58,7 +60,7 @@ jobs:
           # Deployment commands to run on PythonAnywhere
           deployment_commands = f"""
           set -e
-          cd {host} || exit 1
+          cd {directory} || exit 1
           echo "📦 Pulling latest code from GitHub..."
           git fetch origin
           git checkout master
@@ -66,7 +68,7 @@ jobs:
           echo "✅ Code updated successfully"
           
           echo "🔧 Activating virtual environment..."
-          source ~../.virtualenvs/{host}/bin/activate    || exit 1
+          source ~../.virtualenvs/{directory}/bin/activate    || exit 1
           echo "✅ Virtual environment activated"
           
           echo "📚 Installing dependencies..."
