@@ -21,7 +21,6 @@ def foodie(request):
     context = the_code.suggest(request.user)
     context['can_order'] = True if request.user.has_perm('foodie.view_mealorder') else False
 
-    print(context)
     return render(request, 'foodie/foodie.html', context)
 
 

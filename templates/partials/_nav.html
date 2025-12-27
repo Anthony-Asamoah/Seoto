@@ -33,6 +33,10 @@
                 <a class="nav-item nav-link" href="{% url 'login' %}">Login</a>
                 <a class="nav-item nav-link" href="{% url 'register' %}">Sign-up</a>
             {% endif %}
+            <!-- PWA Install Button (shown when installable) -->
+            <button id="install-button" class="nav-item nav-link btn" style="display: none;" title="Install Seoto as an app">
+                <i class="fas fa-download"></i> Install
+            </button>
         </div>
     </div>
 </nav>
