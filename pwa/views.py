@@ -157,16 +157,21 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
     try:
         # Send to all subscriptions
         success_count = 0
+        payload_json = json.dumps(payload)
+        logger.info(f"Sending push notification with payload: {payload_json}")
+
         for subscription in subscriptions:
             try:
+                logger.info(f"Sending to endpoint: {subscription.endpoint[:50]}...")
                 webpush(
                     subscription_info=subscription.get_subscription_info(),
-                    data=json.dumps(payload),
+                    data=payload_json,
                     vapid_private_key=vapid_key_path,  # Pass file path instead of string
                     vapid_claims={
                         "sub": f"mailto:{settings.VAPID_ADMIN_EMAIL}"
                     }
                 )
+                logger.info(f"Push sent successfully to {subscription.endpoint[:50]}...")
                 success_count += 1
             except WebPushException as e:
                 logger.exception(f"Push failed for {subscription.endpoint}")
