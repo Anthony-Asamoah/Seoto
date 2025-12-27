@@ -144,8 +144,9 @@ jobs:
         env:
           PYTHONANYWHERE_HOST: ${{ secrets.PYTHONANYWHERE_HOST }}
           PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+          APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
         run: |
-          HOST="${PYTHONANYWHERE_HOST:-$PYTHONANYWHERE_USERNAME.pythonanywhere.com}"
+          HOST="${APP_DOMAIN:-seoto.org}"
           echo "🏥 Running health check on https://$HOST"
 
           # Try to fetch the homepage
