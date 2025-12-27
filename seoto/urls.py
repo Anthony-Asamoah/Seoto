@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import TemplateView
 
 from author.views import About
 from flip_a_coin.views import Coin
@@ -29,6 +30,9 @@ urlpatterns = [
       path('jotter/', include('jotter.urls')),
       path('blog/', include('blog.urls')),
       path('spending_tracker/', include('spending_tracker.urls')),
+      # PWA
+      path('', include('pwa.urls')),
+      path('offline/', TemplateView.as_view(template_name='offline.html'), name='offline'),
 
   ]
 

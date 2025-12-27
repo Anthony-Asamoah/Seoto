@@ -1,14 +1,18 @@
 import logging
+import json
 from datetime import timedelta, datetime
+from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count, Q, Value, Prefetch
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, Coalesce
 from django.db.transaction import atomic
+from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_http_methods
 
 from utils.paginator import apply_pagination
 from .forms import TransactionForm, AccountForm, CategoryForm
@@ -1106,3 +1110,59 @@ def delete_category(request, pk):
         'other_categories': other_categories,
     }
     return render(request, 'spending_tracker/delete_category.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def create_transaction_api(request):
+    """API endpoint for creating transactions (used by background sync)"""
+    try:
+        data = json.loads(request.body)
+
+        # Get user's default account or first account
+        account = Account.objects.filter(user=request.user, is_default=True).first()
+        if not account:
+            account = Account.objects.filter(user=request.user).first()
+
+        if not account:
+            return JsonResponse({
+                'error': 'No account found for user'
+            }, status=400)
+
+        # Get category if provided
+        category = None
+        category_id = data.get('category_id')
+        if category_id:
+            category = Category.objects.filter(id=category_id, user=request.user).first()
+
+        transaction = Transaction.objects.create(
+            mode=data.get('mode', 'EXPENSE'),
+            amount=Decimal(str(data.get('amount'))),
+            currency=data.get('currency', 'GHS'),
+            details=data.get('details', ''),
+            account=account,
+            category=category
+        )
+
+        # Send push notification to user
+        try:
+            from pwa.views import send_push_notification
+            send_push_notification(
+                user=request.user,
+                title='Transaction Recorded',
+                body=f'{transaction.mode}: {transaction.currency} {transaction.amount}',
+                url='/spending_tracker/'
+            )
+        except Exception as e:
+            logger.warning(f'Failed to send push notification: {e}')
+
+        return JsonResponse({
+            'success': True,
+            'id': transaction.id
+        })
+
+    except Exception as e:
+        logger.error(f'Failed to create transaction via API: {e}')
+        return JsonResponse({
+            'error': str(e)
+        }, status=500)

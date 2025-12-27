@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'blog',
     'spending_tracker',
     'theme',
+    'pwa',
 
     # Django default apps
     'django.contrib.admin',
@@ -179,3 +180,8 @@ MESSAGE_TAGS = {
 
 # Sessions Config
 SESSION_EXPIRE_AT_BROWSER_CLOSE = Env.bool('SESSION_EXPIRE_AT_BROWSER_CLOSE')
+
+# PWA Configuration
+VAPID_PUBLIC_KEY = Env.str('VAPID_PUBLIC_KEY')
+VAPID_PRIVATE_KEY = Env.str('VAPID_PRIVATE_KEY')
+VAPID_ADMIN_EMAIL = Env.str('VAPID_ADMIN_EMAIL')

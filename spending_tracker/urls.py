@@ -23,4 +23,7 @@ urlpatterns = [
     path('accounts/<int:pk>/delete/', views.delete_account, name='delete_account'),
     path('categories/<int:pk>/edit/', views.edit_category, name='edit_category'),
     path('categories/<int:pk>/delete/', views.delete_category, name='delete_category'),
+
+    # Background Sync API
+    path('api/transaction/create/', views.create_transaction_api, name='create-transaction-api'),
 ]
