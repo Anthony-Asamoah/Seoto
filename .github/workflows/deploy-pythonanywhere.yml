@@ -59,7 +59,7 @@ jobs:
           # Deployment commands to run on PythonAnywhere
           deployment_commands = f"""
           set -e
-          cd tony48.pythonanywhere.com || exit 1
+          cd {host} || exit 1
           echo "📦 Pulling latest code from GitHub..."
           git fetch origin
           git checkout master
