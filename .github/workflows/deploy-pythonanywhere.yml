@@ -46,7 +46,7 @@ jobs:
           
           # PythonAnywhere API endpoint for console
           console_api_url = f'https://www.pythonanywhere.com/api/v0/user/{username}/consoles/'
-          webapp_api_url = f'https://www.pythonanywhere.com/api/v0/user/{username}/webapps/{directory}/reload/'
+          webapp_api_url = f'https://www.pythonanywhere.com/api/v0/user/{username}/webapps/{host}/reload/'
           
           headers = {
               'Authorization': f'Token {api_token}',
