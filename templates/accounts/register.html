@@ -76,7 +76,12 @@
             <div class="form">
                 <form method="post">
                     {% csrf_token %}
+                    <div class="hp-field"> {# special honeypot #}
+                        <label for="id_website">Website</label>
+                        {{ form.website }}
+                    </div>
                     {% for field in form %}
+                        {% if field.name != 'website' %}
                         <div class="form-group">
                             <div class="form-row">
                                 <div class="col-sm-5">
@@ -116,6 +121,7 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
                     {% endfor %}
                     <div class="button form-actions mt-3">
                         <button class="btn btn-success register-btn" type="submit">

@@ -4,7 +4,29 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
 
-class LoginForm(AuthenticationForm):
+class HoneypotMixin:
+    """Mixin to add honeypot spam protection to forms."""
+    honeypot_field_name = 'website'  # Looks legitimate to bots
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields[self.honeypot_field_name] = forms.CharField(
+            required=False,
+            widget=forms.TextInput(attrs={
+                'class': 'hp-field',
+                'tabindex': '-1',
+                'autocomplete': 'off',
+            })
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get(self.honeypot_field_name):
+            raise ValidationError('Bot detected.')
+        return cleaned_data
+
+
+class LoginForm(HoneypotMixin, AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
@@ -19,7 +41,7 @@ class LoginForm(AuthenticationForm):
         })
 
 
-class RegisterForm(UserCreationForm):
+class RegisterForm(HoneypotMixin, UserCreationForm):
     first_name = forms.CharField(max_length=30, required=False, help_text='')
     last_name = forms.CharField(max_length=30, required=False, help_text='')
     email = forms.EmailField(max_length=254, help_text='Required. Enter a valid email address.')
