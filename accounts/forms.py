@@ -99,7 +99,7 @@ class CustomPasswordChangeForm(PasswordChangeForm):
         })
 
 
-class CustomPasswordResetForm(PasswordResetForm):
+class CustomPasswordResetForm(HoneypotMixin, PasswordResetForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
