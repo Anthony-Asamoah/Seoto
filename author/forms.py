@@ -1,9 +1,10 @@
 from django.forms import ModelForm, TextInput
 
+from accounts.forms import HoneypotMixin
 from author.models import Message
 
 
-class ContactForm(ModelForm):
+class ContactForm(HoneypotMixin, ModelForm):
     class Meta:
         model = Message
         fields = ['name', 'email', 'subject', 'message']

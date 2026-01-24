@@ -328,6 +328,10 @@
                     </div>
                     <form action="{% url 'about' %}" method="post">
                         {% csrf_token %}
+                        <div class="hp-field">  {# special honeypot #}
+                            <label for="id_website">Website</label>
+                            {{ form.website }}
+                        </div>
                         <div class="form-group">
                             <div class="form-row">
                                 <div class="col-sm-4">
