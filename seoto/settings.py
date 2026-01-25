@@ -87,6 +87,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'theme.context_processors.theme_css',
+                'seoto.context_processors.recaptcha_site_key',
             ],
         },
     },
@@ -185,3 +186,9 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = Env.bool('SESSION_EXPIRE_AT_BROWSER_CLOSE')
 VAPID_PUBLIC_KEY = Env.str('VAPID_PUBLIC_KEY')
 VAPID_PRIVATE_KEY = Env.str('VAPID_PRIVATE_KEY')
 VAPID_ADMIN_EMAIL = Env.str('VAPID_ADMIN_EMAIL')
+
+# reCAPTCHA v3 Configuration
+RECAPTCHA_VERIFY_URL = Env.str('RECAPTCHA_VERIFY_URL')
+RECAPTCHA_SITE_KEY = Env.str('RECAPTCHA_SITE_KEY')
+RECAPTCHA_SECRET_KEY = Env.str('RECAPTCHA_SECRET_KEY')
+RECAPTCHA_SCORE_THRESHOLD = Env.float('RECAPTCHA_SCORE_THRESHOLD', default=0.5)

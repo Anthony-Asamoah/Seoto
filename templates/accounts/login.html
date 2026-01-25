@@ -115,7 +115,7 @@
         </div>
         <div class="main">
             <div class="form">
-                <form method="post" action="{% url 'login' %}">
+                <form method="post" action="{% url 'login' %}" id="loginForm">
                     {% csrf_token %}
                     <div class="hp-field">  {# special honeypot #}
                         <label for="id_website">Website</label>
@@ -159,6 +159,7 @@
                         </button>
                     </div>
                     <input type="hidden" name="next" value="{{ next }}">
+                    {% include 'partials/_recaptcha.html' with action='login' form_id='loginForm' %}
                 </form>
 
                 <div class="additional-links">

@@ -1,10 +1,12 @@
 from django.forms import ModelForm, TextInput
 
-from accounts.forms import HoneypotMixin
+from seoto.mixins.views import HoneypotMixin, RecaptchaMixin
 from author.models import Message
 
 
-class ContactForm(HoneypotMixin, ModelForm):
+class ContactForm(RecaptchaMixin, HoneypotMixin, ModelForm):
+    recaptcha_action = 'contact'
+
     class Meta:
         model = Message
         fields = ['name', 'email', 'subject', 'message']
