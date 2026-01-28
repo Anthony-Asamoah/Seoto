@@ -9,6 +9,7 @@ from django.contrib.auth.forms import (
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
+from seoto.external_services.email_validation import is_valid_email
 from seoto.mixins.views import HoneypotMixin, RecaptchaMixin
 
 
@@ -65,6 +66,14 @@ class RegisterForm(RecaptchaMixin, HoneypotMixin, UserCreationForm):
             )
 
         return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise ValidationError('A user with that email already exists.')
+        if not is_valid_email(email):
+            raise ValidationError('Please enter a valid email address.')
+        return email
 
 
 class CustomPasswordChangeForm(PasswordChangeForm):
