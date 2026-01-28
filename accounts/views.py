@@ -1,19 +1,45 @@
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.models import User
-from django.db import transaction
-from .models import user_profile
-from .forms import RegisterForm
-from django.contrib import messages
-
 import logging
 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.auth.views import LoginView, PasswordResetView
+from django.db import transaction
+from django.shortcuts import render, redirect, get_object_or_404
+
+from .forms import RegisterForm, LoginForm, CustomPasswordResetForm
+from .models import user_profile
 from .utils import trigger_user_onboarded_email
+
+
+class CustomLoginView(LoginView):
+    """Custom login view that passes request to form for reCAPTCHA verification."""
+    template_name = 'accounts/login.html'
+    authentication_form = LoginForm
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
+
+
+class CustomPasswordResetView(PasswordResetView):
+    """Custom password reset view that passes request to form for reCAPTCHA verification."""
+    template_name = 'accounts/password_reset.html'
+    form_class = CustomPasswordResetForm
+    email_template_name = 'emails/password_reset_body.txt'
+    html_email_template_name = 'emails/password_reset.html'
+    subject_template_name = 'emails/password_reset_subject.txt'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['request'] = self.request
+        return kwargs
 
 
 def register(request):
     if request.method == 'POST':
-        form = RegisterForm(request.POST)
+        form = RegisterForm(request.POST, request=request)
         if form.is_valid():
             form.cleaned_data['first_name'] = form.cleaned_data['first_name'].title()
             form.cleaned_data['last_name'] = form.cleaned_data['last_name'].title()
@@ -27,7 +53,7 @@ def register(request):
 
             return redirect('login')
     else:
-        form = RegisterForm()
+        form = RegisterForm(request=request)
     return render(request, 'accounts/register.html', {'form': form})
 
 

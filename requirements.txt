@@ -15,3 +15,5 @@ pywebpush==2.1.2
 py-vapid==1.9.1
 cryptography>=42.0.0,<46.0.0
 Twisted[http2,tls]
+random-string-detector~=1.1.1
+httpx

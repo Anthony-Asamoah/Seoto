@@ -1,0 +1,45 @@
+{# reCAPTCHA v3 partial - Include in forms that need bot protection #}
+{# Usage: {% include 'partials/_recaptcha.html' with action='login' form_id='loginForm' %} #}
+
+{% if recaptcha_site_key %}
+<input type="hidden" name="g-recaptcha-response" id="g-recaptcha-response-{{ form_id }}">
+
+<script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}"></script>
+<script>
+(function() {
+    const formId = '{{ form_id }}';
+    const action = '{{ action }}';
+    const siteKey = '{{ recaptcha_site_key }}';
+
+    const form = document.getElementById(formId);
+    if (!form) {
+        console.warn('reCAPTCHA: Form not found with id:', formId);
+        return;
+    }
+
+    const tokenField = document.getElementById('g-recaptcha-response-' + formId);
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        grecaptcha.ready(function() {
+            grecaptcha.execute(siteKey, {action: action}).then(function(token) {
+                tokenField.value = token;
+                form.submit();
+            }).catch(function(err) {
+                console.error('reCAPTCHA error:', err);
+                // Allow form submission even if reCAPTCHA fails (honeypot will still protect)
+                form.submit();
+            });
+        });
+    });
+})();
+</script>
+
+<small class="text-muted recaptcha-disclosure mt-3" style="font-size: 0.75em; display: block;">
+    This site is protected by reCAPTCHA and the Google
+    <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacy Policy</a> and
+    <a href="https://policies.google.com/terms" target="_blank" rel="noopener">Terms of Service</a> apply.
+</small>
+    <hr>
+{% endif %}
