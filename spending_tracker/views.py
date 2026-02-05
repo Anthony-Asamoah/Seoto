@@ -1,5 +1,6 @@
 import logging
 import json
+import uuid
 from datetime import timedelta, datetime
 from decimal import Decimal
 
@@ -16,10 +17,18 @@ from django.views.decorators.http import require_http_methods
 
 from utils.paginator import apply_pagination
 from .forms import TransactionForm, AccountForm, CategoryForm
-from .models import Account, Transaction, Category, Tag, UserPreferences
+from .models import Account, Transaction, Category, Tag, UserPreferences, CURRENCY_SYMBOLS
 
 # Configure logger
 logger = logging.getLogger(__name__)
+
+
+def _get_currency_symbol(user):
+    """Get currency symbol for the user's default currency."""
+    preferences, _ = UserPreferences.objects.get_or_create(
+        user=user, defaults={'default_currency': 'GHS'}
+    )
+    return CURRENCY_SYMBOLS.get(preferences.default_currency, preferences.default_currency)
 
 
 @login_required
@@ -54,6 +63,7 @@ def dashboard(request):
         'monthly_income': monthly_income,
         'monthly_expense': monthly_expense,
         'net_monthly': monthly_income - monthly_expense,
+        'currency_symbol': _get_currency_symbol(request.user),
     }
     return render(request, 'spending_tracker/dashboard.html', context)
 
@@ -99,12 +109,39 @@ def transaction_list(request):
     if account_filter:
         transactions = transactions.filter(account_id=account_filter)
 
+    # Sort
+    allowed_sorts = {
+        '-transaction_time': 'Newest First',
+        'transaction_time': 'Oldest First',
+        '-amount': 'Highest Amount',
+        'amount': 'Lowest Amount',
+    }
+    sort_value = request.GET.get('sort', '-transaction_time')
+    if sort_value not in allowed_sorts:
+        sort_value = '-transaction_time'
+    transactions = transactions.order_by(sort_value)
+
     transaction_page = apply_pagination(transactions, request.GET.get('page'), 10)
+
+    # Build query string without page for pagination links
+    query_params = {}
+    if mode_filter:
+        query_params['mode'] = mode_filter
+    if category_filter:
+        query_params['category'] = category_filter
+    if account_filter:
+        query_params['account'] = account_filter
+    if sort_value != '-transaction_time':
+        query_params['sort'] = sort_value
 
     context = {
         'page_obj': transaction_page,
-        'categories': Category.objects.all(),
+        'categories': Category.objects.filter(user=request.user),
         'accounts': Account.objects.filter(user=request.user),
+        'currency_symbol': _get_currency_symbol(request.user),
+        'current_sort': sort_value,
+        'sort_options': allowed_sorts,
+        'query_params': query_params,
     }
     return render(request, 'spending_tracker/transaction_list.html', context)
 
@@ -132,6 +169,13 @@ def add_transaction(request):
 
     # Step 2: Show form for selected mode
     if request.method == 'POST':
+        # Idempotency check
+        submitted_token = request.POST.get('idempotency_token')
+        session_token = request.session.pop('idempotency_token', None)
+        if not submitted_token or submitted_token != session_token:
+            messages.error(request, 'This transaction has already been submitted. Please try again.')
+            return redirect(f"{reverse('spending_tracker:add_transaction')}?mode={mode}")
+
         # Get the tags input before form validation
         tags_input = request.POST.get('tags_input', '').strip()
 
@@ -189,6 +233,11 @@ def add_transaction(request):
     all_accounts = Account.objects.filter(user=request.user)
     user_category = Category.objects.filter(user=request.user)
     user_tags = list(Tag.objects.filter(user=request.user))
+
+    # Generate idempotency token for the form
+    idempotency_token = uuid.uuid4().hex
+    request.session['idempotency_token'] = idempotency_token
+
     context = {
         'form': form,
         'mode': mode,
@@ -199,20 +248,84 @@ def add_transaction(request):
         'all_category': user_category,
         'tags': user_tags,
         'preserved_tags_input': preserved_tags or '',
-        'preserved_data': preserved_data or {}
+        'preserved_data': preserved_data or {},
+        'currency_symbol': _get_currency_symbol(request.user),
+        'idempotency_token': idempotency_token,
     }
     return render(request, 'spending_tracker/add_transaction.html', context)
 
 
 @login_required
+@require_http_methods(["POST"])
 def delete_transaction(request, pk):
-    """Delete a transaction"""
-    if request.method == 'GET':
-        transaction = get_object_or_404(Transaction, id=pk, account__user=request.user)
-        transaction.delete()
-        messages.success(request, 'Transaction deleted!')
-
+    """Delete a transaction (reverse its balance impact)"""
+    transaction = get_object_or_404(Transaction, id=pk, account__user=request.user)
+    transaction.delete()
+    messages.success(request, 'Transaction reversed successfully!')
     return redirect('spending_tracker:transaction_list')
+
+
+@login_required
+def edit_transaction(request, pk):
+    """Edit a transaction within 24-hour window"""
+    transaction = get_object_or_404(
+        Transaction.objects.select_related('account', 'category').prefetch_related('tags'),
+        id=pk, account__user=request.user
+    )
+
+    if not transaction.is_editable:
+        messages.error(request, 'This transaction can no longer be edited. The 24-hour edit window has passed.')
+        return redirect('spending_tracker:transaction_list')
+
+    if request.method == 'POST':
+        tags_input = request.POST.get('tags_input', '').strip()
+        post_data = request.POST.copy()
+        post_data.pop('tags', None)
+
+        form = TransactionForm(post_data, instance=transaction, user=request.user)
+        if form.is_valid():
+            with atomic():
+                updated_transaction = form.save()
+
+                # Clear and re-add tags
+                updated_transaction.tags.clear()
+                if tags_input:
+                    tag_labels = [t.strip().lower() for t in tags_input.split(',') if t.strip()]
+                    for tag_label in tag_labels:
+                        tag, _ = Tag.objects.get_or_create(
+                            label=tag_label, defaults={'user': request.user}
+                        )
+                        updated_transaction.tags.add(tag)
+
+            messages.success(request, 'Transaction updated successfully!')
+            return redirect('spending_tracker:transaction_list')
+        else:
+            messages.error(request, 'Invalid data provided.')
+    else:
+        form = TransactionForm(instance=transaction, user=request.user)
+
+    # Calculate remaining edit time
+    edit_deadline = transaction.created_at + timedelta(hours=24)
+    remaining = edit_deadline - timezone.now()
+    remaining_hours = int(remaining.total_seconds() // 3600)
+    remaining_minutes = int((remaining.total_seconds() % 3600) // 60)
+
+    existing_tags = ', '.join(tag.label for tag in transaction.tags.all())
+
+    context = {
+        'form': form,
+        'transaction': transaction,
+        'mode': transaction.mode,
+        'remaining_hours': remaining_hours,
+        'remaining_minutes': remaining_minutes,
+        'existing_tags': existing_tags,
+        'all_accounts': Account.objects.filter(user=request.user),
+        'all_category': Category.objects.filter(user=request.user),
+        'all_currency': [i[0] for i in Transaction.CURRENCY_CHOICES],
+        'tags': list(Tag.objects.filter(user=request.user)),
+        'currency_symbol': _get_currency_symbol(request.user),
+    }
+    return render(request, 'spending_tracker/edit_transaction.html', context)
 
 
 @login_required
@@ -315,6 +428,7 @@ def account_detail(request, pk):
     context = {
         'account': account,
         'transactions': transactions,
+        'currency_symbol': _get_currency_symbol(request.user),
     }
     return render(request, 'spending_tracker/account_detail.html', context)
 
@@ -350,6 +464,7 @@ def accounts_list(request):
         'accounts': accounts,
         'account_stats': account_stats,
         'total_balance': total_balance,
+        'currency_symbol': _get_currency_symbol(request.user),
     }
     return render(request, 'spending_tracker/accounts_list.html', context)
 
@@ -369,14 +484,6 @@ def reports(request):
         user=request.user,
         defaults={'default_currency': 'GHS'}
     )
-
-    # Currency symbol mapping
-    CURRENCY_SYMBOLS = {
-        'GHS': '₵',
-        'USD': '$',
-        'EUR': '€',
-        'GBP': '£',
-    }
 
     user_currency = preferences.default_currency
     currency_symbol = CURRENCY_SYMBOLS.get(user_currency, user_currency)
@@ -517,6 +624,14 @@ def reports(request):
         transaction_time__gte=start_date,
         transaction_time__lte=end_date
     ).select_related('account', 'category')
+
+    # Apply optional account and category filters
+    filter_account = request.GET.get('account')
+    filter_category = request.GET.get('category')
+    if filter_account:
+        base_transactions = base_transactions.filter(account_id=filter_account)
+    if filter_category:
+        base_transactions = base_transactions.filter(category_id=filter_category)
 
     transaction_count = base_transactions.count()
     logger.debug(f"\nTRANSACTIONS FOUND:")
@@ -892,6 +1007,19 @@ def reports(request):
     logger.debug(f"=== REPORTS VIEW COMPLETE ===")
     logger.debug(f"{'=' * 80}\n")
 
+    # Compute summary metrics (Feature 9)
+    days_in_period = max((end_date - start_date).days, 1)
+    avg_daily_spending = round(float(total_expenses) / days_in_period, 2)
+
+    top_expense_category = None
+    top_expense_amount = 0
+    if expense_categories:
+        first_cat = list(expense_categories)[0]
+        top_expense_category = first_cat['category_label']
+        top_expense_amount = round(first_cat['total'], 2)
+
+    income_expense_ratio = round(float(total_income) / float(total_expenses), 2) if total_expenses > 0 else 0
+
     context = {
         'period': period,
         'modifier': modifier,
@@ -909,6 +1037,16 @@ def reports(request):
         'account_performance': account_performance,
         'currency_symbol': currency_symbol,
         'user_currency': user_currency,
+        # Report filters (Feature 8)
+        'filter_accounts': Account.objects.filter(user=request.user),
+        'filter_categories': Category.objects.filter(user=request.user),
+        'selected_account': filter_account or '',
+        'selected_category': filter_category or '',
+        # Summary metrics (Feature 9)
+        'avg_daily_spending': avg_daily_spending,
+        'top_expense_category': top_expense_category,
+        'top_expense_amount': top_expense_amount,
+        'income_expense_ratio': income_expense_ratio,
     }
     return render(request, 'spending_tracker/reports.html', context)
 
@@ -947,6 +1085,7 @@ def config(request):
         'accounts': accounts,
         'categories': categories,
         'currency_choices': Transaction.CURRENCY_CHOICES,
+        'currency_symbol': CURRENCY_SYMBOLS.get(preferences.default_currency, preferences.default_currency),
     }
     return render(request, 'spending_tracker/config.html', context)
 
@@ -974,6 +1113,7 @@ def edit_account(request, pk):
     context = {
         'form': form,
         'account': account,
+        'currency_symbol': _get_currency_symbol(request.user),
     }
     return render(request, 'spending_tracker/edit_account.html', context)
 
@@ -1025,6 +1165,7 @@ def delete_account(request, pk):
         'account': account,
         'transaction_count': transaction_count,
         'other_accounts': other_accounts,
+        'currency_symbol': _get_currency_symbol(request.user),
     }
     return render(request, 'spending_tracker/delete_account.html', context)
 

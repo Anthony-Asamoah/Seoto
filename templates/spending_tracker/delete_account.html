@@ -111,7 +111,7 @@
                             <strong>{{ account.transaction_count }}</strong> transaction{{ account.transaction_count|pluralize }}
                         </div>
                         <div class="stat-item text-muted">
-                            Balance: ${{ account.balance }}
+                            Balance: {{ currency_symbol }}{{ account.balance }}
                         </div>
                     </div>
                 </div>

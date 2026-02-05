@@ -111,7 +111,7 @@
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <div class="summary-label">Total Balance Across All Accounts</div>
-                    <div class="summary-value">${{ total_balance|floatformat:2 }}</div>
+                    <div class="summary-value">{{ currency_symbol }}{{ total_balance|floatformat:2 }}</div>
                 </div>
                 <div class="col-md-4 text-end">
                     <a href="{% url 'spending_tracker:add_account' %}" class="btn btn-light btn-lg">
@@ -138,23 +138,23 @@
                             </small>
                         </div>
                         <div class="col-md-6 text-end">
-                            <div class="account-balance">${{ stat.account.balance|floatformat:2 }}</div>
+                            <div class="account-balance">{{ currency_symbol }}{{ stat.account.balance|floatformat:2 }}</div>
                         </div>
                     </div>
 
                     <div class="account-stats">
                         <div class="stat-item">
                             <div class="stat-label">Total Income</div>
-                            <div class="stat-value income">+${{ stat.total_income|floatformat:2 }}</div>
+                            <div class="stat-value income">+{{ currency_symbol }}{{ stat.total_income|floatformat:2 }}</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Total Expenses</div>
-                            <div class="stat-value expense">-${{ stat.total_expenses|floatformat:2 }}</div>
+                            <div class="stat-value expense">-{{ currency_symbol }}{{ stat.total_expenses|floatformat:2 }}</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Net Flow</div>
                             <div class="stat-value {% if stat.net_flow >= 0 %}income{% else %}expense{% endif %}">
-                                {% if stat.net_flow >= 0 %}+{% endif %}${{ stat.net_flow|floatformat:2 }}
+                                {% if stat.net_flow >= 0 %}+{% endif %}{{ currency_symbol }}{{ stat.net_flow|floatformat:2 }}
                             </div>
                         </div>
                     </div>
