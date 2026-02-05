@@ -71,9 +71,16 @@ class RegisterForm(RecaptchaMixin, HoneypotMixin, UserCreationForm):
         email = self.cleaned_data.get('email')
         if User.objects.filter(email=email).exists():
             raise ValidationError('A user with that email already exists.')
-        if not is_valid_email(email):
-            raise ValidationError('Please enter a valid email address.')
         return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Only call external API if reCAPTCHA + honeypot passed (no errors yet)
+        email = cleaned_data.get('email')
+        if email and not self.errors:
+            if not is_valid_email(email):
+                self.add_error('email', 'Please enter a valid email address.')
+        return cleaned_data
 
 
 class CustomPasswordChangeForm(PasswordChangeForm):
