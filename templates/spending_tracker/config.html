@@ -135,7 +135,7 @@
                             <div class="item-info">
                                 <span class="item-name">{{ account.name }}</span>
                                 <span class="item-count">({{ account.transaction_count }} transaction{{ account.transaction_count|pluralize }})</span>
-                                <small class="text-muted d-block">{{ account.get_account_type_display }} - Balance: ${{ account.balance }}</small>
+                                <small class="text-muted d-block">{{ account.get_account_type_display }} - Balance: {{ currency_symbol }}{{ account.balance }}</small>
                             </div>
                             <div class="item-actions">
                                 <a href="{% url 'spending_tracker:edit_account' account.pk %}" class="btn btn-sm btn-outline-primary">

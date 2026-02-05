@@ -156,6 +156,7 @@
                 <form method="post" id="transactionForm">
                     {% csrf_token %}
                     {{ form.mode.as_hidden }}
+                    <input type="hidden" name="idempotency_token" value="{{ idempotency_token }}">
 
                     <div class="row">
                         <div class="col-md-6">
@@ -168,7 +169,7 @@
                                             <option value="{{ account.pk }}"
                                                     {% if preserved_data.account and preserved_data.account|stringformat:"s" == account.pk|stringformat:"s" %}selected
                                                     {% elif not preserved_data.account and account == default_account %}selected{% endif %}>
-                                                {{ account.name }} ({{ account.currency_symbol }}{{ account.balance }})
+                                                {{ account.name }} ({{ currency_symbol }}{{ account.balance }})
                                             </option>
                                         {% endfor %}
                                     </select>
@@ -421,7 +422,19 @@
             {% endif %}
         });
 
-        // Preserve form data when opening modals
+        // Disable submit button on first click to prevent double submission
+            const transactionForm = document.getElementById('transactionForm');
+            if (transactionForm) {
+                transactionForm.addEventListener('submit', function() {
+                    const submitBtn = transactionForm.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                    }
+                });
+            }
+
+            // Preserve form data when opening modals
         document.querySelector('[data-bs-target="#addAccount"]')?.addEventListener('click', function() {
             {#console.log('🏦 Opening Add Account modal - preserving form data...');#}
             const formData = {

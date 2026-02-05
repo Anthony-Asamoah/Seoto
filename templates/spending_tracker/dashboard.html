@@ -211,26 +211,26 @@
         <div class="row mb-4">
             <div class="col-md-3 col-sm-6">
                 <div class="stats-card text-center">
-                    <div class="stat-value balance">${{ total_balance|floatformat:2 }}</div>
+                    <div class="stat-value balance">{{ currency_symbol }}{{ total_balance|floatformat:2 }}</div>
                     <div class="stat-label">Total Balance</div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stats-card text-center">
-                    <div class="stat-value income">+${{ monthly_income|floatformat:2 }}</div>
+                    <div class="stat-value income">+{{ currency_symbol }}{{ monthly_income|floatformat:2 }}</div>
                     <div class="stat-label">Monthly Income</div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stats-card text-center">
-                    <div class="stat-value expense">-${{ monthly_expense|floatformat:2 }}</div>
+                    <div class="stat-value expense">-{{ currency_symbol }}{{ monthly_expense|floatformat:2 }}</div>
                     <div class="stat-label">Monthly Expenses</div>
                 </div>
             </div>
             <div class="col-md-3 col-sm-6">
                 <div class="stats-card text-center">
                     <div class="stat-value {% if net_monthly >= 0 %}income{% else %}expense{% endif %}">
-                        {% if net_monthly >= 0 %}+{% endif %}&dollar;{{ net_monthly|floatformat:2 }}
+                        {% if net_monthly >= 0 %}+{% endif %}{{ currency_symbol }}{{ net_monthly|floatformat:2 }}
                     </div>
                     <div class="stat-label">Net Monthly</div>
                 </div>
@@ -275,7 +275,7 @@
                                 <small class="text-muted">{{ account.transactions.count }} transactions</small>
                             </div>
                             <div class="mb-3">
-                                <p class="">Balance: ${{ account.balance }}</p>
+                                <p class="">Balance: {{ currency_symbol }}{{ account.balance }}</p>
                             </div>
                         </div>
                     </div>
@@ -319,7 +319,7 @@
                             </div>
                             <div class="d-flex align-items-center">
                                 <span class="transaction-amount me-2 {% if transaction.mode == 'INCOME' %}income{% else %}expense{% endif %}">
-                                    {% if transaction.mode == 'INCOME' %}+{% else %}-{% endif %}{{ transaction.account.currency_symbol }}{{ transaction.amount|floatformat:2 }}
+                                    {% if transaction.mode == 'INCOME' %}+{% else %}-{% endif %}{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}
                                 </span>
                                 <i class="fas fa-chevron-down chevron-icon"></i>
                             </div>
@@ -344,7 +344,7 @@
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">Amount:</span>
-                                    <span class="detail-value">{{ transaction.account.currency_symbol }}{{ transaction.amount|floatformat:2 }} {{ transaction.currency }}</span>
+                                    <span class="detail-value">{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }} {{ transaction.currency }}</span>
                                 </div>
                                 <div class="detail-row">
                                     <span class="detail-label">Date & Time:</span>
@@ -400,6 +400,8 @@
                 }
             });
 
+            const currencySymbol = '{{ currency_symbol|escapejs }}';
+
             {% if accounts.count > 2 %}
             // Account balance chart data
             const accountNames = [
@@ -430,7 +432,7 @@
                 data: {
                     labels: accountNames,
                     datasets: [{
-                        label: 'Balance ($)',
+                        label: 'Balance (' + currencySymbol + ')',
                         data: accountBalances,
                         backgroundColor: backgroundColors,
                         borderColor: borderColors,
@@ -455,7 +457,7 @@
                         tooltip: {
                             callbacks: {
                                 label: (context) => {
-                                    return 'Balance: $' + context.parsed.y.toFixed(2);
+                                    return 'Balance: ' + currencySymbol + context.parsed.y.toFixed(2);
                                 }
                             }
                         }
@@ -464,7 +466,7 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                callback: (value) => '$' + value.toFixed(0)
+                                callback: (value) => currencySymbol + value.toFixed(0)
                             }
                         }
                     }

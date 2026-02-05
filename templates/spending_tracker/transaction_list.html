@@ -10,34 +10,72 @@
         margin-bottom: 20px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .transaction-row {
+    .transaction-card {
         background: white;
-        border-radius: 6px;
-        padding: 15px;
-        margin-bottom: 8px;
-        border-left: 4px solid #dee2e6;
-        transition: all 0.2s ease;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
     }
-    .transaction-row:hover {
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        transform: translateY(-1px);
+    .transaction-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
-    .transaction-row.income {
-        border-left-color: #27ae60;
+    .transaction-summary {
+        padding: 12px 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
     }
-    .transaction-row.expense {
-        border-left-color: #e74c3c;
+    .transaction-icon {
+        font-size: 1.5rem;
+        margin-right: 10px;
     }
-    .amount-display {
-        font-size: 1.2rem;
+    .transaction-info {
+        flex: 1;
+    }
+    .transaction-amount {
         font-weight: bold;
+        font-size: 1.1rem;
     }
-    .income-amount {
-        color: #27ae60;
+    .transaction-details {
+        padding: 0 15px 15px 15px;
+        background: #f8f9fa;
+        border-top: 1px solid #dee2e6;
     }
-    .expense-amount {
-        color: #e74c3c;
+    .detail-row {
+        padding: 5px 0;
+        display: flex;
+        justify-content: space-between;
     }
+    .detail-label {
+        color: #6c757d;
+        font-weight: 500;
+    }
+    .detail-value {
+        color: #2c3e50;
+    }
+    .chevron-icon {
+        transition: transform 0.3s ease;
+        font-size: 1.2rem;
+        color: #6c757d;
+    }
+    .transaction-summary[aria-expanded="true"] .chevron-icon {
+        transform: rotate(180deg);
+    }
+    .tag-badge {
+        display: inline-block;
+        background: #e9ecef;
+        color: #495057;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        margin-right: 5px;
+        margin-top: 5px;
+    }
+    .income { color: #27ae60 !important; }
+    .expense { color: #e74c3c !important; }
 </style>
 {% endblock %}
 
@@ -81,9 +119,18 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">&nbsp;</label>
+                <label class="form-label">Sort By</label>
+                <select name="sort" class="form-select">
+                    {% for value, label in sort_options.items %}
+                    <option value="{{ value }}" {% if current_sort == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12">
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-fill">Filter</button>
+                    <button type="submit" class="btn btn-primary">Filter</button>
                     <a href="{% url 'spending_tracker:transaction_list' %}" class="btn btn-outline-secondary">Clear</a>
                 </div>
             </div>
@@ -98,7 +145,6 @@
             {% else %}
                 All Transactions
             {% endif %}
-            <span class="badge bg-primary">{{ transactions.count }}</span>
         </h4>
         <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-success">
             <i class="fas fa-plus"></i> New Transaction
@@ -107,58 +153,155 @@
 
     <!-- Transactions List -->
     {% for transaction in page_obj %}
-    <div class="transaction-row {{ transaction.mode }}" style="border-left: 4px solid {% if transaction.mode == 'INCOME' %} Green {% else %} Red {% endif %};">
-        <div class="row align-items-center">
-            <div class="col-md-2">
+        <div class="transaction-card"
+             style="border-left: 4px solid {% if transaction.mode == 'INCOME' %}#27ae60{% else %}#e74c3c{% endif %};">
+
+            <!-- Summary (Always Visible) -->
+            <div class="transaction-summary"
+                 data-bs-toggle="collapse"
+                 data-bs-target="#transaction-{{ transaction.id }}"
+                 aria-expanded="false">
+                <div class="d-flex align-items-center flex-grow-1">
+                    <span class="transaction-icon">
+                        {% if transaction.mode == 'INCOME' %}💰{% else %}💸{% endif %}
+                    </span>
+                    <div class="transaction-info">
+                        <div class="fw-bold">
+                            {% if transaction.category %}
+                                {{ transaction.category.label }}
+                            {% else %}
+                                {% if transaction.mode == 'INCOME' %}Income{% else %}Expense{% endif %}
+                            {% endif %}
+                        </div>
+                        <small class="text-muted">
+                            {{ transaction.account.name }} &bull; {{ transaction.transaction_time|date:"M d, Y" }}
+                        </small>
+                    </div>
+                </div>
                 <div class="d-flex align-items-center">
-                    <div class="me-2">
-                        {% if transaction.mode == 'INCOME' %}
-                        <span class="fs-4">💰</span>
-                        {% else %}
-                        <span class="fs-4">💸</span>
+                    <span class="transaction-amount me-2 {% if transaction.mode == 'INCOME' %}income{% else %}expense{% endif %}">
+                        {% if transaction.mode == 'INCOME' %}+{% else %}-{% endif %}{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}
+                    </span>
+                    <i class="fas fa-chevron-down chevron-icon"></i>
+                </div>
+            </div>
+
+            <!-- Details (Collapsible) -->
+            <div class="collapse" id="transaction-{{ transaction.id }}">
+                <div class="transaction-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Account:</span>
+                        <span class="detail-value">{{ transaction.account.name }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Category:</span>
+                        <span class="detail-value">
+                            {% if transaction.category %}
+                                {{ transaction.category.label }}
+                            {% else %}
+                                <em>Uncategorized</em>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Amount:</span>
+                        <span class="detail-value">{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }} {{ transaction.currency }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Date & Time:</span>
+                        <span class="detail-value">{{ transaction.transaction_time|date:"D, M d, Y - g:i A" }}</span>
+                    </div>
+                    {% if transaction.details %}
+                        <div class="detail-row">
+                            <span class="detail-label">Details:</span>
+                            <span class="detail-value">{{ transaction.details }}</span>
+                        </div>
+                    {% endif %}
+                    {% if transaction.reference %}
+                        <div class="detail-row">
+                            <span class="detail-label">Reference:</span>
+                            <span class="detail-value">{{ transaction.reference }}</span>
+                        </div>
+                    {% endif %}
+                    {% if transaction.tags.all %}
+                        <div class="detail-row">
+                            <span class="detail-label">Tags:</span>
+                            <span class="detail-value">
+                                {% for tag in transaction.tags.all %}
+                                    <span class="tag-badge">{{ tag.label }}</span>
+                                {% endfor %}
+                            </span>
+                        </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <hr class="my-2">
+                    <div class="d-flex gap-2 justify-content-end">
+                        {% if transaction.is_editable %}
+                            <a href="{% url 'spending_tracker:edit_transaction' transaction.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
                         {% endif %}
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                data-bs-toggle="modal"
+                                data-bs-target="#reverseModal-{{ transaction.id }}">
+                            <i class="fas fa-undo"></i> Reverse
+                        </button>
                     </div>
-                    <div>
-                        <div class="fw-bold">{{ transaction.get_mode_display }}</div>
-                        <small class="text-muted">{{ transaction.time|date:"M d, Y" }}</small>
-                    </div>
                 </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="fw-bold">{{ transaction.category.label|default:"Uncategorized" }}</div>
-                <small class="text-muted">{{ transaction.account.name }}</small>
-            </div>
-
-            <div class="col-md-4">
-                {% if transaction.details %}
-                <div class="mb-1">{{ transaction.details|truncatechars:80 }}</div>
-                {% endif %}
-                {% if transaction.reference %}
-                <small class="text-muted">Ref: {{ transaction.reference }}</small>
-                {% endif %}
-                {% if transaction.tags.exists %}
-                <div class="mt-1">
-                    {% for tag in transaction.tags.all %}
-                    <span class="badge bg-secondary me-1">{{ tag.label }}</span>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-
-            <div class="col-md-2 text-end">
-                <div class="amount-display {% if transaction.mode == 'INCOME' %}income-amount{% else %}expense-amount{% endif %}">
-                    {% if transaction.mode == 'INCOME' %}+{% else %}-{% endif %}
-                    {{ transaction.currency }} {{ transaction.amount|floatformat:2 }}
-                </div>
-                <small class="text-muted">{{ transaction.time|time:"H:i" }}</small>
-            </div>
-
-            <div class="col-md-1 text-end">
-                <a class="btn btn-outline-secondary" href="{% url 'spending_tracker:delete_transaction' transaction.id %}">Reverse</a>
             </div>
         </div>
-    </div>
+
+        <!-- Reversal Confirmation Modal -->
+        <div class="modal fade" id="reverseModal-{{ transaction.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirm Reversal</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to reverse this transaction?</p>
+                        <div class="bg-light p-3 rounded">
+                            <div class="d-flex justify-content-between mb-2">
+                                <strong>Type:</strong>
+                                <span>{{ transaction.get_mode_display }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <strong>Amount:</strong>
+                                <span class="{% if transaction.mode == 'INCOME' %}income{% else %}expense{% endif %}">
+                                    {{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <strong>Category:</strong>
+                                <span>{{ transaction.category.label|default:"Uncategorized" }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <strong>Account:</strong>
+                                <span>{{ transaction.account.name }}</span>
+                            </div>
+                        </div>
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <small><i class="fas fa-info-circle"></i>
+                                This will {% if transaction.mode == 'INCOME' %}decrease{% else %}increase{% endif %}
+                                the balance of <strong>{{ transaction.account.name }}</strong> by
+                                {{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form method="post" action="{% url 'spending_tracker:delete_transaction' transaction.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-undo"></i> Confirm Reversal
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     {% empty %}
     <div class="alert alert-info text-center">
         <i class="fas fa-info-circle mb-3 fs-1"></i>
@@ -176,17 +319,11 @@
                 {% if page_obj.has_previous %}
                     <li class="page-item">
                         <a class="page-link"
-                           href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if tag_filter %}&tag={{ tag_filter }}{% endif %}">&laquo;
-                            First</a>
+                           href="?page=1{% for key, val in query_params.items %}&{{ key }}={{ val }}{% endfor %}">&laquo; First</a>
                     </li>
                     <li class="page-item">
                         <a class="page-link"
-                           href="?page=
-                                   {{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}
-                            {% endif %}
-                            {% if tag_filter %}&tag={{ tag_filter }}
-                            {% endif %}">
-                            Previous</a>
+                           href="?page={{ page_obj.previous_page_number }}{% for key, val in query_params.items %}&{{ key }}={{ val }}{% endfor %}">Previous</a>
                     </li>
                 {% else %}
                     <li class="page-item disabled">
@@ -205,33 +342,19 @@
                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
                         <li class="page-item">
                             <a class="page-link"
-                               href="?page={{ num }}
-                                {% if search_query %}&search={{ search_query }}
-                                {% endif %}
-                                {% if tag_filter %}&tag={{ tag_filter }}
-                                {% endif %}">{{ num }}
-                            </a>
+                               href="?page={{ num }}{% for key, val in query_params.items %}&{{ key }}={{ val }}{% endfor %}">{{ num }}</a>
                         </li>
                     {% endif %}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}
-                        {% if search_query %}&search={{ search_query }}
-                        {% endif %}
-                        {% if tag_filter %}&tag={{ tag_filter }}
-                        {% endif %}">Next
-                        </a>
+                        <a class="page-link"
+                           href="?page={{ page_obj.next_page_number }}{% for key, val in query_params.items %}&{{ key }}={{ val }}{% endfor %}">Next</a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page=
-                            {{ page_obj.paginator.num_pages }}
-                            {% if search_query %}&search={{ search_query }}
-                            {% endif %}
-                            {% if tag_filter %}&tag={{ tag_filter }}
-                            {% endif %}">Last
-                            &raquo;</a>
+                        <a class="page-link"
+                           href="?page={{ page_obj.paginator.num_pages }}{% for key, val in query_params.items %}&{{ key }}={{ val }}{% endfor %}">Last &raquo;</a>
                     </li>
                 {% else %}
                     <li class="page-item disabled">
@@ -245,4 +368,23 @@
         </nav>
     {% endif %}
 
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Handle transaction card chevron rotation
+        document.querySelectorAll('.transaction-summary').forEach(summary => {
+            const collapseTarget = summary.getAttribute('data-bs-target');
+            if (collapseTarget) {
+                const collapseElement = document.querySelector(collapseTarget);
+                if (collapseElement) {
+                    collapseElement.addEventListener('show.bs.collapse', () => {
+                        summary.setAttribute('aria-expanded', 'true');
+                    });
+                    collapseElement.addEventListener('hide.bs.collapse', () => {
+                        summary.setAttribute('aria-expanded', 'false');
+                    });
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

@@ -246,12 +246,40 @@
                            {% if modifier == 'last_three' %}checked{% endif %}>
                     <label class="btn btn-outline-secondary" for="modifier-last-three">Last Three</label>
                 </div>
+
+                <!-- Account & Category Filters -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label small">Filter by Account</label>
+                        <select id="filter-account" class="form-select form-select-sm">
+                            <option value="">All Accounts</option>
+                            {% for acc in filter_accounts %}
+                                <option value="{{ acc.id }}" {% if selected_account == acc.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ acc.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Filter by Category</label>
+                        <select id="filter-category" class="form-select form-select-sm">
+                            <option value="">All Categories</option>
+                            {% for cat in filter_categories %}
+                                <option value="{{ cat.id }}" {% if selected_category == cat.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ cat.label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="row" id="customDateRange" style="{% if period != 'custom' %}display: none;{% endif %}">
             <div class="col-md-12">
                 <form method="get" action="{% url 'spending_tracker:reports' %}" class="row g-2">
+                    <input type="hidden" name="account" id="custom-form-account" value="{{ selected_account }}">
+                    <input type="hidden" name="category" id="custom-form-category" value="{{ selected_category }}">
                     <div class="col-md-5">
                         <label for="start_date" class="form-label small">Start Date</label>
                         <input type="date" class="form-control" id="start_date" name="start_date"
@@ -297,7 +325,8 @@
         <!-- Income vs Expenses Chart -->
         <div class="col-lg-8">
             <div class="report-card">
-                <h5 class="mb-3">📈 Income vs Expenses Trend</h5>
+                <h5 class="mb-1">📈 Income vs Expenses Trend</h5>
+                <p class="text-muted small mb-3">Tracks income and expense totals over time</p>
                 <div class="chart-container">
                     <canvas id="trendChart"></canvas>
                     <div id="trendChartEmpty" class="chart-empty-state" style="display: none;">
@@ -311,7 +340,8 @@
         <!-- Category Breakdown -->
         <div class="col-lg-4">
             <div class="report-card">
-                <h5 class="mb-3">🏷️ Expense Categories</h5>
+                <h5 class="mb-1">🏷️ Expense Categories</h5>
+                <p class="text-muted small mb-3">Breakdown of spending by category</p>
                 <div class="chart-container">
                     <canvas id="categoryChart"></canvas>
                     <div id="categoryChartEmpty" class="chart-empty-state" style="display: none;">
@@ -361,6 +391,44 @@
                             No expense transactions for this period
                         </div>
                     {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Insights -->
+    <div class="report-card">
+        <h5 class="mb-1">📋 Summary Insights</h5>
+        <p class="text-muted small mb-3">Key metrics for the selected period</p>
+        <div class="metric-grid">
+            <div class="metric-card" style="border-left-color: #e74c3c;">
+                <div class="metric-value" style="color: #e74c3c; font-size: 1.4rem;">{{ currency_symbol }}{{ avg_daily_spending }}</div>
+                <div class="metric-label">Avg. Daily Spending</div>
+            </div>
+            <div class="metric-card" style="border-left-color: #9b59b6;">
+                <div class="metric-value" style="color: #9b59b6; font-size: 1.4rem;">
+                    {% if top_expense_category %}
+                        {{ top_expense_category }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+                <div class="metric-label">Top Expense Category
+                    {% if top_expense_amount %}<br><small class="text-muted">{{ currency_symbol }}{{ top_expense_amount }}</small>{% endif %}
+                </div>
+            </div>
+            <div class="metric-card" style="border-left-color: #3498db;">
+                <div class="metric-value" style="color: #3498db; font-size: 1.4rem;">
+                    {% if income_expense_ratio %}{{ income_expense_ratio }}x{% else %}N/A{% endif %}
+                </div>
+                <div class="metric-label">Income to Expense Ratio</div>
+            </div>
+            <div class="metric-card" style="{% if net_income >= 0 %}border-left-color: #27ae60;{% else %}border-left-color: #e74c3c;{% endif %}">
+                <div class="metric-value" style="{% if net_income >= 0 %}color: #27ae60;{% else %}color: #e74c3c;{% endif %} font-size: 1.4rem;">
+                    {% if net_income >= 0 %}+{% endif %}{{ currency_symbol }}{{ net_income }}
+                </div>
+                <div class="metric-label">Net for Period
+                    <br><small class="text-muted">{{ savings_rate }}% savings rate</small>
                 </div>
             </div>
         </div>
@@ -428,18 +496,30 @@
     {#console.log('  - Start Date:', '{{ start_date }}');#}
     {#console.log('  - End Date:', '{{ end_date }}');#}
 
+    const getFilterParams = () => {
+        let params = '';
+        const accountEl = document.getElementById('filter-account');
+        const categoryEl = document.getElementById('filter-category');
+        if (accountEl && accountEl.value) params += `&account=${accountEl.value}`;
+        if (categoryEl && categoryEl.value) params += `&category=${categoryEl.value}`;
+        return params;
+    };
+
     const applyFilter = () => {
         let url;
+        const filterParams = getFilterParams();
         if (selectedPeriod === 'all_time') {
-            url = `{% url 'spending_tracker:reports' %}?period=all_time`;
+            url = `{% url 'spending_tracker:reports' %}?period=all_time${filterParams}`;
         } else if (selectedPeriod === 'custom') {
-            // Custom date range handled by form
-            {#console.log('Custom period - form submission required');#}
+            // Sync filter values to custom date form hidden inputs
+            const accountEl = document.getElementById('filter-account');
+            const categoryEl = document.getElementById('filter-category');
+            document.getElementById('custom-form-account').value = accountEl ? accountEl.value : '';
+            document.getElementById('custom-form-category').value = categoryEl ? categoryEl.value : '';
             return;
         } else {
-            url = `{% url 'spending_tracker:reports' %}?period=${selectedPeriod}&modifier=${selectedModifier}`;
+            url = `{% url 'spending_tracker:reports' %}?period=${selectedPeriod}&modifier=${selectedModifier}${filterParams}`;
         }
-        {#console.log('Navigating to:', url);#}
         window.location.href = url;
     };
 
@@ -786,6 +866,16 @@
                         {#console.log('Applying filter with period:', selectedPeriod, 'modifier:', modifier);#}
                         applyFilter();
                     }
+                });
+            }
+        });
+
+        // Account & Category filter listeners
+        ['filter-account', 'filter-category'].forEach(id => {
+            const elem = document.getElementById(id);
+            if (elem) {
+                elem.addEventListener('change', () => {
+                    applyFilter();
                 });
             }
         });

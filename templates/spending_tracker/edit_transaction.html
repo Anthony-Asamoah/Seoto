@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}- Edit Transaction{% endblock %}
+
+{% block style %}
+    <style>
+        .form-card {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .mode-indicator {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .mode-indicator.income {
+            background-color: #d5f4e6;
+            color: #27ae60;
+            border: 2px solid #27ae60;
+        }
+
+        .mode-indicator.expense {
+            background-color: #fdeaea;
+            color: #e74c3c;
+            border: 2px solid #e74c3c;
+        }
+
+        .edit-window-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <h1>
+            <a href="{% url 'spending_tracker:dashboard' %}" class="crumb">Expense & Income</a> -
+            Edit Transaction
+        </h1>
+    </div>
+
+    <div class="main">
+        <div class="form-card">
+            <!-- Mode Indicator -->
+            <div class="text-center">
+                <span class="mode-indicator {{ mode|lower }}">
+                    {% if mode == 'INCOME' %}
+                        💰 Editing Income
+                    {% else %}
+                        💸 Editing Expense
+                    {% endif %}
+                </span>
+                <br>
+                <span class="edit-window-badge mt-2">
+                    <i class="fas fa-clock"></i>
+                    {{ remaining_hours }}h {{ remaining_minutes }}m remaining to edit
+                </span>
+            </div>
+
+            <hr class="my-3">
+
+            <form method="post" id="editTransactionForm">
+                {% csrf_token %}
+                {{ form.mode.as_hidden }}
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Account <span class="text-danger">*</span></label>
+                            <select name="account" class="form-control" required>
+                                <option value="">Choose an account...</option>
+                                {% for account in all_accounts %}
+                                    <option value="{{ account.pk }}"
+                                            {% if transaction.account_id == account.pk %}selected{% endif %}>
+                                        {{ account.name }} ({{ currency_symbol }}{{ account.balance }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.account.errors %}
+                                <div class="text-danger small">{{ form.account.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Category</label>
+                            <select name="category" class="form-control">
+                                <option value="">Choose a category...</option>
+                                {% for category in all_category %}
+                                    <option value="{{ category.pk }}"
+                                            {% if transaction.category_id == category.pk %}selected{% endif %}>
+                                        {{ category.label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.category.errors %}
+                                <div class="text-danger small">{{ form.category.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label">Currency</label>
+                            <select name="currency" class="form-control">
+                                {% for currency in all_currency %}
+                                    <option value="{{ currency }}"
+                                            {% if transaction.currency == currency %}selected{% endif %}>
+                                        {{ currency }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label class="form-label">Amount <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="amount" step="0.01"
+                                   placeholder="0.00" value="{{ transaction.amount }}" required>
+                            {% if form.amount.errors %}
+                                <div class="text-danger small">{{ form.amount.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        {% if mode == 'INCOME' %}
+                            Source / Description
+                        {% else %}
+                            Purpose / Description
+                        {% endif %}
+                    </label>
+                    <textarea class="form-control" name="details" rows="3"
+                              placeholder="Optional details about this transaction">{{ transaction.details|default:"" }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        {% if mode == 'INCOME' %}
+                            Payment Reference
+                        {% else %}
+                            Receipt / Invoice Number
+                        {% endif %}
+                    </label>
+                    <input type="text" class="form-control" name="reference"
+                           value="{{ transaction.reference|default:"" }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.transaction_time.id_for_label }}" class="form-label">
+                        Transaction Date & Time <span class="text-danger">*</span>
+                    </label>
+                    {{ form.transaction_time }}
+                    {% if form.transaction_time.errors %}
+                        <div class="text-danger small">{{ form.transaction_time.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label for="tags_input" class="form-label">Tags</label>
+                    <input type="text" class="form-control" name="tags_input" id="tags_input"
+                           value="{{ existing_tags }}"
+                           placeholder="Enter tags separated by commas">
+                    <small class="form-text text-muted">
+                        Existing: {% for tag in tags %}{{ tag }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                    </small>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'spending_tracker:transaction_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

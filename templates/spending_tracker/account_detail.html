@@ -78,7 +78,7 @@
             <div class="col-md-8">
                 <h2 class="mb-2">{{ account.name }}</h2>
                 <div class="balance-display">
-                    ${{ account.balance|floatformat:2 }}
+                    {{ currency_symbol }}{{ account.balance|floatformat:2 }}
                 </div>
                 <p class="mb-0 opacity-75">
                     <i class="fas fa-calendar"></i>
@@ -158,7 +158,7 @@
                         </div>
                         <div>
                             <div class="fw-bold">{{ transaction.get_mode_display }}</div>
-                            <small class="text-muted">{{ transaction.time|date:"M d" }}</small>
+                            <small class="text-muted">{{ transaction.transaction_time|date:"M d" }}</small>
                         </div>
                     </div>
                 </div>
@@ -186,7 +186,7 @@
                         {% if transaction.mode == 'income' %}+{% else %}-{% endif %}
                         {{ transaction.currency }} {{ transaction.amount|floatformat:2 }}
                     </div>
-                    <small class="text-muted">{{ transaction.time|time:"H:i" }}</small>
+                    <small class="text-muted">{{ transaction.transaction_time|time:"H:i" }}</small>
                 </div>
             </div>
         </div>

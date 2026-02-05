@@ -1,9 +1,12 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
+
+CURRENCY_SYMBOLS = {'GHS': '₵', 'USD': '$', 'EUR': '€', 'GBP': '£'}
 
 
 class UserPreferences(models.Model):
@@ -142,10 +145,31 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.get_mode_display()}: {self.currency} {self.amount} - {self.account.name}"
 
+    @property
+    def currency_symbol(self):
+        return CURRENCY_SYMBOLS.get(self.currency, self.currency)
+
+    @property
+    def is_editable(self):
+        return timezone.now() - self.created_at <= timedelta(hours=24)
+
     def save(self, *args, **kwargs):
         """Update account balance when transaction is saved"""
 
-        if not self.pk:
+        if self.pk:
+            # Editing existing transaction — reverse old impact, apply new
+            old = Transaction.objects.get(pk=self.pk)
+            # Reverse old balance impact
+            if old.mode == 'INCOME':
+                Account.make_expense(old.account.id, old.amount)
+            else:
+                Account.gain_income(old.account.id, old.amount)
+            # Apply new balance impact
+            if self.mode == 'INCOME':
+                Account.gain_income(self.account.id, self.amount)
+            else:
+                Account.make_expense(self.account.id, self.amount)
+        else:
             if self.mode == 'INCOME':
                 Account.gain_income(self.account.id, self.amount)
             else:  # expense
