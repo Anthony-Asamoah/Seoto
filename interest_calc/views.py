@@ -20,7 +20,9 @@ class Interest(View):
 
         context = {'principal': principal, 'rate': rate, 'time': time}
         try:
-            context['result'] = Calculator(principal, rate, time, kind).get_result()
+            calc = Calculator(principal, rate, time, kind)
+            context['result'] = calc.get_result()
+            context['chart_data'] = calc.get_chart_data()
             return render(request, 'interest/interest.html', context)
 
         except ValueError as e:

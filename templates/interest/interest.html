@@ -26,6 +26,9 @@
 {% endblock %}
 
 {% block content %}
+    {% if chart_data %}
+        {{ chart_data|json_script:"chart-data" }}
+    {% endif %}
 
     <div class="container">
         <div class="header">
@@ -53,6 +56,16 @@
                             <h5>{{ item }}</h5>
                         {% endfor %}
                     </div>
+                    {% if chart_data %}
+                    <div class="card mt-3 mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">Growth Over Time</h5>
+                            <div style="position: relative; height: 300px;">
+                                <canvas id="growthChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 {% endif %}
             </div>
             <div class="form">
@@ -82,4 +95,58 @@
         </div>
     </div>
 
+{% endblock %}
+
+{% block script %}
+{% if chart_data %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+    const labels = chartData.map(d => 'Period ' + d.period);
+    const principalData = chartData.map(d => d.principal);
+    const profitData = chartData.map(d => d.profit);
+
+    new Chart(document.getElementById('growthChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Principal',
+                    data: principalData,
+                    backgroundColor: 'rgba(52, 152, 219, 0.8)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Profit',
+                    data: profitData,
+                    backgroundColor: 'rgba(39, 174, 96, 0.8)',
+                    borderColor: 'rgba(39, 174, 96, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        footer: function(tooltipItems) {
+                            const idx = tooltipItems[0].dataIndex;
+                            const total = principalData[idx] + profitData[idx];
+                            return 'Total: ' + total.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
 {% endblock %}

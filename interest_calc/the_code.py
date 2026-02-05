@@ -21,6 +21,43 @@ class Calculator:
         }
         return function_map.get(self.kind)()
 
+    def get_chart_data(self):
+        chart_map = {
+            '1': self._chart_simple,
+            '2': self._chart_compound,
+            '3': self._chart_susu
+        }
+        return chart_map.get(self.kind)()
+
+    def _chart_simple(self):
+        data = []
+        for period in range(1, self.time + 1):
+            profit = self.principal * period * (self.rate / 100)
+            data.append({'period': period, 'principal': round(self.principal, 2), 'profit': round(profit, 2)})
+        return data
+
+    def _chart_compound(self):
+        data = []
+        for period in range(1, self.time + 1):
+            net = self.principal * (1 + self.rate / 100) ** period
+            profit = net - self.principal
+            data.append({'period': period, 'principal': round(self.principal, 2), 'profit': round(profit, 2)})
+        return data
+
+    def _chart_susu(self):
+        data = []
+        principal_sum = 0
+        net = 0
+        profit = 0
+        for period in range(1, self.time + 1):
+            principal_sum += self.principal
+            net += self.principal
+            profit += (net * (self.rate / 100))
+            net += profit
+            cumulative_profit = net - principal_sum
+            data.append({'period': period, 'principal': round(principal_sum, 2), 'profit': round(cumulative_profit, 2)})
+        return data
+
     def simple(self):
         profit = (self.principal * self.time) * (self.rate / 100)
         net = profit + self.principal
