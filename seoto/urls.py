@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.http import HttpResponse
 from django.urls import path, include
 from django.views.generic import TemplateView
 
@@ -13,7 +14,15 @@ from interest_calc.views import Interest
 from rhymes.views import Rhymes
 from throw_a_die.views import Die
 
+ROBOTS_TXT = """\
+User-agent: *
+Disallow: /admin/
+Disallow: /accounts/
+Allow: /
+"""
+
 urlpatterns = [
+      path('robots.txt', lambda request: HttpResponse(ROBOTS_TXT, content_type='text/plain')),
       path('', Home.as_view(), name='index'),
       path('admin/', admin.site.urls, name='admin'),
       path('accounts/', include('accounts.urls')),

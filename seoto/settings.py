@@ -64,6 +64,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'seoto.middleware.BotScannerMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -71,6 +72,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'seoto.middleware.RateLimitMiddleware',
 ]
 
 ROOT_URLCONF = 'seoto.urls'
@@ -120,6 +122,22 @@ DATABASES = {
 }
 
 DATABASES['default'] = DATABASES[Env.str('DEFAULT_DB')]
+
+# Cache configuration (used by rate limiting middleware)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'rate-limit-cache',
+    }
+}
+
+# Rate limit configuration: path -> {max_requests, window (seconds)}
+RATE_LIMIT_CONFIG = {
+    '/accounts/login/': {'max_requests': 5, 'window': 300},
+    '/accounts/register': {'max_requests': 5, 'window': 300},
+    '/accounts/password_reset/': {'max_requests': 3, 'window': 300},
+    '/author/@sean_or_tony/': {'max_requests': 3, 'window': 300},
+}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
