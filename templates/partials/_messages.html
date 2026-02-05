@@ -1,6 +1,16 @@
 {% if messages %}
+    <style>
+        .message-container {
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        .message-container.dismiss {
+            opacity: 0;
+        }
+    </style>
+
     {% for message in messages %}
-        <div class="container" id="message" style="transition: 1s ease">
+        <div class="container message-container">
             <div class="alert alert-{{ message.tags }} alert-dismissible text-center" role="alert">
                 <strong>
                     {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
@@ -10,18 +20,34 @@
                     {% endif %}
                 </strong>
                 {{ message }}
+                <button type="button" class="btn-close" aria-label="Close"></button>
             </div>
         </div>
     {% endfor %}
+
+    <script>
+        (function () {
+            function dismissMessage(el) {
+                el.classList.add('dismiss');
+                el.addEventListener('transitionend', function handler() {
+                    el.removeEventListener('transitionend', handler);
+                    el.remove();
+                });
+            }
+
+            document.querySelectorAll('.message-container').forEach(function (el) {
+                setTimeout(function () {
+                    dismissMessage(el);
+                }, 5000);
+
+                var closeBtn = el.querySelector('.btn-close');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        dismissMessage(el);
+                    });
+                }
+            });
+        })();
+    </script>
 {% endif %}
-
-<script>
-    message = document.getElementById('message')
-
-    setTimeout(function () {
-        message.style.opacity = '0';
-        setTimeout(function () {
-            message.style.display = 'none'
-        }, 1000)
-    }, 5000);
-</script>
