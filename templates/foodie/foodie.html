@@ -135,6 +135,39 @@
             margin: auto 10px;
             text-align: center;
         }
+
+        .dot {
+            height: 12px;
+            width: 12px;
+            margin: 0 4px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .dot.active {
+            background-color: #555;
+        }
+
+        .images {
+            position: relative;
+        }
+
+        .pause-indicator {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            color: rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+        }
+
+        .images.click-paused .pause-indicator {
+            display: block;
+        }
     </style>
 {% endblock %}
 
@@ -192,6 +225,7 @@
             {% endif %}
             {% if option_1 or option_2 %}
                 <div class="images">
+                    <div class="pause-indicator">▶</div>
 
                     <div class="option1 slide-item">
                         {% if option_1.img_1 %}
@@ -243,12 +277,12 @@
                         </div>
                     {% endif %}
                 </div>
+                <div style="text-align:center">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
             {% endif %}
-            <div style="text-align:center">
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-            </div>
         {% endif %}
     </div>
 {% endblock %}
@@ -257,31 +291,63 @@
     <script>
         {% if option_1 or option_2 %}
             let slideIndex = 0;
-            showSlides();
+            let timerId = null;
+            let clickPaused = false;
+            const imagesContainer = document.querySelector('.images');
 
             function showSlides() {
-                let i;
-                let slides = document.getElementsByClassName("slide-item");
-                let dots = document.getElementsByClassName("dot");
+                const slides = document.getElementsByClassName("slide-item");
+                const dots = document.getElementsByClassName("dot");
 
-                for (i = 0; i < slides.length; i++) {
+                for (let i = 0; i < slides.length; i++) {
                     slides[i].style.display = "none";
                 }
 
                 slideIndex++;
                 if (slideIndex > slides.length) {
-                    slideIndex = 1
+                    slideIndex = 1;
                 }
 
-                for (i = 0; i < dots.length; i++) {
+                for (let i = 0; i < dots.length; i++) {
                     dots[i].className = dots[i].className.replace(" active", "");
                 }
 
                 slides[slideIndex - 1].style.display = "flex";
                 dots[slideIndex - 1].className += " active";
-
-                setTimeout(showSlides, 3000);
             }
+
+            function startRotation() {
+                clearInterval(timerId);
+                timerId = setInterval(showSlides, 3000);
+            }
+
+            function stopRotation() {
+                clearInterval(timerId);
+            }
+
+            imagesContainer.addEventListener('mouseenter', function () {
+                stopRotation();
+            });
+
+            imagesContainer.addEventListener('mouseleave', function () {
+                if (!clickPaused) {
+                    startRotation();
+                }
+            });
+
+            imagesContainer.addEventListener('click', function () {
+                clickPaused = !clickPaused;
+                if (clickPaused) {
+                    stopRotation();
+                    imagesContainer.classList.add('click-paused');
+                } else {
+                    startRotation();
+                    imagesContainer.classList.remove('click-paused');
+                }
+            });
+
+            showSlides();
+            startRotation();
         {% endif %}
     </script>
 {% endblock %}
