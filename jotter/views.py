@@ -234,7 +234,7 @@ def create_todo_api(request):
 @login_required
 @require_http_methods(["POST"])
 def update_todo_api(request):
-    """API for background sync of todo edits. Uses client_timestamp for last-write-wins conflict resolution."""
+    """API for background sync of thetodoapp edits. Uses client_timestamp for last-write-wins conflict resolution."""
     try:
         data = json.loads(request.body)
         item = todo.objects.get(pk=data['id'], user=request.user)

@@ -296,7 +296,7 @@ async function syncTodos() {
   }
 }
 
-// Background sync helper for todo edits (offline-first with timestamp conflict resolution)
+// Background sync helper for thetodoapp edits (offline-first with timestamp conflict resolution)
 async function syncTodoEdits() {
   try {
     const db = await openIndexedDB();
