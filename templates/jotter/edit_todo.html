@@ -16,8 +16,17 @@
     </div>
     <div class="main">
         <div class="form">
+            {% if conflict %}
+            <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
+                <span>This reminder was updated from another session while you were editing.</span>
+                <button type="button" class="btn btn-sm btn-danger ms-2" onclick="jotterForceSave()">Save anyway</button>
+                <a href="{% url 'edit_todo' item.id %}" class="btn btn-sm btn-secondary ms-1">Discard &amp; see latest</a>
+            </div>
+            {% endif %}
             <form action="{% url 'edit_todo' item.id %}" method="post">
                 {% csrf_token %}
+                <input type="hidden" name="client_version" value="{{ item.updated_at.isoformat }}">
+                <input type="hidden" name="force" id="force-flag" value="0">
                 <div class="form-row">
                     <div class="form-group col-sm-2">
                         <label for="{{ form.priority.id_for_label }}">Priority</label>
@@ -29,8 +38,8 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="{{ form.notes.id_for_label }}">Notes</label>
-                    {{ form.notes }}
+                    <label>Notes</label>
+                    {% include 'partials/_rich_text_editor.html' with field_name="notes" field_id="id_notes" initial_content=notes_for_editor placeholder="Write your notes here..." %}
                 </div>
                 <div class="form-group">
                     <label for="{{ form.reminder.id_for_label }}">Reminder</label>
@@ -48,6 +57,35 @@
 
 {% block script %}
     <script>
+    // Offline form handler: queue edit in IndexedDB when device is offline
+    (function () {
+        var form = document.querySelector('form');
+        if (!form) return;
+        form.addEventListener('submit', function (e) {
+            if (!navigator.onLine) {
+                e.preventDefault();
+                var data = {
+                    id: {{ item.id }},
+                    title: document.getElementById('id_title').value,
+                    priority: document.getElementById('id_priority').value,
+                    notes: document.getElementById('id_notes').value,
+                    reminder: document.getElementById('reminder').value,
+                    client_timestamp: new Date().toISOString()
+                };
+                var csrf = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                if (window.SeotoPWA && window.SeotoPWA.queueForSync) {
+                    window.SeotoPWA.queueForSync('todo_edits', data, csrf);
+                }
+                alert('You are offline. Your changes will sync automatically when you reconnect.');
+                window.location.href = '{% url "jotter" %}';
+            }
+        });
+    })();
 
+    // Force-save: skip version check and resubmit
+    function jotterForceSave() {
+        document.getElementById('force-flag').value = '1';
+        document.querySelector('form').submit();
+    }
     </script>
 {% endblock %}

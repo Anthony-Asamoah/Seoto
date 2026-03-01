@@ -172,7 +172,7 @@
   // IndexedDB helpers
   function openIndexedDB() {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open('SeotoSyncDB', 1);
+      const request = indexedDB.open('SeotoSyncDB', 2);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);
@@ -187,6 +187,9 @@
         }
         if (!db.objectStoreNames.contains('transactions')) {
           db.createObjectStore('transactions', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains('todo_edits')) {
+          db.createObjectStore('todo_edits', { keyPath: 'id', autoIncrement: true });
         }
       };
     });

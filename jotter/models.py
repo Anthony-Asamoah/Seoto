@@ -1,3 +1,5 @@
+import re
+
 from django.db import models
 from django import forms
 from django.contrib.auth.models import User
@@ -68,11 +70,17 @@ class todo(models.Model):
 	isCompleted = models.BooleanField(default=False)
 	completed_on = models.DateTimeField(null=True, blank=True)
 	added_on = models.DateTimeField(default=timezone.now)
+	updated_at = models.DateTimeField(auto_now=True)
 
 	@property
 	def ellipses_notes(self) -> str:
 		if not self.notes: return ''
-		return f"{self.notes[:30]}{'...' if len(self.notes) > 30 else ''}"
+		plain = re.sub(r'<[^>]+>', '', self.notes).strip()
+		return f"{plain[:30]}{'...' if len(plain) > 30 else ''}"
+
+	@property
+	def notes_html(self) -> str:
+		return self.notes or ''
 
 	class Meta:
 		verbose_name_plural = "todo"
