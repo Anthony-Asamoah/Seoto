@@ -1,10 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import permission_required, login_required
+from django.db.models import Q
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_http_methods
 
 from . import the_code
-from .forms import MealOrderForm
+from .forms import MealOrderForm, UserMealForm
 from .models import meal, userPreference, MealOrder
 from .serializer import serialize_mealtime, serialize_all
 from utils.paginator import apply_pagination
@@ -67,7 +69,9 @@ def foodie_config(request, mealtime=None):
         return redirect(redirect_url)
 
     search_query = request.GET.get('search', '').strip()
-    meals_qs = meal.objects.all().order_by('name')
+    meals_qs = meal.objects.filter(
+        Q(created_by=None) | Q(created_by=request.user) | Q(is_public=True)
+    ).order_by('name')
     if search_query:
         meals_qs = meals_qs.filter(name__icontains=search_query)
 
@@ -133,6 +137,55 @@ def order_edit(request, pk: int):
         form = MealOrderForm(instance=order)
 
     return render(request, 'foodie/order_form.html', {'form': form, 'is_edit': True, 'order': order})
+
+
+# User meal management
+
+@login_required
+def my_meals(request):
+    user_meals = meal.objects.filter(created_by=request.user).order_by('name')
+    return render(request, 'foodie/my_meals.html', {'user_meals': user_meals})
+
+
+@login_required
+def meal_create(request):
+    if request.method == 'POST':
+        form = UserMealForm(request.POST, request.FILES)
+        if form.is_valid():
+            new_meal = form.save(commit=False)
+            new_meal.created_by = request.user
+            new_meal.save()
+            messages.success(request, f'"{new_meal.name}" added to your foods.')
+            return redirect('foodie_my_meals')
+    else:
+        form = UserMealForm()
+    return render(request, 'foodie/meal_form.html', {'form': form, 'is_edit': False})
+
+
+@login_required
+def meal_edit(request, pk):
+    m = get_object_or_404(meal, pk=pk, created_by=request.user)
+    if request.method == 'POST':
+        form = UserMealForm(request.POST, request.FILES, instance=m)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'"{m.name}" updated.')
+            return redirect('foodie_my_meals')
+    else:
+        form = UserMealForm(instance=m)
+    return render(request, 'foodie/meal_form.html', {'form': form, 'is_edit': True, 'meal_obj': m})
+
+
+@login_required
+@require_http_methods(["POST"])
+def meal_delete(request, pk):
+    m = get_object_or_404(meal, pk=pk, created_by=request.user)
+    name = m.name
+    if m.main_img:
+        m.main_img.delete(save=False)
+    m.delete()
+    messages.success(request, f'"{name}" deleted.')
+    return redirect('foodie_my_meals')
 
 
 # REST API

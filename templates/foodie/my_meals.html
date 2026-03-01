@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}| My Foods{% endblock %}
+
+{% block style %}
+    <style>
+        .my-meals-table img { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; }
+        .badge-public { background-color: #198754; }
+        .badge-private { background-color: #6c757d; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="header container">
+            <h1>My Foods</h1>
+            <hr />
+            <p class="text-muted">Foods you've added. Public foods are visible to all users in the config page.</p>
+            <div class="mb-3">
+                <a class="btn btn-primary btn-sm" href="{% url 'foodie_meal_create' %}">+ Add food</a>
+                <a class="btn btn-outline-secondary btn-sm ms-2" href="{% url 'foodie_config' %}">Back to config</a>
+            </div>
+        </div>
+
+        {% if user_meals %}
+            <table class="table my-meals-table">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Visibility</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in user_meals %}
+                        <tr>
+                            <td>
+                                {% if m.main_img %}
+                                    <img src="{{ m.main_img.url }}" alt="{{ m.name }}">
+                                {% else %}
+                                    <span class="text-muted small">No image</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ m.name }}</td>
+                            <td>{{ m.description|truncatewords_html:12|safe }}</td>
+                            <td>
+                                {% if m.is_public %}
+                                    <span class="badge badge-public">Public</span>
+                                {% else %}
+                                    <span class="badge badge-private">Private</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'foodie_meal_edit' m.id %}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                <form method="post" action="{% url 'foodie_meal_delete' m.id %}" class="d-inline"
+                                      onsubmit="return confirm('Delete {{ m.name }}?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-muted">You haven't added any foods yet. <a href="{% url 'foodie_meal_create' %}">Add your first one.</a></p>
+        {% endif %}
+    </div>
+{% endblock %}

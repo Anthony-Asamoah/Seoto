@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}| {% if is_edit %}Edit{% else %}Add{% endif %} Food{% endblock %}
+
+{% block style %}
+    <style>
+        .img-preview { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; }
+        .section-label { font-weight: 600; color: #555; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 12px; }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="header container">
+            <h1>{% if is_edit %}Edit "{{ meal_obj.name }}"{% else %}Add a food{% endif %}</h1>
+            <hr />
+        </div>
+
+        <div style="max-width: 680px; margin: 0 auto;">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                {# — Basic info — #}
+                <p class="section-label">Basic info</p>
+
+                <div class="mb-3">
+                    <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Description <span class="text-muted small">(optional)</span></label>
+                    {% include 'partials/_rich_text_editor.html' with field_name="description" field_id="id_description" initial_content=meal_obj.description placeholder="Describe this food..." %}
+                    {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="{{ form.cooking_duration.id_for_label }}">Cooking duration <span class="text-muted small">(optional, e.g. "30 mins")</span></label>
+                    {{ form.cooking_duration }}
+                    {% if form.cooking_duration.errors %}<div class="text-danger small mt-1">{{ form.cooking_duration.errors }}</div>{% endif %}
+                </div>
+
+                {# — Nutrition — #}
+                <p class="section-label mt-4">Nutrition <span class="text-muted fw-normal small">(all optional)</span></p>
+
+                <div class="mb-3">
+                    <label class="form-label">Ingredients</label>
+                    {% include 'partials/_rich_text_editor.html' with field_name="ingredients" field_id="id_ingredients" initial_content=meal_obj.ingredients placeholder="List the ingredients..." %}
+                    {% if form.ingredients.errors %}<div class="text-danger small mt-1">{{ form.ingredients.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Nutrients</label>
+                    {% include 'partials/_rich_text_editor.html' with field_name="nutrients" field_id="id_nutrients" initial_content=meal_obj.nutrients placeholder="List the nutrients..." %}
+                    {% if form.nutrients.errors %}<div class="text-danger small mt-1">{{ form.nutrients.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Benefits</label>
+                    {% include 'partials/_rich_text_editor.html' with field_name="benefits" field_id="id_benefits" initial_content=meal_obj.benefits placeholder="List the health benefits..." %}
+                    {% if form.benefits.errors %}<div class="text-danger small mt-1">{{ form.benefits.errors }}</div>{% endif %}
+                </div>
+
+                {# — Images — #}
+                <p class="section-label mt-4">Images <span class="text-muted fw-normal small">(all optional)</span></p>
+
+                <div class="row g-3 mb-3">
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.main_img.id_for_label }}">Main image</label>
+                        {% if is_edit and meal_obj.main_img %}
+                            <div class="mb-1"><img src="{{ meal_obj.main_img.url }}" alt="main" class="img-preview"></div>
+                        {% endif %}
+                        {{ form.main_img }}
+                        {% if form.main_img.errors %}<div class="text-danger small mt-1">{{ form.main_img.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.img_1.id_for_label }}">Image 2</label>
+                        {% if is_edit and meal_obj.img_1 %}
+                            <div class="mb-1"><img src="{{ meal_obj.img_1.url }}" alt="img 2" class="img-preview"></div>
+                        {% endif %}
+                        {{ form.img_1 }}
+                        {% if form.img_1.errors %}<div class="text-danger small mt-1">{{ form.img_1.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.img_2.id_for_label }}">Image 3</label>
+                        {% if is_edit and meal_obj.img_2 %}
+                            <div class="mb-1"><img src="{{ meal_obj.img_2.url }}" alt="img 3" class="img-preview"></div>
+                        {% endif %}
+                        {{ form.img_2 }}
+                        {% if form.img_2.errors %}<div class="text-danger small mt-1">{{ form.img_2.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label" for="{{ form.img_3.id_for_label }}">Image 4</label>
+                        {% if is_edit and meal_obj.img_3 %}
+                            <div class="mb-1"><img src="{{ meal_obj.img_3.url }}" alt="img 4" class="img-preview"></div>
+                        {% endif %}
+                        {{ form.img_3 }}
+                        {% if form.img_3.errors %}<div class="text-danger small mt-1">{{ form.img_3.errors }}</div>{% endif %}
+                    </div>
+
+                </div>
+
+                {# — Visibility — #}
+                <p class="section-label mt-4">Visibility</p>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        {{ form.is_public }}
+                        <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                            Make this food visible to all users
+                        </label>
+                    </div>
+                    {% if form.is_public.errors %}<div class="text-danger small mt-1">{{ form.is_public.errors }}</div>{% endif %}
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">{% if is_edit %}Save changes{% else %}Add food{% endif %}</button>
+                    <a class="btn btn-secondary ms-2" href="{% url 'foodie_my_meals' %}">Cancel</a>
+                </div>
+
+            </form>
+        </div>
+    </div>
+{% endblock %}

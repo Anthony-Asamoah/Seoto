@@ -33,6 +33,7 @@
                    href="{% url 'foodie_config_time' 'extra' %}">Extra</a>
                 <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'fancy' %}active{% endif %}"
                    href="{% url 'foodie_config_time' 'fancy' %}">Fancy</a>
+                <a class="btn btn-outline-primary btn-sm ms-3" href="{% url 'foodie_my_meals' %}">My Foods</a>
             </div>
         </div>
 
@@ -61,6 +62,9 @@
                                    {% if m.id in selected_ids %}checked{% endif %}>
                             <label for="meal_{{ m.id }}">{{ m.name }}</label>
                             {% if m.description %}<small class="text-muted">{{ m.description|truncatechars:80 }}</small>{% endif %}
+                            {% if m.created_by_id == request.user.id %}
+                                <a href="{% url 'foodie_meal_edit' m.id %}" class="ms-2 small text-muted">edit</a>
+                            {% endif %}
                         </div>
                     {% empty %}
                         <p>No meals found.</p>

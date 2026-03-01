@@ -1,5 +1,20 @@
+import os
+from functools import partial
+
 from django.conf import settings
+from django.core.files.uploadedfile import UploadedFile
 from django.db import models
+from django.utils.text import slugify
+
+_IMG_FIELDS = ['main_img', 'img_1', 'img_2', 'img_3']
+
+
+def meal_image_path(instance, filename, slot=1):
+    ext = os.path.splitext(filename)[1].lower()
+    if instance.created_by_id:
+        slug = slugify(instance.name) or 'meal'
+        return f'food/user_{instance.created_by_id}_{slug}_{slot}{ext}'
+    return f'food/{filename}'
 
 
 class meal(models.Model):
@@ -10,10 +25,29 @@ class meal(models.Model):
     benefits = models.TextField(blank=True)
     cooking_duration = models.CharField(max_length=40, blank=True)
 
-    main_img = models.ImageField(upload_to=f'food', blank=True)
-    img_1 = models.ImageField(upload_to=f'food', blank=True)
-    img_2 = models.ImageField(upload_to=f'food', blank=True)
-    img_3 = models.ImageField(upload_to=f'food', blank=True)
+    main_img = models.ImageField(upload_to=meal_image_path, blank=True)
+    img_1 = models.ImageField(upload_to=partial(meal_image_path, slot=2), blank=True)
+    img_2 = models.ImageField(upload_to=partial(meal_image_path, slot=3), blank=True)
+    img_3 = models.ImageField(upload_to=partial(meal_image_path, slot=4), blank=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='created_meals'
+    )
+    is_public = models.BooleanField(default=True)
+
+    def save(self, *args, **kwargs):
+        if self.pk and self.created_by_id:
+            try:
+                old = meal.objects.get(pk=self.pk)
+                for field_name in _IMG_FIELDS:
+                    old_file = getattr(old, field_name)
+                    new_file = getattr(self, field_name)
+                    if old_file and isinstance(new_file, UploadedFile):
+                        old_file.delete(save=False)
+            except meal.DoesNotExist:
+                pass
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name}"
