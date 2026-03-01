@@ -34,7 +34,7 @@
                 {% endif %}
 
                 <div class="post-content markdown-content">
-                    {{ post.content_html|safe|truncatewords_html:50 }}
+                    {{ post.content|safe|truncatewords_html:50 }}
                     <a href="{% url 'post-detail' post.pk %}" class="btn btn-outline-primary">Read More</a>
                 </div>
 

@@ -24,7 +24,7 @@
                 <tbody>
                 {% for group in groups %}
                     <tr>
-                        <td><strong>{{ group.label }}</strong></td>
+                        <td><strong>{{ group.label|title }}</strong></td>
                         <td>@{{ group.author.username }}</td>
                         <td>{{ group.users.count }} user{{ group.users.count|pluralize }}</td>
                         <td>{{ group.post_count }} post{{ group.post_count|pluralize }}</td>

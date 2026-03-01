@@ -4,16 +4,15 @@ from django.template.loader import render_to_string
 
 
 def user_directory_file_path(instance, filename, prefix: str = None, suffix: str = None):
-    path = f"{instance.user.username}/{filename}"
+    from datetime import datetime
+    parts = []
     if prefix:
-        if not prefix.endswith('/'):
-            prefix = '/' + prefix
-            path = prefix + path
+        parts.append(datetime.now().strftime(prefix).strip('/'))
+    parts.append(instance.user.username)
     if suffix:
-        if not suffix.startswith('/'):
-            suffix = '/' + suffix
-            path = path + suffix
-    return path
+        parts.append(suffix.strip('/'))
+    parts.append(filename)
+    return '/'.join(parts)
 
 
 def trigger_user_onboarded_email(user_obj):

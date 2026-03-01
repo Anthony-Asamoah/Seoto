@@ -5,7 +5,6 @@
 {% block window %}
     <div class="header">
         <h2>Create a Post</h2>
-        <p>Write using Markdown for rich formatting.</p>
         <hr />
     </div>
 
@@ -26,9 +25,6 @@
             {% if form.content.errors %}
                 <div class="error">{{ form.content.errors }}</div>
             {% endif %}
-            <div class="help-text">
-                {{ form.content.help_text|safe }}
-            </div>
         </div>
 
         <hr>
@@ -141,4 +137,8 @@
     </script>
 
     <a href="{% url 'blog-explore' %}" style="display: block; margin-top: 20px;">&larr; Back to Posts</a>
+{% endblock %}
+
+{% block script %}
+{{ form.media }}
 {% endblock %}

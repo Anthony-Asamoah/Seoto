@@ -30,8 +30,20 @@
                 <span class="post-privacy private">Private</span>
             {% endif %}
         </h2>
-        <div class="post-meta">
-            Posted by {{ post.author }} on {{ post.date_posted|date:"F d, Y" }}
+        <div class="post-meta d-flex align-items-center gap-2">
+            {% with profile=post.author.user_profile %}
+                {% if profile.picture_thumbnail %}
+                    <img src="{{ profile.picture_thumbnail.url }}"
+                         alt="{{ post.author.username }}"
+                         class="blog-author-avatar">
+                {% else %}
+                    <span class="blog-author-avatar blog-author-initials">{{ post.author.username|first|upper }}</span>
+                {% endif %}
+            {% endwith %}
+            <div>
+                <a href="{% url 'author-posts' post.author.username %}">{{ post.author }}</a>
+                <small class="d-block">{{ post.date_posted|date:"F d, Y" }}</small>
+            </div>
         </div>
 
         <!-- Tags -->
@@ -45,8 +57,8 @@
         {% endif %}
         <hr/>
 
-        <div class="post-content markdown-content">
-            {{ post.content_html|safe }}
+        <div class="post-content rich-text-content">
+            {{ post.content|safe }}
         </div>
         <hr/>
 
@@ -80,6 +92,15 @@
             </ul>
         </div>
     {% endif %}
+
+    <style>
+        .rich-text-content img {
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 1rem 0;
+        }
+    </style>
 
     <a href="{% url 'blog-explore' %}" style="display: block; margin-top: 20px;">&larr; Back to Posts</a>
 

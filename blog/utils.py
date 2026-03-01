@@ -1,6 +1,49 @@
 import logging
 
 from django.conf import settings
+
+
+def pluralize_label(text):
+    """Ensure a label (word or phrase) is in plural lowercase form.
+    Only the last word of the phrase is pluralized.
+    """
+    if not text:
+        return text
+    words = text.lower().split()
+    last = words[-1]
+    # Already ends with 's' but not 'ss' — likely already plural
+    if last.endswith('s') and not last.endswith('ss'):
+        return ' '.join(words)
+    # Ends with 'ss', 'sh', 'ch', 'x', 'z' → add 'es'
+    if last.endswith(('ss', 'sh', 'ch', 'x', 'z')):
+        words[-1] = last + 'es'
+    # Consonant + 'y' → replace 'y' with 'ies'
+    elif last.endswith('y') and len(last) > 1 and last[-2] not in 'aeiou':
+        words[-1] = last[:-1] + 'ies'
+    else:
+        words[-1] = last + 's'
+    return ' '.join(words)
+
+
+def singularize_label(text):
+    """Ensure a label (word or phrase) is in singular lowercase form.
+    Only the last word of the phrase is singularized.
+    """
+    if not text:
+        return text
+    words = text.lower().split()
+    last = words[-1]
+    # 'ies' → 'y' (technologies → technology)
+    if last.endswith('ies') and len(last) > 3:
+        words[-1] = last[:-3] + 'y'
+    # 'sses'/'xes'/'ches'/'shes' → remove 'es' (classes→class, boxes→box, churches→church)
+    elif last.endswith(('sses', 'xes', 'ches', 'shes')):
+        words[-1] = last[:-2]
+    # ends in 's' but not 'ss' → remove 's'
+    elif last.endswith('s') and not last.endswith('ss'):
+        words[-1] = last[:-1]
+    # already singular — leave as-is
+    return ' '.join(words)
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import reverse

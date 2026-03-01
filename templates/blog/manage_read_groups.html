@@ -36,7 +36,7 @@
                 <tbody>
                 {% for group in groups %}
                     <tr>
-                        <td><strong>{{ group.label }}</strong></td>
+                        <td><strong>{{ group.label|title }}</strong></td>
                         <td>{{ group.users.count }} user{{ group.users.count|pluralize }}</td>
                         <td>
                             <a href="{% url 'edit-read-group' group.id %}" class="btn btn-primary btn-sm">Edit</a>
