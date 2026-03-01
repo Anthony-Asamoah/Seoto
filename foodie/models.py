@@ -26,6 +26,7 @@ class meal(models.Model):
     cooking_duration = models.CharField(max_length=40, blank=True)
 
     main_img = models.ImageField(upload_to=meal_image_path, blank=True)
+    main_img_thumbnail = models.ImageField(upload_to='food/thumbs', blank=True)
     img_1 = models.ImageField(upload_to=partial(meal_image_path, slot=2), blank=True)
     img_2 = models.ImageField(upload_to=partial(meal_image_path, slot=3), blank=True)
     img_3 = models.ImageField(upload_to=partial(meal_image_path, slot=4), blank=True)
@@ -37,6 +38,9 @@ class meal(models.Model):
     is_public = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
+        new_main_img = isinstance(self.main_img, UploadedFile)
+        first_save = not self.pk
+
         if self.pk and self.created_by_id:
             try:
                 old = meal.objects.get(pk=self.pk)
@@ -47,7 +51,60 @@ class meal(models.Model):
                         old_file.delete(save=False)
             except meal.DoesNotExist:
                 pass
+
         super().save(*args, **kwargs)
+
+        if new_main_img or first_save:
+            self._generate_thumbnail()
+
+    def _generate_thumbnail(self):
+        from io import BytesIO
+        from PIL import Image
+        from django.core.files.base import ContentFile
+
+        if not self.main_img:
+            if self.main_img_thumbnail:
+                self.main_img_thumbnail.delete(save=False)
+                type(self).objects.filter(pk=self.pk).update(main_img_thumbnail='')
+            return
+
+        try:
+            self.main_img.open('rb')
+            img = Image.open(self.main_img)
+            img.load()
+
+            w, h = img.size
+            d = min(w, h)
+            img = img.crop(((w - d) // 2, (h - d) // 2, (w + d) // 2, (h + d) // 2))
+            img = img.resize((80, 80), Image.LANCZOS)
+
+            if img.mode in ('RGBA', 'P', 'LA'):
+                img = img.convert('RGB')
+
+            buf = BytesIO()
+            img.save(buf, format='JPEG', quality=85, optimize=True)
+            buf.seek(0)
+
+            slug = slugify(self.name) or str(self.pk)
+            if self.created_by_id:
+                thumb_name = f'food/thumbs/user_{self.created_by_id}_{slug}_thumb.jpg'
+            else:
+                thumb_name = f'food/thumbs/{slug}_thumb.jpg'
+
+            if self.main_img_thumbnail:
+                self.main_img_thumbnail.delete(save=False)
+
+            self.main_img_thumbnail.save(thumb_name, ContentFile(buf.getvalue()), save=False)
+            type(self).objects.filter(pk=self.pk).update(
+                main_img_thumbnail=self.main_img_thumbnail.name
+            )
+        except Exception:
+            pass
+        finally:
+            try:
+                self.main_img.close()
+            except Exception:
+                pass
 
     def __str__(self):
         return f"{self.name}"

@@ -11,6 +11,12 @@
         .meal-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
         .meal-item label { margin-left: 8px; flex: 1; }
         .subtitle { color: #777; }
+        .food-icon { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+        .food-icon-placeholder {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: #e9e9e9; font-size: 22px;
+        }
     </style>
 {% endblock %}
 
@@ -58,6 +64,11 @@
 
                     {% for m in meals %}
                         <div class="meal-item">
+                            {% if m.main_img_thumbnail %}
+                                <img src="{{ m.main_img_thumbnail.url }}" alt="" class="food-icon me-2">
+                            {% else %}
+                                <span class="food-icon-placeholder me-2">🍽️</span>
+                            {% endif %}
                             <input type="checkbox" id="meal_{{ m.id }}" name="selected_meals" value="{{ m.id }}"
                                    {% if m.id in selected_ids %}checked{% endif %}>
                             <label for="meal_{{ m.id }}">{{ m.name }}</label>

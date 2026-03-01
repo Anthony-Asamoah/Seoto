@@ -6,9 +6,14 @@
 
 {% block style %}
     <style>
-        .my-meals-table img { width: 56px; height: 56px; object-fit: cover; border-radius: 4px; }
         .badge-public { background-color: #198754; }
         .badge-private { background-color: #6c757d; }
+        .food-icon { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+        .food-icon-placeholder {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 44px; height: 44px; border-radius: 50%;
+            background: #e9e9e9; font-size: 22px;
+        }
     </style>
 {% endblock %}
 
@@ -39,10 +44,12 @@
                     {% for m in user_meals %}
                         <tr>
                             <td>
-                                {% if m.main_img %}
-                                    <img src="{{ m.main_img.url }}" alt="{{ m.name }}">
+                                {% if m.main_img_thumbnail %}
+                                    <img src="{{ m.main_img_thumbnail.url }}" alt="{{ m.name }}" class="food-icon">
+                                {% elif m.main_img %}
+                                    <img src="{{ m.main_img.url }}" alt="{{ m.name }}" class="food-icon">
                                 {% else %}
-                                    <span class="text-muted small">No image</span>
+                                    <span class="food-icon-placeholder">🍽️</span>
                                 {% endif %}
                             </td>
                             <td>{{ m.name }}</td>
