@@ -71,7 +71,7 @@ def foodie_config(request, mealtime=None):
     if search_query:
         meals_qs = meals_qs.filter(name__icontains=search_query)
 
-    page_obj = apply_pagination(meals_qs, request.GET.get('page'), 20)
+    page_obj = apply_pagination(meals_qs, request.GET.get('page'), 13)
     selected_ids = list(
         userPreference.objects.filter(user=request.user, **{field: True}).values_list('meal_id', flat=True)
     )
