@@ -1,13 +1,17 @@
 from django.contrib import admin
 
+from utils.admin import RichTextAdminMixin
 from .models import Post, PostTags, PostReadGroup, PostComment
 
 
-class PostAdmin(admin.ModelAdmin):
+class PostAdmin(RichTextAdminMixin, admin.ModelAdmin):
+    richtext_fields = ('content',)
+    richtext_config = 'blog'
+
     list_display = ('title', 'author', 'date_posted', 'is_public')
     list_filter = ('is_public', 'date_posted', 'author', 'tags')
     search_fields = ('title', 'content')
-    filter_horizontal = ('tags', 'allowed_groups', 'allowed_users')
+    autocomplete_fields = ('tags', 'allowed_groups', 'allowed_users')
 
     fieldsets = (
         (None, {

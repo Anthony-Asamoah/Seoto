@@ -10,6 +10,7 @@ urlpatterns = [
     path('post/<int:post_pk>/comment/<int:comment_pk>/toggle/', views.toggle_comment_visibility, name='toggle-comment-visibility'),
     path('post/new/', views.create_post, name='post-create'),
     path('post/<int:pk>/edit/', views.edit_post, name='post-edit'),
+    path('post/<int:pk>/delete/', views.delete_post, name='post-delete'),
     path('tags/', views.manage_tags, name='manage-tags'),
     path('tags/<int:tag_id>/', views.tag_posts, name='tag-posts'),
     path('author/<str:username>/', views.author_posts, name='author-posts'),
@@ -20,4 +21,6 @@ urlpatterns = [
     path('read-groups/<int:group_id>/leave/', views.leave_read_group, name='leave-read-group'),
     # Background Sync API
     path('api/create/', views.create_post_api, name='create-post-api'),
+    # Media upload
+    path('upload-image/', views.upload_image, name='blog-upload-image'),
 ]

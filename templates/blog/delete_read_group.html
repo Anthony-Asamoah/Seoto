@@ -11,7 +11,7 @@
     <div class="confirmation-box">
         <h3>Are you sure you want to delete this read group?</h3>
         <div class="group-info">
-            <p><strong>Group Name:</strong> {{ group.label }}</p>
+            <p><strong>Group Name:</strong> {{ group.label|title }}</p>
             <p><strong>Members:</strong> {{ group.users.count }} user{{ group.users.count|pluralize }}</p>
         </div>
 

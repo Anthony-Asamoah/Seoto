@@ -1,0 +1,106 @@
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+
+<style>
+    /* Isolate the editor from any page-level color/theme overrides */
+    #{{ field_id }}-editor .ql-toolbar {
+        background: #f8f8f8;
+        border-bottom: 1px solid #ccc;
+    }
+    #{{ field_id }}-editor .ql-container {
+        background: #ffffff;
+    }
+    #{{ field_id }}-editor .ql-editor {
+        color: #212529;
+        background: #ffffff;
+        min-height: 300px;
+    }
+    /* Ensure all nested content inherits the editor's dark colour */
+    #{{ field_id }}-editor .ql-editor p,
+    #{{ field_id }}-editor .ql-editor li,
+    #{{ field_id }}-editor .ql-editor td,
+    #{{ field_id }}-editor .ql-editor th,
+    #{{ field_id }}-editor .ql-editor blockquote {
+        color: inherit;
+    }
+    #{{ field_id }}-editor .ql-editor img {
+        width: 100%;
+        height: auto;
+        display: block;
+        margin: 1rem 0;
+    }
+</style>
+
+{# Pass initial content via data attribute — avoids JS-string escaping issues #}
+<div id="{{ field_id }}-editor"
+     {% if initial_content %}data-content="{{ initial_content }}"{% endif %}></div>
+<textarea name="{{ field_name }}" id="{{ field_id }}" class="d-none"></textarea>
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+(function () {
+    var quill = new Quill('#{{ field_id }}-editor', {
+        theme: 'snow',
+        placeholder: '{{ placeholder }}',
+        modules: {
+            toolbar: {
+                container: [
+                    [{ 'header': [1, 2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    ['blockquote', 'code-block'],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                    ['link', 'image'],
+                    ['clean']
+                ],
+                handlers: {
+                    image: function () {
+                        var input = document.createElement('input');
+                        input.setAttribute('type', 'file');
+                        input.setAttribute('accept', 'image/*');
+                        input.click();
+                        input.onchange = function () {
+                            var file = input.files[0];
+                            if (!file) return;
+                            var formData = new FormData();
+                            formData.append('image', file);
+                            var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                            fetch('{{ upload_url }}', {
+                                method: 'POST',
+                                headers: { 'X-CSRFToken': csrfToken },
+                                body: formData
+                            })
+                            .then(function (res) { return res.json(); })
+                            .then(function (data) {
+                                if (data.url) {
+                                    var range = quill.getSelection(true);
+                                    quill.insertEmbed(range.index, 'image', data.url);
+                                    quill.setSelection(range.index + 1);
+                                }
+                            })
+                            .catch(function (err) {
+                                console.error('Image upload failed:', err);
+                            });
+                        };
+                    }
+                }
+            }
+        }
+    });
+
+    // Load initial content from data attribute (browser decodes HTML entities automatically).
+    // dangerouslyPasteHTML runs Quill's HTML converters so lists, tables, etc. are
+    // translated into proper Quill Delta format rather than landing as raw DOM nodes.
+    var editorEl = document.getElementById('{{ field_id }}-editor');
+    var initialContent = editorEl.getAttribute('data-content');
+    if (initialContent) {
+        quill.clipboard.dangerouslyPasteHTML(initialContent);
+    }
+
+    var form = editorEl.closest('form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            var textarea = document.getElementById('{{ field_id }}');
+            textarea.value = quill.getText().trim() === '' ? '' : quill.root.innerHTML;
+        });
+    }
+})();
+</script>

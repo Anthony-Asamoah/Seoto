@@ -1,6 +1,15 @@
 from django import forms
+from django.forms import ModelMultipleChoiceField
+from django_ckeditor_5.widgets import CKEditor5Widget
 
-from .models import Post, PostTags
+from .models import Post, PostTags, PostReadGroup
+from .utils import pluralize_label, singularize_label
+
+
+class TitleCaseGroupChoiceField(ModelMultipleChoiceField):
+    """ModelMultipleChoiceField that displays group labels in title case."""
+    def label_from_instance(self, obj):
+        return obj.label.title()
 
 
 class PostForm(forms.ModelForm):
@@ -22,35 +31,21 @@ class PostForm(forms.ModelForm):
         help_text='Enter usernames separated by commas. Invalid usernames will be ignored.'
     )
 
+    allowed_groups = TitleCaseGroupChoiceField(
+        queryset=PostReadGroup.objects.all(),
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'group-select'}),
+        help_text="Select groups that can view this post if it's not public.",
+    )
+
     class Meta:
         model = Post
         fields = ['title', 'content', 'is_public', 'allowed_groups']
         widgets = {
-            'content': forms.Textarea(attrs={
-                'class': 'markdown-editor',
-                'rows': 15,
-                'placeholder': 'Write your post content using Markdown...'
-            }),
-            'allowed_groups': forms.SelectMultiple(attrs={
-                'class': 'group-select',
-            }),
+            'content': CKEditor5Widget(config_name='blog'),
         }
         help_texts = {
-            'content': '''
-                <p>Use Markdown for formatting:</p>
-                <ul>
-                    <li><strong>Bold</strong>: **text** or __text__</li>
-                    <li><em>Italic</em>: *text* or _text_</li>
-                    <li><strong>Headers</strong>: # Header 1, ## Header 2, etc.</li>
-                    <li><strong>Links</strong>: [Link Text](URL)</li>
-                    <li><strong>Images</strong>: ![Alt Text](URL)</li>
-                    <li><strong>Lists</strong>: * item or 1. item</li>
-                    <li><strong>Blockquotes</strong>: > quote</li>
-                    <li><strong>Code</strong>: `inline code` or ```code block```</li>
-                </ul>
-            ''',
             'is_public': 'If unchecked, only you and users/groups you specify below can view this post.',
-            'allowed_groups': 'Select groups that can view this post if it\'s not public.',
         }
 
     def __init__(self, *args, **kwargs):
@@ -84,8 +79,8 @@ class PostForm(forms.ModelForm):
         instance.tags.clear()
 
         if tags_input:
-            # Split by comma, strip whitespace, convert to lowercase, and filter empty strings
-            tag_labels = [tag.strip().lower() for tag in tags_input.split(',') if tag.strip()]
+            # Split by comma, strip whitespace, convert to singular lowercase, and filter empty strings
+            tag_labels = [singularize_label(tag.strip()) for tag in tags_input.split(',') if tag.strip()]
 
             for tag_label in tag_labels:
                 # Get or create the tag

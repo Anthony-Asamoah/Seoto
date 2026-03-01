@@ -1,10 +1,11 @@
 import logging
 import json
 
-import markdown
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.db.models import Q
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
@@ -17,7 +18,8 @@ from .utils import (
     trigger_author_comment_notification,
     notify_user_added_to_group,
     notify_user_removed_from_group,
-    notify_owner_user_left_group
+    notify_owner_user_left_group,
+    pluralize_label,
 )
 
 RESULTS_PER_PAGE = 5
@@ -56,13 +58,7 @@ def explore(request):
     posts = posts.order_by('-date_posted')
     page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
 
-    # Convert markdown to HTML for post previews
     for post in page_obj:
-        post.content_html = markdown.markdown(
-            post.content,
-            extensions=['extra', 'codehilite']
-        )
-        # Get tags for display
         post.tag_list = post.tags.all()
 
     # Get all tags for the filter dropdown
@@ -98,12 +94,6 @@ def post_detail(request, pk):
 
         if not has_access:
             return HttpResponseForbidden("You don't have permission to view this post.")
-    # Convert markdown to HTML
-    post.content_html = markdown.markdown(
-        post.content,
-        extensions=['extra', 'codehilite']
-    )
-
     # Get tags for display
     post.tag_list = post.tags.all()
 
@@ -210,6 +200,17 @@ def edit_post(request, pk):
 
 
 @login_required
+@require_http_methods(["POST"])
+def delete_post(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if post.author != request.user and not request.user.is_staff:
+        return HttpResponseForbidden("You don't have permission to delete this post.")
+    post.delete()
+    messages.success(request, 'Post deleted successfully.')
+    return redirect('blog-explore')
+
+
+@login_required
 def manage_tags(request):
     if not request.user.is_authenticated: return HttpResponseForbidden(
         "You need to log in first"
@@ -245,16 +246,11 @@ def tag_posts(request, tag_id):
     else:
         posts = Post.objects.filter(tags=tag, is_public=True).order_by('-date_posted')
 
-    # Convert markdown to HTML for post previews
     page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
 
     tag.increment_hits(ids=[tag.id])
 
     for post in page_obj:
-        post.content_html = markdown.markdown(
-            post.content,
-            extensions=['extra', 'codehilite']
-        )
         post.tag_list = post.tags.all()
 
     context = {
@@ -280,13 +276,8 @@ def author_posts(request, username):
     else:
         posts = Post.objects.filter(author=author, is_public=True).order_by('-date_posted')
 
-    # Convert markdown to HTML for post previews
     page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
     for post in page_obj:
-        post.content_html = markdown.markdown(
-            post.content,
-            extensions=['extra', 'codehilite']
-        )
         post.tag_list = post.tags.all()
 
     context = {
@@ -300,7 +291,7 @@ def author_posts(request, username):
 def manage_read_groups(request):
     """Manage read groups - list and create"""
     if request.method == 'POST':
-        group_label = request.POST.get('group_label', '').strip()
+        group_label = pluralize_label(request.POST.get('group_label', '').strip())
         if group_label:
             # Check if user already has a group with this name
             existing = PostReadGroup.objects.filter(author=request.user, label=group_label).exists()
@@ -357,7 +348,7 @@ def edit_read_group(request, group_id):
                     logging.warning(f'Failed to send notification to {user.username}')
 
         elif action == 'rename':
-            new_label = request.POST.get('group_label', '').strip()
+            new_label = pluralize_label(request.POST.get('group_label', '').strip())
             if new_label and new_label != group.label:
                 # Check if user already has another group with this name
                 existing = PostReadGroup.objects.filter(
@@ -476,3 +467,27 @@ def create_post_api(request):
         return JsonResponse({
             'error': str(e)
         }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def upload_image(request):
+    """Handle image uploads from the rich text editor"""
+    image = request.FILES.get('image')
+    if not image:
+        return JsonResponse({'error': 'No image provided'}, status=400)
+
+    # Validate it's a real image using Pillow
+    try:
+        from PIL import Image as PILImage
+        img = PILImage.open(image)
+        img.verify()
+        image.seek(0)
+    except Exception:
+        return JsonResponse({'error': 'Invalid image file'}, status=400)
+
+    filename = f'blog/images/{request.user.id}_{image.name}'
+    path = default_storage.save(filename, ContentFile(image.read()))
+    url = default_storage.url(path)
+
+    return JsonResponse({'url': url})

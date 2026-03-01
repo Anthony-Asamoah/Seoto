@@ -233,8 +233,21 @@ CKEDITOR_5_CONFIGS = {
             'undo', 'redo',
         ],
     },
+    'blog': {
+        'toolbar': [
+            'heading', '|',
+            'bold', 'italic', 'underline', 'strikethrough', '|',
+            'bulletedList', 'numberedList', '|',
+            'blockQuote', 'codeBlock', '|',
+            'link', 'insertImage', '|',
+            'undo', 'redo',
+        ],
+        'image': {
+            'toolbar': ['imageTextAlternative', 'imageStyle:inline', 'imageStyle:block'],
+        },
+    },
 }
-CKEDITOR_5_FILE_UPLOAD_PERMISSION = 'staff'
+CKEDITOR_5_FILE_UPLOAD_PERMISSION = 'authenticated'
 
 # Messages Config
 MESSAGE_TAGS = {

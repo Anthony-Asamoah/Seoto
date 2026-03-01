@@ -1,26 +1,19 @@
 from django.contrib import admin
 from django.utils.html import format_html, mark_safe, strip_tags
-from django_ckeditor_5.widgets import CKEditor5Widget
 
+from utils.admin import RichTextAdminMixin
 from .models import meal, userPreference, MealOrder
-
-_RICHTEXT_FIELDS = ('description', 'ingredients', 'nutrients', 'benefits')
 
 
 @admin.register(meal)
-class mealAdmin(admin.ModelAdmin):
+class mealAdmin(RichTextAdminMixin, admin.ModelAdmin):
+    richtext_fields = ('description', 'ingredients', 'nutrients', 'benefits')
+
     list_display = ['meal_icon', 'name', 'description_preview', 'is_public', 'created_by', 'cooking_duration']
     list_display_links = ['name']
     search_fields = ['name', 'description', 'ingredients']
     list_filter = ['is_public', 'created_by', 'cooking_duration']
     list_per_page = 20
-
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        for field_name in _RICHTEXT_FIELDS:
-            if field_name in form.base_fields:
-                form.base_fields[field_name].widget = CKEditor5Widget(config_name='default')
-        return form
 
     @admin.display(description='')
     def meal_icon(self, obj):
