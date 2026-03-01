@@ -199,7 +199,7 @@ if MEDIA_STORAGE == 'AWS':
         'staticfiles': {
             'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
             'OPTIONS': {
-                'location': AWS_S3_BUCKET_PREFIX,
+                'location': f'{AWS_S3_BUCKET_PREFIX}/staticfiles',
             },
         },
     }
