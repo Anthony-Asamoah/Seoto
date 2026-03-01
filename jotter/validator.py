@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 
 from django.contrib import messages
-from django.shortcuts import redirect, HttpResponseRedirect
+from django.shortcuts import redirect
 
 
 def todo_form_validation(request, form):

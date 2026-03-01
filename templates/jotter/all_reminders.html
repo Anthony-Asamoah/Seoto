@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}| All Reminders{% endblock %}
+
+{% block style %}
+    {% include 'partials/_form_style_bootstrap.html' %}
+    <style>
+        .notes-preview {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 0.9rem;
+        }
+        .notes-preview p { margin: 0; }
+        .notes-preview ul, .notes-preview ol { padding-left: 1.2rem; margin: 0; }
+
+        .filter-btn.active {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="header text-center mb-4">
+            <h2>All Reminders</h2>
+            <p class="text-muted">{{ todo_list|length }} item{{ todo_list|length|pluralize }} found</p>
+        </div>
+
+        <div class="main">
+            <form method="get" class="mb-3 d-flex gap-2">
+                <input type="text" name="search" class="form-control" placeholder="Search reminders..." value="{{ search }}">
+                {% if priority %}<input type="hidden" name="priority" value="{{ priority }}">{% endif %}
+                <button type="submit" class="btn btn-primary">Search</button>
+                {% if search or priority %}
+                    <a href="{% url 'all_reminders' %}" class="btn btn-outline-secondary">Clear</a>
+                {% endif %}
+            </form>
+
+            <div class="mb-3 d-flex gap-2 flex-wrap">
+                <a href="{% url 'all_reminders' %}{% if search %}?search={{ search }}{% endif %}"
+                   class="btn btn-sm btn-outline-secondary filter-btn {% if not priority %}active{% endif %}">All</a>
+                {% for p in priority_choices %}
+                    <a href="?{% if search %}search={{ search }}&{% endif %}priority={{ p }}"
+                       class="btn btn-sm btn-outline-secondary filter-btn {% if priority == p %}active{% endif %}">{{ p }}</a>
+                {% endfor %}
+            </div>
+
+            {% if todo_list %}
+                <div class="list-group">
+                    {% for item in todo_list %}
+                        <a href="{% url 'edit_todo' item.id %}"
+                           class="list-group-item list-group-item-action flex-column align-items-start">
+                            <div class="d-flex justify-content-between">
+                                <h5 class="mb-1">{{ item.title|title }}</h5>
+                                <small class="text-muted">{{ item.priority }} priority</small>
+                            </div>
+                            {% if item.notes %}
+                                <div class="notes-preview mb-1">{{ item.notes_html|safe }}</div>
+                            {% endif %}
+                            {% if item.reminder %}
+                                <small class="text-muted">Reminder: {{ item.reminder }}</small>
+                            {% else %}
+                                <small class="text-muted">No reminder set.</small>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted">No reminders found.</p>
+            {% endif %}
+
+            <div class="mt-3 d-flex gap-2">
+                <a href="{% url 'jotter' %}" class="btn btn-outline-secondary btn-sm">Back to Jotter</a>
+                <a href="{% url 'new_to_do' %}" class="btn btn-success btn-sm">Add New Reminder</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}<script></script>{% endblock %}

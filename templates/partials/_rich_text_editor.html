@@ -1,0 +1,41 @@
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+
+<div id="{{ field_id }}-editor" style="min-height: 150px; background: white;"></div>
+<textarea name="{{ field_name }}" id="{{ field_id }}" class="d-none"></textarea>
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+(function () {
+    var quill = new Quill('#{{ field_id }}-editor', {
+        theme: 'snow',
+        placeholder: '{{ placeholder }}',
+        modules: {
+            toolbar: [
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                ['clean']
+            ]
+        }
+    });
+
+    // Expose instance so external scripts (e.g. live-update WS handler) can update content
+    window.jotterEditorInstances = window.jotterEditorInstances || {};
+    window.jotterEditorInstances['{{ field_id }}'] = quill;
+
+    {% if initial_content %}
+    quill.root.innerHTML = "{{ initial_content|escapejs }}";
+    {% endif %}
+
+    var form = document.getElementById('{{ field_id }}-editor').closest('form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            var textarea = document.getElementById('{{ field_id }}');
+            if (quill.getText().trim() === '') {
+                textarea.value = '';
+            } else {
+                textarea.value = quill.root.innerHTML;
+            }
+        });
+    }
+})();
+</script>

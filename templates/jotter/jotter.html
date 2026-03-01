@@ -29,6 +29,17 @@
         .todo-items, .tracker-item {
             overflow: hidden;
         }
+
+        .notes-preview {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        .notes-preview p { margin: 0; }
+        .notes-preview ul, .notes-preview ol { padding-left: 1.2rem; margin: 0; }
     </style>
     {% include 'partials/_form_style_bootstrap.html' %}
 {% endblock %}
@@ -83,7 +94,7 @@
                                     </div>
                                 </div>
                                 {% if item.notes %}
-                                    <p class="mb-1">{{ item.ellipses_notes }}</p>
+                                    <div class="notes-preview mb-1">{{ item.notes_html|safe }}</div>
                                 {% endif %}
                                 {% if item.reminder %}
                                     <small class="text-muted">Reminder on: {{ item.reminder }}</small>
@@ -93,6 +104,11 @@
                             </a>
                         {% endfor %}
                     </div>
+                    {% if todo_extra %}
+                        <a href="{% url 'all_reminders' %}" class="btn btn-outline-secondary btn-sm mt-2">
+                            View more ({{ todo_extra }} more)
+                        </a>
+                    {% endif %}
                 {% else %}
                     <div class="row">
                         <div class="col-md-6">
@@ -152,6 +168,11 @@
                             </a>
                         {% endfor %}
                     </div>
+                    {% if tracker_extra %}
+                        <a href="{% url 'all_trackers' %}" class="btn btn-outline-secondary btn-sm mt-2">
+                            View more ({{ tracker_extra }} more)
+                        </a>
+                    {% endif %}
                 {% else %}
                     <div class="row">
                         <div class="col-md-6">
@@ -172,8 +193,4 @@
     </div>
 {% endblock %}
 
-{% block script %}
-    <script>
-
-    </script>
-{% endblock %}
+{% block script %}<script></script>{% endblock %}

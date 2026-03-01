@@ -7,10 +7,11 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.views import View
 from django.views.decorators.http import require_http_methods
 
-from .models import todo, tracker, todo_form, tracker_form
+from .models import todo, tracker, todo_form, tracker_form, tracker_category_choices
 from .validator import todo_form_validation, tracker_form_validation
 
 
@@ -18,13 +19,18 @@ class JotterView(View):
     @staticmethod
     @login_required
     def home(request):
-        todo_list = todo.objects.all().filter(
+        todo_qs = todo.objects.filter(
             user=request.user, isCompleted=False
         ).order_by('-added_on', 'priority')
-        tracker_list = tracker.objects.all().filter(
+        tracker_qs = tracker.objects.filter(
             user=request.user, isCompleted=False
         ).order_by('-added_on', 'category')
-        context = {'todo_list': todo_list, 'tracker_list': tracker_list}
+        context = {
+            'todo_list': todo_qs[:3],
+            'todo_extra': max(0, todo_qs.count() - 3),
+            'tracker_list': tracker_qs[:3],
+            'tracker_extra': max(0, tracker_qs.count() - 3),
+        }
         return render(request, 'jotter/jotter.html', context)
 
     @staticmethod
@@ -58,26 +64,41 @@ class JotterView(View):
     @login_required
     def edit_todo(request, item_id: int):
         item = todo.objects.get(pk=item_id)
-        default_form = todo_form(initial={
-            'title': item.title,
-            'priority': item.priority,
-            'notes': item.notes
-        })
         if item.reminder:
             formatted_reminder = datetime.strftime(item.reminder, '%Y-%m-%dT%H:%M:%S')
             logging.info(formatted_reminder)
         else:
             formatted_reminder = False
-        context = {
-            'form': default_form,
-            'item': item,
-            'reminder': formatted_reminder
-        }
 
         if request.method == 'POST':
+            force = request.POST.get('force', '0') == '1'
+            client_version = request.POST.get('client_version', '')
+            if client_version and not force:
+                if client_version != item.updated_at.isoformat():
+                    # Version conflict: re-render with user's submitted data intact
+                    form = todo_form(request.POST)
+                    context = {
+                        'form': form,
+                        'item': item,
+                        'reminder': request.POST.get('reminder', ''),
+                        'notes_for_editor': request.POST.get('notes', item.notes or ''),
+                        'conflict': True,
+                    }
+                    return render(request, 'jotter/edit_todo.html', context)
             form = todo_form(request.POST, instance=item)
             return todo_form_validation(request, form)
 
+        default_form = todo_form(initial={
+            'title': item.title,
+            'priority': item.priority,
+            'notes': item.notes
+        })
+        context = {
+            'form': default_form,
+            'item': item,
+            'reminder': formatted_reminder,
+            'notes_for_editor': item.notes,
+        }
         return render(request, 'jotter/edit_todo.html', context)
 
     @staticmethod
@@ -123,6 +144,54 @@ class JotterView(View):
         messages.success(request, 'Item Completed')
         return redirect('jotter')
 
+    @staticmethod
+    @login_required
+    def all_reminders(request):
+        qs = todo.objects.filter(
+            user=request.user, isCompleted=False
+        ).order_by('-added_on', 'priority')
+
+        search = request.GET.get('search', '').strip()
+        priority = request.GET.get('priority', '').strip()
+
+        if search:
+            qs = qs.filter(title__icontains=search)
+        if priority and priority in ['High', 'Medium', 'Low']:
+            qs = qs.filter(priority=priority)
+
+        context = {
+            'todo_list': qs,
+            'search': search,
+            'priority': priority,
+            'priority_choices': ['High', 'Medium', 'Low'],
+        }
+        return render(request, 'jotter/all_reminders.html', context)
+
+    @staticmethod
+    @login_required
+    def all_trackers(request):
+        qs = tracker.objects.filter(
+            user=request.user, isCompleted=False
+        ).order_by('-added_on', 'category')
+
+        search = request.GET.get('search', '').strip()
+        category = request.GET.get('category', '').strip()
+
+        if search:
+            qs = qs.filter(title__icontains=search)
+
+        valid_categories = [c[0] for c in tracker_category_choices]
+        if category and category in valid_categories:
+            qs = qs.filter(category=category)
+
+        context = {
+            'tracker_list': qs,
+            'search': search,
+            'category': category,
+            'category_choices': valid_categories,
+        }
+        return render(request, 'jotter/all_trackers.html', context)
+
 
 @login_required
 @require_http_methods(["POST"])
@@ -160,3 +229,43 @@ def create_todo_api(request):
         return JsonResponse({
             'error': str(e)
         }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def update_todo_api(request):
+    """API for background sync of thetodoapp edits. Uses client_timestamp for last-write-wins conflict resolution."""
+    try:
+        data = json.loads(request.body)
+        item = todo.objects.get(pk=data['id'], user=request.user)
+
+        client_ts_str = data.get('client_timestamp')
+        if client_ts_str:
+            client_ts = parse_datetime(client_ts_str)
+            if client_ts and item.updated_at and client_ts < item.updated_at:
+                return JsonResponse({
+                    'success': True,
+                    'saved': False,
+                    'reason': 'conflict',
+                    'server_timestamp': item.updated_at.isoformat()
+                })
+
+        item.title = data.get('title', item.title)
+        item.priority = data.get('priority', item.priority)
+        item.notes = data.get('notes', item.notes)
+        reminder = data.get('reminder')
+        if reminder:
+            item.reminder = datetime.strptime(reminder, '%Y-%m-%dT%H:%M')
+        item.save()
+
+        return JsonResponse({
+            'success': True,
+            'saved': True,
+            'server_timestamp': item.updated_at.isoformat()
+        })
+
+    except todo.DoesNotExist:
+        return JsonResponse({'error': 'Not found'}, status=404)
+    except Exception as e:
+        logging.error(f'Failed to update todo via API: {e}')
+        return JsonResponse({'error': str(e)}, status=500)

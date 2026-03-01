@@ -229,6 +229,8 @@ self.addEventListener('sync', (event) => {
     event.waitUntil(syncPosts());
   } else if (event.tag === 'sync-todos') {
     event.waitUntil(syncTodos());
+  } else if (event.tag === 'sync-todo-edits') {
+    event.waitUntil(syncTodoEdits());
   } else if (event.tag === 'sync-transactions') {
     event.waitUntil(syncTransactions());
   }
@@ -294,6 +296,44 @@ async function syncTodos() {
   }
 }
 
+// Background sync helper for thetodoapp edits (offline-first with timestamp conflict resolution)
+async function syncTodoEdits() {
+  try {
+    const db = await openIndexedDB();
+    const pendingEdits = await getPendingItems(db, 'todo_edits');
+
+    for (let edit of pendingEdits) {
+      try {
+        const response = await fetch('/jotter/api/todo/update/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': edit.csrfToken
+          },
+          body: JSON.stringify(edit.data)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            // Remove from queue whether saved or rejected (conflict) — no retry benefit
+            await removePendingItem(db, 'todo_edits', edit.id);
+            if (!result.saved) {
+              console.log('[SW] Todo edit rejected (conflict, server version is newer):', edit.id);
+            } else {
+              console.log('[SW] Todo edit synced successfully:', edit.id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[SW] Failed to sync todo edit:', edit.id, error);
+      }
+    }
+  } catch (error) {
+    console.error('[SW] Todo edit background sync failed:', error);
+  }
+}
+
 // Background sync helper for spending tracker transactions
 async function syncTransactions() {
   try {
@@ -327,7 +367,7 @@ async function syncTransactions() {
 // IndexedDB helpers
 function openIndexedDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('SeotoSyncDB', 1);
+    const request = indexedDB.open('SeotoSyncDB', 2);
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
@@ -342,6 +382,9 @@ function openIndexedDB() {
       }
       if (!db.objectStoreNames.contains('transactions')) {
         db.createObjectStore('transactions', { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains('todo_edits')) {
+        db.createObjectStore('todo_edits', { keyPath: 'id', autoIncrement: true });
       }
     };
   });
