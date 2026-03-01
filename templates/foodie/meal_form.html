@@ -8,17 +8,58 @@
     <style>
         .img-preview { width: 100px; height: 100px; object-fit: cover; border-radius: 4px; }
         .section-label { font-weight: 600; color: #555; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 12px; }
+
+        {% if is_edit %}
+        body { background: #111; }
+
+        .meal-bg-grid {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            z-index: -2;
+        }
+        .meal-bg-grid img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .meal-bg-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.62);
+            z-index: -1;
+        }
+        .meal-form-card {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 14px;
+            padding: 2rem;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+            margin-bottom: 3rem;
+        }
+        .meal-form-card .section-label { color: #444; }
+        {% endif %}
     </style>
 {% endblock %}
 
 {% block content %}
-    <div class="container">
-        <div class="header container">
-            <h1>{% if is_edit %}Edit "{{ meal_obj.name }}"{% else %}Add a food{% endif %}</h1>
-            <hr />
+    {% if is_edit %}
+        <div class="meal-bg-grid">
+            {% if meal_obj.main_img %}<img src="{{ meal_obj.main_img.url }}" alt="">{% endif %}
+            {% if meal_obj.img_1 %}<img src="{{ meal_obj.img_1.url }}" alt="">{% endif %}
+            {% if meal_obj.img_2 %}<img src="{{ meal_obj.img_2.url }}" alt="">{% endif %}
+            {% if meal_obj.img_3 %}<img src="{{ meal_obj.img_3.url }}" alt="">{% endif %}
         </div>
+        <div class="meal-bg-overlay"></div>
+    {% endif %}
 
-        <div style="max-width: 680px; margin: 0 auto;">
+    <div class="container">
+        <div class="{% if is_edit %}meal-form-card{% endif %}" style="max-width: 680px; margin: 2rem auto 0;">
+            <h1 class="mb-0">{% if is_edit %}Edit "{{ meal_obj.name }}"{% else %}Add a food{% endif %}</h1>
+            <hr />
+
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
 
@@ -106,6 +147,21 @@
                     </div>
 
                 </div>
+
+                {# — Mealtimes — #}
+                {% if is_edit %}
+                <p class="section-label mt-4">Mealtimes</p>
+                <div class="d-flex flex-wrap gap-3 mb-3">
+                    {% for mt, field in mealtime_fields.items %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="mealtimes"
+                                   value="{{ mt }}" id="mt_{{ mt }}"
+                                   {% if mt in active_mealtimes %}checked{% endif %}>
+                            <label class="form-check-label" for="mt_{{ mt }}">{{ mt|capfirst }}</label>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
 
                 {# — Visibility — #}
                 <p class="section-label mt-4">Visibility</p>

@@ -61,7 +61,7 @@
                             <input type="checkbox" id="meal_{{ m.id }}" name="selected_meals" value="{{ m.id }}"
                                    {% if m.id in selected_ids %}checked{% endif %}>
                             <label for="meal_{{ m.id }}">{{ m.name }}</label>
-                            {% if m.description %}<small class="text-muted">{{ m.description|truncatechars:80 }}</small>{% endif %}
+                            {% if m.description %}<small class="text-muted">{{ m.description|truncatewords_html:12|safe }}</small>{% endif %}
                             {% if m.created_by_id == request.user.id %}
                                 <a href="{% url 'foodie_meal_edit' m.id %}" class="ms-2 small text-muted">edit</a>
                             {% endif %}

@@ -165,15 +165,29 @@ def meal_create(request):
 @login_required
 def meal_edit(request, pk):
     m = get_object_or_404(meal, pk=pk, created_by=request.user)
+    pref, _ = userPreference.objects.get_or_create(user=request.user, meal=m, defaults={'isAvailable': True})
+
     if request.method == 'POST':
         form = UserMealForm(request.POST, request.FILES, instance=m)
         if form.is_valid():
             form.save()
+            selected_times = request.POST.getlist('mealtimes')
+            for mt, field in MEALTIME_FIELDS.items():
+                setattr(pref, field, mt in selected_times)
+            pref.save(update_fields=list(MEALTIME_FIELDS.values()))
             messages.success(request, f'"{m.name}" updated.')
             return redirect('foodie_my_meals')
     else:
         form = UserMealForm(instance=m)
-    return render(request, 'foodie/meal_form.html', {'form': form, 'is_edit': True, 'meal_obj': m})
+
+    active_mealtimes = [mt for mt, field in MEALTIME_FIELDS.items() if getattr(pref, field)]
+    return render(request, 'foodie/meal_form.html', {
+        'form': form,
+        'is_edit': True,
+        'meal_obj': m,
+        'mealtime_fields': MEALTIME_FIELDS,
+        'active_mealtimes': active_mealtimes,
+    })
 
 
 @login_required
