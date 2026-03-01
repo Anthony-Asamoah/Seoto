@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Message, Stack, Education, JobExperience, Intro, IntroLinks
+from .models import Message, Stack, Education, JobExperience, Intro, IntroLinks, Hobby
 
 
 class IntroLinksInline(admin.TabularInline):
@@ -55,6 +55,14 @@ class StackAdmin(admin.ModelAdmin):
     list_display_links = ['label']
     list_editable = ['is_active']
     ordering = ['id']
+
+
+@admin.register(Hobby)
+class HobbyAdmin(admin.ModelAdmin):
+    list_display = ("description", "order", "hidden", "id")
+    list_display_links = ("description", "order", "id")
+    list_editable = ("hidden",)
+    ordering = ("id",)
 
 
 @admin.register(Message)

@@ -117,6 +117,19 @@ class JobExperience(models.Model):
         ordering = ["order"]
 
 
+class Hobby(models.Model):
+    description = models.CharField(max_length=500)
+    order = models.PositiveSmallIntegerField(default=1, blank=True)
+    hidden = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name_plural = "Hobbies"
+        ordering = ["order"]
+
+    def __str__(self):
+        return self.description
+
+
 class Stack(models.Model):
     is_active = models.BooleanField(default=False)
     label = models.CharField(max_length=100, default=f'Developer Stack')
