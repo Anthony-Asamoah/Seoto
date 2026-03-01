@@ -6,7 +6,7 @@
 
 {% block style %}
     <style>
-        .nav-links a { margin-right: 8px; }
+        .nav-links a { margin-right: 8px; margin-bottom: 6px; }
         .meal-list { max-width: 900px; margin: 0 auto; }
         .meal-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
         .meal-item label { margin-left: 8px; flex: 1; }
@@ -21,32 +21,91 @@
             <hr />
             <p class="subtitle">Select which meals should appear for each time of day.</p>
             <div class="nav-links">
-                <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_config_time' 'breakfast' %}">Breakfast</a>
-                <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_config_time' 'brunch' %}">Brunch</a>
-                <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_config_time' 'lunch' %}">Lunch</a>
-                <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_config_time' 'dinner' %}">Dinner</a>
-                <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_config_time' 'extra' %}">Extra</a>
+                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'breakfast' %}active{% endif %}"
+                   href="{% url 'foodie_config_time' 'breakfast' %}">Breakfast</a>
+                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'brunch' %}active{% endif %}"
+                   href="{% url 'foodie_config_time' 'brunch' %}">Brunch</a>
+                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'lunch' %}active{% endif %}"
+                   href="{% url 'foodie_config_time' 'lunch' %}">Lunch</a>
+                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'dinner' %}active{% endif %}"
+                   href="{% url 'foodie_config_time' 'dinner' %}">Dinner</a>
+                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'extra' %}active{% endif %}"
+                   href="{% url 'foodie_config_time' 'extra' %}">Extra</a>
+                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'fancy' %}active{% endif %}"
+                   href="{% url 'foodie_config_time' 'fancy' %}">Fancy</a>
             </div>
         </div>
 
         {% if mealtime %}
             <div class="meal-list">
+                <form method="GET" class="mb-3 d-flex gap-2">
+                    <input type="text" name="search" class="form-control"
+                           placeholder="Search meals..." value="{{ search_query }}">
+                    <button class="btn btn-outline-secondary" type="submit">Search</button>
+                    {% if search_query %}
+                        <a href="?" class="btn btn-outline-danger">Clear</a>
+                    {% endif %}
+                </form>
+
                 <form method="post">
                     {% csrf_token %}
                     {% for m in meals %}
+                        <input type="hidden" name="page_meal_ids" value="{{ m.id }}">
+                    {% endfor %}
+                    <input type="hidden" name="redirect_qs"
+                           value="{% if search_query %}search={{ search_query }}&{% endif %}page={{ meals.number }}">
+
+                    {% for m in meals %}
                         <div class="meal-item">
-                            <input type="checkbox" id="meal_{{ m.id }}" name="selected_meals" value="{{ m.id }}" {% if m.id in selected_ids %}checked{% endif %}>
+                            <input type="checkbox" id="meal_{{ m.id }}" name="selected_meals" value="{{ m.id }}"
+                                   {% if m.id in selected_ids %}checked{% endif %}>
                             <label for="meal_{{ m.id }}">{{ m.name }}</label>
                             {% if m.description %}<small class="text-muted">{{ m.description|truncatechars:80 }}</small>{% endif %}
                         </div>
                     {% empty %}
-                        <p>No meals found. Please add meals in admin.</p>
+                        <p>No meals found.</p>
                     {% endfor %}
+
                     <div class="mt-3">
                         <button class="btn btn-primary" type="submit">Save</button>
                         <a class="btn btn-secondary" href="{% url 'foodie' %}">Back</a>
                     </div>
                 </form>
+
+                {% if meals.has_other_pages %}
+                    <nav class="mt-3" aria-label="Meal pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if meals.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?page={{ meals.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                            {% endif %}
+
+                            {% for num in meals.paginator.page_range %}
+                                {% if meals.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% elif num > meals.number|add:'-3' and num < meals.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if meals.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                       href="?page={{ meals.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
             </div>
         {% else %}
             <div class="container">
@@ -54,10 +113,4 @@
             </div>
         {% endif %}
     </div>
-{% endblock %}
-
-{% block script %}
-    <script>
-        // no-op
-    </script>
 {% endblock %}

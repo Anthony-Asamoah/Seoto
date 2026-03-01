@@ -7,6 +7,7 @@ from . import the_code
 from .forms import MealOrderForm
 from .models import meal, userPreference, MealOrder
 from .serializer import serialize_mealtime, serialize_all
+from utils.paginator import apply_pagination
 
 MEALTIME_FIELDS = {
     'breakfast': 'isBreakfast',
@@ -14,6 +15,7 @@ MEALTIME_FIELDS = {
     'lunch': 'isLunch',
     'dinner': 'isDinner',
     'extra': 'isExtra',
+    'fancy': 'isFancy',
 }
 
 
@@ -42,35 +44,48 @@ def foodie_config(request, mealtime=None):
 
     if request.method == 'POST':
         selected_ids = request.POST.getlist('selected_meals')
+        page_meal_ids = request.POST.getlist('page_meal_ids')
         try:
             selected_ids = [int(x) for x in selected_ids]
+            page_meal_ids = [int(x) for x in page_meal_ids]
         except ValueError:
             selected_ids = []
+            page_meal_ids = []
 
-        # Update user preferences for this mealtime
-        meals_qs = meal.objects.all()
-        for m in meals_qs:
+        # Only update meals that were visible on the submitted page
+        for m in meal.objects.filter(id__in=page_meal_ids):
             pref, _created = userPreference.objects.get_or_create(
                 user=request.user, meal=m, defaults={'isAvailable': True}
             )
             setattr(pref, field, m.id in selected_ids)
             pref.save(update_fields=[field])
 
-        # After saving, redirect to the same page to avoid resubmission
-        return redirect('foodie_config_time', mealtime=mt)
+        redirect_url = f'/foodie/config/{mt}'
+        qs = request.POST.get('redirect_qs', '')
+        if qs:
+            redirect_url += f'?{qs}'
+        return redirect(redirect_url)
 
+    search_query = request.GET.get('search', '').strip()
     meals_qs = meal.objects.all().order_by('name')
-    # Build list of ids currently selected for this mealtime for current user
+    if search_query:
+        meals_qs = meals_qs.filter(name__icontains=search_query)
+
+    page_obj = apply_pagination(meals_qs, request.GET.get('page'), 20)
     selected_ids = list(
         userPreference.objects.filter(user=request.user, **{field: True}).values_list('meal_id', flat=True)
     )
+    query_params = {'search': search_query} if search_query else {}
+
     context = {
         'mealtime': mt,
         'mealtime_readable': mt.capitalize(),
         'field': field,
-        'meals': meals_qs,
+        'meals': page_obj,
         'selected_ids': selected_ids,
         'mealtime_fields': MEALTIME_FIELDS,
+        'search_query': search_query,
+        'query_params': query_params,
     }
     return render(request, 'foodie/foodie_config.html', context)
 
