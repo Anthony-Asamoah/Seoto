@@ -50,7 +50,9 @@ urlpatterns = [
 if settings.IS_THEME_ENABLED:
     urlpatterns.append(path('theme/', include('theme.urls')))
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Only serve media locally; S3 handles its own URLs
+if settings.MEDIA_STORAGE == 'LOCAL':
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler404 = error404
 handler500 = error500

@@ -176,6 +176,35 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_ROOT = path.join(BASE_DIR, 'media')
 MEDIA_URL = 'media/'
 
+# Storage backend: LOCAL | AWS
+MEDIA_STORAGE = Env.str('MEDIA_STORAGE', default='LOCAL')
+
+if MEDIA_STORAGE == 'AWS':
+    AWS_ACCESS_KEY_ID = Env.str('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = Env.str('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = Env.str('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_REGION_NAME = Env.str('AWS_S3_REGION_NAME', default='us-east-1')
+    AWS_S3_BUCKET_PREFIX = Env.str('AWS_S3_BUCKET_PREFIX', default='')
+    AWS_DEFAULT_ACL = 'private'
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_QUERYSTRING_AUTH = True
+
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+            'OPTIONS': {
+                'location': AWS_S3_BUCKET_PREFIX,
+            },
+        },
+        'staticfiles': {
+            'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
+            'OPTIONS': {
+                'location': AWS_S3_BUCKET_PREFIX,
+            },
+        },
+    }
+    MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/{AWS_S3_BUCKET_PREFIX}/'
+
 # Email config
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = Env.str('EMAIL_HOST')
