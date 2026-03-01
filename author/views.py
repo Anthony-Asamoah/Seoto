@@ -6,7 +6,7 @@ from django.views import View
 
 from .forms import ContactForm
 from .models import (
-    Stack, Intro, Education, JobExperience
+    Stack, Intro, Education, JobExperience, Hobby
 )
 
 
@@ -16,6 +16,7 @@ def get_context(request):
         'education': Education.objects.filter(hidden=False) or None,
         'job_history': JobExperience.objects.filter(hidden=False) or None,
         'stack': Stack.objects.filter(is_active=True).first() or None,
+        'hobbies': Hobby.objects.filter(hidden=False),
     }
 
 

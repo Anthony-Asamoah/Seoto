@@ -304,11 +304,11 @@
         <div class="hobbies" id="hobbies">
             <h2>A few hobbies are;</h2>
             <ul>
-                <li>Sports: Long Tennis, Soccer and swimming.</li>
-                <li>Reading random articles on Quora</li>
-                <li>Learning and reading about electronics, auto_mechanics, engines, systems, etc.</li>
-                <li>Photography</li>
-                <li>Playing the guitar</li>
+                {% for hobby in hobbies %}
+                    <li>{{ hobby.description }}</li>
+                {% empty %}
+                    <li>No hobbies listed yet.</li>
+                {% endfor %}
             </ul>
         </div>
 
