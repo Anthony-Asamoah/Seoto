@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     # Third-party
     'daphne',
     'channels',
+    'django_ckeditor_5',
 
     # My apps
     'accounts',
@@ -220,6 +221,20 @@ IS_THEME_ENABLED = Env.bool('IS_THEME_ENABLED', default=False)
 # Accounts config
 LOGIN_REDIRECT_URL = 'index'
 LOGOUT_REDIRECT_URL = 'index'
+
+# CKEditor 5
+CKEDITOR_5_CONFIGS = {
+    'default': {
+        'toolbar': [
+            'heading', '|',
+            'bold', 'italic', 'underline', 'strikethrough', '|',
+            'bulletedList', 'numberedList', '|',
+            'blockQuote', 'link', '|',
+            'undo', 'redo',
+        ],
+    },
+}
+CKEDITOR_5_FILE_UPLOAD_PERMISSION = 'staff'
 
 # Messages Config
 MESSAGE_TAGS = {

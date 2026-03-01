@@ -1,5 +1,20 @@
+import os
+from functools import partial
+
 from django.conf import settings
+from django.core.files.uploadedfile import UploadedFile
 from django.db import models
+from django.utils.text import slugify
+
+_IMG_FIELDS = ['main_img', 'img_1', 'img_2', 'img_3']
+
+
+def meal_image_path(instance, filename, slot=1):
+    ext = os.path.splitext(filename)[1].lower()
+    if instance.created_by_id:
+        slug = slugify(instance.name) or 'meal'
+        return f'food/user_{instance.created_by_id}_{slug}_{slot}{ext}'
+    return f'food/{filename}'
 
 
 class meal(models.Model):
@@ -10,10 +25,86 @@ class meal(models.Model):
     benefits = models.TextField(blank=True)
     cooking_duration = models.CharField(max_length=40, blank=True)
 
-    main_img = models.ImageField(upload_to=f'food', blank=True)
-    img_1 = models.ImageField(upload_to=f'food', blank=True)
-    img_2 = models.ImageField(upload_to=f'food', blank=True)
-    img_3 = models.ImageField(upload_to=f'food', blank=True)
+    main_img = models.ImageField(upload_to=meal_image_path, blank=True)
+    main_img_thumbnail = models.ImageField(upload_to='food/thumbs', blank=True)
+    img_1 = models.ImageField(upload_to=partial(meal_image_path, slot=2), blank=True)
+    img_2 = models.ImageField(upload_to=partial(meal_image_path, slot=3), blank=True)
+    img_3 = models.ImageField(upload_to=partial(meal_image_path, slot=4), blank=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='created_meals'
+    )
+    is_public = models.BooleanField(default=True)
+
+    def save(self, *args, **kwargs):
+        new_main_img = isinstance(self.main_img, UploadedFile)
+        first_save = not self.pk
+
+        if self.pk and self.created_by_id:
+            try:
+                old = meal.objects.get(pk=self.pk)
+                for field_name in _IMG_FIELDS:
+                    old_file = getattr(old, field_name)
+                    new_file = getattr(self, field_name)
+                    if old_file and isinstance(new_file, UploadedFile):
+                        old_file.delete(save=False)
+            except meal.DoesNotExist:
+                pass
+
+        super().save(*args, **kwargs)
+
+        if new_main_img or first_save:
+            self._generate_thumbnail()
+
+    def _generate_thumbnail(self):
+        from io import BytesIO
+        from PIL import Image
+        from django.core.files.base import ContentFile
+
+        if not self.main_img:
+            if self.main_img_thumbnail:
+                self.main_img_thumbnail.delete(save=False)
+                type(self).objects.filter(pk=self.pk).update(main_img_thumbnail='')
+            return
+
+        try:
+            self.main_img.open('rb')
+            img = Image.open(self.main_img)
+            img.load()
+
+            w, h = img.size
+            d = min(w, h)
+            img = img.crop(((w - d) // 2, (h - d) // 2, (w + d) // 2, (h + d) // 2))
+            img = img.resize((80, 80), Image.LANCZOS)
+
+            if img.mode in ('RGBA', 'P', 'LA'):
+                img = img.convert('RGB')
+
+            buf = BytesIO()
+            img.save(buf, format='JPEG', quality=85, optimize=True)
+            buf.seek(0)
+
+            slug = slugify(self.name) or str(self.pk)
+            if self.created_by_id:
+                thumb_name = f'food/thumbs/user_{self.created_by_id}_{slug}_thumb.jpg'
+            else:
+                thumb_name = f'food/thumbs/{slug}_thumb.jpg'
+
+            if self.main_img_thumbnail:
+                self.main_img_thumbnail.delete(save=False)
+
+            self.main_img_thumbnail.save(thumb_name, ContentFile(buf.getvalue()), save=False)
+            type(self).objects.filter(pk=self.pk).update(
+                main_img_thumbnail=self.main_img_thumbnail.name
+            )
+        except Exception:
+            pass
+        finally:
+            try:
+                self.main_img.close()
+            except Exception:
+                pass
 
     def __str__(self):
         return f"{self.name}"

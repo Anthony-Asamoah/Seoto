@@ -1,12 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import permission_required, login_required
+from django.db.models import Q
 from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_http_methods
 
 from . import the_code
-from .forms import MealOrderForm
+from .forms import MealOrderForm, UserMealForm
 from .models import meal, userPreference, MealOrder
 from .serializer import serialize_mealtime, serialize_all
+from utils.paginator import apply_pagination
 
 MEALTIME_FIELDS = {
     'breakfast': 'isBreakfast',
@@ -14,6 +17,7 @@ MEALTIME_FIELDS = {
     'lunch': 'isLunch',
     'dinner': 'isDinner',
     'extra': 'isExtra',
+    'fancy': 'isFancy',
 }
 
 
@@ -42,35 +46,50 @@ def foodie_config(request, mealtime=None):
 
     if request.method == 'POST':
         selected_ids = request.POST.getlist('selected_meals')
+        page_meal_ids = request.POST.getlist('page_meal_ids')
         try:
             selected_ids = [int(x) for x in selected_ids]
+            page_meal_ids = [int(x) for x in page_meal_ids]
         except ValueError:
             selected_ids = []
+            page_meal_ids = []
 
-        # Update user preferences for this mealtime
-        meals_qs = meal.objects.all()
-        for m in meals_qs:
+        # Only update meals that were visible on the submitted page
+        for m in meal.objects.filter(id__in=page_meal_ids):
             pref, _created = userPreference.objects.get_or_create(
                 user=request.user, meal=m, defaults={'isAvailable': True}
             )
             setattr(pref, field, m.id in selected_ids)
             pref.save(update_fields=[field])
 
-        # After saving, redirect to the same page to avoid resubmission
-        return redirect('foodie_config_time', mealtime=mt)
+        redirect_url = f'/foodie/config/{mt}'
+        qs = request.POST.get('redirect_qs', '')
+        if qs:
+            redirect_url += f'?{qs}'
+        return redirect(redirect_url)
 
-    meals_qs = meal.objects.all().order_by('name')
-    # Build list of ids currently selected for this mealtime for current user
+    search_query = request.GET.get('search', '').strip()
+    meals_qs = meal.objects.filter(
+        Q(created_by=None) | Q(created_by=request.user) | Q(is_public=True)
+    ).order_by('name')
+    if search_query:
+        meals_qs = meals_qs.filter(name__icontains=search_query)
+
+    page_obj = apply_pagination(meals_qs, request.GET.get('page'), 13)
     selected_ids = list(
         userPreference.objects.filter(user=request.user, **{field: True}).values_list('meal_id', flat=True)
     )
+    query_params = {'search': search_query} if search_query else {}
+
     context = {
         'mealtime': mt,
         'mealtime_readable': mt.capitalize(),
         'field': field,
-        'meals': meals_qs,
+        'meals': page_obj,
         'selected_ids': selected_ids,
         'mealtime_fields': MEALTIME_FIELDS,
+        'search_query': search_query,
+        'query_params': query_params,
     }
     return render(request, 'foodie/foodie_config.html', context)
 
@@ -118,6 +137,69 @@ def order_edit(request, pk: int):
         form = MealOrderForm(instance=order)
 
     return render(request, 'foodie/order_form.html', {'form': form, 'is_edit': True, 'order': order})
+
+
+# User meal management
+
+@login_required
+def my_meals(request):
+    user_meals = meal.objects.filter(created_by=request.user).order_by('name')
+    return render(request, 'foodie/my_meals.html', {'user_meals': user_meals})
+
+
+@login_required
+def meal_create(request):
+    if request.method == 'POST':
+        form = UserMealForm(request.POST, request.FILES)
+        if form.is_valid():
+            new_meal = form.save(commit=False)
+            new_meal.created_by = request.user
+            new_meal.save()
+            messages.success(request, f'"{new_meal.name}" added to your foods.')
+            return redirect('foodie_my_meals')
+    else:
+        form = UserMealForm()
+    return render(request, 'foodie/meal_form.html', {'form': form, 'is_edit': False})
+
+
+@login_required
+def meal_edit(request, pk):
+    m = get_object_or_404(meal, pk=pk, created_by=request.user)
+    pref, _ = userPreference.objects.get_or_create(user=request.user, meal=m, defaults={'isAvailable': True})
+
+    if request.method == 'POST':
+        form = UserMealForm(request.POST, request.FILES, instance=m)
+        if form.is_valid():
+            form.save()
+            selected_times = request.POST.getlist('mealtimes')
+            for mt, field in MEALTIME_FIELDS.items():
+                setattr(pref, field, mt in selected_times)
+            pref.save(update_fields=list(MEALTIME_FIELDS.values()))
+            messages.success(request, f'"{m.name}" updated.')
+            return redirect('foodie_my_meals')
+    else:
+        form = UserMealForm(instance=m)
+
+    active_mealtimes = [mt for mt, field in MEALTIME_FIELDS.items() if getattr(pref, field)]
+    return render(request, 'foodie/meal_form.html', {
+        'form': form,
+        'is_edit': True,
+        'meal_obj': m,
+        'mealtime_fields': MEALTIME_FIELDS,
+        'active_mealtimes': active_mealtimes,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def meal_delete(request, pk):
+    m = get_object_or_404(meal, pk=pk, created_by=request.user)
+    name = m.name
+    if m.main_img:
+        m.main_img.delete(save=False)
+    m.delete()
+    messages.success(request, f'"{name}" deleted.')
+    return redirect('foodie_my_meals')
 
 
 # REST API

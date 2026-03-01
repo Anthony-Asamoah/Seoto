@@ -19,3 +19,4 @@ random-string-detector~=1.1.1
 httpx
 boto3
 django-storages[s3]
+django-ckeditor-5
