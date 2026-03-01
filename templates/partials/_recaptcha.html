@@ -22,14 +22,25 @@
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
+        var done = false;
+        function doSubmit(token) {
+            if (done) return;
+            done = true;
+            if (token) tokenField.value = token;
+            form.submit();
+        }
+
+        // Fallback: submit after 4s if reCAPTCHA never resolves (e.g. unregistered domain)
+        var fallback = setTimeout(function() { doSubmit(null); }, 4000);
+
         grecaptcha.ready(function() {
             grecaptcha.execute(siteKey, {action: action}).then(function(token) {
-                tokenField.value = token;
-                form.submit();
+                clearTimeout(fallback);
+                doSubmit(token);
             }).catch(function(err) {
                 console.error('reCAPTCHA error:', err);
-                // Allow form submission even if reCAPTCHA fails (honeypot will still protect)
-                form.submit();
+                clearTimeout(fallback);
+                doSubmit(null);
             });
         });
     });

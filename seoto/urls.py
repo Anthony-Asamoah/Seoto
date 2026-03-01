@@ -5,7 +5,7 @@ from django.http import HttpResponse
 from django.urls import path, include
 from django.views.generic import TemplateView
 
-from author.views import About
+from author.views import About, ReachOut
 from flip_a_coin.views import Coin
 from home.views import (
     Home, error404, error500
@@ -29,6 +29,7 @@ urlpatterns = [
       path('home/', include("home.urls")),
       # Anonymous
       path('@sean_or_tony', About.as_view(), name='about'),
+      path('reach-out', ReachOut.as_view(), name='reach_out'),
       path('foodie/', include('foodie.urls')),
       path('interest_calculator', Interest.as_view(), name='interest_calculator'),
       path('rhymes', Rhymes.as_view(), name='rhymes'),
