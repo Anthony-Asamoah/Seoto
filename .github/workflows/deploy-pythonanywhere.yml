@@ -42,6 +42,12 @@ jobs:
           password = os.environ.get('PYTHONANYWHERE_PASSWORD')
           api_token = os.environ.get('PYTHONANYWHERE_API_TOKEN')
           directory = f'{username}.pythonanywhere.com'
+          
+          print(f"Host: {host}")
+          print(f"username: {username}")
+          print(f"password: {password}")
+          print(f"api_token: {api_token}")
+          print(f"directory: {directory}")
 
           if not username or not password or not api_token:
               print("Error: PYTHONANYWHERE_USERNAME, PYTHONANYWHERE_PASSWORD, and PYTHONANYWHERE_API_TOKEN must be set")
