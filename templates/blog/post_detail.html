@@ -98,10 +98,16 @@
 
     <style>
         .rich-text-content img {
-            width: 100%;
+            max-width: 100%;
             height: auto;
             display: block;
             margin: 1rem 0;
+        }
+
+        /* Honour explicit widths set via the size selector at insert time */
+        .rich-text-content img[style],
+        .rich-text-content video[style] {
+            width: revert;
         }
 
         .post-hero {
