@@ -21,32 +21,29 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install paramiko
           pip install httpx
 
       - name: Deploy to PythonAnywhere
         env:
           PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
-          PYTHONANYWHERE_PASSWORD: ${{ secrets.PYTHONANYWHERE_PASSWORD }}
           PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
           APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
         run: |
           python - <<'PYTHON_SCRIPT'
-          import sys, os
-          import paramiko
+          import sys, os, time
           import httpx
 
           # Get environment variables
           host = os.environ.get('APP_DOMAIN')
           username = os.environ.get('PYTHONANYWHERE_USERNAME')
-          password = os.environ.get('PYTHONANYWHERE_PASSWORD')
           api_token = os.environ.get('PYTHONANYWHERE_API_TOKEN')
           directory = f'{username}.pythonanywhere.com'
-          
-          if not username or not password or not api_token:
-              print("Error: PYTHONANYWHERE_USERNAME, PYTHONANYWHERE_PASSWORD, and PYTHONANYWHERE_API_TOKEN must be set")
+
+          if not username or not api_token:
+              print("Error: PYTHONANYWHERE_USERNAME and PYTHONANYWHERE_API_TOKEN must be set")
               sys.exit(1)
 
+          console_api_url = f'https://www.pythonanywhere.com/api/v0/user/{username}/consoles/'
           webapp_api_url = f'https://www.pythonanywhere.com/api/v0/user/{username}/webapps/{host}/reload/'
           headers = {
               'Authorization': f'Token {api_token}',
@@ -57,73 +54,62 @@ jobs:
           print("Starting PythonAnywhere Deployment")
           print("=" * 60)
 
-          # Deployment commands to run on PythonAnywhere via SSH
-          deployment_commands = (
-              f"set -e\n"
-              f"cd {directory}\n"
-              f'echo "Pulling latest code from GitHub..."\n'
-              f"git checkout master\n"
-              f"git pull\n"
-              f'echo "Code updated successfully"\n'
-              f'echo "Activating virtual environment..."\n'
-              f"source ~/.virtualenvs/{directory}/bin/activate\n"
-              f'echo "Virtual environment activated"\n'
-              f'echo "Installing dependencies..."\n'
-              f"pip install -r requirements.txt\n"
-              f'echo "Dependencies installed"\n'
-              f'echo "Running database migrations..."\n'
-              f"python manage.py migrate --noinput\n"
-              f'echo "Migrations completed"\n'
-              f'echo "Collecting static files..."\n'
-              f"python manage.py collectstatic --noinput --clear\n"
-              f'echo "Static files collected"\n'
-              f'echo "DEPLOYMENT_SUCCESS"\n'
+          # Build a single-line bash script (~ expands correctly on the remote shell)
+          bash_script = (
+              f"set -e; "
+              f"cd ~/{directory}; "
+              f"git checkout master; "
+              f"git pull; "
+              f"source ~/.virtualenvs/{directory}/bin/activate; "
+              f"pip install -r requirements.txt; "
+              f"python manage.py migrate --noinput; "
+              f"python manage.py collectstatic --noinput --clear; "
+              f"echo DEPLOYMENT_SUCCESS"
           )
 
           try:
-              # Connect via SSH
-              print("\n🔌 Connecting to PythonAnywhere via SSH...")
-              ssh = paramiko.SSHClient()
-              ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-              ssh.connect(
-                  'ssh.pythonanywhere.com',
-                  username=username,
-                  password=password,
-                  timeout=30,
-              )
-              print("✅ SSH connection established")
+              # Create a console — bash runs the script immediately at startup.
+              # No send_input or browser initialization needed.
+              print("\n🔌 Creating bash console on PythonAnywhere...")
+              console_data = {
+                  'executable': 'bash',
+                  'arguments': f"-c '{bash_script}'"
+              }
+              response = httpx.post(console_api_url, json=console_data, headers=headers)
+              console_result = response.json()
+              console_id = console_result.get('id')
+              print(f"✅ Console created (ID: {console_id})")
+              print(f"   Response: {console_result}")
 
-              # Resolve actual home directory (handles username case differences)
-              _, out, _ = ssh.exec_command('echo $HOME')
-              home_dir = out.read().decode().strip()
-              print(f"   Home directory: {home_dir}")
+              if not console_id:
+                  raise Exception(f"Failed to create console: {response.text}")
 
-              # Patch the cd command with the real home dir now that we know it
-              deployment_commands_resolved = deployment_commands.replace(
-                  f"cd {directory}", f"cd {home_dir}/{directory}", 1
-              )
+              # Wait for deployment commands to finish
+              print("\n⏳ Waiting 90 seconds for deployment to complete...")
+              time.sleep(90)
 
-              # Run deployment commands
-              print("\n🚀 Running deployment commands...\n")
+              # Fetch latest output (~500 chars — DEPLOYMENT_SUCCESS will be last if all succeeded)
+              print("\n📋 Fetching deployment output...")
               print("=" * 60)
-              stdin, stdout, stderr = ssh.exec_command(deployment_commands_resolved, get_pty=True)
-
-              # Stream output as it arrives
-              for line in stdout:
-                  print(line, end='')
-
-              exit_code = stdout.channel.recv_exit_status()
-              err_output = stderr.read().decode()
-              if err_output.strip():
-                  print(f"\nSTDERR:\n{err_output}")
+              output_response = httpx.get(
+                  console_api_url + f'{console_id}/get_latest_output/',
+                  headers=headers
+              )
+              output = ''
+              if output_response.status_code == 200:
+                  output = output_response.json().get('output', '')
+                  print(output)
+              else:
+                  print(f"⚠️  Could not fetch output: {output_response.status_code} {output_response.text}")
               print("=" * 60)
 
-              ssh.close()
+              # Clean up the console
+              httpx.delete(console_api_url + f'{console_id}/', headers=headers)
 
-              if exit_code != 0:
-                  raise Exception(f"Deployment commands failed with exit code {exit_code}")
+              if 'DEPLOYMENT_SUCCESS' not in output:
+                  raise Exception("Deployment did not complete successfully. Check output above.")
 
-              # Reload the web app via API
+              # Reload the web app
               print("\n🔄 Reloading web application...")
               reload_response = httpx.post(webapp_api_url, headers=headers, timeout=60)
               print(f"   Reload response ({reload_response.status_code}): {reload_response.text}")
