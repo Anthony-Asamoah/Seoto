@@ -93,10 +93,20 @@ jobs:
               )
               print("✅ SSH connection established")
 
+              # Resolve actual home directory (handles username case differences)
+              _, out, _ = ssh.exec_command('echo $HOME')
+              home_dir = out.read().decode().strip()
+              print(f"   Home directory: {home_dir}")
+
+              # Patch the cd command with the real home dir now that we know it
+              deployment_commands_resolved = deployment_commands.replace(
+                  f"cd {directory}", f"cd {home_dir}/{directory}", 1
+              )
+
               # Run deployment commands
               print("\n🚀 Running deployment commands...\n")
               print("=" * 60)
-              stdin, stdout, stderr = ssh.exec_command(deployment_commands, get_pty=True)
+              stdin, stdout, stderr = ssh.exec_command(deployment_commands_resolved, get_pty=True)
 
               # Stream output as it arrives
               for line in stdout:
