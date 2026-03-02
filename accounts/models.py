@@ -1,3 +1,4 @@
+import logging
 from functools import partial
 
 from django.contrib.auth.models import User
@@ -5,6 +6,8 @@ from django.core.files.uploadedfile import UploadedFile
 from django.db import models
 
 from accounts.utils import user_directory_file_path
+
+logger = logging.getLogger(__name__)
 
 
 class user_profile(models.Model):
@@ -34,6 +37,13 @@ class user_profile(models.Model):
                 type(self).objects.filter(pk=self.pk).update(picture_thumbnail='')
             return
 
+        # Delete old thumbnail first, independently of new generation
+        if self.picture_thumbnail:
+            try:
+                self.picture_thumbnail.delete(save=False)
+            except Exception:
+                logger.warning('Failed to delete old thumbnail for %s', self.user.username)
+
         try:
             self.picture.open('rb')
             img = Image.open(self.picture)
@@ -52,16 +62,13 @@ class user_profile(models.Model):
             buf.seek(0)
 
             thumb_name = f'accounts/thumbs/{self.user.username}_thumb.jpg'
-
-            if self.picture_thumbnail:
-                self.picture_thumbnail.delete(save=False)
-
             self.picture_thumbnail.save(thumb_name, ContentFile(buf.getvalue()), save=False)
             type(self).objects.filter(pk=self.pk).update(
                 picture_thumbnail=self.picture_thumbnail.name
             )
         except Exception:
-            pass
+            logger.exception('Failed to generate thumbnail for %s', self.user.username)
+            type(self).objects.filter(pk=self.pk).update(picture_thumbnail='')
         finally:
             try:
                 self.picture.close()
