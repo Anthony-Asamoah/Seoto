@@ -21,7 +21,8 @@ urlpatterns = [
     path('read-groups/<int:group_id>/leave/', views.leave_read_group, name='leave-read-group'),
     # Background Sync API
     path('api/create/', views.create_post_api, name='create-post-api'),
-    # Media uploads
+    # Media uploads & proxy serving (proxy prevents S3 signed-URL expiry)
+    path('media/serve/<path:path>/', views.serve_blog_media, name='blog-serve-media'),
     path('upload-image/', views.upload_image, name='blog-upload-image'),
     path('upload-media/', views.upload_media, name='blog-upload-media'),
 ]
