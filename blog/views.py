@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.db.models import Q
-from django.http import HttpResponseForbidden, JsonResponse
+from django.http import Http404, HttpResponseForbidden, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
 
@@ -469,6 +469,19 @@ def create_post_api(request):
         }, status=500)
 
 
+def serve_blog_media(request, path):
+    """Proxy view that generates a fresh signed URL and redirects.
+
+    Storing proxy URLs (instead of pre-signed S3 URLs) in post content means
+    the embedded URLs never expire — a fresh signed URL is produced on every access.
+    """
+    if not (path.startswith('blog/images/') or path.startswith('blog/media/')):
+        raise Http404
+    if not default_storage.exists(path):
+        raise Http404
+    return HttpResponseRedirect(default_storage.url(path))
+
+
 @login_required
 @require_http_methods(["POST"])
 def upload_media(request):
@@ -501,7 +514,14 @@ def upload_media(request):
 
     filename = f'blog/media/{request.user.id}_{file.name}'
     path = default_storage.save(filename, ContentFile(file.read()))
-    url = default_storage.url(path)
+
+    # On AWS, store a proxy URL so the signed URL never expires in saved content.
+    # On local storage, use the direct media URL (no signing, no expiry).
+    if django_settings.MEDIA_STORAGE == 'AWS':
+        from django.urls import reverse
+        url = reverse('blog-serve-media', kwargs={'path': path})
+    else:
+        url = default_storage.url(path)
 
     if content_type.startswith('image/'):
         html = f'<img src="{url}" style="max-width:100%;">'

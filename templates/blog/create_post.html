@@ -300,11 +300,14 @@
             if (!trackedVideo) return;
             const r = trackedVideo.getBoundingClientRect();
             drag = {
-                corner: e.currentTarget.dataset.corner,
-                startX: e.clientX,
-                startY: e.clientY,
-                startW: r.width,
-                video:  trackedVideo,
+                corner:  e.currentTarget.dataset.corner,
+                startX:  e.clientX,
+                startY:  e.clientY,
+                startW:  r.width,
+                video:   trackedVideo,
+                // Capture the model element NOW — getSelectedElement() returns null after
+                // the mousedown fires outside the editor and CKEditor deselects the widget.
+                modelEl: editor.model.document.selection.getSelectedElement(),
             };
             document.addEventListener('mousemove', onMousemove);
             document.addEventListener('mouseup',   onMouseup);
@@ -325,21 +328,18 @@
             document.removeEventListener('mousemove', onMousemove);
             document.removeEventListener('mouseup',   onMouseup);
             if (!drag) return;
-            const newW = Math.round(drag.video.offsetWidth);
+            const newW    = Math.round(drag.video.offsetWidth);
+            const modelEl = drag.modelEl;
             drag = null;
-            commitWidth(newW + 'px');
-        }
-
-        function commitWidth(width) {
-            const modelEl = editor.model.document.selection.getSelectedElement();
             if (!modelEl) return;
             editor.model.change(writer => {
                 const attrs = modelEl.getAttribute('htmlAttributes') || {};
                 writer.setAttribute('htmlAttributes', {
                     ...attrs,
-                    styles: { ...(attrs.styles || {}), width },
+                    styles: { ...(attrs.styles || {}), width: newW + 'px' },
                 }, modelEl);
             });
+            editor.editing.view.focus();
         }
     }
 

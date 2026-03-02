@@ -23,17 +23,17 @@
 
         .blog-div nav a {
             text-decoration: none;
-            color: #333;
+            color: var(--theme-text, #333);
         }
 
         .blog-div nav a:hover {
             text-decoration: underline;
-            color: #175a9c;
+            color: var(--theme-primary, #175a9c);
         }
 
         .blog-div .post {
             margin-bottom: 30px;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--theme-secondary, #ddd);
             padding-bottom: 20px;
         }
 
@@ -42,7 +42,8 @@
         }
 
         .blog-div .post-meta {
-            color: #666;
+            color: var(--theme-text, #666);
+            opacity: 0.8;
             font-size: 0.9em;
             margin-bottom: 15px;
         }
@@ -71,19 +72,29 @@
 
         .tag {
             display: inline-block;
-            background-color: #f1f1f1;
+            background-color: var(--theme-card-header-bg, #f1f1f1);
             padding: 3px 8px;
             border-radius: 3px;
             font-size: 0.8em;
             margin-right: 5px;
             margin-bottom: 5px;
             text-decoration: none;
-            color: #333;
+            color: var(--theme-text, #333);
         }
 
         .tag:hover {
-            background-color: #e0e0e0;
+            background-color: var(--theme-card-header-bg, #f1f1f1);
+            filter: brightness(0.88);
         }
+
+        /* Badges must use their own text color, not any global color set by the
+           theme, otherwise they can disappear against their background. */
+        a.badge, .badge a, .badge {
+            color: inherit !important;
+        }
+
+        .badge-info  { background-color: #17a2b8; color: #fff !important; }
+        .badge-secondary { background-color: #6c757d; color: #fff !important; }
 
         /* Markdown styling */
         .markdown-content {
@@ -109,21 +120,23 @@
         }
 
         .markdown-content blockquote {
-            border-left: 4px solid #ddd;
+            border-left: 4px solid var(--theme-secondary, #ddd);
             padding-left: 1em;
-            color: #666;
+            color: var(--theme-text, #666);
             margin-left: 0;
         }
 
         .markdown-content pre {
-            background-color: #f5f5f5;
+            background-color: var(--theme-card-header-bg, #f5f5f5);
+            color: var(--theme-text, #333);
             padding: 1em;
             border-radius: 4px;
             overflow-x: auto;
         }
 
         .markdown-content code {
-            background-color: #f5f5f5;
+            background-color: var(--theme-card-header-bg, #f5f5f5);
+            color: var(--theme-text, #333);
             padding: 0.2em 0.4em;
             border-radius: 3px;
             font-family: monospace;
@@ -136,7 +149,7 @@
 
         .markdown-content hr {
             border: 0;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid var(--theme-secondary, #ddd);
             margin: 2em 0;
         }
 
@@ -148,13 +161,14 @@
 
         .markdown-content th,
         .markdown-content td {
-            border: 1px solid #ddd;
+            border: 1px solid var(--theme-secondary, #ddd);
             padding: 8px;
             text-align: left;
         }
 
         .markdown-content th {
-            background-color: #f5f5f5;
+            background-color: var(--theme-card-header-bg, #f5f5f5);
+            color: var(--theme-text, #333);
         }
 
         .form-group {
@@ -174,7 +188,7 @@
         select {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--theme-secondary, #ddd);
             border-radius: 4px;
         }
 
@@ -199,7 +213,8 @@
 
         .help-text {
             margin-top: 5px;
-            color: #666;
+            color: var(--theme-text, #666);
+            opacity: 0.8;
             font-size: 0.9em;
         }
 
@@ -210,7 +225,7 @@
         }
 
         .article-listing:hover {
-            background-color: white;
+            background-color: var(--theme-card-bg, #ffffff);
             padding-bottom: 25px;
         }
 
@@ -220,7 +235,7 @@
 
         .form-group:hover label {
             font-weight: bold;
-            color: #00695f;
+            color: var(--theme-primary, #00695f);
         }
 
         .is-public-help-text {
@@ -239,7 +254,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: #175a9c;
+            background: var(--theme-primary, #175a9c);
             color: #fff;
             font-size: 0.85rem;
             font-weight: 600;
