@@ -86,33 +86,50 @@ jobs:
           """
           
           try:
-              # Create a console session
+              import time
+
+              # Create a bare bash console (no arguments — commands sent via send_input)
               print("\n🔌 Creating console session on PythonAnywhere...")
               console_data = {
                   'executable': 'bash',
-                  'arguments': deployment_commands
+                  'working_directory': f'/home/{username}'
               }
-          
+
               response = httpx.post(
                   console_api_url,
                   json=console_data,
                   headers=headers,
               )
-          
+
               console_result = response.json()
-              print(console_result)
+              print(f"   API response: {console_result}")
               console_id = console_result.get('id')
               print(f"✅ Console session created (ID: {console_id})")
-          
+
               if not console_id:
                   print(f"Failed to launch console: {response.text}")
                   raise Exception("Failed to launch console")
 
-              print("⏳ Deployment commands are executing...")
-              print("Waiting 30 seconds for commands to complete...\n")
+              # Wait for the console process to initialize before sending input
+              print("⏳ Waiting for console to initialize...")
+              time.sleep(3)
 
-              import time
-              time.sleep(30)
+              # Send the deployment script via send_input
+              print("📤 Sending deployment commands via send_input...")
+              send_input_url = console_api_url + f'{console_id}/send_input/'
+              input_response = httpx.post(
+                  send_input_url,
+                  json={'input': deployment_commands + '\nexit $?\n'},
+                  headers=headers,
+              )
+              print(f"   send_input status: {input_response.status_code}")
+              if input_response.status_code != 200:
+                  print(f"   send_input response: {input_response.text}")
+                  raise Exception(f"send_input failed with status {input_response.status_code}")
+
+              print("⏳ Deployment commands are executing...")
+              print("Waiting 90 seconds for commands to complete...\n")
+              time.sleep(90)
 
               # Fetch console output
               print("\n📋 Fetching deployment logs...\n")
@@ -122,12 +139,20 @@ jobs:
                   headers=headers,
               )
 
+              output = ''
               if console_logs.status_code == 200:
                   output = console_logs.json().get('output', 'No output available')
                   print(output)
               else:
                   print(f"⚠️  Failed to fetch console logs: {console_logs.status_code}")
+                  print(f"   Response: {console_logs.text}")
               print("=" * 60)
+
+              # Check that deployment commands actually completed successfully
+              if '🎉 Deployment commands completed successfully!' not in output:
+                  print("\n❌ Deployment commands did not complete successfully!")
+                  print("Check the output above for errors.")
+                  raise Exception("Deployment commands failed or did not complete")
 
               # Reload the web app
               print("\n🔄 Reloading web application...")
@@ -136,10 +161,11 @@ jobs:
                   headers=headers,
                   timeout=None
               )
-              if 300 > reload_response.status_code >= 200 :
+              print(f"   Reload response ({reload_response.status_code}): {reload_response.text}")
+              if 300 > reload_response.status_code >= 200:
                   print("✅ Web application reloaded successfully")
               else:
-                  print(f"⚠️  Warning: Reload returned status {response.status_code}")
+                  print(f"⚠️  Warning: Reload returned status {reload_response.status_code}")
           
               print("\n" + "=" * 60)
               print("🎉 Deployment completed successfully!")
