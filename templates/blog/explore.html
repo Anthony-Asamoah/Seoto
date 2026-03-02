@@ -38,7 +38,7 @@
                 <div class="media-body">
                     <div class="article-metadata d-flex align-items-center gap-2">
                         {% with profile=post.author.user_profile %}
-                            {% if profile.picture_thumbnail %}
+                            {% if user.is_authenticated and profile.picture_thumbnail %}
                                 <img src="{{ profile.picture_thumbnail.url }}"
                                      alt="{{ post.author.username }}"
                                      class="blog-author-avatar">

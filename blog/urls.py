@@ -21,6 +21,7 @@ urlpatterns = [
     path('read-groups/<int:group_id>/leave/', views.leave_read_group, name='leave-read-group'),
     # Background Sync API
     path('api/create/', views.create_post_api, name='create-post-api'),
-    # Media upload
+    # Media uploads
     path('upload-image/', views.upload_image, name='blog-upload-image'),
+    path('upload-media/', views.upload_media, name='blog-upload-media'),
 ]

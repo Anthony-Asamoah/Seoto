@@ -27,6 +27,23 @@
             {% endif %}
         </div>
 
+        <div class="media-upload-bar d-flex align-items-center gap-2 flex-wrap py-2 px-1">
+            <label class="mb-0 text-muted small fw-semibold">Insert Media:</label>
+            <input type="file" id="mediaFileInput" class="form-control form-control-sm"
+                   style="max-width:280px;"
+                   accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+            <select id="mediaAlign" class="form-select form-select-sm" style="width:auto;">
+                <option value="">No align</option>
+                <option value="left">Float left</option>
+                <option value="right">Float right</option>
+                <option value="center">Center</option>
+            </select>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMedia()">
+                Upload &amp; Insert
+            </button>
+            <span id="mediaUploadStatus" class="text-muted small"></span>
+        </div>
+
         <hr>
         <div class="form-check form-switch mb-5 mt-5">
             <input class="form-check-input" type="checkbox" name="is_public" id="checkNativeSwitch" switch>
@@ -141,4 +158,42 @@
 
 {% block script %}
 {{ form.media }}
+<script>
+    async function insertMedia() {
+        const input = document.getElementById('mediaFileInput');
+        const file = input.files[0];
+        if (!file) return;
+        const status = document.getElementById('mediaUploadStatus');
+        status.textContent = 'Uploading\u2026';
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        const resp = await fetch('{% url "blog-upload-media" %}', { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (data.error) { status.textContent = data.error; return; }
+
+        // Wrap with alignment if chosen
+        const align = document.getElementById('mediaAlign').value;
+        let html = data.html;
+        if (align === 'left') {
+            html = `<div style="float:left;margin:0 1rem 1rem 0;max-width:50%;">${html}</div>`;
+        } else if (align === 'right') {
+            html = `<div style="float:right;margin:0 0 1rem 1rem;max-width:50%;">${html}</div>`;
+        } else if (align === 'center') {
+            html = `<div style="text-align:center;margin:1rem auto;">${html}</div>`;
+        }
+
+        // Insert at cursor position using CKEditor 5's data processor
+        const editor = window.editors['id_content'];
+        const viewFragment = editor.data.processor.toView(html);
+        const modelFragment = editor.data.toModel(viewFragment);
+        editor.model.insertContent(modelFragment);
+
+        input.value = '';
+        status.textContent = 'Inserted.';
+        setTimeout(() => status.textContent = '', 2000);
+    }
+</script>
 {% endblock %}

@@ -25,7 +25,7 @@ python manage.py sanitize_tags_and_groups
 ```
 
 #### `cleanup_orphan_blog_images`
-Scans the `blog/images/` directory in storage and deletes any image files not referenced in any live post. Run after bulk post deletions or as periodic maintenance.
+Scans the `blog/images/` and `blog/media/` directories in storage and deletes any media files (images, video, audio, documents) not referenced in any live post. Run after bulk post deletions or as periodic maintenance.
 
 ```bash
 python manage.py cleanup_orphan_blog_images --dry-run   # preview

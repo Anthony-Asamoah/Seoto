@@ -245,6 +245,17 @@ CKEDITOR_5_CONFIGS = {
         'image': {
             'toolbar': ['imageTextAlternative', 'imageStyle:inline', 'imageStyle:block'],
         },
+        'htmlSupport': {
+            'allow': [
+                {'name': 'video',  'attributes': True, 'classes': True, 'styles': True},
+                {'name': 'audio',  'attributes': True, 'classes': True, 'styles': True},
+                {'name': 'source', 'attributes': True, 'classes': True, 'styles': True},
+                {'name': 'iframe', 'attributes': True, 'classes': True, 'styles': True},
+                {'name': 'div',    'attributes': True, 'classes': True, 'styles': True},
+                {'name': 'a',      'attributes': True, 'classes': True, 'styles': True},
+                {'name': 'i',      'attributes': True, 'classes': True, 'styles': True},
+            ]
+        },
     },
 }
 CKEDITOR_5_FILE_UPLOAD_PERMISSION = 'authenticated'
@@ -270,3 +281,8 @@ RECAPTCHA_SCORE_THRESHOLD = Env.float('RECAPTCHA_SCORE_THRESHOLD', default=0.5)
 
 # IP Quality Score API Key
 IP_QUALITY_SCORE_API_KEY=Env.str('IP_QUALITY_SCORE_API_KEY', default="None")
+
+# Blog media upload limits (MB)
+BLOG_UPLOAD_MAX_SIZE_MB = Env.int('BLOG_UPLOAD_MAX_SIZE_MB', default=10)
+BLOG_VIDEO_MAX_SIZE_MB = Env.int('BLOG_VIDEO_MAX_SIZE_MB', default=60)
+DATA_UPLOAD_MAX_MEMORY_SIZE = BLOG_VIDEO_MAX_SIZE_MB * 1024 * 1024

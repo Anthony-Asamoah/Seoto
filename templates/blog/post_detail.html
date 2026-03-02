@@ -23,8 +23,8 @@
 {% block window %}
     <article class="post">
         {% with profile=post.author.user_profile %}
-            <div class="post-hero{% if profile.picture %} post-hero-has-image{% endif %}"
-                 {% if profile.picture %}style="background-image: url('{{ profile.picture.url }}')"{% endif %}>
+            <div class="post-hero{% if user.is_authenticated and profile.picture %} post-hero-has-image{% endif %}"
+                 {% if user.is_authenticated and profile.picture %}style="background-image: url('{{ profile.picture.url }}')"{% endif %}>
                 <div class="post-hero-overlay">
                     <h2>
                         {{ post.title }}
@@ -35,7 +35,7 @@
                         {% endif %}
                     </h2>
                     <div class="post-meta d-flex align-items-center gap-2">
-                        {% if profile.picture_thumbnail %}
+                        {% if user.is_authenticated and profile.picture_thumbnail %}
                             <img src="{{ profile.picture_thumbnail.url }}"
                                  alt="{{ post.author.username }}"
                                  class="blog-author-avatar">
@@ -127,6 +127,35 @@
 
         .post-hero:not(.post-hero-has-image) .post-hero-overlay {
             background: none;
+        }
+
+        .rich-text-content video,
+        .rich-text-content audio {
+            width: 100%;
+            display: block;
+            margin: 1rem 0;
+        }
+
+        .rich-text-content .blog-doc-embed {
+            margin: 1rem 0;
+        }
+
+        .rich-text-content .blog-doc-embed iframe {
+            width: 100%;
+            border: none;
+        }
+
+        .rich-text-content::after {
+            content: '';
+            display: table;
+            clear: both;
+        }
+
+        .rich-text-content [style*="float:left"],
+        .rich-text-content [style*="float: left"],
+        .rich-text-content [style*="float:right"],
+        .rich-text-content [style*="float: right"] {
+            max-width: 50%;
         }
     </style>
 
@@ -304,6 +333,10 @@
 
 {% block script %}
     <script>
+        // Strip autoplay from any video/audio in post content
+        document.querySelectorAll('.rich-text-content video, .rich-text-content audio')
+            .forEach(el => el.removeAttribute('autoplay'));
+
         // Initialize share URLs and embed code when modal is shown
         document.getElementById('shareModal').addEventListener('show.bs.modal', function () {
             const url = window.location.href;

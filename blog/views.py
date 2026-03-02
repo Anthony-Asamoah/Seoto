@@ -471,6 +471,70 @@ def create_post_api(request):
 
 @login_required
 @require_http_methods(["POST"])
+def upload_media(request):
+    """Handle media uploads (image, video, audio, document) from the blog editor."""
+    from django.conf import settings as django_settings
+
+    file = request.FILES.get('file')
+    if not file:
+        return JsonResponse({'error': 'No file provided'}, status=400)
+
+    content_type = file.content_type or ''
+
+    if content_type.startswith('video/'):
+        max_mb = django_settings.BLOG_VIDEO_MAX_SIZE_MB
+    else:
+        max_mb = django_settings.BLOG_UPLOAD_MAX_SIZE_MB
+
+    if file.size > max_mb * 1024 * 1024:
+        return JsonResponse({'error': f'File exceeds the {max_mb} MB limit.'}, status=400)
+
+    # Validate images with Pillow
+    if content_type.startswith('image/'):
+        try:
+            from PIL import Image as PILImage
+            img = PILImage.open(file)
+            img.verify()
+            file.seek(0)
+        except Exception:
+            return JsonResponse({'error': 'Invalid image file.'}, status=400)
+
+    filename = f'blog/media/{request.user.id}_{file.name}'
+    path = default_storage.save(filename, ContentFile(file.read()))
+    url = default_storage.url(path)
+
+    if content_type.startswith('image/'):
+        html = f'<img src="{url}" style="max-width:100%;">'
+    elif content_type.startswith('video/'):
+        html = (
+            f'<video controls preload="metadata" style="width:100%;">'
+            f'<source src="{url}" type="{content_type}"></video>'
+        )
+    elif content_type.startswith('audio/'):
+        html = (
+            f'<audio controls preload="none" style="width:100%;">'
+            f'<source src="{url}" type="{content_type}"></audio>'
+        )
+    elif content_type == 'application/pdf':
+        html = (
+            f'<div class="blog-doc-embed">'
+            f'<iframe src="{url}" width="100%" height="500" style="border:none;"></iframe>'
+            f'<a href="{url}" target="_blank" download>Download PDF</a>'
+            f'</div>'
+        )
+    else:
+        html = (
+            f'<div class="blog-doc-embed">'
+            f'<a href="{url}" target="_blank" download class="btn btn-outline-secondary">'
+            f'<i class="fas fa-file"></i> Download: {file.name}</a>'
+            f'</div>'
+        )
+
+    return JsonResponse({'url': url, 'html': html})
+
+
+@login_required
+@require_http_methods(["POST"])
 def upload_image(request):
     """Handle image uploads from the rich text editor"""
     image = request.FILES.get('image')
