@@ -4,11 +4,11 @@ from django.core.files.storage import default_storage
 from django.core.management.base import BaseCommand
 
 from blog.models import Post
-from blog.signals import _url_to_storage_path
+from blog.signals import _url_to_storage_path, _BLOG_MEDIA_PREFIXES
 
 
 class Command(BaseCommand):
-    help = 'Delete images in blog/images/ storage that are not referenced by any post.'
+    help = 'Delete media files in blog/images/ and blog/media/ storage not referenced by any post.'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -22,37 +22,43 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(self.style.WARNING('DRY RUN — no files will be deleted.\n'))
 
-        # Collect all storage paths referenced in live posts
+        # Collect all storage paths referenced in live posts (all media tag types)
         referenced = set()
+        url_pattern = re.compile(r'<(?:img|source|iframe|a)[^>]+(?:src|href)=["\']([^"\']+)["\']')
         for content in Post.objects.values_list('content', flat=True):
             if not content:
                 continue
-            for url in re.findall(r'<img[^>]+src=["\']([^"\']+)["\']', content):
+            for url in url_pattern.findall(content):
                 path = _url_to_storage_path(url)
                 if path:
                     referenced.add(path)
 
-        self.stdout.write(f'Found {len(referenced)} image(s) referenced in live posts.')
+        self.stdout.write(f'Found {len(referenced)} media file(s) referenced in live posts.')
 
-        # List all files in the blog/images/ directory
-        try:
-            _, filenames = default_storage.listdir('blog/images/')
-        except FileNotFoundError:
-            self.stdout.write('No blog/images/ directory found in storage. Nothing to clean.')
-            return
+        # Scan both storage directories
+        total_orphans = []
+        for directory in _BLOG_MEDIA_PREFIXES:
+            try:
+                _, filenames = default_storage.listdir(directory)
+            except FileNotFoundError:
+                self.stdout.write(f'  No {directory} directory found, skipping.')
+                continue
 
-        orphans = [
-            f'blog/images/{name}'
-            for name in filenames
-            if f'blog/images/{name}' not in referenced
-        ]
+            orphans = [
+                f'{directory}{name}'
+                for name in filenames
+                if f'{directory}{name}' not in referenced
+            ]
+            if orphans:
+                self.stdout.write(f'  {len(orphans)} orphan(s) in {directory}')
+            total_orphans.extend(orphans)
 
-        if not orphans:
-            self.stdout.write(self.style.SUCCESS('No orphaned images found.'))
+        if not total_orphans:
+            self.stdout.write(self.style.SUCCESS('No orphaned media files found.'))
             return
 
         deleted = 0
-        for path in orphans:
+        for path in total_orphans:
             self.stdout.write(f'  {"[dry-run] " if dry_run else ""}Deleting {path}')
             if not dry_run:
                 try:
@@ -61,5 +67,5 @@ class Command(BaseCommand):
                 except Exception as e:
                     self.stdout.write(self.style.ERROR(f'  Failed to delete {path}: {e}'))
 
-        summary = f'{len(orphans)} orphaned file(s) {"found" if dry_run else f"deleted ({deleted} succeeded)"}.'
+        summary = f'{len(total_orphans)} orphaned file(s) {"found" if dry_run else f"deleted ({deleted} succeeded)"}.'
         self.stdout.write(self.style.SUCCESS(summary))

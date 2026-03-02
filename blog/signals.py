@@ -11,32 +11,36 @@ from .models import Post
 
 logger = logging.getLogger(__name__)
 
+_BLOG_MEDIA_PREFIXES = ('blog/images/', 'blog/media/')
+
 
 def _url_to_storage_path(url):
-    """Convert an image URL embedded in post content to a storage-relative path.
+    """Convert a media URL embedded in post content to a storage-relative path.
     Returns None if the URL cannot be mapped to a known storage path.
     """
     media_url = settings.MEDIA_URL
-    img_path = urlparse(url).path.lstrip('/')
+    file_path = urlparse(url).path.lstrip('/')
     media_path_prefix = urlparse(media_url).path.lstrip('/')
 
-    if media_path_prefix and img_path.startswith(media_path_prefix):
-        return img_path[len(media_path_prefix):]
+    if media_path_prefix and file_path.startswith(media_path_prefix):
+        return file_path[len(media_path_prefix):]
 
-    # Fallback: pull out the blog/images/ segment directly (handles S3 presigned URLs)
-    if 'blog/images/' in img_path:
-        return 'blog/images/' + img_path.split('blog/images/')[-1]
+    # Fallback: extract known blog storage segments (handles S3 presigned URLs)
+    for prefix in _BLOG_MEDIA_PREFIXES:
+        if prefix in file_path:
+            return prefix + file_path.split(prefix)[-1]
 
     return None
 
 
 @receiver(post_delete, sender=Post)
-def delete_post_images(sender, instance, **kwargs):
-    """Delete images embedded in a post's content when the post is deleted."""
+def delete_post_media(sender, instance, **kwargs):
+    """Delete media files embedded in a post's content when the post is deleted."""
     if not instance.content:
         return
 
-    urls = re.findall(r'<img[^>]+src=["\']([^"\']+)["\']', instance.content)
+    # Match src/href on img, source, iframe, and anchor tags
+    urls = re.findall(r'<(?:img|source|iframe|a)[^>]+(?:src|href)=["\']([^"\']+)["\']', instance.content)
     for url in urls:
         storage_path = _url_to_storage_path(url)
         if not storage_path:
@@ -44,6 +48,6 @@ def delete_post_images(sender, instance, **kwargs):
         try:
             if default_storage.exists(storage_path):
                 default_storage.delete(storage_path)
-                logger.info(f'Deleted orphaned blog image: {storage_path}')
+                logger.info(f'Deleted blog media file: {storage_path}')
         except Exception as e:
-            logger.warning(f'Failed to delete blog image {storage_path}: {e}')
+            logger.warning(f'Failed to delete blog media file {storage_path}: {e}')
