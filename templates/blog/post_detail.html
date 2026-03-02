@@ -22,39 +22,42 @@
 {% block title %}- {{ post.title }}{% endblock %}
 {% block window %}
     <article class="post">
-        <h2>
-            {{ post.title }}
-            {% if post.is_public %}
-                <span class="post-privacy public">Public</span>
-            {% else %}
-                <span class="post-privacy private">Private</span>
-            {% endif %}
-        </h2>
-        <div class="post-meta d-flex align-items-center gap-2">
-            {% with profile=post.author.user_profile %}
-                {% if profile.picture_thumbnail %}
-                    <img src="{{ profile.picture_thumbnail.url }}"
-                         alt="{{ post.author.username }}"
-                         class="blog-author-avatar">
-                {% else %}
-                    <span class="blog-author-avatar blog-author-initials">{{ post.author.username|first|upper }}</span>
-                {% endif %}
-            {% endwith %}
-            <div>
-                <a href="{% url 'author-posts' post.author.username %}">{{ post.author }}</a>
-                <small class="d-block">{{ post.date_posted|date:"F d, Y" }}</small>
+        {% with profile=post.author.user_profile %}
+            <div class="post-hero{% if profile.picture %} post-hero-has-image{% endif %}"
+                 {% if profile.picture %}style="background-image: url('{{ profile.picture.url }}')"{% endif %}>
+                <div class="post-hero-overlay">
+                    <h2>
+                        {{ post.title }}
+                        {% if post.is_public %}
+                            <span class="post-privacy public">Public</span>
+                        {% else %}
+                            <span class="post-privacy private">Private</span>
+                        {% endif %}
+                    </h2>
+                    <div class="post-meta d-flex align-items-center gap-2">
+                        {% if profile.picture_thumbnail %}
+                            <img src="{{ profile.picture_thumbnail.url }}"
+                                 alt="{{ post.author.username }}"
+                                 class="blog-author-avatar">
+                        {% else %}
+                            <span class="blog-author-avatar blog-author-initials">{{ post.author.username|first|upper }}</span>
+                        {% endif %}
+                        <div>
+                            <a href="{% url 'author-posts' post.author.username %}">{{ post.author }}</a>
+                            <small class="d-block">{{ post.date_posted|date:"F d, Y" }}</small>
+                        </div>
+                    </div>
+                    {% if post.tag_list %}
+                        <div class="tags-container">
+                            Tags:
+                            {% for tag in post.tag_list %}
+                                <a href="{% url 'tag-posts' tag.id %}" class="tag">{{ tag.label }}</a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-        </div>
-
-        <!-- Tags -->
-        {% if post.tag_list %}
-            <div class="tags-container">
-                Tags:
-                {% for tag in post.tag_list %}
-                    <a href="{% url 'tag-posts' tag.id %}" class="tag">{{ tag.label }}</a>
-                {% endfor %}
-            </div>
-        {% endif %}
+        {% endwith %}
         <hr/>
 
         <div class="post-content rich-text-content">
@@ -99,6 +102,31 @@
             height: auto;
             display: block;
             margin: 1rem 0;
+        }
+
+        .post-hero {
+            position: relative;
+            background-color: whitesmoke;
+            background-size: auto 100%;
+            background-position: right center;
+            background-repeat: no-repeat;
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .post-hero-overlay {
+            padding: 1.25rem 1.5rem;
+            background: linear-gradient(to right,
+                whitesmoke 0%,
+                whitesmoke 42%,
+                rgba(245, 245, 245, 0.6) 70%,
+                rgba(245, 245, 245, 0.15) 100%
+            );
+        }
+
+        .post-hero:not(.post-hero-has-image) .post-hero-overlay {
+            background: none;
         }
     </style>
 
