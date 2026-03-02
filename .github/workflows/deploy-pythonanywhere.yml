@@ -60,7 +60,7 @@ jobs:
           # Deployment commands to run on PythonAnywhere via SSH
           deployment_commands = (
               f"set -e\n"
-              f"cd ~/{directory}\n"
+              f'cd "$HOME/{directory}"\n'
               f'echo "Pulling latest code from GitHub..."\n'
               f"git checkout master\n"
               f"git pull\n"
