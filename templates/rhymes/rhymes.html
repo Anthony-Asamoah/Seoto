@@ -80,16 +80,15 @@
 
     <div class="container">
         <div class="header">
-            <h2>Type in the Rhyme(s) you want and click 'Find'</h2>
+            <h2>Type in a word to find its rhymes</h2>
         </div>
         <div class="main mt-3">
             <div class="form">
                 <form action="{% url 'rhymes' %}" method="post">
                     {% csrf_token %}
                     <div class="input">
-                        <input type="text" name="rhyme" id="rhmye" required placeholder="example; tion, ime, tor">
-                        <small class="text-muted">Search for two or more items by separating each rhyme with a
-                            comma</small>
+                        <input type="text" name="rhyme" id="rhmye" required placeholder="example: singing, time, factor">
+                        <small class="text-muted">Search rhymes for two or more words by separating them with a comma</small>
                     </div>
                     <div class="button">
                         <button class="btn btn-primary" type="submit">Find</button>

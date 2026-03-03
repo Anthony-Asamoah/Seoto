@@ -39,8 +39,9 @@
             </button>
             <!-- Notification Toggle Button (for authenticated users) -->
             {% if user.is_authenticated %}
-            <button id="notification-toggle" class="nav-item nav-link btn" title="Enable push notifications" onclick="window.SeotoPWA.requestNotificationPermission()">
+            <button id="notification-toggle" class="nav-item nav-link btn position-relative" title="Enable push notifications" onclick="window.SeotoPWA.requestNotificationPermission()">
                 <i class="fas fa-bell"></i>
+                <span id="notification-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:.6rem;"></span>
             </button>
             {% endif %}
         </div>

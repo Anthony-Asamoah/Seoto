@@ -1,0 +1,74 @@
+{% extends 'Home/dashboard/base.html' %}
+
+{% block title %}| User Analytics{% endblock %}
+{% block nav_users %}active{% endblock %}
+
+{% block dash_content %}
+<h2 class="mb-4">User Analytics</h2>
+
+<div class="row g-3 mb-5">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-muted small">Total Users</div>
+            <div class="fs-2 fw-bold text-primary">{{ total_users }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-muted small">Active</div>
+            <div class="fs-2 fw-bold text-success">{{ active_users }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-muted small">Staff</div>
+            <div class="fs-2 fw-bold text-warning">{{ staff_users }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="text-muted small">Active (7d)</div>
+            <div class="fs-2 fw-bold text-info">{{ recently_active }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-5">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Registrations</h6>
+                <table class="table table-sm mb-0">
+                    <tr><td>Last 7 days</td><td class="fw-bold">{{ new_week }}</td></tr>
+                    <tr><td>Last 30 days</td><td class="fw-bold">{{ new_month }}</td></tr>
+                    <tr><td>Logged in (7d)</td><td class="fw-bold">{{ recently_active }}</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h5 class="mb-3">Daily Registrations (last 30 days)</h5>
+{% if daily_regs %}
+<div class="table-responsive">
+    <table class="table table-sm table-striped">
+        <thead class="table-dark">
+            <tr><th>Date</th><th>New Users</th><th>Bar</th></tr>
+        </thead>
+        <tbody>
+            {% for row in daily_regs %}
+            <tr>
+                <td>{{ row.day }}</td>
+                <td>{{ row.count }}</td>
+                <td>
+                    <div class="bg-primary rounded" style="height:12px;width:{{ row.count|add:0 }}0px;max-width:300px;"></div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">No registrations in the last 30 days.</p>
+{% endif %}
+{% endblock %}

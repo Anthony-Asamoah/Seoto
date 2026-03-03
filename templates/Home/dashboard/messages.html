@@ -1,0 +1,56 @@
+{% extends 'Home/dashboard/base.html' %}
+
+{% block title %}| Messages{% endblock %}
+{% block nav_messages %}active{% endblock %}
+
+{% block dash_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Platform Messages</h2>
+    <div class="text-muted small">
+        {{ unread }} unread of {{ total }} total
+    </div>
+</div>
+
+<form method="get" class="mb-4 row g-2">
+    <div class="col-auto">
+        <select name="replied" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="" {% if not replied %}selected{% endif %}>All messages</option>
+            <option value="no" {% if replied == 'no' %}selected{% endif %}>Unread / Not replied</option>
+            <option value="yes" {% if replied == 'yes' %}selected{% endif %}>Replied</option>
+        </select>
+    </div>
+    <div class="col">
+        <div class="input-group input-group-sm">
+            <input type="text" name="q" class="form-control" placeholder="Search name, subject, message…" value="{{ search }}">
+            <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i></button>
+            {% if search %}<a href="{% url 'dashboard_messages' %}{% if replied %}?replied={{ replied }}{% endif %}" class="btn btn-outline-danger"><i class="fas fa-times"></i></a>{% endif %}
+        </div>
+    </div>
+</form>
+
+{% if contact_messages %}
+<div class="list-group">
+    {% for msg in contact_messages %}
+    <a href="{% url 'message_detail' msg.pk %}"
+       class="list-group-item list-group-item-action {% if not msg.replied %}list-group-item-warning{% endif %}">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <strong>{{ msg.name }}</strong>
+                <span class="text-muted small ms-2">{{ msg.email }}</span>
+                {% if not msg.replied %}
+                    <span class="badge bg-warning text-dark ms-2">Unread</span>
+                {% else %}
+                    <span class="badge bg-success ms-2">Replied</span>
+                {% endif %}
+                <div class="text-muted small mt-1">{{ msg.subject }}</div>
+                <div class="small mt-1">{{ msg.message|truncatechars:100 }}</div>
+            </div>
+            <span class="text-muted small text-nowrap ms-3">{{ msg.submitted_on|date:"M j, Y" }}</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">No messages found.</div>
+{% endif %}
+{% endblock %}
