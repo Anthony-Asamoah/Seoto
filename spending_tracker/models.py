@@ -152,6 +152,14 @@ class Transaction(models.Model):
                                  related_name='transactions')
     tags = models.ManyToManyField(Tag, blank=True)
 
+    # Attachment (receipt image or PDF)
+    attachment = models.FileField(
+        upload_to='receipts/%Y/%m/',
+        blank=True,
+        null=True,
+        help_text='Receipt image (JPEG, PNG, WebP, GIF) or PDF',
+    )
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     transaction_time = models.DateTimeField(default=timezone.now, db_index=True)
@@ -162,6 +170,12 @@ class Transaction(models.Model):
     @property
     def currency_symbol(self):
         return CURRENCY_SYMBOLS.get(self.currency, self.currency)
+
+    @property
+    def attachment_type(self):
+        if not self.attachment:
+            return None
+        return 'pdf' if self.attachment.name.lower().endswith('.pdf') else 'image'
 
     @property
     def is_editable(self):

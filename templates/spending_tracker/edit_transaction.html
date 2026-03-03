@@ -47,6 +47,12 @@
             border: 1px solid #ffc107;
         }
     </style>
+    <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
+    <style>
+        .ql-container { font-size: 14px; border-radius: 0 0 4px 4px; }
+        .ql-toolbar { border-radius: 4px 4px 0 0; }
+        .ql-container.ql-snow, .ql-toolbar.ql-snow { border-color: #ced4da; }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -173,8 +179,8 @@
                             Purpose / Description
                         {% endif %}
                     </label>
-                    <textarea class="form-control" name="details" rows="3"
-                              placeholder="Optional details about this transaction">{{ transaction.details|default:"" }}</textarea>
+                    <div id="details-editor"></div>
+                    <textarea name="details" id="details-input" style="display:none;">{{ transaction.details|default:"" }}</textarea>
                 </div>
 
                 <div class="form-group">
@@ -222,4 +228,26 @@
             </form>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+    <script>
+        const detailsQuill = new Quill('#details-editor', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }]
+                ]
+            }
+        });
+
+        // Pre-populate with existing transaction details
+        const detailsInitial = document.getElementById('details-input').value;
+        if (detailsInitial) detailsQuill.root.innerHTML = detailsInitial;
+
+        // Keep hidden textarea in sync
+        detailsQuill.on('text-change', function () {
+            document.getElementById('details-input').value = detailsQuill.root.innerHTML;
+        });
+    </script>
 {% endblock %}

@@ -1,6 +1,7 @@
-import logging
 import json
+import logging
 import uuid
+from collections import OrderedDict
 from datetime import timedelta, datetime
 from decimal import Decimal
 
@@ -29,6 +30,51 @@ def _get_currency_symbol(user):
         user=user, defaults={'default_currency': 'GHS'}
     )
     return CURRENCY_SYMBOLS.get(preferences.default_currency, preferences.default_currency)
+
+
+def _group_transactions(transactions, group_by):
+    """
+    Group a list of Transaction objects by a time period.
+    Returns list of dicts: {label, transactions, income_total, expense_total}.
+    """
+    groups = OrderedDict()
+
+    for tx in transactions:
+        dt = tx.transaction_time
+
+        if group_by == 'day':
+            key = dt.date()
+            label = dt.strftime('%A, %-d %b %Y')
+        elif group_by == 'week':
+            monday = dt.date() - timedelta(days=dt.weekday())
+            key = monday
+            label = f'Week of {monday.strftime("%-d %b %Y")}'
+        elif group_by == 'month':
+            key = (dt.year, dt.month)
+            label = dt.strftime('%B %Y')
+        elif group_by == 'quarter':
+            quarter = (dt.month - 1) // 3 + 1
+            key = (dt.year, quarter)
+            label = f'Q{quarter} {dt.year}'
+        else:  # year
+            key = dt.year
+            label = str(dt.year)
+
+        if key not in groups:
+            groups[key] = {
+                'label': label,
+                'transactions': [],
+                'income_total': Decimal('0.00'),
+                'expense_total': Decimal('0.00'),
+            }
+
+        groups[key]['transactions'].append(tx)
+        if tx.mode == 'INCOME':
+            groups[key]['income_total'] += tx.amount
+        elif tx.mode == 'EXPENSE':
+            groups[key]['expense_total'] += tx.amount
+
+    return list(groups.values())
 
 
 @login_required
@@ -109,6 +155,14 @@ def transaction_list(request):
     if account_filter:
         transactions = transactions.filter(account_id=account_filter)
 
+    # Date range filter
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    if date_from:
+        transactions = transactions.filter(transaction_time__date__gte=date_from)
+    if date_to:
+        transactions = transactions.filter(transaction_time__date__lte=date_to)
+
     # Sort
     allowed_sorts = {
         '-transaction_time': 'Newest First',
@@ -121,7 +175,18 @@ def transaction_list(request):
         sort_value = '-transaction_time'
     transactions = transactions.order_by(sort_value)
 
-    transaction_page = apply_pagination(transactions, request.GET.get('page'), 10)
+    # Grouping
+    allowed_group_by = {'day', 'week', 'month', 'quarter', 'year'}
+    group_by = request.GET.get('group_by', '').lower()
+    if group_by not in allowed_group_by:
+        group_by = ''
+
+    if group_by:
+        grouped_transactions = _group_transactions(list(transactions), group_by)
+        page_obj = None
+    else:
+        grouped_transactions = None
+        page_obj = apply_pagination(transactions, request.GET.get('page'), 10)
 
     # Build query string without page for pagination links
     query_params = {}
@@ -133,15 +198,25 @@ def transaction_list(request):
         query_params['account'] = account_filter
     if sort_value != '-transaction_time':
         query_params['sort'] = sort_value
+    if date_from:
+        query_params['date_from'] = date_from
+    if date_to:
+        query_params['date_to'] = date_to
+    if group_by:
+        query_params['group_by'] = group_by
 
     context = {
-        'page_obj': transaction_page,
+        'page_obj': page_obj,
+        'grouped_transactions': grouped_transactions,
+        'group_by': group_by,
         'categories': Category.objects.filter(user=request.user),
         'accounts': Account.objects.filter(user=request.user),
         'currency_symbol': _get_currency_symbol(request.user),
         'current_sort': sort_value,
         'sort_options': allowed_sorts,
         'query_params': query_params,
+        'date_from': date_from,
+        'date_to': date_to,
     }
     return render(request, 'spending_tracker/transaction_list.html', context)
 
@@ -184,7 +259,7 @@ def add_transaction(request):
         # Remove tags from the form data as we'll handle them separately
         post_data.pop('tags', None)
 
-        form = TransactionForm(post_data, user=request.user)
+        form = TransactionForm(post_data, request.FILES, user=request.user)
 
         if form.is_valid():
             transaction = form.save()
@@ -687,7 +762,7 @@ def reports(request):
     ).annotate(
         total=Sum('amount'),
         count=Count('id')
-    ).order_by('-total')[:10]
+    ).order_by('-total')[:5]
 
     user_accounts = Account.objects.filter(user=request.user).prefetch_related(
         Prefetch(
