@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block style %}
+<style>
+    .dash-wrapper {
+        display: flex;
+        min-height: calc(100vh - 56px);
+    }
+    .dash-sidebar {
+        width: 220px;
+        flex-shrink: 0;
+        background: var(--bs-dark, #212529);
+        padding: 1.5rem 0;
+    }
+    .dash-sidebar .nav-link {
+        color: rgba(255,255,255,.75);
+        padding: .5rem 1.25rem;
+        border-radius: 0;
+        font-size: .9rem;
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+    }
+    .dash-sidebar .nav-link:hover,
+    .dash-sidebar .nav-link.active {
+        color: #fff;
+        background: rgba(255,255,255,.1);
+    }
+    .dash-sidebar .nav-section {
+        font-size: .7rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        color: rgba(255,255,255,.4);
+        padding: 1rem 1.25rem .3rem;
+    }
+    .dash-main {
+        flex: 1;
+        padding: 2rem;
+        overflow-x: auto;
+    }
+    .stat-card {
+        border-radius: .5rem;
+        padding: 1.25rem 1.5rem;
+        color: #fff;
+        min-width: 140px;
+    }
+    .stat-card .stat-label {
+        font-size: .75rem;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        opacity: .85;
+    }
+    .stat-card .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    @media (max-width: 768px) {
+        .dash-sidebar { display: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-wrapper">
+    <nav class="dash-sidebar">
+        <div class="nav-section">Overview</div>
+        <a href="{% url 'dashboard' %}" class="nav-link {% block nav_overview %}{% endblock %}">
+            <i class="fas fa-tachometer-alt fa-fw"></i> Dashboard
+        </a>
+
+        <div class="nav-section">System</div>
+        <a href="{% url 'dashboard_errors' %}" class="nav-link {% block nav_errors %}{% endblock %}">
+            <i class="fas fa-exclamation-triangle fa-fw"></i> Errors
+        </a>
+
+        <div class="nav-section">Analytics</div>
+        <a href="{% url 'dashboard_users' %}" class="nav-link {% block nav_users %}{% endblock %}">
+            <i class="fas fa-users fa-fw"></i> Users
+        </a>
+        <a href="{% url 'dashboard_usage' %}" class="nav-link {% block nav_usage %}{% endblock %}">
+            <i class="fas fa-chart-bar fa-fw"></i> App Usage
+        </a>
+
+        <div class="nav-section">Messages</div>
+        <a href="{% url 'dashboard_messages' %}" class="nav-link {% block nav_messages %}{% endblock %}">
+            <i class="fas fa-envelope fa-fw"></i> Messages
+        </a>
+    </nav>
+
+    <main class="dash-main">
+        {% block dash_content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}

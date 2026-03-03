@@ -28,6 +28,16 @@ class RhymeDB:
         for letter in self._rhyme_string:
             if letter not in allowed_chars: raise InvalidInput('Only english letters are allowed')
 
+    def _find_rhymes_for_word(self, word: str, temp: str) -> None:
+        for n in [3, 2, 1]:
+            if len(word) >= n:
+                suffix = word[-n:]
+                regex = re.compile(f'\\w*{suffix}\\s')
+                data = sorted({i.title() for i in regex.findall(temp)})
+                if data:
+                    self._result[suffix] = data
+                    return
+
     def findall(self) -> None:
         dictionary_path = path.join(BASE_DIR, "Words.txt")  # default Path for english dictionary
         dictionary = open(dictionary_path, "r")
@@ -36,16 +46,10 @@ class RhymeDB:
         temp = " ".join(all_text)
 
         if ',' not in self._rhyme_string:
-            regex = re.compile(f'\\w*{self._rhyme_string.strip()}\\s')
-            data = sorted({i.title() for i in regex.findall(temp)})
-            if data: self._result[self._rhyme_string] = data
+            self._find_rhymes_for_word(self._rhyme_string.strip(), temp)
         else:
-            rhyme_list = self._rhyme_string.split(',')
-            for item in rhyme_list:
-                item = item.strip()
-                regex = re.compile(f'\\w*{item}\\s')
-                data = (sorted({i.title() for i in regex.findall(temp)}))
-                if data: self._result[item] = data
+            for item in self._rhyme_string.split(','):
+                self._find_rhymes_for_word(item.strip(), temp)
 
     def get_all_words(self) -> list:
         if not self._all_words:

@@ -15,24 +15,33 @@
       return;
     }
 
+    // Reuse or create the icon element (preserve the badge span)
+    let icon = notificationToggle.querySelector('i');
+    if (!icon) {
+      icon = document.createElement('i');
+      notificationToggle.insertBefore(icon, notificationToggle.firstChild);
+    }
+
     // Update button based on permission status
     const permission = Notification.permission;
 
     if (permission === 'granted') {
-      notificationToggle.innerHTML = '<i class="fas fa-bell"></i>';
+      icon.className = 'fas fa-bell';
       notificationToggle.title = 'Notifications enabled';
       notificationToggle.classList.add('text-success');
       notificationToggle.classList.remove('text-muted');
+      notificationToggle.disabled = false;
     } else if (permission === 'denied') {
-      notificationToggle.innerHTML = '<i class="fas fa-bell-slash"></i>';
+      icon.className = 'fas fa-bell-slash';
       notificationToggle.title = 'Notifications blocked (check browser settings)';
       notificationToggle.classList.add('text-muted');
       notificationToggle.classList.remove('text-success');
       notificationToggle.disabled = true;
     } else {
-      notificationToggle.innerHTML = '<i class="far fa-bell"></i>';
+      icon.className = 'far fa-bell';
       notificationToggle.title = 'Enable push notifications';
       notificationToggle.classList.remove('text-success', 'text-muted');
+      notificationToggle.disabled = false;
     }
   }
 

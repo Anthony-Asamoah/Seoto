@@ -1,0 +1,73 @@
+{% extends 'Home/dashboard/base.html' %}
+
+{% block title %}| Errors{% endblock %}
+{% block nav_errors %}active{% endblock %}
+
+{% block dash_content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Error Log</h2>
+    <span class="badge bg-danger fs-6">{{ logs|length }} shown</span>
+</div>
+
+<form method="get" class="mb-4 d-flex gap-2 align-items-center flex-wrap">
+    <label class="form-label mb-0 text-muted small">Filter:</label>
+    <a href="{% url 'dashboard_errors' %}" class="btn btn-sm {% if not level %}btn-secondary{% else %}btn-outline-secondary{% endif %}">All</a>
+    {% for lvl in levels %}
+        <a href="?level={{ lvl }}"
+           class="btn btn-sm {% if level == lvl %}btn-danger{% else %}btn-outline-danger{% endif %}">
+            {{ lvl }}
+        </a>
+    {% endfor %}
+</form>
+
+{% if logs %}
+<div class="table-responsive">
+    <table class="table table-sm table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Time</th>
+                <th>Level</th>
+                <th>Logger</th>
+                <th>Message</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td class="text-nowrap text-muted small">{{ log.timestamp|date:"M j, H:i" }}</td>
+                <td>
+                    <span class="badge {% if log.level == 'CRITICAL' %}bg-dark{% elif log.level == 'ERROR' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                        {{ log.level }}
+                    </span>
+                </td>
+                <td class="text-muted small">{{ log.logger_name }}</td>
+                <td class="font-monospace small">{{ log.message|truncatechars:120 }}</td>
+                <td>
+                    {% if log.traceback %}
+                        <button class="btn btn-sm btn-outline-secondary"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#tb-{{ log.pk }}">
+                            Traceback
+                        </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% if log.traceback %}
+            <tr class="collapse" id="tb-{{ log.pk }}">
+                <td colspan="5">
+                    <pre class="bg-dark text-light p-3 rounded small mb-0" style="white-space:pre-wrap;overflow-x:auto;">{{ log.traceback }}</pre>
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-success">
+    <i class="fas fa-check-circle me-2"></i> No errors logged{% if level %} at level {{ level }}{% endif %}.
+</div>
+{% endif %}
+{% endblock %}

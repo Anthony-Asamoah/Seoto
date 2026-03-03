@@ -1,53 +1,87 @@
 {% if messages %}
-    <style>
-        .message-container {
-            opacity: 1;
-            transition: opacity 0.5s ease;
-        }
-        .message-container.dismiss {
-            opacity: 0;
-        }
-    </style>
-
+<div id="toast-tray" aria-live="polite" aria-atomic="false">
     {% for message in messages %}
-        <div class="container message-container">
-            <div class="alert alert-{{ message.tags }} alert-dismissible text-center" role="alert">
-                <strong>
-                    {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
-                        Error
-                    {% else %}
-                        {{ message.tags | title }}
-                    {% endif %}
-                </strong>
-                {{ message }}
-                <button type="button" class="btn-close" aria-label="Close"></button>
-            </div>
-        </div>
+    <div class="toast-item alert alert-{{ message.tags }} alert-dismissible" role="alert">
+        <strong>
+            {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+                Error
+            {% else %}
+                {{ message.tags|title }}
+            {% endif %}
+        </strong>
+        {{ message }}
+        <button type="button" class="btn-close" aria-label="Close"></button>
+    </div>
     {% endfor %}
+</div>
 
-    <script>
-        (function () {
-            function dismissMessage(el) {
-                el.classList.add('dismiss');
-                el.addEventListener('transitionend', function handler() {
-                    el.removeEventListener('transitionend', handler);
-                    el.remove();
-                });
-            }
+<style>
+    #toast-tray {
+        position: fixed;
+        top: 70px;        /* clear the navbar */
+        right: 1rem;
+        width: 25vw;
+        min-width: 260px;
+        max-height: 50vh;
+        overflow-y: auto;
+        z-index: 1080;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        pointer-events: none;   /* tray itself is click-through */
+    }
+    .toast-item {
+        pointer-events: all;    /* individual toasts are clickable */
+        border-radius: .5rem;
+        box-shadow: 0 4px 16px rgba(0,0,0,.18);
+        margin: 0;
+        opacity: 0;
+        transform: translateX(110%);
+        transition: opacity .35s ease, transform .35s ease;
+    }
+    .toast-item.visible {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    .toast-item.dismiss {
+        opacity: 0;
+        transform: translateX(110%);
+    }
+    @media (max-width: 600px) {
+        #toast-tray {
+            width: calc(100vw - 2rem);
+            right: 1rem;
+        }
+    }
+</style>
 
-            document.querySelectorAll('.message-container').forEach(function (el) {
-                setTimeout(function () {
-                    dismissMessage(el);
-                }, 5000);
+<script>
+(function () {
+    function dismiss(el) {
+        el.classList.remove('visible');
+        el.classList.add('dismiss');
+        el.addEventListener('transitionend', function h() {
+            el.removeEventListener('transitionend', h);
+            el.remove();
+        });
+    }
 
-                var closeBtn = el.querySelector('.btn-close');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        dismissMessage(el);
-                    });
-                }
-            });
-        })();
-    </script>
+    document.querySelectorAll('.toast-item').forEach(function (el) {
+        // Slide in
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () { el.classList.add('visible'); });
+        });
+
+        // Auto-dismiss after 5s
+        setTimeout(function () { dismiss(el); }, 5000);
+
+        // Manual close
+        var btn = el.querySelector('.btn-close');
+        if (btn) btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            dismiss(el);
+        });
+    });
+})();
+</script>
 {% endif %}

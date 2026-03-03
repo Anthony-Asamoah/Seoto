@@ -284,5 +284,29 @@ IP_QUALITY_SCORE_API_KEY=Env.str('IP_QUALITY_SCORE_API_KEY', default="None")
 
 # Blog media upload limits (MB)
 BLOG_UPLOAD_MAX_SIZE_MB = Env.int('BLOG_UPLOAD_MAX_SIZE_MB', default=10)
+
+# Structured logging — write ERROR+ to the database via home.log_handler
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'db': {
+            'level': 'ERROR',
+            'class': 'home.log_handler.DatabaseLogHandler',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['db'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['db'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
 BLOG_VIDEO_MAX_SIZE_MB = Env.int('BLOG_VIDEO_MAX_SIZE_MB', default=60)
 DATA_UPLOAD_MAX_MEMORY_SIZE = BLOG_VIDEO_MAX_SIZE_MB * 1024 * 1024
