@@ -64,6 +64,8 @@
                 <span class="mode-indicator {{ mode|lower }}">
                     {% if mode == 'INCOME' %}
                         💰 Editing Income
+                    {% elif mode == 'TRANSFER' %}
+                        🔄 Editing Transfer
                     {% else %}
                         💸 Editing Expense
                     {% endif %}
@@ -99,6 +101,25 @@
                             {% endif %}
                         </div>
                     </div>
+                    {% if mode == 'TRANSFER' %}
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Destination Account <span class="text-danger">*</span></label>
+                            <select name="destination_account" class="form-control" required>
+                                <option value="">Choose destination account...</option>
+                                {% for account in all_accounts %}
+                                    <option value="{{ account.pk }}"
+                                            {% if transaction.destination_account_id == account.pk %}selected{% endif %}>
+                                        {{ account.name }} ({{ currency_symbol }}{{ account.balance }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.destination_account.errors %}
+                                <div class="text-danger small">{{ form.destination_account.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="form-label">Category</label>

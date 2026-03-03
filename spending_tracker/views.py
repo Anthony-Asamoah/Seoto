@@ -17,7 +17,7 @@ from django.views.decorators.http import require_http_methods
 
 from utils.paginator import apply_pagination
 from .forms import TransactionForm, AccountForm, CategoryForm
-from .models import Account, Transaction, Category, Tag, UserPreferences, CURRENCY_SYMBOLS
+from .models import Account, Transaction, Category, Tag, UserPreferences, CURRENCY_SYMBOLS, TransactionModeChoices
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -96,7 +96,7 @@ def transaction_list(request):
 
     # Filter by mode
     mode_filter = request.GET.get('mode')
-    if mode_filter in ['INCOME', 'EXPENSE']:
+    if mode_filter in TransactionModeChoices.names_list():
         transactions = transactions.filter(mode=mode_filter)
 
     # Filter by category
@@ -161,7 +161,7 @@ def add_transaction(request):
             f"Retrieved preserved transaction data from session: mode={request.session.get('transaction_mode')}, fields={list(preserved_data.keys())}")
 
     # Step 1: Show mode selection if no mode specified
-    if not mode or mode not in ['INCOME', 'EXPENSE']:
+    if not mode or mode not in TransactionModeChoices.names_list():
         logger.debug("No mode specified, showing mode selection page")
         return render(request, 'spending_tracker/add_transaction.html', {
             'show_mode_selection': True
@@ -439,7 +439,9 @@ def accounts_list(request):
     accounts = Account.objects.filter(user=request.user).annotate(
         transaction_count=Count('transactions'),
         total_income=Sum('transactions__amount', filter=Q(transactions__mode='INCOME')),
-        total_expenses=Sum('transactions__amount', filter=Q(transactions__mode='EXPENSE'))
+        total_expenses=Sum('transactions__amount', filter=Q(transactions__mode='EXPENSE')),
+        total_transfers_out=Sum('transactions__amount', filter=Q(transactions__mode='TRANSFER')),
+        total_transfers_in=Sum('incoming_transfers__amount'),
     ).order_by('-balance')
 
     # Calculate total balance across all accounts
@@ -450,7 +452,9 @@ def accounts_list(request):
     for account in accounts:
         income = account.total_income or 0
         expenses = account.total_expenses or 0
-        net_flow = income - expenses
+        transfers_out = account.total_transfers_out or 0
+        transfers_in = account.total_transfers_in or 0
+        net_flow = income - expenses - transfers_out + transfers_in
 
         account_stats.append({
             'account': account,
@@ -695,17 +699,29 @@ def reports(request):
 
     account_stats = base_transactions.values('account').annotate(
         income=Sum('amount', filter=Q(mode='INCOME')),
-        expenses=Sum('amount', filter=Q(mode='EXPENSE'))
+        expenses=Sum('amount', filter=Q(mode='EXPENSE')),
+        transfers_out=Sum('amount', filter=Q(mode='TRANSFER')),
     )
+
+    # Transfers received per account (destination side, not covered by account_stats)
+    transfers_in_by_account = (
+        base_transactions
+        .filter(mode='TRANSFER', destination_account__isnull=False)
+        .values('destination_account')
+        .annotate(transfers_in=Sum('amount'))
+    )
+    transfers_in_dict = {row['destination_account']: row['transfers_in'] for row in transfers_in_by_account}
 
     account_stats_dict = {stat['account']: stat for stat in account_stats}
 
     account_performance = []
     for account in user_accounts:
-        stats = account_stats_dict.get(account.id, {'income': 0, 'expenses': 0})
+        stats = account_stats_dict.get(account.id, {'income': 0, 'expenses': 0, 'transfers_out': 0})
         account_income = stats.get('income') or 0
         account_expenses = stats.get('expenses') or 0
-        net_change = account_income - account_expenses
+        account_transfers_out = stats.get('transfers_out') or 0
+        account_transfers_in = transfers_in_dict.get(account.id, 0) or 0
+        net_change = account_income - account_expenses - account_transfers_out + account_transfers_in
         starting_balance = account.balance - net_change
 
         account_performance.append({
@@ -1007,6 +1023,33 @@ def reports(request):
     logger.debug(f"=== REPORTS VIEW COMPLETE ===")
     logger.debug(f"{'=' * 80}\n")
 
+    # Transfer analysis
+    transfers = (
+        base_transactions
+        .filter(mode='TRANSFER')
+        .select_related('account', 'destination_account', 'category')
+        .order_by('-transaction_time')
+    )
+    transfer_agg = transfers.aggregate(
+        total_volume=Sum('amount'),
+        transfer_count=Count('id'),
+    )
+    total_transfer_volume = round(float(transfer_agg['total_volume'] or 0), 2)
+    transfer_count = transfer_agg['transfer_count'] or 0
+
+    # Most common source and destination accounts for transfers
+    transfer_by_source = (
+        transfers.values('account__name')
+        .annotate(count=Count('id'), volume=Sum('amount'))
+        .order_by('-volume')[:5]
+    )
+    transfer_by_dest = (
+        transfers.filter(destination_account__isnull=False)
+        .values('destination_account__name')
+        .annotate(count=Count('id'), volume=Sum('amount'))
+        .order_by('-volume')[:5]
+    )
+
     # Compute summary metrics (Feature 9)
     days_in_period = max((end_date - start_date).days, 1)
     avg_daily_spending = round(float(total_expenses) / days_in_period, 2)
@@ -1047,6 +1090,12 @@ def reports(request):
         'top_expense_category': top_expense_category,
         'top_expense_amount': top_expense_amount,
         'income_expense_ratio': income_expense_ratio,
+        # Transfer analysis
+        'transfers': transfers,
+        'transfer_count': transfer_count,
+        'total_transfer_volume': total_transfer_volume,
+        'transfer_by_source': transfer_by_source,
+        'transfer_by_dest': transfer_by_dest,
     }
     return render(request, 'spending_tracker/reports.html', context)
 
@@ -1276,12 +1325,19 @@ def create_transaction_api(request):
         if category_id:
             category = Category.objects.filter(id=category_id, user=request.user).first()
 
+        # Get destination account for transfers
+        destination_account = None
+        destination_account_id = data.get('destination_account_id')
+        if destination_account_id:
+            destination_account = Account.objects.filter(id=destination_account_id, user=request.user).first()
+
         transaction = Transaction.objects.create(
             mode=data.get('mode', 'EXPENSE'),
             amount=Decimal(str(data.get('amount'))),
             currency=data.get('currency', 'GHS'),
             details=data.get('details', ''),
             account=account,
+            destination_account=destination_account,
             category=category
         )
 

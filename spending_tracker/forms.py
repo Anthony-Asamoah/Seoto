@@ -7,7 +7,7 @@ from .models import Transaction, Account, Category
 class TransactionForm(forms.ModelForm):
     class Meta:
         model = Transaction
-        fields = ['mode', 'amount', 'currency', 'details', 'reference', 'account', 'category', 'tags', 'transaction_time']
+        fields = ['mode', 'amount', 'currency', 'details', 'reference', 'account', 'destination_account', 'category', 'tags', 'transaction_time']
         widgets = {
             'transaction_time': forms.DateTimeInput(
                 attrs={
@@ -33,6 +33,7 @@ class TransactionForm(forms.ModelForm):
 
         if user:
             self.fields['account'].queryset = Account.objects.filter(user=user)
+            self.fields['destination_account'].queryset = Account.objects.filter(user=user)
             self.fields['category'].queryset = Category.objects.filter(user=user)
 
         # Set default value for transaction_time to now if creating new transaction
@@ -41,6 +42,18 @@ class TransactionForm(forms.ModelForm):
 
         # Make transaction_time field required
         self.fields['transaction_time'].required = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+        mode = cleaned_data.get('mode')
+        account = cleaned_data.get('account')
+        destination_account = cleaned_data.get('destination_account')
+        if mode == 'TRANSFER':
+            if not destination_account:
+                self.add_error('destination_account', 'A destination account is required for transfers.')
+            elif destination_account == account:
+                self.add_error('destination_account', 'Destination account must differ from source account.')
+        return cleaned_data
 
 
 class AccountForm(forms.ModelForm):
