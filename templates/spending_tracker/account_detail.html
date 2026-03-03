@@ -150,8 +150,10 @@
                 <div class="col-md-2">
                     <div class="d-flex align-items-center">
                         <div class="me-2">
-                            {% if transaction.mode == 'income' %}
+                            {% if transaction.mode == 'INCOME' %}
                                 <span class="fs-4">💰</span>
+                            {% elif transaction.mode == 'TRANSFER' %}
+                                <span class="fs-4">🔄</span>
                             {% else %}
                                 <span class="fs-4">💸</span>
                             {% endif %}
@@ -182,8 +184,8 @@
                 </div>
 
                 <div class="col-md-3 text-end">
-                    <div class="amount-display {% if transaction.mode == 'income' %}income-amount{% else %}expense-amount{% endif %}">
-                        {% if transaction.mode == 'income' %}+{% else %}-{% endif %}
+                    <div class="amount-display {% if transaction.mode == 'INCOME' %}income-amount{% elif transaction.mode == 'TRANSFER' %}transfer-amount{% else %}expense-amount{% endif %}">
+                        {% if transaction.mode == 'INCOME' %}+{% elif transaction.mode == 'TRANSFER' %}↔{% else %}-{% endif %}
                         {{ transaction.currency }} {{ transaction.amount|floatformat:2 }}
                     </div>
                     <small class="text-muted">{{ transaction.transaction_time|time:"H:i" }}</small>

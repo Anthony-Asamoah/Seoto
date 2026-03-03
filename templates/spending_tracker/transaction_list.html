@@ -94,6 +94,7 @@
                     <option value="">All Types</option>
                     <option value="INCOME" {% if request.GET.mode == 'INCOME' %}selected{% endif %}>Income</option>
                     <option value="EXPENSE" {% if request.GET.mode == 'EXPENSE' %}selected{% endif %}>Expense</option>
+                    <option value="TRANSFER" {% if request.GET.mode == 'TRANSFER' %}selected{% endif %}>Transfer</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -154,7 +155,7 @@
     <!-- Transactions List -->
     {% for transaction in page_obj %}
         <div class="transaction-card"
-             style="border-left: 4px solid {% if transaction.mode == 'INCOME' %}#27ae60{% else %}#e74c3c{% endif %};">
+             style="border-left: 4px solid {% if transaction.mode == 'INCOME' %}#27ae60{% elif transaction.mode == 'TRANSFER' %}#3498db{% else %}#e74c3c{% endif %};">
 
             <!-- Summary (Always Visible) -->
             <div class="transaction-summary"
@@ -163,14 +164,14 @@
                  aria-expanded="false">
                 <div class="d-flex align-items-center flex-grow-1">
                     <span class="transaction-icon">
-                        {% if transaction.mode == 'INCOME' %}💰{% else %}💸{% endif %}
+                        {% if transaction.mode == 'INCOME' %}💰{% elif transaction.mode == 'TRANSFER' %}🔄{% else %}💸{% endif %}
                     </span>
                     <div class="transaction-info">
                         <div class="fw-bold">
                             {% if transaction.category %}
                                 {{ transaction.category.label }}
                             {% else %}
-                                {% if transaction.mode == 'INCOME' %}Income{% else %}Expense{% endif %}
+                                {% if transaction.mode == 'INCOME' %}Income{% elif transaction.mode == 'TRANSFER' %}Transfer{% else %}Expense{% endif %}
                             {% endif %}
                         </div>
                         <small class="text-muted">
@@ -179,8 +180,8 @@
                     </div>
                 </div>
                 <div class="d-flex align-items-center">
-                    <span class="transaction-amount me-2 {% if transaction.mode == 'INCOME' %}income{% else %}expense{% endif %}">
-                        {% if transaction.mode == 'INCOME' %}+{% else %}-{% endif %}{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}
+                    <span class="transaction-amount me-2 {% if transaction.mode == 'INCOME' %}income{% elif transaction.mode == 'TRANSFER' %}transfer{% else %}expense{% endif %}">
+                        {% if transaction.mode == 'INCOME' %}+{% elif transaction.mode == 'TRANSFER' %}↔{% else %}-{% endif %}{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}
                     </span>
                     <i class="fas fa-chevron-down chevron-icon"></i>
                 </div>
@@ -269,7 +270,7 @@
                             </div>
                             <div class="d-flex justify-content-between mb-2">
                                 <strong>Amount:</strong>
-                                <span class="{% if transaction.mode == 'INCOME' %}income{% else %}expense{% endif %}">
+                                <span class="{% if transaction.mode == 'INCOME' %}income{% elif transaction.mode == 'TRANSFER' %}transfer{% else %}expense{% endif %}">
                                     {{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}
                                 </span>
                             </div>
@@ -284,7 +285,7 @@
                         </div>
                         <div class="alert alert-warning mt-3 mb-0">
                             <small><i class="fas fa-info-circle"></i>
-                                This will {% if transaction.mode == 'INCOME' %}decrease{% else %}increase{% endif %}
+                                This will {% if transaction.mode == 'INCOME' %}decrease{% elif transaction.mode == 'TRANSFER' %}adjust{% else %}increase{% endif %}
                                 the balance of <strong>{{ transaction.account.name }}</strong> by
                                 {{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}.
                             </small>

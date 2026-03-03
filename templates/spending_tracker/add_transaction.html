@@ -132,6 +132,13 @@
                     <p class="text-muted mt-3 mb-0">Bills, groceries, entertainment, and other purchases</p>
                 </a>
 
+                <a href="{% url 'spending_tracker:add_transaction' %}?mode=TRANSFER" class="mode-choice-card transfer">
+                    <div class="mode-icon">🔄</div>
+                    <div class="mode-title">Transfer</div>
+                    <div class="mode-description">Move money between accounts</div>
+                    <p class="text-muted mt-3 mb-0">Move funds from one account to another</p>
+                </a>
+
                 <div class="text-center mt-4">
                     <a href="{% url 'spending_tracker:dashboard' %}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Back to Dashboard
@@ -147,6 +154,8 @@
                     <span class="mode-indicator {{ mode|lower }}">
                         {% if mode == 'INCOME' %}
                             💰 Recording Income
+                        {% elif mode == 'TRANSFER' %}
+                            🔄 Recording Transfer
                         {% else %}
                             💸 Recording Expense
                         {% endif %}
@@ -183,6 +192,25 @@
                                 {% endif %}
                             </div>
                         </div>
+                        {% if mode == 'TRANSFER' %}
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Destination Account <span class="text-danger">*</span></label>
+                                <select name="destination_account" class="form-control" required>
+                                    <option value="">Choose destination account...</option>
+                                    {% for account in all_accounts %}
+                                        <option value="{{ account.pk }}"
+                                            {% if preserved_data.destination_account and preserved_data.destination_account|stringformat:"s" == account.pk|stringformat:"s" %}selected{% endif %}>
+                                            {{ account.name }} ({{ currency_symbol }}{{ account.balance }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.destination_account.errors %}
+                                    <div class="text-danger small">{{ form.destination_account.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="form-label">

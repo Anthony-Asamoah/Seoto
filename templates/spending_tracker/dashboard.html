@@ -293,7 +293,7 @@
 
                 {% for transaction in recent_transactions %}
                     <div class="transaction-card"
-                         style="border-left: 4px solid {% if transaction.mode == 'INCOME' %}#27ae60{% else %}#e74c3c{% endif %};"
+                         style="border-left: 4px solid {% if transaction.mode == 'INCOME' %}#27ae60{% elif transaction.mode == 'TRANSFER' %}#3498db{% else %}#e74c3c{% endif %};"
                          data-bs-toggle="collapse"
                          data-bs-target="#transaction-{{ transaction.id }}"
                          aria-expanded="false">
@@ -302,14 +302,14 @@
                         <div class="transaction-summary">
                             <div class="d-flex align-items-center flex-grow-1">
                                 <span class="transaction-icon">
-                                    {% if transaction.mode == 'INCOME' %}💰{% else %}💸{% endif %}
+                                    {% if transaction.mode == 'INCOME' %}💰{% elif transaction.mode == 'TRANSFER' %}🔄{% else %}💸{% endif %}
                                 </span>
                                 <div class="transaction-info">
                                     <div class="fw-bold">
                                         {% if transaction.category %}
                                             {{ transaction.category.label }}
                                         {% else %}
-                                            {% if transaction.mode == 'INCOME' %}Income{% else %}Expense{% endif %}
+                                            {% if transaction.mode == 'INCOME' %}Income{% elif transaction.mode == 'TRANSFER' %}Transfer{% else %}Expense{% endif %}
                                         {% endif %}
                                     </div>
                                     <small class="text-muted">
@@ -318,8 +318,8 @@
                                 </div>
                             </div>
                             <div class="d-flex align-items-center">
-                                <span class="transaction-amount me-2 {% if transaction.mode == 'INCOME' %}income{% else %}expense{% endif %}">
-                                    {% if transaction.mode == 'INCOME' %}+{% else %}-{% endif %}{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}
+                                <span class="transaction-amount me-2 {% if transaction.mode == 'INCOME' %}income{% elif transaction.mode == 'TRANSFER' %}transfer{% else %}expense{% endif %}">
+                                    {% if transaction.mode == 'INCOME' %}+{% elif transaction.mode == 'TRANSFER' %}↔{% else %}-{% endif %}{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}
                                 </span>
                                 <i class="fas fa-chevron-down chevron-icon"></i>
                             </div>

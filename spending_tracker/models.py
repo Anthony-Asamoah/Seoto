@@ -6,6 +6,22 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
+from seoto.utils import BaseChoices
+
+
+class TransactionModeChoices(BaseChoices):
+    INCOME = 'INCOME', 'Income'
+    EXPENSE = 'EXPENSE', 'Expense'
+    TRANSFER = 'TRANSFER', 'Transfer'
+
+
+class TransactionCurrencyChoices(BaseChoices):
+    GHS = 'GHS', 'GHS'
+    USD = 'USD', 'USD'
+    EUR = 'EUR', 'EUR'
+    GBP = 'GBP', 'GBP'
+
+
 CURRENCY_SYMBOLS = {'GHS': '₵', 'USD': '$', 'EUR': '€', 'GBP': '£'}
 
 
@@ -110,18 +126,8 @@ class Account(models.Model):
 
 class Transaction(models.Model):
     """Individual transactions (income/expense)"""
-
-    MODE_CHOICES = [
-        ('INCOME', 'INCOME'),
-        ('EXPENSE', 'EXPENSE'),
-    ]
-
-    CURRENCY_CHOICES = [
-        ('GHS', 'GHS'),
-        ('USD', 'USD'),
-        ('EUR', 'EUR'),
-        ('GBP', 'GBP'),
-    ]
+    MODE_CHOICES = TransactionModeChoices.choices
+    CURRENCY_CHOICES = TransactionCurrencyChoices.choices
 
     mode = models.CharField(max_length=10, choices=MODE_CHOICES, db_index=True)
     amount = models.DecimalField(
@@ -135,7 +141,15 @@ class Transaction(models.Model):
 
     # Foreign keys
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='transactions')
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
+    destination_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='incoming_transfers',
+    )
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name='transactions')
     tags = models.ManyToManyField(Tag, blank=True)
 
     # Timestamps
@@ -162,18 +176,30 @@ class Transaction(models.Model):
             # Reverse old balance impact
             if old.mode == 'INCOME':
                 Account.make_expense(old.account.id, old.amount)
-            else:
+            elif old.mode == 'EXPENSE':
                 Account.gain_income(old.account.id, old.amount)
+            else:  # TRANSFER
+                Account.gain_income(old.account.id, old.amount)
+                if old.destination_account_id:
+                    Account.make_expense(old.destination_account_id, old.amount)
             # Apply new balance impact
             if self.mode == 'INCOME':
                 Account.gain_income(self.account.id, self.amount)
-            else:
+            elif self.mode == 'EXPENSE':
                 Account.make_expense(self.account.id, self.amount)
+            else:  # TRANSFER
+                Account.make_expense(self.account.id, self.amount)
+                if self.destination_account_id:
+                    Account.gain_income(self.destination_account_id, self.amount)
         else:
             if self.mode == 'INCOME':
                 Account.gain_income(self.account.id, self.amount)
-            else:  # expense
+            elif self.mode == 'EXPENSE':
                 Account.make_expense(self.account.id, self.amount)
+            else:  # TRANSFER
+                Account.make_expense(self.account.id, self.amount)
+                if self.destination_account_id:
+                    Account.gain_income(self.destination_account_id, self.amount)
 
         super().save(*args, **kwargs)
 
@@ -182,8 +208,12 @@ class Transaction(models.Model):
         # Reverse the transaction's effect on balance
         if self.mode == 'INCOME':
             Account.make_expense(self.account.id, self.amount)
-        else:  # expense
+        elif self.mode == 'EXPENSE':
             Account.gain_income(self.account.id, self.amount)
+        else:  # TRANSFER
+            Account.gain_income(self.account.id, self.amount)
+            if self.destination_account_id:
+                Account.make_expense(self.destination_account_id, self.amount)
 
         super().delete(*args, **kwargs)
 
