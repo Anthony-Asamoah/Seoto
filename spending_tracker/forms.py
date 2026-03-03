@@ -7,7 +7,7 @@ from .models import Transaction, Account, Category
 class TransactionForm(forms.ModelForm):
     class Meta:
         model = Transaction
-        fields = ['mode', 'amount', 'currency', 'details', 'reference', 'account', 'destination_account', 'category', 'tags', 'transaction_time']
+        fields = ['mode', 'amount', 'currency', 'details', 'reference', 'account', 'destination_account', 'category', 'tags', 'transaction_time', 'attachment']
         widgets = {
             'transaction_time': forms.DateTimeInput(
                 attrs={

@@ -162,7 +162,7 @@
                     </span>
                 </div>
 
-                <form method="post" id="transactionForm">
+                <form method="post" enctype="multipart/form-data" id="transactionForm">
                     {% csrf_token %}
                     {{ form.mode.as_hidden }}
                     <input type="hidden" name="idempotency_token" value="{{ idempotency_token }}">
@@ -295,6 +295,16 @@
                                value="{{ preserved_data.reference|default:'' }}"
                                placeholder="{% if mode == 'INCOME' %}e.g., Transfer ID, Check number, Payment code...{% else %}e.g., Invoice #12345, Receipt code, Transaction ID...{% endif %}">
                         <small class="form-text text-muted">Optional reference number or code</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Receipt / Attachment
+                            <small class="text-muted">(optional — image or PDF)</small>
+                        </label>
+                        <input type="file" name="attachment" id="attachment_input"
+                               accept="image/*,application/pdf" capture="environment"
+                               class="form-control">
                     </div>
 
                     <div class="form-group">
@@ -510,5 +520,6 @@
 
             {#console.log('✅ Form data preserved in hidden fields');#}
         });
+
     </script>
 {% endblock %}

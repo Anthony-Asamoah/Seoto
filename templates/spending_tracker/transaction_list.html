@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load spending_extras %}
 {% block title %}- Transactions{% endblock %}
 
 {% block style %}
@@ -129,6 +130,25 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="col-md-3">
+                <label class="form-label">Group By</label>
+                <select name="group_by" class="form-select">
+                    <option value="" {% if not group_by %}selected{% endif %}>No Grouping</option>
+                    <option value="day" {% if group_by == 'day' %}selected{% endif %}>Day</option>
+                    <option value="week" {% if group_by == 'week' %}selected{% endif %}>Week</option>
+                    <option value="month" {% if group_by == 'month' %}selected{% endif %}>Month</option>
+                    <option value="quarter" {% if group_by == 'quarter' %}selected{% endif %}>Quarter</option>
+                    <option value="year" {% if group_by == 'year' %}selected{% endif %}>Year</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">From</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">To</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+            </div>
             <div class="col-12">
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary">Filter</button>
@@ -153,6 +173,143 @@
     </div>
 
     <!-- Transactions List -->
+    {% if group_by and grouped_transactions %}
+        <!-- GROUPED VIEW -->
+        {% for group in grouped_transactions %}
+            <div class="d-flex justify-content-between align-items-center py-2 px-1 mb-2 border-bottom">
+                <h5 class="mb-0 fw-semibold text-secondary">{{ group.label }}</h5>
+                <div class="d-flex gap-3 small">
+                    <span class="income"><i class="fas fa-arrow-up"></i> {{ currency_symbol }}{{ group.income_total|floatformat:2 }}</span>
+                    <span class="expense"><i class="fas fa-arrow-down"></i> {{ currency_symbol }}{{ group.expense_total|floatformat:2 }}</span>
+                </div>
+            </div>
+            {% for transaction in group.transactions %}
+                <div class="transaction-card"
+                     style="border-left: 4px solid {% if transaction.mode == 'INCOME' %}#27ae60{% elif transaction.mode == 'TRANSFER' %}#3498db{% else %}#e74c3c{% endif %};">
+                    <div class="transaction-summary"
+                         data-bs-toggle="collapse"
+                         data-bs-target="#transaction-g-{{ transaction.id }}"
+                         aria-expanded="false">
+                        <div class="d-flex align-items-center flex-grow-1">
+                            <span class="transaction-icon">
+                                {% if transaction.mode == 'INCOME' %}💰{% elif transaction.mode == 'TRANSFER' %}🔄{% else %}💸{% endif %}
+                            </span>
+                            <div class="transaction-info">
+                                <div class="fw-bold">
+                                    {% if transaction.category %}{{ transaction.category.label }}{% else %}{% if transaction.mode == 'INCOME' %}Income{% elif transaction.mode == 'TRANSFER' %}Transfer{% else %}Expense{% endif %}{% endif %}
+                                </div>
+                                <small class="text-muted">
+                                    {{ transaction.account.name }} &bull; {{ transaction.transaction_time|relative_date }}
+                                </small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="transaction-amount me-2 {% if transaction.mode == 'INCOME' %}income{% elif transaction.mode == 'TRANSFER' %}transfer{% else %}expense{% endif %}">
+                                {% if transaction.mode == 'INCOME' %}+{% elif transaction.mode == 'TRANSFER' %}↔{% else %}-{% endif %}{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}
+                            </span>
+                            <i class="fas fa-chevron-down chevron-icon"></i>
+                        </div>
+                    </div>
+                    <div class="collapse" id="transaction-g-{{ transaction.id }}">
+                        <div class="transaction-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Account:</span>
+                                <span class="detail-value">{{ transaction.account.name }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Category:</span>
+                                <span class="detail-value">{% if transaction.category %}{{ transaction.category.label }}{% else %}<em>Uncategorized</em>{% endif %}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Amount:</span>
+                                <span class="detail-value">{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }} {{ transaction.currency }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Date & Time:</span>
+                                <span class="detail-value">{{ transaction.transaction_time|date:"D, M d, Y - g:i A" }}</span>
+                            </div>
+                            {% if transaction.details %}
+                                <div class="detail-row">
+                                    <span class="detail-label">Details:</span>
+                                    <span class="detail-value">{{ transaction.details }}</span>
+                                </div>
+                            {% endif %}
+                            {% if transaction.reference %}
+                                <div class="detail-row">
+                                    <span class="detail-label">Reference:</span>
+                                    <span class="detail-value">{{ transaction.reference }}</span>
+                                </div>
+                            {% endif %}
+                            {% if transaction.tags.all %}
+                                <div class="detail-row">
+                                    <span class="detail-label">Tags:</span>
+                                    <span class="detail-value">{% for tag in transaction.tags.all %}<span class="tag-badge">{{ tag.label }}</span>{% endfor %}</span>
+                                </div>
+                            {% endif %}
+                            <hr class="my-2">
+                            <div class="d-flex gap-2 justify-content-end">
+                                {% if transaction.is_editable %}
+                                    <a href="{% url 'spending_tracker:edit_transaction' transaction.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#reverseModal-g-{{ transaction.id }}">
+                                    <i class="fas fa-undo"></i> Reverse
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal fade" id="reverseModal-g-{{ transaction.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-danger text-white">
+                                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirm Reversal</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to reverse this transaction?</p>
+                                <div class="bg-light p-3 rounded">
+                                    <div class="d-flex justify-content-between mb-2"><strong>Type:</strong><span>{{ transaction.get_mode_display }}</span></div>
+                                    <div class="d-flex justify-content-between mb-2"><strong>Amount:</strong><span class="{% if transaction.mode == 'INCOME' %}income{% elif transaction.mode == 'TRANSFER' %}transfer{% else %}expense{% endif %}">{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}</span></div>
+                                    <div class="d-flex justify-content-between mb-2"><strong>Category:</strong><span>{{ transaction.category.label|default:"Uncategorized" }}</span></div>
+                                    <div class="d-flex justify-content-between"><strong>Account:</strong><span>{{ transaction.account.name }}</span></div>
+                                </div>
+                                <div class="alert alert-warning mt-3 mb-0">
+                                    <small><i class="fas fa-info-circle"></i>
+                                        This will {% if transaction.mode == 'INCOME' %}decrease{% elif transaction.mode == 'TRANSFER' %}adjust{% else %}increase{% endif %}
+                                        the balance of <strong>{{ transaction.account.name }}</strong> by
+                                        {{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}.
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <form method="post" action="{% url 'spending_tracker:delete_transaction' transaction.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger"><i class="fas fa-undo"></i> Confirm Reversal</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted small ps-2">No transactions in this period.</p>
+            {% endfor %}
+            <div class="mb-4"></div>
+        {% empty %}
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle mb-3 fs-1"></i>
+                <h4>No transactions found</h4>
+                <p>{% if request.GET %}Try adjusting your filters or{% endif %}
+                   <a href="{% url 'spending_tracker:add_transaction' %}">add your first transaction</a> to get started!
+                </p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <!-- FLAT VIEW -->
     {% for transaction in page_obj %}
         <div class="transaction-card"
              style="border-left: 4px solid {% if transaction.mode == 'INCOME' %}#27ae60{% elif transaction.mode == 'TRANSFER' %}#3498db{% else %}#e74c3c{% endif %};">
@@ -175,7 +332,7 @@
                             {% endif %}
                         </div>
                         <small class="text-muted">
-                            {{ transaction.account.name }} &bull; {{ transaction.transaction_time|date:"M d, Y" }}
+                            {{ transaction.account.name }} &bull; {{ transaction.transaction_time|relative_date }}
                         </small>
                     </div>
                 </div>
@@ -312,9 +469,10 @@
         </p>
     </div>
     {% endfor %}
+    {% endif %}{# end flat/grouped conditional #}
 </div>
 
-    {% if page_obj.has_other_pages %}
+    {% if page_obj and page_obj.has_other_pages %}
         <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}

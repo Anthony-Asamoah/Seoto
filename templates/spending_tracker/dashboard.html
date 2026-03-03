@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load spending_extras %}
 
 {% block title %} - Spending Dashboard {% endblock %}
 
@@ -313,7 +314,7 @@
                                         {% endif %}
                                     </div>
                                     <small class="text-muted">
-                                        {{ transaction.account.name }} • {{ transaction.transaction_time|date:"M d, Y" }}
+                                        {{ transaction.account.name }} • {{ transaction.transaction_time|relative_date }}
                                     </small>
                                 </div>
                             </div>
