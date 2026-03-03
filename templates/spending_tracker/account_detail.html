@@ -168,7 +168,7 @@
                 <div class="col-md-4">
                     <div class="fw-bold">{{ transaction.category.label|default:"Uncategorized" }}</div>
                     {% if transaction.details %}
-                        <div class="text-muted small">{{ transaction.details|truncatechars:60 }}</div>
+                        <div class="text-muted small">{{ transaction.details|striptags|truncatechars:60 }}</div>
                     {% endif %}
                 </div>
 

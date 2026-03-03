@@ -231,7 +231,7 @@
                             {% if transaction.details %}
                                 <div class="detail-row">
                                     <span class="detail-label">Details:</span>
-                                    <span class="detail-value">{{ transaction.details }}</span>
+                                    <span class="detail-value">{{ transaction.details|safe }}</span>
                                 </div>
                             {% endif %}
                             {% if transaction.reference %}
@@ -248,6 +248,15 @@
                             {% endif %}
                             <hr class="my-2">
                             <div class="d-flex gap-2 justify-content-end">
+                                {% if transaction.attachment %}
+                                    <button type="button" class="btn btn-sm btn-outline-secondary attachment-preview-btn"
+                                            data-url="{{ transaction.attachment.url }}"
+                                            data-type="{{ transaction.attachment_type }}"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#attachmentPreviewModal">
+                                        <i class="fas fa-paperclip"></i> Receipt
+                                    </button>
+                                {% endif %}
                                 {% if transaction.is_editable %}
                                     <a href="{% url 'spending_tracker:edit_transaction' transaction.id %}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-edit"></i> Edit
@@ -372,7 +381,7 @@
                     {% if transaction.details %}
                         <div class="detail-row">
                             <span class="detail-label">Details:</span>
-                            <span class="detail-value">{{ transaction.details }}</span>
+                            <span class="detail-value">{{ transaction.details|safe }}</span>
                         </div>
                     {% endif %}
                     {% if transaction.reference %}
@@ -395,6 +404,15 @@
                     <!-- Action Buttons -->
                     <hr class="my-2">
                     <div class="d-flex gap-2 justify-content-end">
+                        {% if transaction.attachment %}
+                            <button type="button" class="btn btn-sm btn-outline-secondary attachment-preview-btn"
+                                    data-url="{{ transaction.attachment.url }}"
+                                    data-type="{{ transaction.attachment_type }}"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#attachmentPreviewModal">
+                                <i class="fas fa-paperclip"></i> Receipt
+                            </button>
+                        {% endif %}
                         {% if transaction.is_editable %}
                             <a href="{% url 'spending_tracker:edit_transaction' transaction.id %}" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-edit"></i> Edit
@@ -527,6 +545,25 @@
         </nav>
     {% endif %}
 
+<!-- Attachment Preview Modal -->
+<div class="modal fade" id="attachmentPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-paperclip"></i> Receipt / Attachment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-2" id="attachmentPreviewBody"></div>
+            <div class="modal-footer">
+                <a id="attachmentDownloadLink" href="#" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-external-link-alt"></i> Open in New Tab
+                </a>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Handle transaction card chevron rotation
@@ -544,6 +581,24 @@
                 }
             }
         });
+    });
+
+    // Attachment preview modal
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.attachment-preview-btn');
+        if (!btn) return;
+        const url = btn.dataset.url;
+        const type = btn.dataset.type;
+        document.getElementById('attachmentDownloadLink').href = url;
+        const body = document.getElementById('attachmentPreviewBody');
+        if (type === 'pdf') {
+            body.innerHTML = `<iframe src="${url}" style="width:100%;height:70vh;border:none;"></iframe>`;
+        } else {
+            body.innerHTML = `<img src="${url}" class="img-fluid rounded" alt="Receipt" style="max-height:70vh;">`;
+        }
+    });
+    document.getElementById('attachmentPreviewModal').addEventListener('hidden.bs.modal', function () {
+        document.getElementById('attachmentPreviewBody').innerHTML = '';
     });
 </script>
 {% endblock %}

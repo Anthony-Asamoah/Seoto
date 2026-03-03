@@ -172,6 +172,12 @@ class Transaction(models.Model):
         return CURRENCY_SYMBOLS.get(self.currency, self.currency)
 
     @property
+    def attachment_type(self):
+        if not self.attachment:
+            return None
+        return 'pdf' if self.attachment.name.lower().endswith('.pdf') else 'image'
+
+    @property
     def is_editable(self):
         return timezone.now() - self.created_at <= timedelta(hours=24)
 

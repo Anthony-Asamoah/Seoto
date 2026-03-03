@@ -98,6 +98,12 @@
             border: 2px solid #e74c3c;
         }
     </style>
+    <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
+    <style>
+        .ql-container { font-size: 14px; border-radius: 0 0 4px 4px; }
+        .ql-toolbar { border-radius: 4px 4px 0 0; }
+        .ql-container.ql-snow, .ql-toolbar.ql-snow { border-color: #ced4da; }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -278,8 +284,8 @@
                                 Purpose / Description
                             {% endif %}
                         </label>
-                        <textarea class="form-control" name="details" rows="3"
-                                  placeholder="{% if mode == 'INCOME' %}e.g., Salary from Company X, Freelance project, Gift from family...{% else %}e.g., Grocery shopping at Supermarket, Monthly rent payment, Utility bills...{% endif %}">{{ preserved_data.details|default:'' }}</textarea>
+                        <div id="details-editor"></div>
+                        <textarea name="details" id="details-input" style="display:none;">{{ preserved_data.details|default:'' }}</textarea>
                         <small class="form-text text-muted">Optional details about this transaction</small>
                     </div>
 
@@ -521,5 +527,27 @@
             {#console.log('✅ Form data preserved in hidden fields');#}
         });
 
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
+    <script>
+        const detailsQuill = new Quill('#details-editor', {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'ordered' }, { 'list': 'bullet' }]
+                ]
+            }
+        });
+
+        // Pre-populate with preserved data
+        const detailsInitial = document.getElementById('details-input').value;
+        if (detailsInitial) detailsQuill.root.innerHTML = detailsInitial;
+
+        // Keep hidden textarea in sync
+        detailsQuill.on('text-change', function () {
+            document.getElementById('details-input').value = detailsQuill.root.innerHTML;
+        });
     </script>
 {% endblock %}
