@@ -592,10 +592,10 @@
                                            data-bs-toggle="popover"
                                            data-bs-trigger="focus"
                                            data-bs-placement="left"
-                                           data-bs-html="true"
-                                           data-bs-content="{{ t.details|escapejs }}">
+                                           data-details-id="transfer-detail-{{ forloop.counter }}">
                                             <i class="fa fa-circle-info"></i>
                                         </a>
+                                        <div id="transfer-detail-{{ forloop.counter }}" class="d-none">{{ t.details|safe }}</div>
                                     {% else %}
                                         —
                                     {% endif %}
@@ -1020,7 +1020,11 @@
 
         // Initialize rich text popovers for transfer details
         document.querySelectorAll('.details-popover').forEach(el => {
-            new bootstrap.Popover(el);
+            const detailId = el.dataset.detailsId;
+            new bootstrap.Popover(el, {
+                html: true,
+                content: () => document.getElementById(detailId).innerHTML,
+            });
         });
 
         initCharts();
