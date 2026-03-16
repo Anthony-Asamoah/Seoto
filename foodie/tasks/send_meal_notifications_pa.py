@@ -65,7 +65,7 @@ def run():
         option_2 = context.get('option_2')
         mealtime = context.get('mealtime', schedule.slot.label)
 
-        title = f"Time for {mealtime.capitalize()}!"
+        title = f"{mealtime.capitalize()} Time!"
         if option_2 and option_2['name'] != option_1['name']:
             body = f"How about {option_1['name']} or {option_2['name']}?"
         else:
