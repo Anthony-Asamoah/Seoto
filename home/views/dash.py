@@ -17,7 +17,6 @@ def _is_staff(user):
 def dashboard(request):
     from author.models import Message
     from blog.models import Post
-    from foodie.models import MealOrder
     from home.models import ErrorLog
     from spending_tracker.models import Transaction
 
@@ -30,7 +29,6 @@ def dashboard(request):
         'unread_messages': Message.objects.filter(replied=False).count(),
         'transactions_week': Transaction.objects.filter(created_at__gte=week_ago).count(),
         'posts_week': Post.objects.filter(date_posted__gte=week_ago).count(),
-        'orders_week': MealOrder.objects.filter(date_ordered__gte=week_ago).count(),
         'year': datetime.now().year,
     }
     return render(request, 'Home/dashboard/overview.html', context)

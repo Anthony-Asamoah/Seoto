@@ -1,20 +1,19 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import permission_required, login_required
 from django.db.models import Q
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseForbidden
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_http_methods
 
 from . import services
-from .forms import MealOrderForm, UserMealForm
-from .models import meal, userPreference, MealOrder, MealTimeSlot, UserMealSchedule
+from .forms import UserMealForm
+from .models import meal, userPreference, MealTimeSlot, UserMealSchedule
 from .serializer import serialize_mealtime, serialize_all
 from utils.paginator import apply_pagination
 
 
 def foodie(request):
     context = services.suggest(request.user)
-    context['can_order'] = True if request.user.has_perm('foodie.view_mealorder') else False
     return render(request, 'foodie/foodie.html', context)
 
 
@@ -80,50 +79,6 @@ def foodie_config(request, mealtime=None):
         'query_params': query_params,
     }
     return render(request, 'foodie/foodie_config.html', context)
-
-
-@login_required
-@permission_required('foodie.view_mealorder', login_url='login', raise_exception=True)
-def orders_list(request):
-    orders = MealOrder.objects.filter(user=request.user).select_related('meal').order_by('-date_ordered')
-    return render(request, 'foodie/orders_list.html', {'orders': orders})
-
-
-@login_required
-@permission_required('foodie.add_mealorder', login_url='login', raise_exception=True)
-def order_create(request):
-    if request.method == 'POST':
-        form = MealOrderForm(request.POST)
-        if form.is_valid():
-            order = form.save(commit=False)
-            order.user = request.user
-            order.save()
-            return redirect('foodie_orders')
-    else:
-        form = MealOrderForm()
-    return render(request, 'foodie/order_form.html', {'form': form, 'is_edit': False})
-
-
-@login_required
-def order_edit(request, pk: int):
-    order = get_object_or_404(MealOrder, pk=pk)
-    if order.user_id != request.user.id:
-        return HttpResponseForbidden('You cannot edit this order.')
-    if not order.not_available:
-        messages.warning(request, 'This order cannot be edited at the moment.')
-        return redirect('foodie_orders')
-
-    if request.method == 'POST':
-        form = MealOrderForm(request.POST, instance=order)
-        if form.is_valid():
-            updated_order = form.save()
-            updated_order.reset_to_pending()
-            messages.success(request, 'Order updated and set back to pending.')
-            return redirect('foodie_orders')
-    else:
-        form = MealOrderForm(instance=order)
-
-    return render(request, 'foodie/order_form.html', {'form': form, 'is_edit': True, 'order': order})
 
 
 # User meal management

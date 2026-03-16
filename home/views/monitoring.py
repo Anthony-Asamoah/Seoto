@@ -72,7 +72,6 @@ def user_analytics(request):
 @user_passes_test(_is_staff)
 def app_usage(request):
     from blog.models import Post
-    from foodie.models import MealOrder
     from jotter.models import todo, tracker
     from spending_tracker.models import Transaction
 
@@ -91,12 +90,6 @@ def app_usage(request):
             'total': Post.objects.count(),
             'week': Post.objects.filter(date_posted__gte=week_ago).count(),
             'month': Post.objects.filter(date_posted__gte=month_ago).count(),
-        },
-        {
-            'name': 'Foodie Orders',
-            'total': MealOrder.objects.count(),
-            'week': MealOrder.objects.filter(date_ordered__gte=week_ago).count(),
-            'month': MealOrder.objects.filter(date_ordered__gte=month_ago).count(),
         },
         {
             'name': 'Jotter (Todos)',
