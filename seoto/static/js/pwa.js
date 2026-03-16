@@ -95,20 +95,30 @@
   // Subscribe to push notifications
   async function subscribeToPushNotifications() {
     try {
+      console.log('[PWA] Waiting for service worker to be ready...');
       const registration = await navigator.serviceWorker.ready;
+      console.log('[PWA] Service worker ready, scope:', registration.scope);
 
       // Fetch VAPID public key from server
-      const response = await fetch('/api/push/vapid-public-key/');
-      const { publicKey } = await response.json();
+      console.log('[PWA] Fetching VAPID public key...');
+      const keyResponse = await fetch('/api/push/vapid-public-key/');
+      if (!keyResponse.ok) {
+        console.error('[PWA] Failed to fetch VAPID public key:', keyResponse.status);
+        return;
+      }
+      const { publicKey } = await keyResponse.json();
+      console.log('[PWA] VAPID public key received, length:', publicKey.length);
 
+      console.log('[PWA] Calling pushManager.subscribe...');
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
 
-      console.log('Push subscription created:', subscription);
+      console.log('[PWA] Push subscription created:', JSON.stringify(subscription));
 
       // Send subscription to server
+      console.log('[PWA] Saving subscription to server...');
       const saveResponse = await fetch('/api/push/subscribe/', {
         method: 'POST',
         headers: {
@@ -118,16 +128,19 @@
         body: JSON.stringify(subscription)
       });
 
+      console.log('[PWA] Server response status:', saveResponse.status);
+      const saveData = await saveResponse.json().catch(() => ({}));
+      console.log('[PWA] Server response body:', saveData);
+
       if (!saveResponse.ok) {
-        console.error('Failed to save push subscription to server:', saveResponse.status);
-        // Unsubscribe from push manager since server didn't save it
+        console.error('[PWA] Server rejected subscription — unsubscribing from push manager');
         await subscription.unsubscribe();
         return;
       }
 
-      console.log('Push subscription saved to server');
+      console.log('[PWA] Push subscription saved to server successfully');
     } catch (error) {
-      console.error('Failed to subscribe to push notifications:', error);
+      console.error('[PWA] Failed to subscribe to push notifications:', error);
     }
   }
 
