@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
@@ -26,7 +27,6 @@ def _broadcast_to_user(user_id: int, event: str, payload: dict):
             },
         )
     except Exception:
-        # Avoid crashing on broadcast errors
         pass
 
 
@@ -67,7 +67,6 @@ def order_notifications(sender, instance: MealOrder, created: bool, **kwargs):
             'quantity': instance.quantity,
         })
     else:
-        # not_available toggled on
         if (not getattr(instance, '_old_not_available', False)) and instance.not_available:
             subject = "Order item not available"
             message = (
@@ -79,7 +78,6 @@ def order_notifications(sender, instance: MealOrder, created: bool, **kwargs):
                 'id': instance.id,
                 'meal': str(instance.meal),
             })
-        # transitioned back to pending (after edit)
         elif getattr(instance, '_old_not_available', False) and not instance.not_available and not instance.is_confirmed and not instance.is_purchased and not instance.is_delivered:
             subject = "Order updated"
             message = (
@@ -91,7 +89,6 @@ def order_notifications(sender, instance: MealOrder, created: bool, **kwargs):
                 'meal': str(instance.meal),
                 'quantity': instance.quantity,
             })
-        # other status updates
         elif (not getattr(instance, '_old_confirmed', False)) and instance.is_confirmed:
             subject = "Order confirmed"
             message = f"Your order for '{instance.meal}' has been confirmed."
@@ -103,11 +100,26 @@ def order_notifications(sender, instance: MealOrder, created: bool, **kwargs):
         elif (not getattr(instance, '_old_delivered', False)) and instance.is_delivered:
             subject = "Order delivered"
             message = f"Your order for '{instance.meal}' has been delivered."
-            _broadcast_to_user(user.id, 'order.delivered', {'id': instance.id,  'meal': str(instance.meal)})
+            _broadcast_to_user(user.id, 'order.delivered', {'id': instance.id, 'meal': str(instance.meal)})
 
-    # Send email if we have a subject and user email
     if subject and user and user.email:
         try:
             send_mail(subject, message, getattr(settings, 'EMAIL_HOST_USER', None), [user.email], fail_silently=True)
         except Exception:
             pass
+
+
+@receiver(post_save, sender=get_user_model())
+def create_user_meal_schedule(sender, instance, created, **kwargs):
+    """Seed UserMealSchedule entries for every new user from current MealTimeSlot defaults."""
+    if not created: return
+    try:
+        from .models import MealTimeSlot, UserMealSchedule
+        for slot in MealTimeSlot.objects.exclude(label='fancy'):
+            UserMealSchedule.objects.get_or_create(
+                user=instance,
+                slot=slot,
+                defaults={'time': slot.default_time}
+            )
+    except Exception:
+        pass

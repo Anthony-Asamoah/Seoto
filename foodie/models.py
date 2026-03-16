@@ -17,6 +17,15 @@ def meal_image_path(instance, filename, slot=1):
     return f'food/{filename}'
 
 
+class MealTimeSlot(models.Model):
+    """Global reference table of named meal time slots, seeded via seed_meal_time_slots."""
+    label = models.CharField(max_length=50, primary_key=True)
+    default_time = models.TimeField()
+
+    def __str__(self):
+        return self.label.capitalize()
+
+
 class meal(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
@@ -36,6 +45,11 @@ class meal(models.Model):
         on_delete=models.SET_NULL, related_name='created_meals'
     )
     is_public = models.BooleanField(default=True)
+    is_fancy = models.BooleanField(default=False)
+    default_preference = models.ForeignKey(
+        MealTimeSlot, null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='default_meals'
+    )
 
     def save(self, *args, **kwargs):
         new_main_img = isinstance(self.main_img, UploadedFile)
@@ -110,6 +124,19 @@ class meal(models.Model):
         return f"{self.name}"
 
 
+class UserMealSchedule(models.Model):
+    """Per-user meal time schedule. One row per slot, seeded on user creation."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='meal_schedule')
+    slot = models.ForeignKey(MealTimeSlot, on_delete=models.CASCADE, related_name='user_schedules')
+    time = models.TimeField()
+
+    class Meta:
+        unique_together = ('user', 'slot')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.slot} at {self.time}"
+
+
 class MealOrder(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='meal_orders')
     details = models.TextField(blank=True, help_text='Optional details or instructions for this order')
@@ -146,19 +173,14 @@ class MealOrder(models.Model):
 
 
 class userPreference(models.Model):
+    """User's meal preference per slot. One row per user-meal-slot combination."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='meal_preferences')
     meal = models.ForeignKey(meal, on_delete=models.CASCADE, related_name='user_preferences')
-
-    isBreakfast = models.BooleanField(default=False)
-    isBrunch = models.BooleanField(default=False)
-    isLunch = models.BooleanField(default=False)
-    isDinner = models.BooleanField(default=False)
-    isExtra = models.BooleanField(default=False)
-    isFancy = models.BooleanField(default=False)
+    slot = models.ForeignKey(MealTimeSlot, on_delete=models.CASCADE, related_name='preferences')
     isAvailable = models.BooleanField(default=True)
 
     class Meta:
-        unique_together = ('user', 'meal')
+        unique_together = ('user', 'meal', 'slot')
 
     def __str__(self):
-        return f"{self.user} · {self.meal}"
+        return f"{self.user} · {self.meal} · {self.slot}"

@@ -177,43 +177,16 @@
             <h1>So you want something to eat...</h1>
             <hr/>
         </div>
-        {% if mealtime == 'Fasting' %}
-            <div class="main container" style="text-align: center">
-                <h3>
-                    Unfortunately
-                    <wbr>
-                    you will be going to bed soon.
-                    Have {{ option_1 | lower }}
-                    <wbr>
-                    or {{ option_2 | lower }}
-                    <wbr>
-                    for now.
-                </h3>
-            </div>
-        {% else %}
+        {% if suggestion_text %}
             <div class="main container">
-                <h3>
-                    {% if option_1 or option_2 %}
-                        It's time for <span class="time">{{ mealtime | lower }}</span>,
-                        <wbr> so i suggest <span class="food1">{{ option_1 | lower }}</span>
-                        {% if option_1 %}
-                            <wbr>or <span class="food2">{{ option_2 | lower }}</span>.
-                        {% endif %}
-                    {% else %}
-                        There is nothing on the menu!<br/>
-                        <p class="mt-3">Configure your cuisine via the button below.</p>
-                    {% endif %}
-                </h3>
-                {% if fancy %}
-                    <h4>Otherwise
-                        <wbr>
-                        let's get some <span class="fancy">{{ fancy | lower }}</span></h4>
+                <h3>{{ suggestion_text }}</h3>
+                {% if fancy_text %}
+                    <h4>{{ fancy_text }}</h4>
                 {% endif %}
             </div>
             {% if user.is_authenticated %}
                 <div class="nav-links pt-2">
-                    <a href="{% url 'foodie_config' %}"
-                       class="configure-link">
+                    <a href="{% url 'foodie_config' %}" class="configure-link">
                         <button class="btn btn-outline-secondary btn-sm">Configure</button>
                     </a>
                     {% if can_order %}
@@ -223,64 +196,82 @@
                     {% endif %}
                 </div>
             {% endif %}
-            {% if option_1 or option_2 %}
-                <div class="images">
-                    <div class="pause-indicator">▶</div>
+            <div class="images">
+                <div class="pause-indicator">▶</div>
 
-                    <div class="option1 slide-item">
-                        {% if option_1.img_1 %}
-                            <div class="img_1 item-img">
-                                <img src="{{ option_1.img_1.url }}" alt="{{ option_1 }}">
-                            </div>
-                        {% endif %}
-                        <div class="main_img item-img">
-                            <img src="{{ option_1.main_img.url }}" alt="{{ option_1 }}">
+                <div class="option1 slide-item">
+                    {% if option_1.img_1 %}
+                        <div class="img_1 item-img">
+                            <img src="{{ option_1.img_1 }}" alt="{{ option_1.name }}">
                         </div>
-                        {% if option_1.img_2 %}
-                            <div class="img_2 item-img">
-                                <img src="{{ option_1.img_2.url }}" alt="{{ option_1 }}">
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="option2 slide-item">
-                        {% if option_2.img_1 %}
-                            <div class="img_1 item-img">
-                                <img src="{{ option_2.img_1.url }}" alt="{{ option_2 }}">
-                            </div>
-                        {% endif %}
+                    {% endif %}
+                    {% if option_1.main_img %}
                         <div class="main_img item-img">
-                            <img src="{{ option_2.main_img.url }}" alt="{{ option_2 }}">
+                            <img src="{{ option_1.main_img }}" alt="{{ option_1.name }}">
                         </div>
-                        {% if option_2.img_2 %}
-                            <div class="img_2 item-img">
-                                <img src="{{ option_2.img_2.url }}" alt="{{ option_2 }}">
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    {% if fancy %}
-                        <div class="fancy slide-item">
-                            {% if fancy.img_1 %}
-                                <div class="img_1 item-img">
-                                    <img src="{{ fancy.img_1.url }}" alt="{{ fancy }}">
-                                </div>
-                            {% endif %}
-                            <div class="main_img item-img">
-                                <img src="{{ fancy.main_img.url }}" alt="{{ fancy }}">
-                            </div>
-                            {% if fancy.img_2 %}
-                                <div class="img_2 item-img">
-                                    <img src="{{ fancy.img_2.url }}" alt="{{ fancy }}">
-                                </div>
-                            {% endif %}
+                    {% endif %}
+                    {% if option_1.img_2 %}
+                        <div class="img_2 item-img">
+                            <img src="{{ option_1.img_2 }}" alt="{{ option_1.name }}">
                         </div>
                     {% endif %}
                 </div>
-                <div style="text-align:center">
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
+
+                <div class="option2 slide-item">
+                    {% if option_2.img_1 %}
+                        <div class="img_1 item-img">
+                            <img src="{{ option_2.img_1 }}" alt="{{ option_2.name }}">
+                        </div>
+                    {% endif %}
+                    {% if option_2.main_img %}
+                        <div class="main_img item-img">
+                            <img src="{{ option_2.main_img }}" alt="{{ option_2.name }}">
+                        </div>
+                    {% endif %}
+                    {% if option_2.img_2 %}
+                        <div class="img_2 item-img">
+                            <img src="{{ option_2.img_2 }}" alt="{{ option_2.name }}">
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% if fancy %}
+                    <div class="fancy slide-item">
+                        {% if fancy.img_1 %}
+                            <div class="img_1 item-img">
+                                <img src="{{ fancy.img_1 }}" alt="{{ fancy.name }}">
+                            </div>
+                        {% endif %}
+                        {% if fancy.main_img %}
+                            <div class="main_img item-img">
+                                <img src="{{ fancy.main_img }}" alt="{{ fancy.name }}">
+                            </div>
+                        {% endif %}
+                        {% if fancy.img_2 %}
+                            <div class="img_2 item-img">
+                                <img src="{{ fancy.img_2 }}" alt="{{ fancy.name }}">
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            <div style="text-align:center">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+        {% else %}
+            <div class="main container" style="text-align: center">
+                <h3>
+                    There is nothing on the menu!<br/>
+                    <p class="mt-3">Configure your cuisine via the button below.</p>
+                </h3>
+            </div>
+            {% if user.is_authenticated %}
+                <div class="nav-links pt-2">
+                    <a href="{% url 'foodie_config' %}" class="configure-link">
+                        <button class="btn btn-outline-secondary btn-sm">Configure</button>
+                    </a>
                 </div>
             {% endif %}
         {% endif %}
@@ -289,7 +280,7 @@
 
 {% block script %}
     <script>
-        {% if option_1 or option_2 %}
+        {% if suggestion_text %}
             let slideIndex = 0;
             let timerId = null;
             let clickPaused = false;
