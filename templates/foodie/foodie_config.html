@@ -23,23 +23,20 @@
 {% block content %}
     <div class="container">
         <div class="header container">
-            <h1>Configure your menu{% if mealtime %} for {{ mealtime_readable }}{% endif %}</h1>
+            <h1>Configure your menu{% if mealtime %} — {{ mealtime_readable }}{% endif %}</h1>
             <hr />
-            <p class="subtitle">Select which meals should appear for each time of day.</p>
+            {% if mealtime == 'fancy' %}
+                <p class="subtitle">Select your fancy meals — one will be suggested alongside your regular options.</p>
+            {% else %}
+                <p class="subtitle">Select which meals should appear for each time of day.</p>
+            {% endif %}
             <div class="nav-links">
-                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'breakfast' %}active{% endif %}"
-                   href="{% url 'foodie_config_time' 'breakfast' %}">Breakfast</a>
-                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'brunch' %}active{% endif %}"
-                   href="{% url 'foodie_config_time' 'brunch' %}">Brunch</a>
-                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'lunch' %}active{% endif %}"
-                   href="{% url 'foodie_config_time' 'lunch' %}">Lunch</a>
-                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'dinner' %}active{% endif %}"
-                   href="{% url 'foodie_config_time' 'dinner' %}">Dinner</a>
-                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'extra' %}active{% endif %}"
-                   href="{% url 'foodie_config_time' 'extra' %}">Extra</a>
-                <a class="btn btn-outline-secondary btn-sm {% if mealtime == 'fancy' %}active{% endif %}"
-                   href="{% url 'foodie_config_time' 'fancy' %}">Fancy</a>
+                {% for slot in slots %}
+                    <a class="btn btn-outline-secondary btn-sm {% if mealtime == slot.label %}active{% endif %}"
+                       href="{% url 'foodie_config_time' slot.label %}">{{ slot.label|capfirst }}</a>
+                {% endfor %}
                 <a class="btn btn-outline-primary btn-sm ms-3" href="{% url 'foodie_my_meals' %}">My Foods</a>
+                <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_schedule' %}">My Schedule</a>
             </div>
         </div>
 

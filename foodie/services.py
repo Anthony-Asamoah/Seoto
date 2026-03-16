@@ -1,72 +1,117 @@
 from datetime import datetime
-from random import randint
+from random import choice, sample
 
-from .models import meal, userPreference
-
-MEALTIME_FIELDS = {
-    'Breakfast': 'isBreakfast',
-    'Brunch': 'isBrunch',
-    'Lunch': 'isLunch',
-    'Dinner': 'isDinner',
-    'Extra': 'isExtra',
-}
+from .models import meal, userPreference, UserMealSchedule
 
 
-def _current_mealtime():
-    hour = datetime.now().hour
+def _meal_data(m):
+    """Serialize a meal instance to a plain dict with description and image URLs."""
+    def _url(field):
+        if field and getattr(field, 'name', None):
+            try:
+                return field.url
+            except ValueError:
+                return None
+        return None
+
+    return {
+        'id': m.id,
+        'name': m.name,
+        'description': m.description,
+        'main_img': _url(m.main_img),
+        'img_1': _url(m.img_1),
+        'img_2': _url(m.img_2),
+        'img_3': _url(m.img_3),
+    }
+
+
+def _current_mealtime(user=None):
+    """
+    Return the label of the current meal time slot.
+    For authenticated users, finds the slot whose scheduled time is within 30 minutes of now.
+    Falls back to hour-based heuristic for unauthenticated users or when no slot matches.
+    """
+    now = datetime.now()
+    now_minutes = now.hour * 60 + now.minute
+
+    if user and user.is_authenticated:
+        schedules = UserMealSchedule.objects.select_related('slot').filter(user=user)
+        best_label = None
+        best_delta = None
+        for schedule in schedules:
+            slot_minutes = schedule.time.hour * 60 + schedule.time.minute
+            delta = abs(slot_minutes - now_minutes)
+            if delta <= 30 and (best_delta is None or delta < best_delta):
+                best_label = schedule.slot.label
+                best_delta = delta
+        if best_label:
+            return best_label
+
+    # Fallback: hour-based heuristic
+    hour = now.hour
     if 4 <= hour < 10:
-        return 'Breakfast'
+        return 'breakfast'
     if 10 <= hour < 13:
-        return 'Brunch'
+        return 'lunch'
     if 13 <= hour < 18:
-        return 'Lunch'
+        return 'dinner'
     if 18 <= hour < 21:
-        return 'Dinner'
-    if 21 <= hour < 24:
-        return 'Extra'
-    return 'Fasting'
+        return 'snack'
+    return None
 
 
 def suggest(user=None):
     context = {}
-    mealtime = _current_mealtime()
-
-    # Default placeholders if no preferences
+    mealtime = _current_mealtime(user)
     available_meals = []
+    fancy_meal = None
 
     if user and user.is_authenticated:
-        field = MEALTIME_FIELDS.get(mealtime)
-        if field:
+        if mealtime:
             prefs = userPreference.objects.select_related('meal').filter(
-                user=user, isAvailable=True, **{field: True}
+                user=user, isAvailable=True, slot_id=mealtime, meal__is_fancy=False
             )
             available_meals = [p.meal for p in prefs]
+
+        # Fancy: meals the user has added to their 'fancy' pseudo-slot
         fancy_prefs = userPreference.objects.select_related('meal').filter(
-            user=user, isAvailable=True, isFancy=True
+            user=user, isAvailable=True, slot_id='fancy'
         )
-        fancy_meals = [p.meal for p in fancy_prefs]
+        fancy_pool = [p.meal for p in fancy_prefs]
+        if fancy_pool:
+            fancy_meal = choice(fancy_pool)
     else:
-        # If no user, fallback to all meals without filtering; no flags to filter by
-        available_meals = list(meal.objects.all())
-        fancy_meals = []
+        available_meals = list(meal.objects.filter(is_fancy=False))
+        fancy_pool = list(meal.objects.filter(is_fancy=True))
+        if fancy_pool:
+            fancy_meal = choice(fancy_pool)
 
     if available_meals:
-        suggestion1 = available_meals[randint(0, len(available_meals) - 1)]
-        suggestion2 = available_meals[randint(0, len(available_meals) - 1)]
+        picks = sample(available_meals, min(2, len(available_meals)))
+        option_1 = _meal_data(picks[0])
+        option_2 = _meal_data(picks[1] if len(picks) > 1 else picks[0])
 
-        if len(available_meals) > 1:
-            while suggestion2 == suggestion1:
-                suggestion2 = available_meals[randint(0, len(available_meals) - 1)]
+        if mealtime:
+            suggestion_text = (
+                f"It's time for {mealtime.lower()}, so I suggest "
+                f"{option_1['name'].lower()} or {option_2['name'].lower()}."
+            )
+        else:
+            suggestion_text = (
+                f"Unfortunately you will be going to bed soon. "
+                f"Have {option_1['name'].lower()} or {option_2['name'].lower()} for now."
+            )
 
         context = {
             'mealtime': mealtime,
-            'option_1': suggestion1,
-            'option_2': suggestion2,
+            'option_1': option_1,
+            'option_2': option_2,
+            'suggestion_text': suggestion_text,
         }
-
-        if fancy_meals:
-            fancy = fancy_meals[randint(0, len(fancy_meals) - 1)]
-            context.update({'fancy': fancy})
+        if fancy_meal:
+            fancy = _meal_data(fancy_meal)
+            context['fancy'] = fancy
+            context['fancy_text'] = f"Otherwise let's get some {fancy['name'].lower()}."
 
     return context
 
@@ -90,5 +135,4 @@ def get_all(user=None):
             }
             for p in prefs
         ]
-    # Fallback to all meals if user not available
     return meal.objects.all().values()

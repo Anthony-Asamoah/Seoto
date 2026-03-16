@@ -7,42 +7,29 @@ from django.views.decorators.http import require_http_methods
 
 from . import services
 from .forms import MealOrderForm, UserMealForm
-from .models import meal, userPreference, MealOrder
+from .models import meal, userPreference, MealOrder, MealTimeSlot, UserMealSchedule
 from .serializer import serialize_mealtime, serialize_all
 from utils.paginator import apply_pagination
 
-MEALTIME_FIELDS = {
-    'breakfast': 'isBreakfast',
-    'brunch': 'isBrunch',
-    'lunch': 'isLunch',
-    'dinner': 'isDinner',
-    'extra': 'isExtra',
-    'fancy': 'isFancy',
-}
-
 
 def foodie(request):
-    context = the_code.suggest(request.user)
+    context = services.suggest(request.user)
     context['can_order'] = True if request.user.has_perm('foodie.view_mealorder') else False
-
     return render(request, 'foodie/foodie.html', context)
 
 
 @login_required
 def foodie_config(request, mealtime=None):
-    # If no specific mealtime provided, show landing page with links
+    slots = MealTimeSlot.objects.all()
+
     if mealtime is None:
         return render(request, 'foodie/foodie_config.html', {
             'mealtime': None,
-            'mealtime_fields': MEALTIME_FIELDS,
+            'slots': slots,
             'meals': [],
         })
 
-    mt = str(mealtime).lower()
-    if mt not in MEALTIME_FIELDS:
-        return HttpResponseBadRequest('Unknown mealtime')
-
-    field = MEALTIME_FIELDS[mt]
+    slot = get_object_or_404(MealTimeSlot, pk=mealtime)
 
     if request.method == 'POST':
         selected_ids = request.POST.getlist('selected_meals')
@@ -54,15 +41,16 @@ def foodie_config(request, mealtime=None):
             selected_ids = []
             page_meal_ids = []
 
-        # Only update meals that were visible on the submitted page
         for m in meal.objects.filter(id__in=page_meal_ids):
-            pref, _created = userPreference.objects.get_or_create(
-                user=request.user, meal=m, defaults={'isAvailable': True}
-            )
-            setattr(pref, field, m.id in selected_ids)
-            pref.save(update_fields=[field])
+            if m.id in selected_ids:
+                userPreference.objects.get_or_create(
+                    user=request.user, meal=m, slot=slot,
+                    defaults={'isAvailable': True}
+                )
+            else:
+                userPreference.objects.filter(user=request.user, meal=m, slot=slot).delete()
 
-        redirect_url = f'/foodie/config/{mt}'
+        redirect_url = f'/foodie/config/{mealtime}'
         qs = request.POST.get('redirect_qs', '')
         if qs:
             redirect_url += f'?{qs}'
@@ -77,17 +65,17 @@ def foodie_config(request, mealtime=None):
 
     page_obj = apply_pagination(meals_qs, request.GET.get('page'), 13)
     selected_ids = list(
-        userPreference.objects.filter(user=request.user, **{field: True}).values_list('meal_id', flat=True)
+        userPreference.objects.filter(user=request.user, slot=slot).values_list('meal_id', flat=True)
     )
     query_params = {'search': search_query} if search_query else {}
 
     context = {
-        'mealtime': mt,
-        'mealtime_readable': mt.capitalize(),
-        'field': field,
+        'mealtime': mealtime,
+        'mealtime_readable': slot.label.capitalize(),
+        'slot': slot,
+        'slots': slots,
         'meals': page_obj,
         'selected_ids': selected_ids,
-        'mealtime_fields': MEALTIME_FIELDS,
         'search_query': search_query,
         'query_params': query_params,
     }
@@ -129,7 +117,6 @@ def order_edit(request, pk: int):
         form = MealOrderForm(request.POST, instance=order)
         if form.is_valid():
             updated_order = form.save()
-            # Reset statuses back to pending and clear not_available
             updated_order.reset_to_pending()
             messages.success(request, 'Order updated and set back to pending.')
             return redirect('foodie_orders')
@@ -165,27 +152,35 @@ def meal_create(request):
 @login_required
 def meal_edit(request, pk):
     m = get_object_or_404(meal, pk=pk, created_by=request.user)
-    pref, _ = userPreference.objects.get_or_create(user=request.user, meal=m, defaults={'isAvailable': True})
+    slots = MealTimeSlot.objects.all()
 
     if request.method == 'POST':
         form = UserMealForm(request.POST, request.FILES, instance=m)
         if form.is_valid():
             form.save()
-            selected_times = request.POST.getlist('mealtimes')
-            for mt, field in MEALTIME_FIELDS.items():
-                setattr(pref, field, mt in selected_times)
-            pref.save(update_fields=list(MEALTIME_FIELDS.values()))
+            selected_labels = request.POST.getlist('mealtimes')
+            # Remove deselected slots, add selected ones
+            userPreference.objects.filter(user=request.user, meal=m).exclude(slot_id__in=selected_labels).delete()
+            for label in selected_labels:
+                slot = MealTimeSlot.objects.filter(pk=label).first()
+                if slot:
+                    userPreference.objects.get_or_create(
+                        user=request.user, meal=m, slot=slot,
+                        defaults={'isAvailable': True}
+                    )
             messages.success(request, f'"{m.name}" updated.')
             return redirect('foodie_my_meals')
     else:
         form = UserMealForm(instance=m)
 
-    active_mealtimes = [mt for mt, field in MEALTIME_FIELDS.items() if getattr(pref, field)]
+    active_mealtimes = list(
+        userPreference.objects.filter(user=request.user, meal=m).values_list('slot_id', flat=True)
+    )
     return render(request, 'foodie/meal_form.html', {
         'form': form,
         'is_edit': True,
         'meal_obj': m,
-        'mealtime_fields': MEALTIME_FIELDS,
+        'slots': slots,
         'active_mealtimes': active_mealtimes,
     })
 
@@ -202,16 +197,91 @@ def meal_delete(request, pk):
     return redirect('foodie_my_meals')
 
 
+@login_required
+def meal_schedule(request):
+    """Let users view, edit, add, and remove their personal meal time schedule entries."""
+    from datetime import time as dt_time
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'add':
+            slot_label = request.POST.get('slot_label', '').strip().lower()
+            raw_time = request.POST.get('time', '').strip()
+            if not slot_label:
+                messages.error(request, 'Please enter a slot name.')
+            elif slot_label == 'fancy':
+                messages.error(request, '"Fancy" is a reserved slot.')
+            elif not raw_time:
+                messages.error(request, 'Please enter a time.')
+            else:
+                try:
+                    h, m = raw_time.split(':')
+                    slot, _ = MealTimeSlot.objects.get_or_create(
+                        label=slot_label,
+                        defaults={'default_time': dt_time(int(h), int(m))}
+                    )
+                    _, created = UserMealSchedule.objects.get_or_create(
+                        user=request.user, slot=slot,
+                        defaults={'time': dt_time(int(h), int(m))}
+                    )
+                    if created:
+                        messages.success(request, f'{slot.label.capitalize()} added to your schedule.')
+                    else:
+                        messages.info(request, f'{slot.label.capitalize()} is already in your schedule.')
+                except ValueError:
+                    messages.error(request, f'Invalid time: "{raw_time}"')
+
+        elif action == 'remove':
+            schedule_id = request.POST.get('schedule_id')
+            UserMealSchedule.objects.filter(pk=schedule_id, user=request.user).delete()
+            messages.success(request, 'Slot removed from your schedule.')
+
+        elif action == 'save':
+            schedules = UserMealSchedule.objects.filter(user=request.user)
+            errors = []
+            for schedule in schedules:
+                raw = request.POST.get(f'time_{schedule.slot.label}', '').strip()
+                if raw:
+                    try:
+                        h, m = raw.split(':')
+                        schedule.time = dt_time(int(h), int(m))
+                        schedule.save(update_fields=['time'])
+                    except ValueError:
+                        errors.append(f'Invalid time for {schedule.slot.label}: "{raw}"')
+            if errors:
+                for err in errors:
+                    messages.error(request, err)
+            else:
+                messages.success(request, 'Schedule saved.')
+
+        return redirect('foodie_schedule')
+
+    # Auto-seed schedule for users created before the signal was in place
+    if not UserMealSchedule.objects.filter(user=request.user).exists():
+        for slot in MealTimeSlot.objects.exclude(label='fancy'):
+            UserMealSchedule.objects.get_or_create(
+                user=request.user, slot=slot,
+                defaults={'time': slot.default_time}
+            )
+
+    schedules = UserMealSchedule.objects.select_related('slot').filter(
+        user=request.user
+    ).order_by('time')
+
+    return render(request, 'foodie/meal_schedule.html', {
+        'schedules': schedules,
+    })
+
+
 # REST API
 def foodie_rest(request):
-    context = the_code.suggest(request.user)
+    context = services.suggest(request.user)
     context = serialize_mealtime(context, request)
-
     return JsonResponse(context)
 
 
 def all_foodie_rest(request):
-    context = the_code.get_all(request.user)
+    context = services.get_all(request.user)
     context = serialize_all(context, request)
-
     return JsonResponse(context, safe=False)

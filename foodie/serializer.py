@@ -19,16 +19,16 @@ def serialize_mealtime(context, request):
 	result.update(dict(mealtime=mealtime))
 
 	one = context['option_1']
-	one = meal.objects.all().filter(name=one.name).values()[0]
+	one = meal.objects.all().filter(name=one['name']).values()[0]
 	result.update(dict(option_1=append_host_url(one, url)))
 
 	two = context['option_2']
-	two = meal.objects.all().filter(name=two.name).values()[0]
+	two = meal.objects.all().filter(name=two['name']).values()[0]
 	result.update(dict(option_2=append_host_url(two, url)))
 
 	if 'fancy' in context.keys():
 		fancy = context['fancy']
-		fancy = meal.objects.all().filter(name=fancy.name).values()[0]
+		fancy = meal.objects.all().filter(name=fancy['name']).values()[0]
 		result.update(dict(fancy=append_host_url(fancy, url)))
 
 	logging.info(result)

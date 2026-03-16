@@ -40,6 +40,7 @@ class UserMealForm(forms.ModelForm):
         for field in self.fields.values():
             field.widget.attrs['class'] = 'form-control'
         self.fields['is_public'].widget.attrs['class'] = 'form-check-input'
+        self.fields['is_fancy'].widget.attrs['class'] = 'form-check-input'
 
     class Meta:
         model = meal
@@ -47,7 +48,7 @@ class UserMealForm(forms.ModelForm):
             'name', 'description', 'cooking_duration',
             'ingredients', 'nutrients', 'benefits',
             'main_img', 'img_1', 'img_2', 'img_3',
-            'is_public',
+            'is_public', 'is_fancy',
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),

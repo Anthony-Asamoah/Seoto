@@ -2,17 +2,33 @@ from django.contrib import admin
 from django.utils.html import format_html, mark_safe, strip_tags
 
 from utils.admin import RichTextAdminMixin
-from .models import meal, userPreference, MealOrder
+from .models import meal, userPreference, MealOrder, MealTimeSlot, UserMealSchedule
+
+
+@admin.register(MealTimeSlot)
+class MealTimeSlotAdmin(admin.ModelAdmin):
+    list_display = ['label', 'default_time']
+    ordering = ['default_time']
+
+
+@admin.register(UserMealSchedule)
+class UserMealScheduleAdmin(admin.ModelAdmin):
+    list_display = ['user', 'slot', 'time']
+    list_filter = ['slot']
+    search_fields = ['user__username']
+    autocomplete_fields = ['user']
+    ordering = ['slot', 'user']
+    list_per_page = 20
 
 
 @admin.register(meal)
 class mealAdmin(RichTextAdminMixin, admin.ModelAdmin):
     richtext_fields = ('description', 'ingredients', 'nutrients', 'benefits')
 
-    list_display = ['meal_icon', 'name', 'description_preview', 'is_public', 'created_by', 'cooking_duration']
+    list_display = ['meal_icon', 'name', 'description_preview', 'default_preference', 'is_public', 'created_by', 'cooking_duration']
     list_display_links = ['name']
     search_fields = ['name', 'description', 'ingredients']
-    list_filter = ['is_public', 'created_by', 'cooking_duration']
+    list_filter = ['is_public', 'created_by', 'cooking_duration', 'default_preference']
     list_per_page = 20
 
     @admin.display(description='')
@@ -35,63 +51,28 @@ class mealAdmin(RichTextAdminMixin, admin.ModelAdmin):
 
 @admin.register(userPreference)
 class userPreferenceAdmin(admin.ModelAdmin):
-    list_display = [
-        'user', 'meal', 'isAvailable', 'isBreakfast', 'isBrunch', 'isLunch', 'isDinner', 'isExtra', 'isFancy'
-    ]
-    list_filter = [
-        'user', 'meal', 'isAvailable', 'isBreakfast', 'isBrunch', 'isLunch', 'isDinner', 'isExtra',
-        'isFancy'
-    ]
+    list_display = ['user', 'meal', 'slot', 'isAvailable']
+    list_filter = ['slot', 'isAvailable']
     search_fields = ['user__username', 'meal__name']
     autocomplete_fields = ['user', 'meal']
-    list_per_page = 10
+    list_per_page = 20
 
 
 @admin.register(MealOrder)
 class MealOrderAdmin(admin.ModelAdmin):
     list_display = [
-        'user',
-        'meal',
-        'quantity',
-        'location',
-        'price',
-        'details',
-        'is_confirmed',
-        'is_purchased',
-        'is_delivered',
-        'not_available',
+        'user', 'meal', 'quantity', 'location', 'price', 'details',
+        'is_confirmed', 'is_purchased', 'is_delivered', 'not_available',
     ]
-    list_editable = [
-        'is_confirmed',
-        'is_purchased',
-        'is_delivered',
-        'not_available',
-    ]
-    list_display_links = [
-        'user',
-        'meal',
-        'quantity',
-        'location',
-        'price',
-        'details',
-    ]
+    list_editable = ['is_confirmed', 'is_purchased', 'is_delivered', 'not_available']
+    list_display_links = ['user', 'meal', 'quantity', 'location', 'price', 'details']
     list_filter = [
-        'date_ordered',
-        'is_confirmed',
-        'is_purchased',
-        'is_delivered',
-        'not_available',
-        'location',
-        'user',
-        'meal',
+        'date_ordered', 'is_confirmed', 'is_purchased', 'is_delivered',
+        'not_available', 'location', 'user', 'meal',
     ]
     search_fields = [
-        'user__username',
-        'user__first_name',
-        'user__last_name',
-        'user__email',
-        'meal__name',
-        'details',
+        'user__username', 'user__first_name', 'user__last_name',
+        'user__email', 'meal__name', 'details',
     ]
     autocomplete_fields = ['user', 'meal']
     date_hierarchy = 'date_ordered'
