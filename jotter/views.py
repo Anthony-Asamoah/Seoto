@@ -12,7 +12,7 @@ from django.views import View
 from django.views.decorators.http import require_http_methods
 
 from .models import todo, tracker, todo_form, tracker_form, tracker_category_choices
-from .validator import todo_form_validation, tracker_form_validation
+from .utils import todo_form_validation, tracker_form_validation
 
 
 class JotterView(View):
@@ -43,6 +43,7 @@ class JotterView(View):
         if request.method == 'POST':
             form = todo_form(request.POST)
             return todo_form_validation(request, form)
+
 
         return render(request, 'jotter/new_todo.html', {'form': default_form})
 
@@ -209,7 +210,7 @@ def create_todo_api(request):
 
         # Send push notification to user
         try:
-            from pwa.views import send_push_notification
+            from pwa.services import send_push_notification
             send_push_notification(
                 user=request.user,
                 title='Todo Created',
