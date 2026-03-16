@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html, mark_safe, strip_tags
 
 from utils.admin import RichTextAdminMixin
-from .models import meal, userPreference, MealOrder, MealTimeSlot, UserMealSchedule
+from .models import meal, userPreference, MealTimeSlot, UserMealSchedule
 
 
 @admin.register(MealTimeSlot)
@@ -57,24 +57,3 @@ class userPreferenceAdmin(admin.ModelAdmin):
     autocomplete_fields = ['user', 'meal']
     list_per_page = 20
 
-
-@admin.register(MealOrder)
-class MealOrderAdmin(admin.ModelAdmin):
-    list_display = [
-        'user', 'meal', 'quantity', 'location', 'price', 'details',
-        'is_confirmed', 'is_purchased', 'is_delivered', 'not_available',
-    ]
-    list_editable = ['is_confirmed', 'is_purchased', 'is_delivered', 'not_available']
-    list_display_links = ['user', 'meal', 'quantity', 'location', 'price', 'details']
-    list_filter = [
-        'date_ordered', 'is_confirmed', 'is_purchased', 'is_delivered',
-        'not_available', 'location', 'user', 'meal',
-    ]
-    search_fields = [
-        'user__username', 'user__first_name', 'user__last_name',
-        'user__email', 'meal__name', 'details',
-    ]
-    autocomplete_fields = ['user', 'meal']
-    date_hierarchy = 'date_ordered'
-    ordering = ['-date_ordered']
-    list_per_page = 20
