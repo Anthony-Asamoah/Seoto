@@ -150,7 +150,7 @@ async function networkFirst(request, cacheName) {
 
 // Push Notification Event
 self.addEventListener('push', (event) => {
-  console.log('[SW] Push notification received:', event);
+  console.log('[SW] Push event fired. Has data:', !!event.data);
 
   let notificationData = {
     title: 'Seoto',
@@ -161,9 +161,10 @@ self.addEventListener('push', (event) => {
   };
 
   if (event.data) {
+    console.log('[SW] Raw push data text:', event.data.text());
     try {
       const payload = event.data.json();
-      console.log('[SW] Parsed payload:', payload);
+      console.log('[SW] Parsed payload:', JSON.stringify(payload));
       notificationData = {
         title: payload.title || notificationData.title,
         body: payload.body || notificationData.body,
@@ -171,11 +172,14 @@ self.addEventListener('push', (event) => {
         badge: payload.badge || notificationData.badge,
         data: payload.data || {}
       };
-      console.log('[SW] Notification data:', notificationData);
     } catch (error) {
-      console.error('[SW] Failed to parse push payload:', error);
+      console.error('[SW] Failed to parse push payload as JSON:', error);
     }
+  } else {
+    console.warn('[SW] Push event had no data — showing default notification');
   }
+
+  console.log('[SW] Showing notification:', JSON.stringify(notificationData));
 
   event.waitUntil(
     self.registration.showNotification(notificationData.title, {
@@ -191,7 +195,7 @@ self.addEventListener('push', (event) => {
       console.log('[SW] Notification displayed successfully');
     })
     .catch(error => {
-      console.error('[SW] Error showing notification:', error);
+      console.error('[SW] showNotification failed:', error);
     })
   );
 });

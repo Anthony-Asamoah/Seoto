@@ -7,6 +7,7 @@ from pywebpush import webpush, WebPushException
 import json
 import logging
 import os
+import tempfile
 from .models import PushSubscription, Notification
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,6 @@ def service_worker(request):
         with open(sw_path, 'r') as f:
             sw_content = f.read()
         response = HttpResponse(sw_content, content_type='application/javascript')
-        # Allow service worker to control the entire site
         response['Service-Worker-Allowed'] = '/'
         return response
     except FileNotFoundError:
@@ -44,9 +44,7 @@ def manifest(request):
 @require_http_methods(["GET"])
 def vapid_public_key(request):
     """Return VAPID public key for push subscription"""
-    return JsonResponse({
-        'publicKey': settings.VAPID_PUBLIC_KEY
-    })
+    return JsonResponse({'publicKey': settings.VAPID_PUBLIC_KEY})
 
 
 @login_required
@@ -56,7 +54,6 @@ def subscribe_push(request):
     try:
         subscription_data = json.loads(request.body)
 
-        # Extract subscription details
         endpoint = subscription_data.get('endpoint')
         keys = subscription_data.get('keys', {})
         p256dh = keys.get('p256dh')
@@ -65,7 +62,6 @@ def subscribe_push(request):
         if not all([endpoint, p256dh, auth]):
             return JsonResponse({'error': 'Missing subscription data'}, status=400)
 
-        # Create or update subscription
         subscription, created = PushSubscription.objects.update_or_create(
             user=request.user,
             endpoint=endpoint,
@@ -76,12 +72,10 @@ def subscribe_push(request):
             }
         )
 
-        return JsonResponse({
-            'success': True,
-            'created': created
-        })
+        return JsonResponse({'success': True, 'created': created})
 
     except Exception as e:
+        logger.exception(f"subscribe_push failed for user {request.user.username}")
         return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -104,12 +98,13 @@ def unsubscribe_push(request):
         return JsonResponse({'success': True})
 
     except Exception as e:
+        logger.exception(f"unsubscribe_push failed for user {request.user.username}")
         return JsonResponse({'error': str(e)}, status=500)
 
 
 def send_push_notification(user, title, body, icon=None, url=None, data=None):
     """
-    Send push notification to all user's active subscriptions
+    Send push notification to all user's active subscriptions.
 
     Args:
         user: User object
@@ -119,7 +114,6 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
         url: URL to open on click (optional)
         data: Additional data (optional)
     """
-    # Create notification record
     notification = Notification.objects.create(
         user=user,
         title=title,
@@ -129,14 +123,10 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
         data=data or {}
     )
 
-    # Get all active subscriptions for user
-    subscriptions = PushSubscription.objects.filter(
-        user=user,
-        is_active=True
-    )
+    subscriptions = list(PushSubscription.objects.filter(user=user, is_active=True))
+    if not subscriptions: return 0
 
-    # Prepare notification payload
-    payload = {
+    payload = json.dumps({
         'title': title,
         'body': body,
         'icon': icon or '/static/img/pwa/icon-192x192.png',
@@ -145,44 +135,34 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
             'url': url or '/',
             **(data or {})
         }
-    }
+    })
 
-    # Workaround for py-vapid: save private key to temp file
-    # py-vapid 1.9.1 doesn't support loading PEM from string
-    # Also normalize escaped newlines (\n) that env vars on PythonAnywhere may store as literals
-    import tempfile
+    # Normalize escaped newlines that PythonAnywhere may store literally in env vars
     pem_key = settings.VAPID_PRIVATE_KEY.replace('\\n', '\n')
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as f:
         f.write(pem_key)
         vapid_key_path = f.name
 
     try:
-        # Send to all subscriptions
         success_count = 0
-        payload_json = json.dumps(payload)
-        logger.info(f"Sending push notification with payload: {payload_json}")
-
         for subscription in subscriptions:
             try:
-                logger.info(f"Sending to endpoint: {subscription.endpoint[:50]}...")
                 webpush(
                     subscription_info=subscription.get_subscription_info(),
-                    data=payload_json,
-                    vapid_private_key=vapid_key_path,  # Pass file path instead of string
-                    vapid_claims={
-                        "sub": f"mailto:{settings.VAPID_ADMIN_EMAIL}"
-                    }
+                    data=payload,
+                    vapid_private_key=vapid_key_path,
+                    vapid_claims={"sub": f"mailto:{settings.VAPID_ADMIN_EMAIL}"}
                 )
-                logger.info(f"Push sent successfully to {subscription.endpoint[:50]}...")
                 success_count += 1
             except WebPushException as e:
-                logger.exception(f"Push failed for {subscription.endpoint}")
+                response_status = e.response.status_code if e.response else 'no response'
+                logger.error(f"Push failed for subscription {subscription.id} — status: {response_status}, error: {e}")
                 if e.response and e.response.status_code in [404, 410]:
-                    # Subscription no longer valid
                     subscription.is_active = False
                     subscription.save()
+            except Exception:
+                logger.exception(f"Unexpected push error for subscription {subscription.id}")
 
-        # Update notification record
         if success_count > 0:
             from django.utils import timezone
             notification.sent = True
@@ -191,8 +171,7 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
 
         return success_count
     finally:
-        # Clean up temp file
         try:
             os.unlink(vapid_key_path)
-        except:
+        except Exception:
             pass

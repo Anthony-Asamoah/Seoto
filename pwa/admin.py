@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
@@ -6,10 +8,7 @@ from django.urls import path, reverse
 from .models import PushSubscription, Notification
 from .views import send_push_notification
 
-
-class SendPushForm:
-    """Simple form-like container — using plain Django forms would need a forms.py import"""
-    pass
+logger = logging.getLogger(__name__)
 
 
 @admin.register(PushSubscription)
@@ -22,22 +21,20 @@ class PushSubscriptionAdmin(admin.ModelAdmin):
 
     def endpoint_preview(self, obj):
         return obj.endpoint[:50] + '...'
+
     endpoint_preview.short_description = 'Endpoint'
 
     def get_urls(self):
         urls = super().get_urls()
-        custom_urls = [
-            path(
-                'send-push/',
-                self.admin_site.admin_view(self.send_push_view),
-                name='pwa_pushsubscription_send_push',
-            ),
-        ]
+        custom_urls = [path(
+            'send-push/',
+            self.admin_site.admin_view(self.send_push_view),
+            name='pwa_pushsubscription_send_push',
+        ), ]
         return custom_urls + urls
 
     @admin.action(description='Send push notification to selected subscriptions')
     def send_push_notification_action(self, request, queryset):
-        # Store selected IDs in session and redirect to compose form
         selected_ids = list(queryset.values_list('id', flat=True))
         request.session['push_selected_ids'] = selected_ids
         return HttpResponseRedirect(reverse('admin:pwa_pushsubscription_send_push'))
@@ -54,14 +51,12 @@ class PushSubscriptionAdmin(admin.ModelAdmin):
             if not title or not body:
                 self.message_user(request, 'Title and body are required.', level='error')
             else:
-                # Deduplicate — one notification per user
                 seen_users = set()
                 success_count = 0
                 for sub in subscriptions:
                     if sub.user_id not in seen_users:
                         seen_users.add(sub.user_id)
-                        sent = send_push_notification(sub.user, title, body, url=url)
-                        success_count += sent
+                        success_count += send_push_notification(sub.user, title, body, url=url)
 
                 del request.session['push_selected_ids']
                 self.message_user(
