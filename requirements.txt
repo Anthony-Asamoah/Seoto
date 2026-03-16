@@ -20,4 +20,3 @@ httpx
 boto3
 django-storages[s3]
 django-ckeditor-5
-django-crontab

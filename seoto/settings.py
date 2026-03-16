@@ -39,8 +39,6 @@ INSTALLED_APPS = [
     'daphne',
     'channels',
     'django_ckeditor_5',
-    'django_crontab',
-
     # My apps
     'accounts',
     'author',
@@ -311,11 +309,3 @@ LOGGING = {
 }
 BLOG_VIDEO_MAX_SIZE_MB = Env.int('BLOG_VIDEO_MAX_SIZE_MB', default=60)
 DATA_UPLOAD_MAX_MEMORY_SIZE = BLOG_VIDEO_MAX_SIZE_MB * 1024 * 1024
-
-# Scheduled tasks (django-crontab)
-# Install: python manage.py crontab add
-# Remove:  python manage.py crontab remove
-# Show:    python manage.py crontab show
-CRONJOBS = [
-    ('0 * * * *', 'django.core.management.call_command', ['send_meal_notifications']),
-]
