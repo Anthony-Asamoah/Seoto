@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.urls import path, reverse
 
 from .models import PushSubscription, Notification
-from .views import send_push_notification
+from .services import send_push_notification
 
 logger = logging.getLogger(__name__)
 

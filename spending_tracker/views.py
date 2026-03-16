@@ -1418,7 +1418,7 @@ def create_transaction_api(request):
 
         # Send push notification to user
         try:
-            from pwa.views import send_push_notification
+            from pwa.services import send_push_notification
             send_push_notification(
                 user=request.user,
                 title='Transaction Recorded',
