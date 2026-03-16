@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 from seoto.utils import GetEnv as Env
 
-load_dotenv('.env')
+load_dotenv(pathlib(__file__).resolve().parent.parent / '.env')
 
 logging.basicConfig(
     level=Env.int('LOG_LEVEL'),
