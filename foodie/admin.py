@@ -25,6 +25,8 @@ class UserMealScheduleAdmin(admin.ModelAdmin):
 class mealAdmin(RichTextAdminMixin, admin.ModelAdmin):
     richtext_fields = ('description', 'ingredients', 'nutrients', 'benefits')
 
+    exclude = ['main_img_thumbnail']
+
     list_display = ['meal_icon', 'name', 'description_preview', 'default_preference', 'is_public', 'created_by', 'cooking_duration']
     list_display_links = ['name']
     search_fields = ['name', 'description', 'ingredients']
