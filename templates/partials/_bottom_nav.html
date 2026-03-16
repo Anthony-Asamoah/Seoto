@@ -1,0 +1,40 @@
+<nav class="bottom-nav d-md-none" aria-label="Mobile navigation">
+    <a href="{% url 'index' %}" class="bottom-nav-item">
+        <i class="fas fa-home"></i>
+        <span>Home</span>
+    </a>
+
+    {% if user.is_authenticated %}
+        <a href="{% url 'profile' user.username %}" class="bottom-nav-item">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </a>
+
+        <button id="install-button-bottom" class="bottom-nav-item" style="display:none;" title="Install Seoto as an app">
+            <i class="fas fa-download"></i>
+            <span>Install</span>
+        </button>
+
+        <form method="POST" action="{% url 'logout' %}" style="display:contents;">
+            {% csrf_token %}
+            <button type="submit" class="bottom-nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </button>
+        </form>
+
+    {% else %}
+        <a href="{% url 'login' %}" class="bottom-nav-item">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>Login</span>
+        </a>
+        <a href="{% url 'register' %}" class="bottom-nav-item">
+            <i class="fas fa-user-plus"></i>
+            <span>Sign up</span>
+        </a>
+        <button id="install-button-bottom" class="bottom-nav-item" style="display:none;" title="Install Seoto as an app">
+            <i class="fas fa-download"></i>
+            <span>Install</span>
+        </button>
+    {% endif %}
+</nav>

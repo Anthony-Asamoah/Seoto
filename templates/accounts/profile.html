@@ -6,21 +6,210 @@
 
 {% block style %}
     <style>
-        .header {
-            text-align: center;
-        }
-
-        .dp {
-            text-align: center;
-        }
-        .dp img {
-            width: 250px;
+        /* Avatar */
+        .profile-avatar {
+            width: 96px;
+            height: 96px;
             object-fit: cover;
-            object-position: center;
-            margin:20px 0;
-            border-radius: 15px;
+            object-position: center top;
+            border-radius: 50%;
+            border: 3px solid #dee2e6;
+            display: block;
+            margin: 0 auto 10px;
         }
 
+        /* Hero */
+        .profile-hero {
+            text-align: center;
+            padding: 8px 0 16px;
+        }
+
+        .profile-hero .profile-name {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin: 0 0 2px;
+        }
+
+        .profile-hero .profile-handle {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin: 0 0 6px;
+        }
+
+        .profile-hero .profile-since {
+            font-size: 0.75rem;
+            color: #adb5bd;
+            margin: 0;
+        }
+
+        /* Tab pills */
+        .profile-tabs {
+            margin-bottom: 16px;
+        }
+
+        .profile-tabs .nav-link {
+            color: #495057;
+            border-radius: 20px;
+            padding: 6px 20px;
+            font-size: 0.9rem;
+        }
+
+        .profile-tabs .nav-link.active {
+            background-color: #175a9c;
+            color: #fff;
+        }
+
+        /* Form card */
+        .profile-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, .07);
+        }
+
+        .profile-card .field-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6c757d;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .profile-card .form-group {
+            margin-bottom: 14px;
+        }
+
+        /* Profile actions */
+        .profile-actions {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .profile-actions .btn-save {
+            width: 100%;
+        }
+
+        .profile-actions .secondary-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .profile-actions .secondary-links a {
+            font-size: 0.875rem;
+            color: #175a9c;
+            text-decoration: none;
+        }
+
+        .profile-actions .secondary-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Settings list */
+        .settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .settings-item {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, .07);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .settings-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .settings-icon.icon-blue   { background: #e8f0fb; color: #175a9c; }
+        .settings-icon.icon-purple { background: #f0eafa; color: #6f42c1; }
+        .settings-icon.icon-green  { background: #e9f7ef; color: #198754; }
+
+        .settings-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .settings-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .settings-desc {
+            font-size: 0.75rem;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .settings-action {
+            flex-shrink: 0;
+        }
+
+        .settings-action .btn {
+            font-size: 0.8rem;
+            padding: 5px 14px;
+            border-radius: 20px;
+        }
+
+        .settings-action a.btn {
+            text-decoration: none;
+        }
+
+        /* Desktop */
+        @media (min-width: 768px) {
+            .profile-layout {
+                display: grid;
+                grid-template-columns: 180px 1fr;
+                gap: 28px;
+                align-items: start;
+            }
+
+            .profile-avatar {
+                width: 150px;
+                height: 150px;
+            }
+
+            .profile-hero {
+                position: sticky;
+                top: 80px;
+            }
+
+            .profile-actions {
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .profile-actions .btn-save {
+                width: auto;
+                min-width: 120px;
+            }
+
+            .profile-actions .secondary-links {
+                justify-content: flex-start;
+            }
+        }
     </style>
     {% include 'partials/_form_style_bootstrap.html' %}
 {% endblock %}
@@ -28,61 +217,246 @@
 {% block content %}
     <div class="container">
         <div class="header">
-            <h2>Account Info | {{ user.username | title }}</h2>
-            <p>Check and update your account details.</p>
+            <h2>Profile</h2>
         </div>
         <div class="main">
-            <div class="form row">
-                <div class="col-md-4 dp">
+            <div class="profile-layout">
+
+                <!-- Avatar + identity (always visible) -->
+                <div class="profile-hero">
                     {% if extra.picture %}
-                        <img src="{{ extra.picture.url }}" alt="profile picture">
+                        <img src="{{ extra.picture.url }}" alt="profile picture" class="profile-avatar">
                     {% else %}
-                        <img src="{% static 'img/profile_pic.png' %}" alt="profile picture">
+                        <img src="{% static 'img/profile_pic.png' %}" alt="profile picture" class="profile-avatar">
                     {% endif %}
+                    {% if user.first_name %}
+                        <p class="profile-name">{{ user.first_name }} {{ user.last_name }}</p>
+                    {% endif %}
+                    <p class="profile-handle">@{{ user.username }}</p>
+                    <p class="profile-since">Member since {{ joined_date }}</p>
                 </div>
-              <form method="post" class="col-md-8" action="{% url 'profile' user.username %}" enctype='multipart/form-data'>
-                  {% csrf_token %}
-                  <div class="date_joined mb-3 form-group">
-                      <label>Account Created on {{ joined_day }}, {{ joined_date }} at {{ joined_time | lower}}</label>
-                  </div>
-                  <div class="form-group">
-                      <label for="username">Username</label>
-                      <input type="text" name="username" id="username" class="form-control " value="{{ user.username }}" readonly>
-                  </div>
-                  <div class="form-row">
-                      <div class="form-group col-md-6">
-                          <label for="first_name">First Name</label>
-                          <input type="text" name="first_name" id="first_name" class="form-control" value="{{ user.first_name }}">
-                      </div>
-                      <div class="form-group col-md-6">
-                          <label for="last_name">Last Name</label>
-                          <input type="text" name="last_name" id="last_name" class="form-control" value="{{ user.last_name }}">
-                      </div>
-                  </div>
-                  <div class="form-group">
-                      <label for="email">Email</label>
-                      <input type="text" name="email" id="email" class="form-control" value="{{ user.email }}">
-                      {% if not user.email %}
-                        <span class="form-text text-muted">Kindly enter a valid email: example@example.com.eu</span>
-                      {% endif %}
-                  </div>
-                  <div class="form-group ">
-                      <label for="contact">Contact</label>
-                      <input type="text" name="contact" id="contact" class="form-control" value="{{ extra.contact }}" minlength="10">
-                      {% if not extra.contact %}
-                        <span class="form-text text-muted">Must consist of country code then number: +555 555 555 555</span>
-                      {% endif %}
-                  </div>
-                  <div class="form-group mt-4">
-                      <label for="picture">Change Profile Picture</label>
-                      <input class="border" type="file" name="picture" id="picture" accept="image/*">
-                  </div>
-                  <div class="buttons mt-4">
-                      <button type="submit" class="btn btn-success">Save</button>
-                      <a href="{% url 'password_change' %}">Change Password</a>
-                  </div>
-              </form>
+
+                <!-- Tabs + content -->
+                <div>
+                    <ul class="nav nav-pills profile-tabs" id="profileTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="info-tab" data-bs-toggle="pill"
+                                    data-bs-target="#tab-info" type="button" role="tab">
+                                Info
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="settings-tab" data-bs-toggle="pill"
+                                    data-bs-target="#tab-settings" type="button" role="tab">
+                                Settings
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+
+                        <!-- Info tab -->
+                        <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+                            <form method="post" action="{% url 'profile' user.username %}" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="profile-card">
+                                    <div class="form-group">
+                                        <label class="field-label" for="username">Username</label>
+                                        <input type="text" name="username" id="username" class="form-control"
+                                               value="{{ user.username }}" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-label" for="first_name">First Name</label>
+                                        <input type="text" name="first_name" id="first_name" class="form-control"
+                                               value="{{ user.first_name }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-label" for="last_name">Last Name</label>
+                                        <input type="text" name="last_name" id="last_name" class="form-control"
+                                               value="{{ user.last_name }}">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-label" for="email">Email</label>
+                                        <input type="text" name="email" id="email" class="form-control"
+                                               value="{{ user.email }}">
+                                        {% if not user.email %}
+                                            <span class="form-text text-muted">e.g. example@example.com</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-label" for="contact">Contact</label>
+                                        <input type="text" name="contact" id="contact" class="form-control"
+                                               value="{{ extra.contact }}" minlength="10">
+                                        {% if not extra.contact %}
+                                            <span class="form-text text-muted">Include country code: +1 555 555 5555</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-label" for="picture">Change Photo</label>
+                                        <input class="form-control" type="file" name="picture" id="picture"
+                                               accept="image/*">
+                                    </div>
+                                    <div class="profile-actions">
+                                        <button type="submit" class="btn btn-success btn-save">Save Changes</button>
+                                        <div class="secondary-links">
+                                            <a href="{% url 'password_change' %}">Change Password</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Settings tab -->
+                        <div class="tab-pane fade" id="tab-settings" role="tabpanel">
+                            <div class="settings-list">
+
+                                <!-- Notifications -->
+                                <div class="settings-item">
+                                    <div class="settings-icon icon-blue">
+                                        <i class="fas fa-bell"></i>
+                                    </div>
+                                    <div class="settings-body">
+                                        <div class="settings-title">Push Notifications</div>
+                                        <div class="settings-desc">Alerts for updates &amp; reminders</div>
+                                    </div>
+                                    <div class="settings-action">
+                                        <button id="notification-toggle-profile"
+                                                class="btn btn-outline-primary position-relative"
+                                                title="Enable push notifications">
+                                            <i class="far fa-bell"></i>
+                                            <span id="notification-badge-profile"
+                                                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                                  style="display:none; font-size:.6rem;"></span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {% if IS_THEME_ENABLED %}
+                                <!-- Theme -->
+                                <div class="settings-item">
+                                    <div class="settings-icon icon-purple">
+                                        <i class="fas fa-palette"></i>
+                                    </div>
+                                    <div class="settings-body">
+                                        <div class="settings-title">Appearance</div>
+                                        <div class="settings-desc">Customise your colour theme</div>
+                                    </div>
+                                    <div class="settings-action">
+                                        <a href="{% url 'theme:theme_home' %}" class="btn btn-outline-secondary">
+                                            Open <i class="fas fa-chevron-right ms-1" style="font-size:.7rem;"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- Install PWA -->
+                                <div class="settings-item" id="install-item-profile" style="display:none;">
+                                    <div class="settings-icon icon-green">
+                                        <i class="fas fa-download"></i>
+                                    </div>
+                                    <div class="settings-body">
+                                        <div class="settings-title">Install App</div>
+                                        <div class="settings-desc">Add Seoto to your home screen</div>
+                                    </div>
+                                    <div class="settings-action">
+                                        <button id="install-button-profile" class="btn btn-outline-success">
+                                            Install
+                                        </button>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block script %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // ── Notification button ──────────────────────────────────────────────
+        const notifBtn = document.getElementById('notification-toggle-profile');
+        const notifDesc = document.querySelector('#tab-settings .settings-item .settings-desc');
+
+        if (notifBtn) {
+            // Remove inline onclick so we can control feedback here
+            notifBtn.removeAttribute('onclick');
+
+            notifBtn.addEventListener('click', async function () {
+                if (!('Notification' in window) || !('PushManager' in window)) {
+                    alert('Push notifications are not supported in this browser.');
+                    return;
+                }
+
+                const permission = Notification.permission;
+
+                if (permission === 'denied') {
+                    alert('Notifications are blocked. Please enable them in your browser settings, then return here.');
+                    return;
+                }
+
+                // Show loading state
+                const originalHTML = notifBtn.innerHTML;
+                notifBtn.disabled = true;
+                notifBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+
+                try {
+                    if (permission === 'granted') {
+                        // Permission already granted — ensure the push subscription exists and is saved
+                        await window.SeotoPWA.subscribeToPushNotifications();
+                        notifBtn.classList.remove('btn-outline-primary', 'btn-outline-danger');
+                        notifBtn.classList.add('btn-success');
+                        notifBtn.innerHTML = '<i class="fas fa-check"></i>';
+                        notifBtn.title = 'Notifications enabled';
+                        // Update the description
+                        const desc = notifBtn.closest('.settings-item').querySelector('.settings-desc');
+                        if (desc) desc.textContent = 'Notifications are active';
+                    } else {
+                        // 'default' — request permission then subscribe
+                        await window.SeotoPWA.requestNotificationPermission();
+
+                        const newPermission = Notification.permission;
+                        if (newPermission === 'granted') {
+                            notifBtn.classList.remove('btn-outline-primary', 'btn-outline-danger');
+                            notifBtn.classList.add('btn-success');
+                            notifBtn.innerHTML = '<i class="fas fa-check"></i>';
+                            notifBtn.title = 'Notifications enabled';
+                            const desc = notifBtn.closest('.settings-item').querySelector('.settings-desc');
+                            if (desc) desc.textContent = 'Notifications are active';
+                        } else {
+                            // User dismissed the permission dialog
+                            notifBtn.disabled = false;
+                            notifBtn.innerHTML = originalHTML;
+                        }
+                    }
+                } catch (err) {
+                    console.error('Notification setup failed:', err);
+                    notifBtn.disabled = false;
+                    notifBtn.innerHTML = originalHTML;
+                    notifBtn.classList.add('btn-danger');
+                    notifBtn.classList.remove('btn-outline-primary');
+                    notifBtn.title = 'Setup failed — tap to retry';
+                }
+            });
+        }
+
+        // ── Install row: show when PWA is installable ────────────────────────
+        const installItem = document.getElementById('install-item-profile');
+        const installBtn = document.getElementById('install-button-profile');
+
+        if (installItem && installBtn) {
+            const observer = new MutationObserver(function () {
+                installItem.style.display = installBtn.style.display === 'none' ? 'none' : 'flex';
+            });
+            observer.observe(installBtn, { attributes: true, attributeFilter: ['style'] });
+        }
+
+    });
+</script>
 {% endblock %}

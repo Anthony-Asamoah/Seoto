@@ -4,7 +4,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
     <title>Seoto {% block title %}{% endblock %}</title>
 
@@ -138,12 +138,88 @@
                 font-size: 1.2em;
             }
         }
+
+        /* ── Bottom navigation bar ── */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            z-index: 1030;
+            padding: 0 4px;
+            /* Reserve space for iOS home indicator — items sit above it */
+            padding-bottom: env(safe-area-inset-bottom);
+            min-height: calc(60px + env(safe-area-inset-bottom));
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            font-size: 0.65rem;
+            color: #495057;
+            text-decoration: none;
+            background: none;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            min-width: 44px;
+            min-height: 44px;
+            transition: color 0.15s ease, background-color 0.15s ease;
+            flex: 1;
+            max-width: 80px;
+        }
+
+        .bottom-nav-item i {
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .bottom-nav-item:hover,
+        .bottom-nav-item:focus {
+            color: #175a9c;
+            background-color: rgba(23, 90, 156, 0.08);
+            outline: none;
+        }
+
+        /* Hide top navbar on mobile; bottom nav takes over */
+        @media (max-width: 768px) {
+            .navbar {
+                display: none !important;
+            }
+            .page-container {
+                padding-bottom: calc(68px + env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Bottom nav hidden on desktop (Bootstrap d-md-none handles this too) */
+        @media (min-width: 769px) {
+            .bottom-nav {
+                display: none !important;
+            }
+        }
+
+        /* PWA standalone: add top padding so content clears the status bar */
+        @media (display-mode: standalone) {
+            .page-container {
+                padding-top: env(safe-area-inset-top);
+            }
+        }
     </style>
     {% block style %}{% endblock %}
 </head>
 <body>
 <div class="page-container">
     {% include 'partials/_nav.html' %}
+    {% include 'partials/_bottom_nav.html' %}
     {% include 'partials/_messages.html' %}
     {% block content %}{% endblock %}
 </div>
