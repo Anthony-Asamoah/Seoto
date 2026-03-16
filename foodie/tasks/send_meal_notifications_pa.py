@@ -11,6 +11,14 @@ PROJECT_ROOT = '/home/Tony48/tony48.pythonanywhere.com'
 sys.path.insert(0, PROJECT_ROOT)
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'seoto.settings')
 
+# --- debug ---
+print(f'[debug] CWD: {os.getcwd()}')
+dotenv_path = os.path.join(PROJECT_ROOT, '.env')
+print(f'[debug] .env path: {dotenv_path}')
+print(f'[debug] .env exists: {os.path.exists(dotenv_path)}')
+print(f'[debug] LOG_LEVEL in env before setup: {os.environ.get("LOG_LEVEL")}')
+# --- end debug ---
+
 import django
 django.setup()
 
