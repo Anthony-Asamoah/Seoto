@@ -27,19 +27,21 @@
 
   // Show the install button
   function showInstallButton() {
-    const installButton = document.getElementById('install-button');
-    if (installButton && shouldShowPrompt()) {
-      installButton.style.display = 'block';
-      console.log('Install button shown - PWA can be installed');
-    }
+    ['install-button', 'install-button-bottom', 'install-button-profile'].forEach(function(id) {
+      const btn = document.getElementById(id);
+      if (btn && shouldShowPrompt()) {
+        btn.style.display = 'flex';
+      }
+    });
+    console.log('Install button shown - PWA can be installed');
   }
 
   // Hide the install button
   function hideInstallButton() {
-    const installButton = document.getElementById('install-button');
-    if (installButton) {
-      installButton.style.display = 'none';
-    }
+    ['install-button', 'install-button-bottom', 'install-button-profile'].forEach(function(id) {
+      const btn = document.getElementById(id);
+      if (btn) btn.style.display = 'none';
+    });
   }
 
   // Handle install button click
@@ -107,18 +109,20 @@
 
   // Attach click handler when DOM is ready
   window.addEventListener('DOMContentLoaded', () => {
-    const installButton = document.getElementById('install-button');
-    if (installButton) {
-      installButton.addEventListener('click', handleInstallClick);
-
-      // Also add a close/dismiss button if exists
-      const dismissButton = document.getElementById('install-dismiss');
-      if (dismissButton) {
-        dismissButton.addEventListener('click', () => {
-          markAsDismissed();
-          hideInstallButton();
-        });
+    ['install-button', 'install-button-bottom', 'install-button-profile'].forEach(function(id) {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.addEventListener('click', handleInstallClick);
       }
+    });
+
+    // Also add a close/dismiss button if exists
+    const dismissButton = document.getElementById('install-dismiss');
+    if (dismissButton) {
+      dismissButton.addEventListener('click', () => {
+        markAsDismissed();
+        hideInstallButton();
+      });
     }
   });
 

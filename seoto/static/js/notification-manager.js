@@ -4,22 +4,21 @@
 (function() {
   'use strict';
 
-  // Update notification button based on permission status
-  function updateNotificationButton() {
-    const notificationToggle = document.getElementById('notification-toggle');
-    if (!notificationToggle) return;
+  // Update a single notification button based on permission status
+  function updateSingleButton(btn) {
+    if (!btn) return;
 
     // Check if notifications are supported
     if (!('Notification' in window) || !('PushManager' in window)) {
-      notificationToggle.style.display = 'none';
+      btn.style.display = 'none';
       return;
     }
 
     // Reuse or create the icon element (preserve the badge span)
-    let icon = notificationToggle.querySelector('i');
+    let icon = btn.querySelector('i');
     if (!icon) {
       icon = document.createElement('i');
-      notificationToggle.insertBefore(icon, notificationToggle.firstChild);
+      btn.insertBefore(icon, btn.firstChild);
     }
 
     // Update button based on permission status
@@ -27,22 +26,29 @@
 
     if (permission === 'granted') {
       icon.className = 'fas fa-bell';
-      notificationToggle.title = 'Notifications enabled';
-      notificationToggle.classList.add('text-success');
-      notificationToggle.classList.remove('text-muted');
-      notificationToggle.disabled = false;
+      btn.title = 'Notifications enabled';
+      btn.classList.add('text-success');
+      btn.classList.remove('text-muted');
+      btn.disabled = false;
     } else if (permission === 'denied') {
       icon.className = 'fas fa-bell-slash';
-      notificationToggle.title = 'Notifications blocked (check browser settings)';
-      notificationToggle.classList.add('text-muted');
-      notificationToggle.classList.remove('text-success');
-      notificationToggle.disabled = true;
+      btn.title = 'Notifications blocked (check browser settings)';
+      btn.classList.add('text-muted');
+      btn.classList.remove('text-success');
+      btn.disabled = true;
     } else {
       icon.className = 'far fa-bell';
-      notificationToggle.title = 'Enable push notifications';
-      notificationToggle.classList.remove('text-success', 'text-muted');
-      notificationToggle.disabled = false;
+      btn.title = 'Enable push notifications';
+      btn.classList.remove('text-success', 'text-muted');
+      btn.disabled = false;
     }
+  }
+
+  // Update all notification buttons (top nav, bottom nav, profile settings)
+  function updateNotificationButton() {
+    updateSingleButton(document.getElementById('notification-toggle'));
+    updateSingleButton(document.getElementById('notification-toggle-bottom'));
+    updateSingleButton(document.getElementById('notification-toggle-profile'));
   }
 
   // Check subscription status and ensure backend is synced
