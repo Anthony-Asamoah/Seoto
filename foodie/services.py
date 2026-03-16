@@ -60,9 +60,9 @@ def _current_mealtime(user=None):
     return None
 
 
-def suggest(user=None):
+def suggest(user=None, slot=None):
     context = {}
-    mealtime = _current_mealtime(user)
+    mealtime = slot.label if slot else _current_mealtime(user)
     available_meals = []
     fancy_meal = None
 
