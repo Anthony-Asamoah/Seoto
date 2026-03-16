@@ -149,9 +149,11 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
 
     # Workaround for py-vapid: save private key to temp file
     # py-vapid 1.9.1 doesn't support loading PEM from string
+    # Also normalize escaped newlines (\n) that env vars on PythonAnywhere may store as literals
     import tempfile
+    pem_key = settings.VAPID_PRIVATE_KEY.replace('\\n', '\n')
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as f:
-        f.write(settings.VAPID_PRIVATE_KEY)
+        f.write(pem_key)
         vapid_key_path = f.name
 
     try:
