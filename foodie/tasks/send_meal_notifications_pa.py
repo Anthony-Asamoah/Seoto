@@ -56,7 +56,7 @@ def run():
             skipped_count += 1
             continue
 
-        context = suggest(user)
+        context = suggest(user, slot=schedule.slot)
         if not context.get('option_1'):
             skipped_count += 1
             continue
