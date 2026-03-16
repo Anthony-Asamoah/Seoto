@@ -109,7 +109,7 @@
       console.log('Push subscription created:', subscription);
 
       // Send subscription to server
-      await fetch('/api/push/subscribe/', {
+      const saveResponse = await fetch('/api/push/subscribe/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -117,6 +117,13 @@
         },
         body: JSON.stringify(subscription)
       });
+
+      if (!saveResponse.ok) {
+        console.error('Failed to save push subscription to server:', saveResponse.status);
+        // Unsubscribe from push manager since server didn't save it
+        await subscription.unsubscribe();
+        return;
+      }
 
       console.log('Push subscription saved to server');
     } catch (error) {

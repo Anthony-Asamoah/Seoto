@@ -9,7 +9,7 @@ const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 // Static assets to cache on install
 const STATIC_ASSETS = [
   '/',
-  '/static/manifest.json',
+  '/manifest.json',
   '/static/img/logo.png',
   '/static/img/pwa/icon-192x192.png',
   '/static/img/pwa/icon-512x512.png',
@@ -29,10 +29,10 @@ self.addEventListener('install', (event) => {
         console.log('[SW] Caching static assets');
         return cache.addAll(STATIC_ASSETS);
       })
-      .then(() => self.skipWaiting()) // Activate immediately
       .catch((error) => {
         console.error('[SW] Failed to cache static assets:', error);
       })
+      .then(() => self.skipWaiting()) // Activate immediately regardless of cache result
   );
 });
 
