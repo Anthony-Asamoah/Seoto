@@ -1,9 +1,7 @@
-from .models import meal, userPreference
-import logging
-from random import randint
 from datetime import datetime
-from django.db.models import Prefetch
+from random import randint
 
+from .models import meal, userPreference
 
 MEALTIME_FIELDS = {
     'Breakfast': 'isBreakfast',
