@@ -13,4 +13,5 @@ urlpatterns = [
     path('my-foods/add/', views.meal_create, name='foodie_meal_create'),
     path('my-foods/<int:pk>/edit/', views.meal_edit, name='foodie_meal_edit'),
     path('my-foods/<int:pk>/delete/', views.meal_delete, name='foodie_meal_delete'),
+    path('config/<str:mealtime>/search/', views.meal_search_autocomplete, name='foodie_meal_search'),
 ]

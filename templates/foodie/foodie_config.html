@@ -81,6 +81,37 @@
         .meal-info { flex: 1; min-width: 0; }
         .meal-name { font-weight: 500; font-size: 0.95rem; }
         .meal-desc { font-size: 0.8rem; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Autocomplete */
+        .search-wrap { position: relative; flex: 1; }
+        .autocomplete-dropdown {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0; right: 0;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,.1);
+            z-index: 100;
+            overflow: hidden;
+        }
+        .autocomplete-dropdown.open { display: block; }
+        .ac-item {
+            padding: 9px 14px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .ac-item:hover, .ac-item.active { background: #f4faf4; }
+        .ac-empty { padding: 9px 14px; color: #aaa; font-size: 0.85rem; }
+        .ac-item { display: flex; align-items: center; justify-content: space-between; }
+        .ac-name { flex: 1; }
+        .ac-add-btn {
+            background: none; border: 1px solid #c8dfc8; border-radius: 6px;
+            color: #3a7a3a; font-size: 0.75rem; padding: 2px 8px; cursor: pointer;
+            white-space: nowrap; margin-left: 8px;
+        }
+        .ac-add-btn:hover { background: #f0faf0; }
     </style>
 {% endblock %}
 
@@ -142,12 +173,15 @@
                 <div class="config-card-title">Add to menu</div>
 
                 <!-- Search -->
-                <form method="GET" class="d-flex gap-2 mb-3">
+                <form method="GET" class="d-flex gap-2 mb-3" id="search-form">
                     {% if category_filter %}
                         <input type="hidden" name="category" value="{{ category_filter }}">
                     {% endif %}
-                    <input type="text" name="search" class="form-control form-control-sm"
-                           placeholder="Search meals..." value="{{ search_query }}">
+                    <div class="search-wrap">
+                        <input type="text" name="search" id="meal-search" class="form-control form-control-sm"
+                               placeholder="Search meals..." value="{{ search_query }}" autocomplete="off">
+                        <div class="autocomplete-dropdown" id="ac-dropdown"></div>
+                    </div>
                     <button class="btn btn-outline-secondary btn-sm" type="submit">Search</button>
                     {% if search_query or category_filter %}
                         <a href="?" class="btn btn-outline-danger btn-sm">Clear</a>
@@ -238,3 +272,112 @@
     </div>
 </div>
 {% endblock %}
+
+{% if mealtime %}
+{% block script %}
+<script>
+(function () {
+    const input = document.getElementById('meal-search');
+    const dropdown = document.getElementById('ac-dropdown');
+    if (!input) return;
+
+    const AUTOCOMPLETE_URL = "{% url 'foodie_meal_search' mealtime %}";
+    let activeIdx = -1;
+    let debounceTimer = null;
+    let currentItems = [];
+
+    const CSRF = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const CONFIG_URL = window.location.pathname;
+
+    function open(items) {
+        currentItems = items;
+        activeIdx = -1;
+        if (!items.length) {
+            dropdown.innerHTML = '<div class="ac-empty">No results</div>';
+        } else {
+            dropdown.innerHTML = items.map(m =>
+                `<div class="ac-item" data-id="${m.id}" data-name="${m.name}">
+                    <span class="ac-name">${m.name}</span>
+                    <button class="ac-add-btn" type="button">+ Add</button>
+                </div>`
+            ).join('');
+            dropdown.querySelectorAll('.ac-item').forEach(el => {
+                el.querySelector('.ac-name').addEventListener('mousedown', e => {
+                    e.preventDefault();
+                    selectItem(el.dataset.name);
+                });
+                el.querySelector('.ac-add-btn').addEventListener('mousedown', e => {
+                    e.preventDefault();
+                    addMeal(el.dataset.id);
+                });
+            });
+        }
+        dropdown.classList.add('open');
+    }
+
+    function close() {
+        dropdown.classList.remove('open');
+        activeIdx = -1;
+    }
+
+    function selectItem(name) {
+        input.value = name;
+        close();
+        document.getElementById('search-form').submit();
+    }
+
+    function addMeal(mealId) {
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.action = CONFIG_URL;
+        [['csrfmiddlewaretoken', CSRF], ['action', 'add'], ['meal_id', mealId]].forEach(([k, v]) => {
+            const inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = k; inp.value = v;
+            form.appendChild(inp);
+        });
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    function highlight(idx) {
+        dropdown.querySelectorAll('.ac-item').forEach((el, i) =>
+            el.classList.toggle('active', i === idx)
+        );
+    }
+
+    input.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        const q = input.value.trim();
+        if (q.length < 3) { close(); return; }
+        debounceTimer = setTimeout(() => {
+            fetch(`${AUTOCOMPLETE_URL}?q=${encodeURIComponent(q)}`)
+                .then(r => r.json())
+                .then(open);
+        }, 200);
+    });
+
+    input.addEventListener('keydown', e => {
+        const els = dropdown.querySelectorAll('.ac-item');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIdx = Math.min(activeIdx + 1, els.length - 1);
+            highlight(activeIdx);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIdx = Math.max(activeIdx - 1, 0);
+            highlight(activeIdx);
+        } else if (e.key === 'Enter' && activeIdx >= 0) {
+            e.preventDefault();
+            selectItem(currentItems[activeIdx].name);
+        } else if (e.key === 'Escape') {
+            close();
+        }
+    });
+
+    document.addEventListener('click', e => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) close();
+    });
+})();
+</script>
+{% endblock script %}
+{% endif %}

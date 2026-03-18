@@ -242,6 +242,28 @@ def meal_schedule(request):
     })
 
 
+@login_required
+def meal_search_autocomplete(request, mealtime):
+    q = request.GET.get('q', '').strip()
+    if len(q) < 3:
+        return JsonResponse([], safe=False)
+
+    slot = get_object_or_404(MealTimeSlot, pk=mealtime)
+    selected_ids = userPreference.objects.filter(
+        user=request.user, slot=slot
+    ).values_list('meal_id', flat=True)
+
+    results = (
+        meal.objects.filter(
+            Q(created_by=None) | Q(created_by=request.user) | Q(is_public=True),
+            name__icontains=q,
+        )
+        .exclude(id__in=selected_ids)
+        .values('id', 'name')[:8]
+    )
+    return JsonResponse(list(results), safe=False)
+
+
 # REST API
 def foodie_rest(request):
     context = services.suggest(request.user)
