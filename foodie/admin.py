@@ -27,10 +27,10 @@ class mealAdmin(RichTextAdminMixin, admin.ModelAdmin):
 
     exclude = ['main_img_thumbnail']
 
-    list_display = ['meal_icon', 'name', 'description_preview', 'default_preference', 'is_public', 'created_by', 'cooking_duration']
+    list_display = ['meal_icon', 'name', 'description_preview', 'categories_preview', 'is_public', 'created_by', 'cooking_duration']
     list_display_links = ['name']
     search_fields = ['name', 'description', 'ingredients']
-    list_filter = ['is_public', 'created_by', 'cooking_duration', 'default_preference']
+    list_filter = ['is_public', 'created_by', 'cooking_duration']
     list_per_page = 20
 
     @admin.display(description='')
@@ -49,6 +49,12 @@ class mealAdmin(RichTextAdminMixin, admin.ModelAdmin):
     def description_preview(self, obj):
         text = strip_tags(obj.description)
         return (text[:60] + '…') if len(text) > 60 else text
+
+
+    @admin.display(description='Categories')
+    def categories_preview(self, obj):
+        if not obj.categories: return []
+        return ', '.join(obj.categories)
 
 
 @admin.register(userPreference)

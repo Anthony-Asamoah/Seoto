@@ -81,8 +81,14 @@ def suggest(user=None, slot=None):
         if fancy_pool:
             fancy_meal = choice(fancy_pool)
     else:
-        available_meals = list(meal.objects.filter(is_fancy=False))
-        fancy_pool = list(meal.objects.filter(is_fancy=True))
+        if mealtime:
+            available_meals = list(meal.objects.filter(
+                is_fancy=False, created_by=None,
+                categories__contains=[mealtime]
+            ))
+        else:
+            available_meals = []
+        fancy_pool = list(meal.objects.filter(is_fancy=True, created_by=None))
         if fancy_pool:
             fancy_meal = choice(fancy_pool)
 
@@ -135,4 +141,4 @@ def get_all(user=None):
             }
             for p in prefs
         ]
-    return meal.objects.all().values()
+    return meal.objects.filter(created_by=None, is_public=True).values()

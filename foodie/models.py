@@ -40,16 +40,15 @@ class meal(models.Model):
     img_2 = models.ImageField(upload_to=partial(meal_image_path, slot=3), blank=True)
     img_3 = models.ImageField(upload_to=partial(meal_image_path, slot=4), blank=True)
 
+    SLOT_CHOICES = ['breakfast', 'lunch', 'dinner', 'supper', 'snack']
+
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True,
         on_delete=models.SET_NULL, related_name='created_meals'
     )
     is_public = models.BooleanField(default=True)
     is_fancy = models.BooleanField(default=False)
-    default_preference = models.ForeignKey(
-        MealTimeSlot, null=True, blank=True,
-        on_delete=models.SET_NULL, related_name='default_meals'
-    )
+    categories = models.JSONField(default=list, blank=True)
 
     def save(self, *args, **kwargs):
         new_main_img = isinstance(self.main_img, UploadedFile)

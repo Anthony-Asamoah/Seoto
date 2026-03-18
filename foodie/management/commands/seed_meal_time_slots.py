@@ -6,6 +6,7 @@ DEFAULTS = [
     ('lunch',     '12:00'),
     ('snack',     '15:00'),
     ('dinner',    '18:00'),
+    ('supper',    '20:00'),
     ('fancy',     '00:00'),  # Pseudo-slot — not time-based; used for fancy meal preferences
 ]
 
