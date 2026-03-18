@@ -1,8 +1,6 @@
 import ast
 import os
 
-from django.db import models
-
 
 class GetEnv:
     class NotFound(Exception):
@@ -39,9 +37,3 @@ class GetEnv:
     @classmethod
     def tuple(cls, var_name: str, default=None) -> tuple:
         return tuple(cls.str(var_name, default).split(","))
-
-
-class BaseChoices(models.TextChoices):
-    @classmethod
-    def names_list(cls) -> list[str]:
-        return [member.name for member in cls]

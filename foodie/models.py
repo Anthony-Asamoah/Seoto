@@ -72,53 +72,20 @@ class meal(models.Model):
             self._generate_thumbnail()
 
     def _generate_thumbnail(self):
-        from io import BytesIO
-        from PIL import Image
-        from django.core.files.base import ContentFile
-
         if not self.main_img:
-            if self.main_img_thumbnail:
-                self.main_img_thumbnail.delete(save=False)
-                type(self).objects.filter(pk=self.pk).update(main_img_thumbnail='')
+            self.main_img_thumbnail.delete(save=False)
+            type(self).objects.filter(pk=self.pk).update(main_img_thumbnail='')
             return
 
-        try:
-            self.main_img.open('rb')
-            img = Image.open(self.main_img)
-            img.load()
+        from seoto.utils import MediaHelper
 
-            w, h = img.size
-            d = min(w, h)
-            img = img.crop(((w - d) // 2, (h - d) // 2, (w + d) // 2, (h + d) // 2))
-            img = img.resize((80, 80), Image.LANCZOS)
+        slug = slugify(self.name) or str(self.pk)
+        if self.created_by_id:
+            thumb_name = f'food/thumbs/user_{self.created_by_id}_{slug}_thumb.jpg'
+        else:
+            thumb_name = f'food/thumbs/{slug}_thumb.jpg'
 
-            if img.mode in ('RGBA', 'P', 'LA'):
-                img = img.convert('RGB')
-
-            buf = BytesIO()
-            img.save(buf, format='JPEG', quality=85, optimize=True)
-            buf.seek(0)
-
-            slug = slugify(self.name) or str(self.pk)
-            if self.created_by_id:
-                thumb_name = f'food/thumbs/user_{self.created_by_id}_{slug}_thumb.jpg'
-            else:
-                thumb_name = f'food/thumbs/{slug}_thumb.jpg'
-
-            if self.main_img_thumbnail:
-                self.main_img_thumbnail.delete(save=False)
-
-            self.main_img_thumbnail.save(thumb_name, ContentFile(buf.getvalue()), save=False)
-            type(self).objects.filter(pk=self.pk).update(
-                main_img_thumbnail=self.main_img_thumbnail.name
-            )
-        except Exception:
-            pass
-        finally:
-            try:
-                self.main_img.close()
-            except Exception:
-                pass
+        MediaHelper.generate_thumbnail(self, 'main_img', 'main_img_thumbnail', thumb_name)
 
     def __str__(self):
         return f"{self.name}"
