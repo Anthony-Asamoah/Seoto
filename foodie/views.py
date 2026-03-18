@@ -31,42 +31,53 @@ def foodie_config(request, mealtime=None):
     slot = get_object_or_404(MealTimeSlot, pk=mealtime)
 
     if request.method == 'POST':
-        selected_ids = request.POST.getlist('selected_meals')
-        page_meal_ids = request.POST.getlist('page_meal_ids')
-        try:
-            selected_ids = [int(x) for x in selected_ids]
-            page_meal_ids = [int(x) for x in page_meal_ids]
-        except ValueError:
-            selected_ids = []
-            page_meal_ids = []
-
-        for m in meal.objects.filter(id__in=page_meal_ids):
-            if m.id in selected_ids:
-                userPreference.objects.get_or_create(
-                    user=request.user, meal=m, slot=slot,
-                    defaults={'isAvailable': True}
-                )
-            else:
-                userPreference.objects.filter(user=request.user, meal=m, slot=slot).delete()
-
+        action = request.POST.get('action', '')
+        meal_id = request.POST.get('meal_id')
         redirect_url = f'/foodie/config/{mealtime}'
         qs = request.POST.get('redirect_qs', '')
         if qs:
             redirect_url += f'?{qs}'
+
+        if action == 'add' and meal_id:
+            m = get_object_or_404(meal, pk=meal_id)
+            userPreference.objects.get_or_create(
+                user=request.user, meal=m, slot=slot,
+                defaults={'isAvailable': True}
+            )
+        elif action == 'remove' and meal_id:
+            userPreference.objects.filter(user=request.user, meal_id=meal_id, slot=slot).delete()
+
         return redirect(redirect_url)
 
     search_query = request.GET.get('search', '').strip()
-    meals_qs = meal.objects.filter(
-        Q(created_by=None) | Q(created_by=request.user) | Q(is_public=True)
-    ).order_by('name')
-    if search_query:
-        meals_qs = meals_qs.filter(name__icontains=search_query)
+    category_filter = request.GET.get('category', '').strip()
 
-    page_obj = apply_pagination(meals_qs, request.GET.get('page'), 13)
     selected_ids = list(
         userPreference.objects.filter(user=request.user, slot=slot).values_list('meal_id', flat=True)
     )
-    query_params = {'search': search_query} if search_query else {}
+    selected_meal_objects = meal.objects.filter(id__in=selected_ids).order_by('name')
+
+    available_qs = meal.objects.filter(
+        Q(created_by=None) | Q(created_by=request.user) | Q(is_public=True)
+    ).exclude(id__in=selected_ids).order_by('name')
+    if search_query:
+        available_qs = available_qs.filter(name__icontains=search_query)
+    if category_filter:
+        available_qs = available_qs.filter(categories__icontains=f'"{category_filter}"')
+
+    all_categories = sorted({
+        cat
+        for cats in meal.objects.exclude(categories=[]).values_list('categories', flat=True)
+        for cat in (cats or [])
+    })
+
+    page_obj = apply_pagination(available_qs, request.GET.get('page'), 13)
+
+    query_params = {}
+    if search_query:
+        query_params['search'] = search_query
+    if category_filter:
+        query_params['category'] = category_filter
 
     context = {
         'mealtime': mealtime,
@@ -74,8 +85,10 @@ def foodie_config(request, mealtime=None):
         'slot': slot,
         'slots': slots,
         'meals': page_obj,
-        'selected_ids': selected_ids,
+        'selected_meal_objects': selected_meal_objects,
         'search_query': search_query,
+        'category_filter': category_filter,
+        'all_categories': all_categories,
         'query_params': query_params,
     }
     return render(request, 'foodie/foodie_config.html', context)

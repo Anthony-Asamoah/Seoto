@@ -6,111 +6,222 @@
 
 {% block style %}
     <style>
-        .nav-links a { margin-right: 8px; margin-bottom: 6px; }
-        .meal-list { max-width: 900px; margin: 0 auto; }
-        .meal-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .meal-item label { margin-left: 8px; flex: 1; }
-        .subtitle { color: #777; }
-        .food-icon { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+        .config-wrap { max-width: 860px; margin: 0 auto; }
+
+        /* Slot nav */
+        .slot-nav a { margin-right: 6px; margin-bottom: 6px; }
+
+        /* Shared card style */
+        .config-card {
+            background: #fff;
+            border: 1px solid #e2e8e2;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+        }
+        .config-card-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 14px;
+        }
+
+        /* Selected meal chips */
+        .meal-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #f4faf4;
+            border: 1px solid #c8dfc8;
+            border-radius: 20px;
+            padding: 5px 10px 5px 6px;
+            font-size: 0.875rem;
+        }
+        .meal-chip img,
+        .meal-chip .chip-icon {
+            width: 26px; height: 26px;
+            border-radius: 50%; object-fit: cover;
+            flex-shrink: 0;
+        }
+        .meal-chip .chip-icon {
+            background: #e9e9e9;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 13px;
+        }
+        .chip-remove {
+            background: none; border: none;
+            color: #aaa; font-size: 15px; line-height: 1;
+            padding: 0; cursor: pointer; margin-left: 2px;
+        }
+        .chip-remove:hover { color: #c00; }
+
+        /* Available meals list */
+        .show-only-label {
+            font-size: 0.78rem;
+            color: #999;
+            white-space: nowrap;
+            align-self: center;
+        }
+        .meal-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f2f2f2;
+            gap: 12px;
+        }
+        .meal-row:last-child { border-bottom: none; }
+        .food-icon { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
         .food-icon-placeholder {
             display: inline-flex; align-items: center; justify-content: center;
-            width: 44px; height: 44px; border-radius: 50%;
-            background: #e9e9e9; font-size: 22px;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: #e9e9e9; font-size: 20px; flex-shrink: 0;
         }
+        .meal-info { flex: 1; min-width: 0; }
+        .meal-name { font-weight: 500; font-size: 0.95rem; }
+        .meal-desc { font-size: 0.8rem; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     </style>
 {% endblock %}
 
 {% block content %}
-    <div class="container">
-        <div class="header container">
-            <h1>Configure your menu{% if mealtime %} — {{ mealtime_readable }}{% endif %}</h1>
-            <hr />
+<div class="container">
+    <div class="config-wrap">
+
+        <!-- Page header -->
+        <div class="mt-4 mb-4">
+            <h2 class="mb-1">Configure your menu{% if mealtime %} — {{ mealtime_readable }}{% endif %}</h2>
             {% if mealtime == 'fancy' %}
-                <p class="subtitle">Select your fancy meals — one will be suggested alongside your regular options.</p>
+                <p class="text-muted mb-3">Select your fancy meals — one will be suggested alongside your regular options.</p>
             {% else %}
-                <p class="subtitle">Select which meals should appear for each time of day.</p>
+                <p class="text-muted mb-3">Select which meals should appear for each time of day.</p>
             {% endif %}
-            <div class="nav-links">
+            <div class="slot-nav">
                 {% for slot in slots %}
                     <a class="btn btn-outline-secondary btn-sm {% if mealtime == slot.label %}active{% endif %}"
                        href="{% url 'foodie_config_time' slot.label %}">{{ slot.label|capfirst }}</a>
                 {% endfor %}
-                <a class="btn btn-outline-primary btn-sm ms-3" href="{% url 'foodie_my_meals' %}">My Foods</a>
+                <a class="btn btn-outline-primary btn-sm ms-2" href="{% url 'foodie_my_meals' %}">My Foods</a>
                 <a class="btn btn-outline-secondary btn-sm" href="{% url 'foodie_schedule' %}">My Schedule</a>
             </div>
         </div>
 
         {% if mealtime %}
-            <div class="meal-list">
-                <form method="GET" class="mb-3 d-flex gap-2">
-                    <input type="text" name="search" class="form-control"
+
+            <!-- Section 1: Selected meals -->
+            <div class="config-card">
+                <div class="config-card-title">Your {{ mealtime_readable }} menu</div>
+                {% if selected_meal_objects %}
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for m in selected_meal_objects %}
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="remove">
+                                <input type="hidden" name="meal_id" value="{{ m.id }}">
+                                <input type="hidden" name="redirect_qs"
+                                       value="{% if search_query %}search={{ search_query }}&{% endif %}{% if category_filter %}category={{ category_filter }}&{% endif %}page={{ meals.number }}">
+                                <div class="meal-chip">
+                                    {% if m.main_img_thumbnail %}
+                                        <img src="{{ m.main_img_thumbnail.url }}" alt="">
+                                    {% else %}
+                                        <span class="chip-icon">🍽️</span>
+                                    {% endif %}
+                                    <span>{{ m.name }}</span>
+                                    <button type="submit" class="chip-remove" title="Remove">×</button>
+                                </div>
+                            </form>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0 small">No meals selected yet. Add some from below.</p>
+                {% endif %}
+            </div>
+
+            <!-- Section 2: Available meals -->
+            <div class="config-card">
+                <div class="config-card-title">Add to menu</div>
+
+                <!-- Search -->
+                <form method="GET" class="d-flex gap-2 mb-3">
+                    {% if category_filter %}
+                        <input type="hidden" name="category" value="{{ category_filter }}">
+                    {% endif %}
+                    <input type="text" name="search" class="form-control form-control-sm"
                            placeholder="Search meals..." value="{{ search_query }}">
-                    <button class="btn btn-outline-secondary" type="submit">Search</button>
-                    {% if search_query %}
-                        <a href="?" class="btn btn-outline-danger">Clear</a>
+                    <button class="btn btn-outline-secondary btn-sm" type="submit">Search</button>
+                    {% if search_query or category_filter %}
+                        <a href="?" class="btn btn-outline-danger btn-sm">Clear</a>
                     {% endif %}
                 </form>
 
-                <form method="post">
-                    {% csrf_token %}
-                    {% for m in meals %}
-                        <input type="hidden" name="page_meal_ids" value="{{ m.id }}">
-                    {% endfor %}
-                    <input type="hidden" name="redirect_qs"
-                           value="{% if search_query %}search={{ search_query }}&{% endif %}page={{ meals.number }}">
+                <!-- Category filter -->
+                {% if all_categories %}
+                    <div class="d-flex flex-wrap align-items-center gap-1 mb-3">
+                        <span class="show-only-label">Show only:</span>
+                        <a class="btn btn-sm {% if not category_filter %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
+                           href="?{% if search_query %}search={{ search_query %}{% endif %}">All</a>
+                        {% for cat in all_categories %}
+                            <a class="btn btn-sm {% if category_filter == cat %}btn-secondary{% else %}btn-outline-secondary{% endif %}"
+                               href="?category={{ cat }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ cat|capfirst }}</a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
 
-                    {% for m in meals %}
-                        <div class="meal-item">
-                            {% if m.main_img_thumbnail %}
-                                <img src="{{ m.main_img_thumbnail.url }}" alt="" class="food-icon me-2">
-                            {% else %}
-                                <span class="food-icon-placeholder me-2">🍽️</span>
-                            {% endif %}
-                            <input type="checkbox" id="meal_{{ m.id }}" name="selected_meals" value="{{ m.id }}"
-                                   {% if m.id in selected_ids %}checked{% endif %}>
-                            <label for="meal_{{ m.id }}">{{ m.name }}</label>
-                            {% if m.description %}<small class="text-muted">{{ m.description|truncatewords_html:12|safe }}</small>{% endif %}
-                            {% if m.created_by_id == request.user.id %}
-                                <a href="{% url 'foodie_meal_edit' m.id %}" class="ms-2 small text-muted">edit</a>
+                <!-- Meal rows -->
+                {% for m in meals %}
+                    <div class="meal-row">
+                        {% if m.main_img_thumbnail %}
+                            <img src="{{ m.main_img_thumbnail.url }}" alt="" class="food-icon">
+                        {% else %}
+                            <span class="food-icon-placeholder">🍽️</span>
+                        {% endif %}
+                        <div class="meal-info">
+                            <div class="meal-name">{{ m.name }}</div>
+                            {% if m.description %}
+                                <div class="meal-desc">{{ m.description|truncatewords_html:10|safe }}</div>
                             {% endif %}
                         </div>
-                    {% empty %}
-                        <p>No meals found.</p>
-                    {% endfor %}
-
-                    <div class="mt-3">
-                        <button class="btn btn-primary" type="submit">Save</button>
-                        <a class="btn btn-secondary" href="{% url 'foodie' %}">Back</a>
+                        {% if m.created_by_id == request.user.id %}
+                            <a href="{% url 'foodie_meal_edit' m.id %}" class="btn btn-outline-secondary btn-sm">Edit</a>
+                        {% endif %}
+                        <form method="post" class="d-inline flex-shrink-0">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="add">
+                            <input type="hidden" name="meal_id" value="{{ m.id }}">
+                            <input type="hidden" name="redirect_qs"
+                                   value="{% if search_query %}search={{ search_query }}&{% endif %}{% if category_filter %}category={{ category_filter }}&{% endif %}page={{ meals.number }}">
+                            <button type="submit" class="btn btn-outline-success btn-sm">+ Add</button>
+                        </form>
                     </div>
-                </form>
+                {% empty %}
+                    <p class="text-muted mt-2 mb-0 small">
+                        No meals found{% if search_query or category_filter %} matching your filters{% endif %}.
+                    </p>
+                {% endfor %}
 
+                <!-- Pagination -->
                 {% if meals.has_other_pages %}
                     <nav class="mt-3" aria-label="Meal pagination">
-                        <ul class="pagination justify-content-center">
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
                             {% if meals.has_previous %}
                                 <li class="page-item">
-                                    <a class="page-link"
-                                       href="?page={{ meals.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                                    <a class="page-link" href="?page={{ meals.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Previous</a>
                                 </li>
                             {% else %}
                                 <li class="page-item disabled"><span class="page-link">Previous</span></li>
                             {% endif %}
-
                             {% for num in meals.paginator.page_range %}
                                 {% if meals.number == num %}
                                     <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                                 {% elif num > meals.number|add:'-3' and num < meals.number|add:'3' %}
                                     <li class="page-item">
-                                        <a class="page-link"
-                                           href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">{{ num }}</a>
                                     </li>
                                 {% endif %}
                             {% endfor %}
-
                             {% if meals.has_next %}
                                 <li class="page-item">
-                                    <a class="page-link"
-                                       href="?page={{ meals.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                                    <a class="page-link" href="?page={{ meals.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}">Next</a>
                                 </li>
                             {% else %}
                                 <li class="page-item disabled"><span class="page-link">Next</span></li>
@@ -119,10 +230,11 @@
                     </nav>
                 {% endif %}
             </div>
+
         {% else %}
-            <div class="container">
-                <p>Choose a time above to configure its menu.</p>
-            </div>
+            <p class="text-muted">Choose a time above to configure its menu.</p>
         {% endif %}
+
     </div>
+</div>
 {% endblock %}

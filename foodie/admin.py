@@ -5,6 +5,23 @@ from utils.admin import RichTextAdminMixin
 from .models import meal, userPreference, MealTimeSlot, UserMealSchedule
 
 
+class CategoriesFilter(admin.SimpleListFilter):
+    title = 'category'
+    parameter_name = 'category'
+
+    def lookups(self, request, model_admin):
+        all_cats = set()
+        for cats in meal.objects.exclude(categories=[]).values_list('categories', flat=True):
+            if cats:
+                all_cats.update(cats)
+        return [(c, c.capitalize()) for c in sorted(all_cats)]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(categories__icontains=f'"{self.value()}"')
+        return queryset
+
+
 @admin.register(MealTimeSlot)
 class MealTimeSlotAdmin(admin.ModelAdmin):
     list_display = ['label', 'default_time']
@@ -30,7 +47,7 @@ class mealAdmin(RichTextAdminMixin, admin.ModelAdmin):
     list_display = ['meal_icon', 'name', 'description_preview', 'categories_preview', 'is_public', 'created_by', 'cooking_duration']
     list_display_links = ['name']
     search_fields = ['name', 'description', 'ingredients']
-    list_filter = ['is_public', 'created_by', 'cooking_duration']
+    list_filter = ['is_public', 'created_by', 'cooking_duration', CategoriesFilter]
     list_per_page = 20
 
     @admin.display(description='')

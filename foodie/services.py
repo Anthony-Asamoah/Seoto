@@ -84,7 +84,7 @@ def suggest(user=None, slot=None):
         if mealtime:
             available_meals = list(meal.objects.filter(
                 is_fancy=False, created_by=None,
-                categories__contains=[mealtime]
+                categories__icontains=f'"{mealtime}"'
             ))
         else:
             available_meals = []
