@@ -16,3 +16,5 @@ throw_a_die/__pycache__/
 flip_a_coin/__pycache__/
 logs.txt
 Rhymes_Seoto.txt
+.qwen/
+.claude/
