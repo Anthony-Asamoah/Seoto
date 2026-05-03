@@ -35,17 +35,24 @@ def _current_mealtime(user=None):
     now_minutes = now.hour * 60 + now.minute
 
     if user and user.is_authenticated:
-        schedules = UserMealSchedule.objects.select_related('slot').filter(user=user)
-        best_label = None
-        best_delta = None
-        for schedule in schedules:
-            slot_minutes = schedule.time.hour * 60 + schedule.time.minute
-            delta = abs(slot_minutes - now_minutes)
-            if delta <= 30 and (best_delta is None or delta < best_delta):
-                best_label = schedule.slot.label
-                best_delta = delta
-        if best_label:
-            return best_label
+        schedules = list(
+            UserMealSchedule.objects
+            .select_related('slot')
+            .filter(user=user)
+            .exclude(slot__label='fancy')
+        )
+        if schedules:
+            schedules.sort(key=lambda sch: (sch.time.hour, sch.time.minute))
+            current = None
+            for sch in schedules:
+                slot_minutes = sch.time.hour * 60 + sch.time.minute
+                if slot_minutes <= now_minutes:
+                    current = sch
+                else:
+                    break
+            if current is None:
+                current = schedules[-1]
+            return current.slot.label
 
     # Fallback: hour-based heuristic
     hour = now.hour
