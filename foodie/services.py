@@ -1,7 +1,7 @@
 from datetime import datetime
 from random import choice, sample
 
-from .models import meal, userPreference, UserMealSchedule
+from .models import meal, userPreference, UserMealSchedule, DailyMealSuggestion, MealTimeSlot
 
 
 def _meal_data(m):
@@ -67,66 +67,214 @@ def _current_mealtime(user=None):
     return None
 
 
-def suggest(user=None, slot=None):
-    context = {}
-    mealtime = slot.label if slot else _current_mealtime(user)
-    available_meals = []
-    fancy_meal = None
+def _build_context(mealtime, option_1_obj, option_2_obj, fancy_obj):
+    option_1 = _meal_data(option_1_obj)
+    option_2 = _meal_data(option_2_obj) if option_2_obj else None
 
-    if user and user.is_authenticated:
+    if option_2:
+        names = f"{option_1['name'].lower()} or {option_2['name'].lower()}"
+    else:
+        names = option_1['name'].lower()
+
+    if mealtime:
+        suggestion_text = f"It's time for {mealtime.lower()}, so I suggest {names}."
+    else:
+        suggestion_text = f"Unfortunately you will be going to bed soon. Have {names} for now."
+
+    context = {
+        'mealtime': mealtime,
+        'option_1': option_1,
+        'option_2': option_2,
+        'suggestion_text': suggestion_text,
+    }
+    if fancy_obj:
+        fancy = _meal_data(fancy_obj)
+        context['fancy'] = fancy
+        context['fancy_text'] = f"Otherwise let's get some {fancy['name'].lower()}."
+    return context
+
+
+def _pick_options(pool, exclude_ids):
+    """Pick up to 2 distinct meals from pool, preferring those whose id is not in exclude_ids.
+    Falls back to the full pool if the filtered pool is too small. Returns (m1, m2_or_None)."""
+    if not pool:
+        return None, None
+
+    filtered = [m for m in pool if m.id not in exclude_ids]
+    if len(filtered) >= 2:
+        picks = sample(filtered, 2)
+        return picks[0], picks[1]
+    if len(filtered) == 1:
+        first = filtered[0]
+        # Need a second from the rest of the pool (allow used-today repeat) but distinct from first
+        rest = [m for m in pool if m.id != first.id]
+        second = choice(rest) if rest else None
+        return first, second
+    # filtered empty — allow repeats from full pool
+    if len(pool) >= 2:
+        picks = sample(pool, 2)
+        return picks[0], picks[1]
+    return pool[0], None
+
+
+def _pick_fancy(pool, exclude_ids):
+    if not pool:
+        return None
+    filtered = [m for m in pool if m.id not in exclude_ids]
+    if filtered:
+        return choice(filtered)
+    return choice(pool)
+
+
+def _session_key(today, mealtime):
+    return f"{today.isoformat()}:{mealtime}"
+
+
+def _session_used_ids(session, today):
+    prefix = f"{today.isoformat()}:"
+    used = set()
+    store = session.get('foodie_suggestion', {})
+    for key, val in store.items():
+        if key.startswith(prefix):
+            for fld in ('option_1', 'option_2', 'fancy'):
+                mid = val.get(fld)
+                if mid:
+                    used.add(mid)
+    return used
+
+
+def _prune_session(session, today):
+    """Drop session cache entries from prior dates."""
+    store = session.get('foodie_suggestion', {})
+    prefix = f"{today.isoformat()}:"
+    pruned = {k: v for k, v in store.items() if k.startswith(prefix)}
+    if pruned != store:
+        session['foodie_suggestion'] = pruned
+        session.modified = True
+
+
+def suggest(user=None, slot=None, request=None):
+    """Return a stable per-(user, date, slot) meal suggestion.
+
+    Within a single mealtime on a given day, repeated calls return the same picks.
+    Across mealtimes within the same day, picks avoid meals already shown.
+    Anonymous suggestions are cached in the request session.
+    """
+    if user is None and request is not None:
+        user = request.user
+
+    mealtime = slot.label if slot else _current_mealtime(user)
+    today = datetime.now().date()
+
+    is_auth = bool(user and user.is_authenticated)
+
+    # 1. Cache lookup
+    if is_auth and mealtime:
+        cached = (
+            DailyMealSuggestion.objects
+            .select_related('option_1', 'option_2', 'fancy')
+            .filter(user=user, date=today, slot_id=mealtime)
+            .first()
+        )
+        if cached:
+            return _build_context(mealtime, cached.option_1, cached.option_2, cached.fancy)
+
+    if not is_auth and request is not None and mealtime:
+        _prune_session(request.session, today)
+        store = request.session.get('foodie_suggestion', {})
+        cached = store.get(_session_key(today, mealtime))
+        if cached:
+            try:
+                m1 = meal.objects.get(pk=cached['option_1'])
+                m2 = meal.objects.filter(pk=cached.get('option_2')).first() if cached.get('option_2') else None
+                fm = meal.objects.filter(pk=cached.get('fancy')).first() if cached.get('fancy') else None
+                return _build_context(mealtime, m1, m2, fm)
+            except meal.DoesNotExist:
+                pass  # stale cache; regenerate
+
+    # 2. Build pools
+    available_meals = []
+    fancy_pool = []
+
+    if is_auth:
         if mealtime:
             prefs = userPreference.objects.select_related('meal').filter(
                 user=user, isAvailable=True, slot_id=mealtime, meal__is_fancy=False
             )
             available_meals = [p.meal for p in prefs]
-
-        # Fancy: meals the user has added to their 'fancy' pseudo-slot
         fancy_prefs = userPreference.objects.select_related('meal').filter(
             user=user, isAvailable=True, slot_id='fancy'
         )
         fancy_pool = [p.meal for p in fancy_prefs]
-        if fancy_pool:
-            fancy_meal = choice(fancy_pool)
     else:
         if mealtime:
             available_meals = list(meal.objects.filter(
                 is_fancy=False, created_by=None,
                 categories__icontains=f'"{mealtime}"'
             ))
-        else:
-            available_meals = []
         fancy_pool = list(meal.objects.filter(is_fancy=True, created_by=None))
-        if fancy_pool:
-            fancy_meal = choice(fancy_pool)
 
-    if available_meals:
-        picks = sample(available_meals, min(2, len(available_meals)))
-        option_1 = _meal_data(picks[0])
-        option_2 = _meal_data(picks[1] if len(picks) > 1 else picks[0])
+    # 3. Determine "used today" exclusion set
+    if is_auth:
+        used_ids = set()
+        for row in DailyMealSuggestion.objects.filter(user=user, date=today).values(
+            'option_1_id', 'option_2_id', 'fancy_id'
+        ):
+            for v in row.values():
+                if v:
+                    used_ids.add(v)
+    elif request is not None:
+        used_ids = _session_used_ids(request.session, today)
+    else:
+        used_ids = set()
 
-        if mealtime:
-            suggestion_text = (
-                f"It's time for {mealtime.lower()}, so I suggest "
-                f"{option_1['name'].lower()} or {option_2['name'].lower()}."
+    # 4. Pick options
+    option_1_obj, option_2_obj = _pick_options(available_meals, used_ids)
+    if option_1_obj is None:
+        # No meals at all for this slot — return empty context (matches prior behavior)
+        # but still try fancy.
+        fancy_exclude = used_ids.copy()
+        fancy_obj = _pick_fancy(fancy_pool, fancy_exclude)
+        if fancy_obj is None:
+            return {}
+        # Build a fancy-only context (no main options).
+        ctx = {'mealtime': mealtime}
+        ctx['fancy'] = _meal_data(fancy_obj)
+        ctx['fancy_text'] = f"Otherwise let's get some {ctx['fancy']['name'].lower()}."
+        return ctx
+
+    # 5. Pick fancy (excluding used + chosen options)
+    fancy_exclude = set(used_ids)
+    fancy_exclude.add(option_1_obj.id)
+    if option_2_obj:
+        fancy_exclude.add(option_2_obj.id)
+    fancy_obj = _pick_fancy(fancy_pool, fancy_exclude)
+
+    # 6. Persist
+    if is_auth and mealtime:
+        try:
+            slot_obj = MealTimeSlot.objects.get(pk=mealtime)
+            DailyMealSuggestion.objects.update_or_create(
+                user=user, date=today, slot=slot_obj,
+                defaults={
+                    'option_1': option_1_obj,
+                    'option_2': option_2_obj,
+                    'fancy': fancy_obj,
+                },
             )
-        else:
-            suggestion_text = (
-                f"Unfortunately you will be going to bed soon. "
-                f"Have {option_1['name'].lower()} or {option_2['name'].lower()} for now."
-            )
-
-        context = {
-            'mealtime': mealtime,
-            'option_1': option_1,
-            'option_2': option_2,
-            'suggestion_text': suggestion_text,
+        except MealTimeSlot.DoesNotExist:
+            pass
+    elif not is_auth and request is not None and mealtime:
+        store = request.session.get('foodie_suggestion', {})
+        store[_session_key(today, mealtime)] = {
+            'option_1': option_1_obj.id,
+            'option_2': option_2_obj.id if option_2_obj else None,
+            'fancy': fancy_obj.id if fancy_obj else None,
         }
-        if fancy_meal:
-            fancy = _meal_data(fancy_meal)
-            context['fancy'] = fancy
-            context['fancy_text'] = f"Otherwise let's get some {fancy['name'].lower()}."
+        request.session['foodie_suggestion'] = store
+        request.session.modified = True
 
-    return context
+    return _build_context(mealtime, option_1_obj, option_2_obj, fancy_obj)
 
 
 def get_all(user=None):
