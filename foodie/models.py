@@ -115,3 +115,22 @@ class userPreference(models.Model):
 
     def __str__(self):
         return f"{self.user} · {self.meal} · {self.slot}"
+
+
+class DailyMealSuggestion(models.Model):
+    """Per-(user, date, slot) cached suggestion so reloads within a mealtime are stable
+    and a meal isn't repeated across mealtimes within the same day."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='daily_suggestions')
+    date = models.DateField()
+    slot = models.ForeignKey(MealTimeSlot, on_delete=models.CASCADE, related_name='daily_suggestions')
+    option_1 = models.ForeignKey(meal, on_delete=models.CASCADE, related_name='+')
+    option_2 = models.ForeignKey(meal, on_delete=models.CASCADE, related_name='+', null=True, blank=True)
+    fancy = models.ForeignKey(meal, on_delete=models.CASCADE, related_name='+', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'date', 'slot')
+        indexes = [models.Index(fields=['user', 'date'])]
+
+    def __str__(self):
+        return f"{self.user} · {self.date} · {self.slot}"

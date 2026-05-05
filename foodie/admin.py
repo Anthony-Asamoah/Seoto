@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html, mark_safe, strip_tags
 
 from utils.admin import RichTextAdminMixin
-from .models import meal, userPreference, MealTimeSlot, UserMealSchedule
+from .models import meal, userPreference, MealTimeSlot, UserMealSchedule, DailyMealSuggestion
 
 
 class CategoriesFilter(admin.SimpleListFilter):
@@ -72,6 +72,16 @@ class mealAdmin(RichTextAdminMixin, admin.ModelAdmin):
     def categories_preview(self, obj):
         if not obj.categories: return []
         return ', '.join(obj.categories)
+
+
+@admin.register(DailyMealSuggestion)
+class DailyMealSuggestionAdmin(admin.ModelAdmin):
+    list_display = ['user', 'date', 'slot', 'option_1', 'option_2', 'fancy', 'created_at']
+    list_filter = ['slot', 'date']
+    search_fields = ['user__username']
+    autocomplete_fields = ['user', 'option_1', 'option_2', 'fancy']
+    ordering = ['-date', 'slot']
+    list_per_page = 30
 
 
 @admin.register(userPreference)

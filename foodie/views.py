@@ -13,7 +13,7 @@ from utils.paginator import apply_pagination
 
 
 def foodie(request):
-    context = services.suggest(request.user)
+    context = services.suggest(request.user, request=request)
     return render(request, 'foodie/foodie.html', context)
 
 
@@ -266,7 +266,7 @@ def meal_search_autocomplete(request, mealtime):
 
 # REST API
 def foodie_rest(request):
-    context = services.suggest(request.user)
+    context = services.suggest(request.user, request=request)
     context = serialize_mealtime(context, request)
     return JsonResponse(context)
 

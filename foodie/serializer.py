@@ -13,23 +13,29 @@ def append_host_url(queryset, url):
 
 def serialize_mealtime(context, request):
 	result = {}
+	if not context:
+		return result
 	url = get_current_site(request)
 
-	mealtime = context['mealtime']
-	result.update(dict(mealtime=mealtime))
+	result['mealtime'] = context.get('mealtime')
 
-	one = context['option_1']
-	one = meal.objects.all().filter(name=one['name']).values()[0]
-	result.update(dict(option_1=append_host_url(one, url)))
+	one = context.get('option_1')
+	if one:
+		row = meal.objects.filter(name=one['name']).values().first()
+		if row:
+			result['option_1'] = append_host_url(row, url)
 
-	two = context['option_2']
-	two = meal.objects.all().filter(name=two['name']).values()[0]
-	result.update(dict(option_2=append_host_url(two, url)))
+	two = context.get('option_2')
+	if two:
+		row = meal.objects.filter(name=two['name']).values().first()
+		if row:
+			result['option_2'] = append_host_url(row, url)
 
-	if 'fancy' in context.keys():
+	if context.get('fancy'):
 		fancy = context['fancy']
-		fancy = meal.objects.all().filter(name=fancy['name']).values()[0]
-		result.update(dict(fancy=append_host_url(fancy, url)))
+		row = meal.objects.filter(name=fancy['name']).values().first()
+		if row:
+			result['fancy'] = append_host_url(row, url)
 
 	logging.info(result)
 
