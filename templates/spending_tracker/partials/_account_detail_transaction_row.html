@@ -1,0 +1,47 @@
+<div class="transaction-row {{ transaction.mode }} mb-2">
+    <div class="row align-items-center">
+        <div class="col-md-2">
+            <div class="d-flex align-items-center">
+                <div class="me-2">
+                    {% if transaction.mode == 'INCOME' %}
+                        <span class="fs-4">💰</span>
+                    {% elif transaction.mode == 'TRANSFER' %}
+                        <span class="fs-4">🔄</span>
+                    {% else %}
+                        <span class="fs-4">💸</span>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="fw-bold">{{ transaction.get_mode_display }}</div>
+                    <small class="text-muted">{{ transaction.transaction_time|date:"M d" }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="fw-bold">{{ transaction.category.label|default:"Uncategorized" }}</div>
+            {% if transaction.details %}
+                <div class="text-muted small">{{ transaction.details|striptags|truncatechars:60 }}</div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-3">
+            {% if transaction.tags.exists %}
+                {% for tag in transaction.tags.all %}
+                    <span class="badge bg-secondary me-1">{{ tag.label }}</span>
+                {% endfor %}
+            {% endif %}
+            {% if transaction.reference %}
+                <div class="text-muted small">Ref: {{ transaction.reference }}</div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-3 text-end">
+            <div class="amount-display {% if transaction.mode == 'INCOME' %}income-amount{% elif transaction.mode == 'TRANSFER' %}transfer-amount{% else %}expense-amount{% endif %}">
+                {% if transaction.mode == 'INCOME' %}+{% elif transaction.mode == 'TRANSFER' %}↔{% else %}-{% endif %}
+                {{ transaction.currency }} {{ transaction.amount|floatformat:2 }}
+            </div>
+            <small class="text-muted">{{ transaction.transaction_time|time:"H:i" }}</small>
+        </div>
+    </div>
+</div>

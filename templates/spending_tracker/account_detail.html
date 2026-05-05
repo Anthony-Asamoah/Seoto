@@ -144,68 +144,29 @@
         </a>
     </div>
 
-    {% for transaction in transactions|slice:":10" %}
-        <div class="transaction-row {{ transaction.mode }} mb-2">
-            <div class="row align-items-center">
-                <div class="col-md-2">
-                    <div class="d-flex align-items-center">
-                        <div class="me-2">
-                            {% if transaction.mode == 'INCOME' %}
-                                <span class="fs-4">💰</span>
-                            {% elif transaction.mode == 'TRANSFER' %}
-                                <span class="fs-4">🔄</span>
-                            {% else %}
-                                <span class="fs-4">💸</span>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <div class="fw-bold">{{ transaction.get_mode_display }}</div>
-                            <small class="text-muted">{{ transaction.transaction_time|date:"M d" }}</small>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="fw-bold">{{ transaction.category.label|default:"Uncategorized" }}</div>
-                    {% if transaction.details %}
-                        <div class="text-muted small">{{ transaction.details|striptags|truncatechars:60 }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="col-md-3">
-                    {% if transaction.tags.exists %}
-                        {% for tag in transaction.tags.all %}
-                            <span class="badge bg-secondary me-1">{{ tag.label }}</span>
-                        {% endfor %}
-                    {% endif %}
-                    {% if transaction.reference %}
-                        <div class="text-muted small">Ref: {{ transaction.reference }}</div>
-                    {% endif %}
-                </div>
-
-                <div class="col-md-3 text-end">
-                    <div class="amount-display {% if transaction.mode == 'INCOME' %}income-amount{% elif transaction.mode == 'TRANSFER' %}transfer-amount{% else %}expense-amount{% endif %}">
-                        {% if transaction.mode == 'INCOME' %}+{% elif transaction.mode == 'TRANSFER' %}↔{% else %}-{% endif %}
-                        {{ transaction.currency }} {{ transaction.amount|floatformat:2 }}
-                    </div>
-                    <small class="text-muted">{{ transaction.transaction_time|time:"H:i" }}</small>
+    {% if transactions_page.object_list %}
+        <div id="account-detail-transactions">
+            {% for transaction in transactions_page %}
+                {% include "spending_tracker/partials/_account_detail_transaction_row.html" %}
+            {% endfor %}
+        </div>
+        {% if transactions_page.has_next %}
+            <div data-infinite-scroll-sentinel
+                 data-url="{% url 'spending_tracker:account_detail' account.id %}"
+                 data-next-page="{{ transactions_page.next_page_number }}"
+                 data-target="#account-detail-transactions">
+                <div class="d-flex align-items-center justify-content-center gap-2 py-2">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true"></div>
+                    <span class="text-muted small">Loading more…</span>
                 </div>
             </div>
-        </div>
-    {% empty %}
+        {% endif %}
+    {% else %}
         <div class="alert alert-info text-center">
             <i class="fas fa-info-circle mb-2 fs-1"></i>
             <h5>No transactions yet</h5>
             <p>Start tracking your finances by <a href="{% url 'spending_tracker:add_transaction' %}">adding your first
                 transaction</a>!</p>
-        </div>
-    {% endfor %}
-
-    {% if transactions.count > 10 %}
-        <div class="text-center mt-4">
-            <a href="{% url 'spending_tracker:transaction_list' %}?account={{ account.id }}" class="btn btn-primary">
-                View All {{ transactions.count }} Transactions
-            </a>
         </div>
     {% endif %}
 </div>

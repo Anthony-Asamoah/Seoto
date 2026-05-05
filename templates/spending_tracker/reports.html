@@ -396,10 +396,7 @@
                 <div class="list-group list-group-flush">
                     {% if expense_categories %}
                         {% for expense in expense_categories %}
-                            <div class="list-group-item d-flex justify-content-between">
-                                <span>{{ expense.category_label|default:"Uncategorized" }}</span>
-                                <span class="fw-bold text-danger">-{{ currency_symbol }}{{ expense.total | floatformat:2 }}</span>
-                            </div>
+                            {% include "spending_tracker/partials/_expense_category_row.html" %}
                         {% endfor %}
                     {% else %}
                         <div class="list-group-item text-center text-muted">
