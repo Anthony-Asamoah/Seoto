@@ -10,8 +10,9 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count, Q, Value, Prefetch
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, Coalesce
 from django.db.transaction import atomic
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
@@ -75,6 +76,20 @@ def _group_transactions(transactions, group_by):
             groups[key]['expense_total'] += tx.amount
 
     return list(groups.values())
+
+
+def _is_partial(request):
+    return request.GET.get('partial') == '1'
+
+
+def _render_fragment(request, template_name, page_obj, extra_context=None):
+    context = {'page_obj': page_obj}
+    if extra_context:
+        context.update(extra_context)
+    html = render_to_string(template_name, context, request=request)
+    response = HttpResponse(html)
+    response['X-Has-Next'] = '1' if page_obj.has_next() else '0'
+    return response
 
 
 @login_required
@@ -182,11 +197,26 @@ def transaction_list(request):
         group_by = ''
 
     if group_by:
-        grouped_transactions = _group_transactions(list(transactions), group_by)
-        page_obj = None
+        all_groups = _group_transactions(list(transactions), group_by)
+        page_obj = apply_pagination(all_groups, request.GET.get('page'), 5)
+        grouped_transactions = page_obj.object_list
     else:
         grouped_transactions = None
         page_obj = apply_pagination(transactions, request.GET.get('page'), 10)
+
+    if _is_partial(request):
+        if group_by:
+            return _render_fragment(
+                request,
+                'spending_tracker/partials/_transactions_grouped_fragment.html',
+                page_obj,
+                {'currency_symbol': _get_currency_symbol(request.user)},
+            )
+        return _render_fragment(
+            request,
+            'spending_tracker/partials/_transactions_flat_fragment.html',
+            page_obj,
+        )
 
     # Build query string without page for pagination links
     query_params = {}
@@ -499,10 +529,19 @@ def account_detail(request, pk):
     """View account details and transactions"""
     account = get_object_or_404(Account, id=pk, user=request.user)
     transactions = account.transactions.all().select_related('category').prefetch_related('tags')
+    transactions_page = apply_pagination(transactions, request.GET.get('page'), 10)
+
+    if _is_partial(request):
+        return _render_fragment(
+            request,
+            'spending_tracker/partials/_account_detail_transactions_fragment.html',
+            transactions_page,
+        )
 
     context = {
         'account': account,
         'transactions': transactions,
+        'transactions_page': transactions_page,
         'currency_symbol': _get_currency_symbol(request.user),
     }
     return render(request, 'spending_tracker/account_detail.html', context)
@@ -745,12 +784,12 @@ def reports(request):
 
     savings_rate = (net_income / total_income * 100) if total_income > 0 else 0
 
-    expense_categories = base_transactions.filter(mode='EXPENSE').values(
+    expense_categories = list(base_transactions.filter(mode='EXPENSE').values(
         category_label=Coalesce('category__label', Value('Uncategorized'))
     ).annotate(
         total=Sum('amount'),
         count=Count('id')
-    ).order_by('-total')[:10]
+    ).order_by('-total')[:5])
 
     json_expense_categories = [
         {'label': record['category_label'], 'total': float(record['total']), 'count': record['count']}

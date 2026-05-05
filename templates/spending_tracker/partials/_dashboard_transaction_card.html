@@ -1,0 +1,96 @@
+{% load spending_extras %}
+<div class="transaction-card"
+     style="border-left: 4px solid {% if transaction.mode == 'INCOME' %}#27ae60{% elif transaction.mode == 'TRANSFER' %}#3498db{% else %}#e74c3c{% endif %};"
+     data-bs-toggle="collapse"
+     data-bs-target="#transaction-{{ transaction.id }}"
+     aria-expanded="false">
+
+    <div class="transaction-summary">
+        <div class="d-flex align-items-center flex-grow-1">
+            <span class="transaction-icon">
+                {% if transaction.mode == 'INCOME' %}💰{% elif transaction.mode == 'TRANSFER' %}🔄{% else %}💸{% endif %}
+            </span>
+            <div class="transaction-info">
+                <div class="fw-bold">
+                    {% if transaction.category %}
+                        {{ transaction.category.label }}
+                    {% else %}
+                        {% if transaction.mode == 'INCOME' %}Income{% elif transaction.mode == 'TRANSFER' %}Transfer{% else %}Expense{% endif %}
+                    {% endif %}
+                </div>
+                <small class="text-muted">
+                    {{ transaction.account.name }} • {{ transaction.transaction_time|relative_date }}
+                </small>
+            </div>
+        </div>
+        <div class="d-flex align-items-center">
+            <span class="transaction-amount me-2 {% if transaction.mode == 'INCOME' %}income{% elif transaction.mode == 'TRANSFER' %}transfer{% else %}expense{% endif %}">
+                {% if transaction.mode == 'INCOME' %}+{% elif transaction.mode == 'TRANSFER' %}↔{% else %}-{% endif %}{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }}
+            </span>
+            <i class="fas fa-chevron-down chevron-icon"></i>
+        </div>
+    </div>
+
+    <div class="collapse" id="transaction-{{ transaction.id }}">
+        <div class="transaction-details">
+            <div class="detail-row">
+                <span class="detail-label">Account:</span>
+                <span class="detail-value">{{ transaction.account.name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Category:</span>
+                <span class="detail-value">
+                    {% if transaction.category %}
+                        {{ transaction.category.label }}
+                    {% else %}
+                        <em>Uncategorized</em>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Amount:</span>
+                <span class="detail-value">{{ transaction.currency_symbol }}{{ transaction.amount|floatformat:2 }} {{ transaction.currency }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Date & Time:</span>
+                <span class="detail-value">{{ transaction.transaction_time|date:"D, M d, Y - g:i A" }}</span>
+            </div>
+            {% if transaction.details %}
+                <div class="detail-row">
+                    <span class="detail-label">Details:</span>
+                    <span class="detail-value">{{ transaction.details|safe }}</span>
+                </div>
+            {% endif %}
+            {% if transaction.reference %}
+                <div class="detail-row">
+                    <span class="detail-label">Reference:</span>
+                    <span class="detail-value">{{ transaction.reference }}</span>
+                </div>
+            {% endif %}
+            {% if transaction.tags.all %}
+                <div class="detail-row">
+                    <span class="detail-label">Tags:</span>
+                    <span class="detail-value">
+                        {% for tag in transaction.tags.all %}
+                            <span class="tag-badge">{{ tag.label }}</span>
+                        {% endfor %}
+                    </span>
+                </div>
+            {% endif %}
+            {% if transaction.attachment %}
+                <div class="detail-row">
+                    <span class="detail-label">Receipt:</span>
+                    <span class="detail-value">
+                        <button type="button" class="btn btn-sm btn-outline-secondary attachment-preview-btn"
+                                data-url="{{ transaction.attachment.url }}"
+                                data-type="{{ transaction.attachment_type }}"
+                                data-bs-toggle="modal"
+                                data-bs-target="#attachmentPreviewModal">
+                            <i class="fas fa-paperclip"></i> View Receipt
+                        </button>
+                    </span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
