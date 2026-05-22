@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'jotter',
     'blog',
     'spending_tracker',
+    'generate_invoice',
     'theme',
     'pwa',
 
