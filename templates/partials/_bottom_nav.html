@@ -76,7 +76,7 @@
         // Haptic + visual tap feedback on every nav control
         document.querySelectorAll('.bottom-nav-item, .bottom-nav-back').forEach(function (el) {
             el.addEventListener('pointerdown', function () {
-                if (navigator.vibrate) navigator.vibrate(8);
+                if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
                 el.classList.add('nav-tap');
                 el.addEventListener('animationend', function handler() {
                     el.classList.remove('nav-tap');
