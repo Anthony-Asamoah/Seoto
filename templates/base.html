@@ -267,6 +267,177 @@
             animation: nav-tap-flash 0.35s ease-out forwards;
         }
 
+        /* Divider between main items and Back */
+        .nav-divider {
+            width: 1px;
+            height: 20px;
+            background: #e5e7eb;
+            align-self: center;
+            flex-shrink: 0;
+            margin: 0 2px;
+        }
+
+        /* Notification bell wrapper (holds icon + badge) */
+        .notif-bell-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notif-badge {
+            position: absolute;
+            top: -5px;
+            right: -7px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 3px;
+            background: #e53e3e;
+            color: #fff;
+            font-size: 0.6rem;
+            font-weight: 700;
+            border-radius: 99px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            border: 1.5px solid #fff;
+        }
+
+        /* Notification overlay (behind panel, above page content) */
+        .notif-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1028;
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .notif-overlay.active {
+            display: block;
+        }
+
+        /* Notification bottom-sheet panel */
+        .notif-panel {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: calc(56px + env(safe-area-inset-bottom));
+            max-height: 60vh;
+            background: #fff;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, .12);
+            z-index: 1029;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(110%);
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .notif-panel.open {
+            transform: translateY(0);
+        }
+
+        .notif-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid #f3f4f6;
+            flex-shrink: 0;
+        }
+
+        .notif-panel-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .notif-panel-close {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+            border-radius: 4px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .notif-panel-close:focus-visible {
+            outline: 2px solid #175a9c;
+        }
+
+        .notif-list {
+            overflow-y: auto;
+            flex: 1;
+            overscroll-behavior: contain;
+        }
+
+        .notif-item {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: default;
+            border-left: 3px solid transparent;
+            transition: background 0.15s;
+        }
+
+        .notif-item[data-url] {
+            cursor: pointer;
+        }
+
+        .notif-item[data-url]:active {
+            background: #f9fafb;
+        }
+
+        .notif-item.unread {
+            background: #f0f5ff;
+            border-left-color: #175a9c;
+        }
+
+        .notif-item-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #111827;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+
+        .notif-item-body {
+            font-size: 0.78rem;
+            color: #6b7280;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .notif-item-time {
+            font-size: 0.68rem;
+            color: #9ca3af;
+        }
+
+        .notif-loading,
+        .notif-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 32px 16px;
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+
+        .notif-loading i,
+        .notif-empty i {
+            font-size: 1.6rem;
+        }
+
         /* Mobile: show bottom nav, hide top navbar, pad page content */
         @media (max-width: 768px) {
             .bottom-nav {

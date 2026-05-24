@@ -12,4 +12,8 @@ urlpatterns = [
     path('api/push/vapid-public-key/', views.vapid_public_key, name='vapid_public_key'),
     path('api/push/subscribe/', views.subscribe_push, name='subscribe_push'),
     path('api/push/unsubscribe/', views.unsubscribe_push, name='unsubscribe_push'),
+
+    # In-app notification feed
+    path('api/notifications/', views.notifications_list, name='notifications_list'),
+    path('api/notifications/read/', views.mark_notifications_read, name='mark_notifications_read'),
 ]

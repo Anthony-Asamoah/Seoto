@@ -1,3 +1,24 @@
+{% url 'pwa:notifications_list' as notif_url %}
+{% url 'pwa:mark_notifications_read' as notif_read_url %}
+
+<!-- Notification dropdown panel (slides up from above the nav) -->
+{% if user.is_authenticated %}
+<div id="notif-overlay" class="notif-overlay" aria-hidden="true"></div>
+<div id="notif-panel" class="notif-panel" role="dialog" aria-label="Notifications" aria-hidden="true">
+    <div class="notif-panel-header">
+        <span class="notif-panel-title">Notifications</span>
+        <button class="notif-panel-close" id="notif-close" aria-label="Close notifications">
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="notif-list" id="notif-list">
+        <div class="notif-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <nav class="bottom-nav" aria-label="Mobile navigation">
 
     <a href="{% url 'index' %}"
@@ -8,6 +29,15 @@
     </a>
 
     {% if user.is_authenticated %}
+
+        <button class="bottom-nav-item" id="notif-toggle"
+                aria-label="Notifications" aria-expanded="false" aria-controls="notif-panel">
+            <span class="notif-bell-wrap">
+                <i class="fas fa-bell" aria-hidden="true"></i>
+                <span class="notif-badge" id="notif-badge" style="display:none;"></span>
+            </span>
+            <span>Alerts</span>
+        </button>
 
         <a href="{% url 'profile' user.username %}"
            class="bottom-nav-item{% if request.resolver_match.url_name == 'profile' %} active{% endif %}"
@@ -54,11 +84,13 @@
 
     {% endif %}
 
+    <div class="nav-divider" aria-hidden="true"></div>
+
     <button class="bottom-nav-back" id="bottom-nav-back"
             onclick="history.back()"
             aria-label="Go back"
             title="Go back">
-        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
         <span>Back</span>
     </button>
 
@@ -66,12 +98,134 @@
 
 <script>
 (function () {
+    var NOTIF_URL  = '{{ notif_url }}';
+    var READ_URL   = '{{ notif_read_url }}';
+
+    function getCsrf() {
+        var match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? match[1] : '';
+    }
+
+    function timeAgo(iso) {
+        var diff = (Date.now() - new Date(iso)) / 1000;
+        if (diff < 60)     return 'just now';
+        if (diff < 3600)   return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400)  return Math.floor(diff / 3600) + 'h ago';
+        if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+        return new Date(iso).toLocaleDateString();
+    }
+
+    function setBadge(count) {
+        var badge = document.getElementById('notif-badge');
+        if (!badge) return;
+        if (count > 0) {
+            badge.textContent = count > 9 ? '9+' : count;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function renderNotifications(items) {
+        var list = document.getElementById('notif-list');
+        if (!list) return;
+        if (!items.length) {
+            list.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash"></i><span>No notifications yet</span></div>';
+            return;
+        }
+        list.innerHTML = items.map(function (n) {
+            var cls = n.is_read ? 'notif-item' : 'notif-item unread';
+            var url = n.url ? ' data-url="' + n.url + '"' : '';
+            return '<div class="' + cls + '"' + url + '>'
+                + '<div class="notif-item-title">' + n.title + '</div>'
+                + '<div class="notif-item-body">' + n.body + '</div>'
+                + '<div class="notif-item-time">' + timeAgo(n.created_at) + '</div>'
+                + '</div>';
+        }).join('');
+
+        list.querySelectorAll('.notif-item[data-url]').forEach(function (el) {
+            el.addEventListener('click', function () {
+                window.location.href = el.dataset.url;
+            });
+        });
+    }
+
+    function openPanel() {
+        var panel   = document.getElementById('notif-panel');
+        var overlay = document.getElementById('notif-overlay');
+        var toggle  = document.getElementById('notif-toggle');
+        if (!panel) return;
+
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+        overlay.classList.add('active');
+        if (toggle) toggle.setAttribute('aria-expanded', 'true');
+
+        // Fetch notifications
+        fetch(NOTIF_URL, { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                renderNotifications(data.notifications);
+                setBadge(0); // clear badge once panel is open
+
+                // Mark all as read
+                fetch(READ_URL, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'X-CSRFToken': getCsrf() },
+                })
+                .catch(function () {});
+            })
+            .catch(function () {
+                var list = document.getElementById('notif-list');
+                if (list) list.innerHTML = '<div class="notif-empty"><i class="fas fa-exclamation-circle"></i><span>Could not load notifications</span></div>';
+            });
+    }
+
+    function closePanel() {
+        var panel   = document.getElementById('notif-panel');
+        var overlay = document.getElementById('notif-overlay');
+        var toggle  = document.getElementById('notif-toggle');
+        if (!panel) return;
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+        overlay.classList.remove('active');
+        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         // Hide back button when there is nowhere to go back to
         var backBtn = document.getElementById('bottom-nav-back');
         if (backBtn && window.history.length <= 1) {
             backBtn.style.visibility = 'hidden';
         }
+
+        // Fetch unread count on load to populate badge
+        {% if user.is_authenticated %}
+        fetch(NOTIF_URL, { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) { setBadge(data.unread_count); })
+            .catch(function () {});
+        {% endif %}
+
+        // Bell toggle
+        var toggle = document.getElementById('notif-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', function () {
+                var panel = document.getElementById('notif-panel');
+                if (panel && panel.classList.contains('open')) {
+                    closePanel();
+                } else {
+                    openPanel();
+                }
+            });
+        }
+
+        // Close button & overlay
+        var closeBtn = document.getElementById('notif-close');
+        var overlay  = document.getElementById('notif-overlay');
+        if (closeBtn) closeBtn.addEventListener('click', closePanel);
+        if (overlay)  overlay.addEventListener('click', closePanel);
 
         // Haptic + visual tap feedback on every nav control
         document.querySelectorAll('.bottom-nav-item, .bottom-nav-back').forEach(function (el) {

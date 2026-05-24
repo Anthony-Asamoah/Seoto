@@ -8,7 +8,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_http_methods
 
-from .models import PushSubscription
+from .models import PushSubscription, Notification
 
 logger = logging.getLogger(__name__)
 
@@ -77,6 +77,36 @@ def subscribe_push(request):
     except Exception as e:
         logger.exception(f"subscribe_push failed for user {request.user.username}")
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def notifications_list(request):
+    """Return the 10 most recent notifications for the current user."""
+    qs = request.user.notifications.all()[:10]
+    unread_count = request.user.notifications.filter(is_read=False).count()
+    return JsonResponse({
+        'unread_count': unread_count,
+        'notifications': [
+            {
+                'id': n.id,
+                'title': n.title,
+                'body': n.body,
+                'url': n.url or '',
+                'is_read': n.is_read,
+                'created_at': n.created_at.isoformat(),
+            }
+            for n in qs
+        ],
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def mark_notifications_read(request):
+    """Mark all of the current user's notifications as read."""
+    request.user.notifications.filter(is_read=False).update(is_read=True)
+    return JsonResponse({'success': True})
 
 
 @login_required
