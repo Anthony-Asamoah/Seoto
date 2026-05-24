@@ -148,14 +148,16 @@
             background: #fff;
             box-shadow: 0 -1px 0 rgba(0, 0, 0, .06), 0 -4px 20px rgba(0, 0, 0, .07);
             display: none; /* hidden by default; shown on mobile below */
-            padding: 0 4px;
+            justify-content: center;
+            gap: 4px;
+            padding: 0 16px;
             padding-bottom: env(safe-area-inset-bottom);
             min-height: calc(56px + env(safe-area-inset-bottom));
             z-index: 1030;
         }
 
         .bottom-nav-item {
-            flex: 1;
+            flex: 0 0 72px;
             display: flex;
             flex-direction: column;
             align-items: center;
