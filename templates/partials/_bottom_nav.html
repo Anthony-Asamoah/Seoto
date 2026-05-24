@@ -1,5 +1,13 @@
 <nav class="bottom-nav" aria-label="Mobile navigation">
 
+    <button class="bottom-nav-back" id="bottom-nav-back"
+            onclick="history.back()"
+            aria-label="Go back"
+            title="Go back">
+        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        <span>Back</span>
+    </button>
+
     <a href="{% url 'index' %}"
        class="bottom-nav-item{% if request.resolver_match.url_name == 'index' %} active{% endif %}"
        aria-current="{% if request.resolver_match.url_name == 'index' %}page{% else %}false{% endif %}">
@@ -55,3 +63,27 @@
     {% endif %}
 
 </nav>
+
+<script>
+(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        // Hide back button when there is nowhere to go back to
+        var backBtn = document.getElementById('bottom-nav-back');
+        if (backBtn && window.history.length <= 1) {
+            backBtn.style.visibility = 'hidden';
+        }
+
+        // Haptic + visual tap feedback on every nav control
+        document.querySelectorAll('.bottom-nav-item, .bottom-nav-back').forEach(function (el) {
+            el.addEventListener('pointerdown', function () {
+                if (navigator.vibrate) navigator.vibrate(8);
+                el.classList.add('nav-tap');
+                el.addEventListener('animationend', function handler() {
+                    el.classList.remove('nav-tap');
+                    el.removeEventListener('animationend', handler);
+                });
+            });
+        });
+    });
+})();
+</script>
