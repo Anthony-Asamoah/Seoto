@@ -1,13 +1,5 @@
 <nav class="bottom-nav" aria-label="Mobile navigation">
 
-    <button class="bottom-nav-back" id="bottom-nav-back"
-            onclick="history.back()"
-            aria-label="Go back"
-            title="Go back">
-        <i class="fas fa-chevron-left" aria-hidden="true"></i>
-        <span>Back</span>
-    </button>
-
     <a href="{% url 'index' %}"
        class="bottom-nav-item{% if request.resolver_match.url_name == 'index' %} active{% endif %}"
        aria-current="{% if request.resolver_match.url_name == 'index' %}page{% else %}false{% endif %}">
@@ -61,6 +53,14 @@
         </button>
 
     {% endif %}
+
+    <button class="bottom-nav-back" id="bottom-nav-back"
+            onclick="history.back()"
+            aria-label="Go back"
+            title="Go back">
+        <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        <span>Back</span>
+    </button>
 
 </nav>
 
