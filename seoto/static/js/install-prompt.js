@@ -27,18 +27,23 @@
 
   // Show the install button
   function showInstallButton() {
-    ['install-button', 'install-button-bottom', 'install-button-profile'].forEach(function(id) {
+    if (!shouldShowPrompt()) return;
+
+    const bottomBtn = document.getElementById('install-button-bottom');
+    if (bottomBtn) bottomBtn.style.visibility = 'visible';
+
+    ['install-button', 'install-button-profile'].forEach(function(id) {
       const btn = document.getElementById(id);
-      if (btn && shouldShowPrompt()) {
-        btn.style.display = 'flex';
-      }
+      if (btn) btn.style.display = 'flex';
     });
-    console.log('Install button shown - PWA can be installed');
   }
 
   // Hide the install button
   function hideInstallButton() {
-    ['install-button', 'install-button-bottom', 'install-button-profile'].forEach(function(id) {
+    const bottomBtn = document.getElementById('install-button-bottom');
+    if (bottomBtn) bottomBtn.style.visibility = 'hidden';
+
+    ['install-button', 'install-button-profile'].forEach(function(id) {
       const btn = document.getElementById(id);
       if (btn) btn.style.display = 'none';
     });
