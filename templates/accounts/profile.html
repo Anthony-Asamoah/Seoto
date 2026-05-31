@@ -225,9 +225,9 @@
                 <!-- Avatar + identity (always visible) -->
                 <div class="profile-hero">
                     {% if extra.picture %}
-                        <img src="{{ extra.picture.url }}" alt="profile picture" class="profile-avatar">
+                        <img src="{{ extra.picture.url }}" alt="profile picture" class="profile-avatar" id="profile-avatar" title="Click to view" style="cursor:zoom-in;">
                     {% else %}
-                        <img src="{% static 'img/profile_pic.png' %}" alt="profile picture" class="profile-avatar">
+                        <img src="{% static 'img/profile_pic.png' %}" alt="profile picture" class="profile-avatar" id="profile-avatar" title="Click to view" style="cursor:zoom-in;">
                     {% endif %}
                     {% if user.first_name %}
                         <p class="profile-name">{{ user.first_name }} {{ user.last_name }}</p>
@@ -393,21 +393,73 @@
             </div>
         </div>
     </div>
+
+    <!-- Avatar lightbox -->
+    <div id="avatar-lightbox"
+         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:1060;
+                align-items:center; justify-content:center; cursor:zoom-out;"
+         role="dialog" aria-modal="true" aria-label="Profile photo preview">
+        <img id="avatar-lightbox-img"
+             style="max-width:90vw; max-height:88vh; border-radius:14px;
+                    box-shadow:0 12px 48px rgba(0,0,0,0.6); object-fit:contain;">
+        <button id="avatar-lightbox-close"
+                style="position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.18);
+                       border:none; color:#fff; border-radius:50%; width:40px; height:40px;
+                       font-size:1.1rem; cursor:pointer; display:flex; align-items:center;
+                       justify-content:center; backdrop-filter:blur(4px);"
+                aria-label="Close preview">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
 {% endblock %}
 
 {% block script %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
-        // ── Avatar preview ───────────────────────────────────────────────────
+        // ── Avatar lightbox + file preview ──────────────────────────────────
+        const avatar       = document.getElementById('profile-avatar');
+        const lightbox     = document.getElementById('avatar-lightbox');
+        const lightboxImg  = document.getElementById('avatar-lightbox-img');
+        const lightboxClose= document.getElementById('avatar-lightbox-close');
         const pictureInput = document.getElementById('picture');
-        const avatar = document.querySelector('.profile-avatar');
+
+        function openLightbox(src) {
+            lightboxImg.src = src;
+            lightbox.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        function closeLightbox() {
+            lightbox.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        if (avatar && lightbox) {
+            // Click avatar → open lightbox
+            avatar.addEventListener('click', function () { openLightbox(avatar.src); });
+
+            // Click backdrop or close button → close
+            lightbox.addEventListener('click', function (e) {
+                if (e.target === lightbox) closeLightbox();
+            });
+            if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
+
+            // Escape key → close
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeLightbox();
+            });
+        }
+
+        // File picker → update avatar + auto-open lightbox as preview
         if (pictureInput && avatar) {
             pictureInput.addEventListener('change', function () {
                 const file = this.files[0];
                 if (!file || !file.type.startsWith('image/')) return;
                 const reader = new FileReader();
-                reader.onload = function (e) { avatar.src = e.target.result; };
+                reader.onload = function (e) {
+                    avatar.src = e.target.result;
+                    openLightbox(e.target.result);
+                };
                 reader.readAsDataURL(file);
             });
         }
