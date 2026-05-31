@@ -29,29 +29,17 @@
                 <div class="form-row">
                     <div class="form-group col-md-2">
                         <label for="{{ from.episode.id_for_label }}">
-                            {% if category == 'Book' %}
-                                Page
-                            {% else %}
-                                Episode
-                            {% endif %}
+                            {% if category == 'Book' %}Page{% else %}Episode{% endif %}
                         </label>
                         <div class="input-group">
-                            <div class="input-group-prepend">
-                                <div class="input-group-text">
-                                    #
-                                </div>
-                            </div>
+                            <span class="input-group-text">#</span>
                             {{ form.episode }}
                         </div>
                     </div>
                     <div class="form-group col-md-2">
                         <label for="{{ form.chapter.id_for_label }}">Chapter</label>
                         <div class="input-group">
-                            <div class="input-group-prepend">
-                                <div class="input-group-text">
-                                     #
-                                </div>
-                            </div>
+                            <span class="input-group-text">#</span>
                             {{ form.chapter }}
                         </div>
                     </div>
@@ -71,11 +59,9 @@
                     <div class="input-group">
                         {{ form.link }}
                         {% if item.link %}
-                        <div class="input-group-prepend">
-                            <div class="input-group-btn">
-                                <a href="{{ item.link }}" target="_blank"><span class="btn btn-primary">Launch/Goto {{ item.category }}</span></a>
-                            </div>
-                        </div>
+                            <a href="{{ item.link }}" target="_blank" class="btn btn-outline-secondary">
+                                Launch/Goto {{ item.category }}
+                            </a>
                         {% endif %}
                     </div>
                 </div>

@@ -671,6 +671,138 @@
             color:            var(--theme-btn-info-text, #fff);
         }
 
+        /* ── Form controls ──────────────────────────────────────────────── */
+        .form-control,
+        .form-select {
+            min-height: 40px;
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            border: 1.5px solid #d1d5db;
+            border-radius: 8px;
+            background-color: #fff;
+            color: #111827;
+            box-shadow: none;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-select { padding-right: 2.25rem; } /* preserve Bootstrap dropdown arrow room */
+
+        .form-control::placeholder { color: #9ca3af; }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--theme-primary, #175a9c);
+            box-shadow: 0 0 0 3px rgba(23, 90, 156, 0.12);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary, #175a9c) 15%, transparent);
+            outline: none;
+            background-color: #fff;
+        }
+
+        .form-control[readonly],
+        .form-control[disabled] {
+            background-color: #f9fafb;
+            color: #6b7280;
+        }
+
+        textarea.form-control {
+            height: auto;
+            min-height: 90px;
+            resize: vertical;
+            padding: 10px 12px;
+        }
+
+        .form-control-sm,
+        .form-select-sm {
+            min-height: 34px;
+            padding: 5px 10px;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .form-select-sm { padding-right: 2rem; }
+
+        textarea.form-control-sm { min-height: 60px; }
+
+        /* Input group */
+        .input-group .form-control,
+        .input-group .form-select { border-radius: 0; }
+
+        .input-group > .form-control:first-child,
+        .input-group > .form-select:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+        .input-group > .form-control:last-child,
+        .input-group > .form-select:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+        .input-group > .btn:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+        .input-group > .btn:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+        .input-group-text {
+            min-height: 40px;
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            border: 1.5px solid #d1d5db;
+            border-radius: 0;
+            background-color: #f9fafb;
+            color: #6b7280;
+            line-height: 1;
+        }
+        .input-group > .input-group-text:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+        .input-group > .input-group-text:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        /* Checkbox & radio */
+        .form-check-input {
+            width: 1.1em;
+            height: 1.1em;
+            border: 1.5px solid #d1d5db;
+            border-radius: 3px;
+            cursor: pointer;
+            accent-color: var(--theme-primary, #175a9c);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .form-check-input[type="radio"] { border-radius: 50%; }
+        .form-check-input:checked {
+            background-color: var(--theme-primary, #175a9c);
+            border-color: var(--theme-primary, #175a9c);
+        }
+        .form-check-input:focus {
+            outline: none;
+            border-color: var(--theme-primary, #175a9c);
+            box-shadow: 0 0 0 3px rgba(23, 90, 156, 0.12);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary, #175a9c) 15%, transparent);
+        }
+
+        /* Form label */
+        .form-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+
+        /* Help / hint text */
+        .form-text,
+        .form-text.text-muted {
+            font-size: 0.78rem;
+            color: #9ca3af !important;
+            margin-top: 4px;
+            display: block;
+        }
+
         /* ── Pagination ─────────────────────────────────────────────────── */
         .pg-nav {
             display: flex;
