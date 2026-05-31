@@ -581,6 +581,52 @@
             border-color:     var(--theme-btn-info-bg, #17a2b8);
             color:            var(--theme-btn-info-text, #fff);
         }
+
+        /* ── Pagination ─────────────────────────────────────────────────── */
+        .pg-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 16px 0 4px;
+        }
+        .pg-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+            padding: 0 10px;
+            border-radius: 8px;
+            border: 1.5px solid #e0e0e0;
+            background: transparent;
+            color: #495057;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+            user-select: none;
+        }
+        .pg-btn:hover:not(:disabled):not(.active) {
+            background: #f5f5f5;
+            border-color: #bbb;
+            color: var(--theme-primary, #175a9c);
+        }
+        .pg-btn.active {
+            background: var(--theme-primary, #175a9c);
+            border-color: var(--theme-primary, #175a9c);
+            color: #fff;
+            cursor: default;
+        }
+        .pg-btn:disabled {
+            opacity: 0.35;
+            cursor: default;
+            pointer-events: none;
+        }
+        .pg-btn i { font-size: 0.72rem; }
     </style>
     {% block style %}{% endblock %}
 </head>

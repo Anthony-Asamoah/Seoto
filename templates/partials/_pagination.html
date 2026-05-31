@@ -1,0 +1,36 @@
+{% if page_obj.has_other_pages %}
+<nav class="pg-nav" aria-label="Pagination">
+
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tag_filter %}&tag={{ tag_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}"
+           class="pg-btn" aria-label="Previous page">
+            <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        </a>
+    {% else %}
+        <button class="pg-btn" disabled aria-label="Previous page">
+            <i class="fas fa-chevron-left" aria-hidden="true"></i>
+        </button>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+            <span class="pg-btn active" aria-current="page">{{ num }}</span>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tag_filter %}&tag={{ tag_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}"
+               class="pg-btn">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if tag_filter %}&tag={{ tag_filter }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}"
+           class="pg-btn" aria-label="Next page">
+            <i class="fas fa-chevron-right" aria-hidden="true"></i>
+        </a>
+    {% else %}
+        <button class="pg-btn" disabled aria-label="Next page">
+            <i class="fas fa-chevron-right" aria-hidden="true"></i>
+        </button>
+    {% endif %}
+
+</nav>
+{% endif %}
