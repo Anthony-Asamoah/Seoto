@@ -145,65 +145,306 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background-color: #f8f9fa;
-            border-top: 1px solid #dee2e6;
-            display: flex;
-            align-items: center;
-            justify-content: space-around;
-            z-index: 1030;
-            padding: 0 4px;
-            /* Reserve space for iOS home indicator — items sit above it */
+            background: #fff;
+            box-shadow: 0 -1px 0 rgba(0, 0, 0, .06), 0 -4px 20px rgba(0, 0, 0, .07);
+            display: none; /* hidden by default; shown on mobile below */
+            justify-content: center;
+            gap: 4px;
+            padding: 0 16px;
             padding-bottom: env(safe-area-inset-bottom);
-            min-height: calc(60px + env(safe-area-inset-bottom));
+            min-height: calc(56px + env(safe-area-inset-bottom));
+            z-index: 1030;
         }
 
         .bottom-nav-item {
+            flex: 0 0 72px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 2px;
-            font-size: 0.65rem;
-            color: #495057;
+            gap: 3px;
+            padding: 8px 4px 6px;
+            color: #9ca3af;
+            font-size: 0.7rem;
+            font-weight: 500;
+            letter-spacing: 0.01em;
             text-decoration: none;
             background: none;
             border: none;
-            padding: 6px 10px;
-            border-radius: 8px;
             cursor: pointer;
-            min-width: 44px;
+            position: relative;
             min-height: 44px;
-            transition: color 0.15s ease, background-color 0.15s ease;
-            flex: 1;
-            max-width: 80px;
+            min-width: 44px;
+            transition: color 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .bottom-nav-item i {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             line-height: 1;
+            transition: transform 0.15s ease;
         }
 
-        .bottom-nav-item:hover,
-        .bottom-nav-item:focus {
+        /* Active page indicator — thin bar at top of item */
+        .bottom-nav-item.active {
             color: #175a9c;
-            background-color: rgba(23, 90, 156, 0.08);
-            outline: none;
         }
 
-        /* Hide top navbar on mobile; bottom nav takes over */
+        .bottom-nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 28px;
+            height: 3px;
+            background: #175a9c;
+            border-radius: 0 0 4px 4px;
+        }
+
+        /* Subtle press feedback */
+        .bottom-nav-item:active i {
+            transform: scale(0.88);
+        }
+
+        /* Keyboard focus ring — use :focus-visible so mouse clicks are unaffected */
+        .bottom-nav-item:focus-visible {
+            outline: 2px solid #175a9c;
+            outline-offset: -3px;
+            border-radius: 6px;
+        }
+
+        /* Back button — regular flex item, sits naturally after the others */
+        .bottom-nav-back {
+            flex: 0 0 72px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 8px 4px 6px;
+            color: #9ca3af;
+            font-size: 0.7rem;
+            font-weight: 500;
+            min-height: 44px;
+            min-width: 44px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: color 0.15s ease;
+        }
+
+        .bottom-nav-back i {
+            font-size: 1.2rem;
+            line-height: 1;
+            transition: transform 0.15s ease;
+        }
+
+        .bottom-nav-back:active i {
+            transform: scale(0.88);
+        }
+
+        .bottom-nav-back:focus-visible {
+            outline: 2px solid #175a9c;
+            outline-offset: -3px;
+            border-radius: 6px;
+        }
+
+        /* Tap flash — triggered by .nav-tap class added in JS on pointerdown */
+        @keyframes nav-tap-flash {
+            0%   { background: rgba(23, 90, 156, 0.14); border-radius: 8px; color: #175a9c; }
+            100% { background: transparent; color: inherit; }
+        }
+
+        .bottom-nav-item.nav-tap,
+        .bottom-nav-back.nav-tap {
+            animation: nav-tap-flash 0.35s ease-out forwards;
+        }
+
+        /* Divider between main items and Back */
+        .nav-divider {
+            width: 1px;
+            height: 20px;
+            background: #e5e7eb;
+            align-self: center;
+            flex-shrink: 0;
+            margin: 0 2px;
+        }
+
+        /* Notification bell wrapper (holds icon + badge) */
+        .notif-bell-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notif-badge {
+            position: absolute;
+            top: -5px;
+            right: -7px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 3px;
+            background: #e53e3e;
+            color: #fff;
+            font-size: 0.6rem;
+            font-weight: 700;
+            border-radius: 99px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            border: 1.5px solid #fff;
+        }
+
+        /* Notification overlay (behind panel, above page content) */
+        .notif-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1028;
+            background: rgba(0, 0, 0, 0.25);
+        }
+
+        .notif-overlay.active {
+            display: block;
+        }
+
+        /* Notification bottom-sheet panel */
+        .notif-panel {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: calc(56px + env(safe-area-inset-bottom));
+            max-height: 60vh;
+            background: #fff;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, .12);
+            z-index: 1029;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(110%);
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .notif-panel.open {
+            transform: translateY(0);
+        }
+
+        .notif-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px 10px;
+            border-bottom: 1px solid #f3f4f6;
+            flex-shrink: 0;
+        }
+
+        .notif-panel-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .notif-panel-close {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+            border-radius: 4px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .notif-panel-close:focus-visible {
+            outline: 2px solid #175a9c;
+        }
+
+        .notif-list {
+            overflow-y: auto;
+            flex: 1;
+            overscroll-behavior: contain;
+        }
+
+        .notif-item {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: default;
+            border-left: 3px solid transparent;
+            transition: background 0.15s;
+        }
+
+        .notif-item[data-url] {
+            cursor: pointer;
+        }
+
+        .notif-item[data-url]:active {
+            background: #f9fafb;
+        }
+
+        .notif-item.unread {
+            background: #f0f5ff;
+            border-left-color: #175a9c;
+        }
+
+        .notif-item-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #111827;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 2px;
+        }
+
+        .notif-item-body {
+            font-size: 0.78rem;
+            color: #6b7280;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .notif-item-time {
+            font-size: 0.68rem;
+            color: #9ca3af;
+        }
+
+        .notif-loading,
+        .notif-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 32px 16px;
+            color: #9ca3af;
+            font-size: 0.85rem;
+        }
+
+        .notif-loading i,
+        .notif-empty i {
+            font-size: 1.6rem;
+        }
+
+        /* Mobile: show bottom nav, hide top navbar, pad page content */
         @media (max-width: 768px) {
+            .bottom-nav {
+                display: flex;
+            }
+
             .navbar {
                 display: none !important;
             }
-            .page-container {
-                padding-bottom: calc(68px + env(safe-area-inset-bottom));
-            }
-        }
 
-        /* Bottom nav hidden on desktop (Bootstrap d-md-none handles this too) */
-        @media (min-width: 769px) {
-            .bottom-nav {
-                display: none !important;
+            .page-container {
+                padding-bottom: calc(64px + env(safe-area-inset-bottom));
             }
         }
 
@@ -212,6 +453,133 @@
             .page-container {
                 padding-top: env(safe-area-inset-top);
             }
+        }
+
+        /* ── Custom button system ──────────────────────────────────────────── */
+        /* Shape, typography, interactions — colors come from the theme processor */
+
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            letter-spacing: 0.015em;
+            padding: 8px 18px;
+            line-height: 1.3;
+            border-width: 1.5px;
+            border-style: solid;
+            transition: filter 0.15s ease, box-shadow 0.15s ease,
+                        background-color 0.15s ease, color 0.15s ease,
+                        transform 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn-sm {
+            border-radius: 6px;
+            font-size: 0.8rem;
+            padding: 5px 12px;
+        }
+
+        .btn-lg {
+            border-radius: 10px;
+            font-size: 1rem;
+            padding: 10px 24px;
+        }
+
+        /* Replace Bootstrap's box-shadow focus ring with a clean outline */
+        .btn:focus {
+            box-shadow: none;
+        }
+        .btn:focus-visible {
+            outline: 2px solid currentColor;
+            outline-offset: 2px;
+            box-shadow: none;
+        }
+
+        /* Tactile press feedback */
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Soft colored glow on hover — matches the app's subtle shadow language */
+        .btn-primary:hover   { box-shadow: 0 3px 12px rgba( 23,  90, 156, 0.30); }
+        .btn-success:hover   { box-shadow: 0 3px 12px rgba( 40, 167,  69, 0.30); }
+        .btn-danger:hover    { box-shadow: 0 3px 12px rgba(220,  53,  69, 0.30); }
+        .btn-warning:hover   { box-shadow: 0 3px 12px rgba(255, 193,   7, 0.25); }
+        .btn-info:hover      { box-shadow: 0 3px 12px rgba( 23, 162, 184, 0.30); }
+        .btn-secondary:hover { box-shadow: 0 3px 12px rgba(108, 117, 125, 0.25); }
+
+        /* Outline variants — border and text use theme variables; fill on hover */
+        .btn-outline-primary {
+            border-color: var(--theme-primary, #175a9c);
+            color:        var(--theme-primary, #175a9c);
+            background:   transparent;
+        }
+        .btn-outline-primary:hover,
+        .btn-outline-primary:focus {
+            background-color: var(--theme-primary, #175a9c);
+            border-color:     var(--theme-primary, #175a9c);
+            color:            #fff;
+            box-shadow:       0 3px 12px rgba(23, 90, 156, 0.25);
+        }
+
+        .btn-outline-secondary {
+            border-color: var(--theme-secondary, #6c757d);
+            color:        var(--theme-secondary, #6c757d);
+            background:   transparent;
+        }
+        .btn-outline-secondary:hover,
+        .btn-outline-secondary:focus {
+            background-color: var(--theme-secondary, #6c757d);
+            border-color:     var(--theme-secondary, #6c757d);
+            color: #fff;
+        }
+
+        .btn-outline-success {
+            border-color: var(--theme-btn-success-bg, #28a745);
+            color:        var(--theme-btn-success-bg, #28a745);
+            background:   transparent;
+        }
+        .btn-outline-success:hover,
+        .btn-outline-success:focus {
+            background-color: var(--theme-btn-success-bg, #28a745);
+            border-color:     var(--theme-btn-success-bg, #28a745);
+            color:            var(--theme-btn-success-text, #fff);
+        }
+
+        .btn-outline-danger {
+            border-color: var(--theme-btn-danger-bg, #dc3545);
+            color:        var(--theme-btn-danger-bg, #dc3545);
+            background:   transparent;
+        }
+        .btn-outline-danger:hover,
+        .btn-outline-danger:focus {
+            background-color: var(--theme-btn-danger-bg, #dc3545);
+            border-color:     var(--theme-btn-danger-bg, #dc3545);
+            color:            var(--theme-btn-danger-text, #fff);
+        }
+
+        .btn-outline-warning {
+            border-color: var(--theme-btn-warning-bg, #ffc107);
+            color:        var(--theme-btn-warning-bg, #ffc107);
+            background:   transparent;
+        }
+        .btn-outline-warning:hover,
+        .btn-outline-warning:focus {
+            background-color: var(--theme-btn-warning-bg, #ffc107);
+            border-color:     var(--theme-btn-warning-bg, #ffc107);
+            color:            var(--theme-btn-warning-text, #000);
+        }
+
+        .btn-outline-info {
+            border-color: var(--theme-btn-info-bg, #17a2b8);
+            color:        var(--theme-btn-info-bg, #17a2b8);
+            background:   transparent;
+        }
+        .btn-outline-info:hover,
+        .btn-outline-info:focus {
+            background-color: var(--theme-btn-info-bg, #17a2b8);
+            border-color:     var(--theme-btn-info-bg, #17a2b8);
+            color:            var(--theme-btn-info-text, #fff);
         }
     </style>
     {% block style %}{% endblock %}

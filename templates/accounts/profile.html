@@ -365,6 +365,25 @@
                                     </div>
                                 </div>
 
+                                <!-- Sign out -->
+                                <div class="settings-item">
+                                    <div class="settings-icon" style="background:#fdecea; color:#c0392b;">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    </div>
+                                    <div class="settings-body">
+                                        <div class="settings-title">Sign Out</div>
+                                        <div class="settings-desc">Log out of your account</div>
+                                    </div>
+                                    <div class="settings-action">
+                                        <form method="POST" action="{% url 'logout' %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-outline-danger" style="font-size:0.8rem; padding:5px 14px; border-radius:20px;">
+                                                Sign out
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
 
