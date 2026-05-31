@@ -210,6 +210,24 @@
                 justify-content: flex-start;
             }
         }
+
+        /* Lightbox */
+        #avatar-lightbox {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.22s ease;
+        }
+        #avatar-lightbox.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #avatar-lightbox-img {
+            transform: scale(0.5) translateY(24px);
+            transition: transform 0.3s cubic-bezier(0.34, 1.45, 0.64, 1);
+        }
+        #avatar-lightbox.is-open #avatar-lightbox-img {
+            transform: scale(1) translateY(0);
+        }
     </style>
     {% include 'partials/_form_style_bootstrap.html' %}
 {% endblock %}
@@ -396,9 +414,9 @@
 
     <!-- Avatar lightbox -->
     <div id="avatar-lightbox"
-         style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:1060;
+         style="display:flex; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:1060;
                 align-items:center; justify-content:center; cursor:zoom-out;"
-         role="dialog" aria-modal="true" aria-label="Profile photo preview">
+         role="dialog" aria-modal="true" aria-label="Profile photo preview" aria-hidden="true">
         <img id="avatar-lightbox-img"
              style="max-width:90vw; max-height:88vh; border-radius:14px;
                     box-shadow:0 12px 48px rgba(0,0,0,0.6); object-fit:contain;">
@@ -426,12 +444,23 @@
 
         function openLightbox(src) {
             lightboxImg.src = src;
-            lightbox.style.display = 'flex';
+            lightbox.setAttribute('aria-hidden', 'false');
+            // Double rAF so display:flex is painted before the transition class fires
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    lightbox.classList.add('is-open');
+                });
+            });
             document.body.style.overflow = 'hidden';
         }
         function closeLightbox() {
-            lightbox.style.display = 'none';
+            lightbox.classList.remove('is-open');
+            lightbox.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = '';
+            // Wait for the opacity transition to finish before hiding from flow
+            lightboxImg.addEventListener('transitionend', function handler() {
+                lightboxImg.removeEventListener('transitionend', handler);
+            });
         }
 
         if (avatar && lightbox) {
