@@ -228,6 +228,81 @@
         #avatar-lightbox.is-open #avatar-lightbox-img {
             transform: scale(1) translateY(0);
         }
+
+        /* Crop UI */
+        #avatar-crop-ui {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 8px 20px 20px;
+            transform: scale(0.5) translateY(24px);
+            transition: transform 0.3s cubic-bezier(0.34, 1.45, 0.64, 1);
+        }
+        #avatar-lightbox.is-open #avatar-crop-ui {
+            transform: scale(1) translateY(0);
+        }
+        .crop-hint {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.78rem;
+            margin: 0;
+            text-align: center;
+            letter-spacing: 0.02em;
+        }
+        #crop-stage {
+            width: 280px;
+            height: 280px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 6px;
+            cursor: grab;
+            touch-action: none;
+            flex-shrink: 0;
+        }
+        #crop-stage.dragging { cursor: grabbing; }
+        #crop-img {
+            position: absolute;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        #crop-mask {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(circle 130px at center, transparent 130px, rgba(0,0,0,0.65) 130px);
+        }
+        #crop-ring {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 260px; height: 260px;
+            border: 2px solid rgba(255,255,255,0.75);
+            border-radius: 50%;
+            transform: translate(-50%,-50%);
+            pointer-events: none;
+        }
+        .crop-zoom-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255,255,255,0.55);
+            font-size: 0.8rem;
+        }
+        #crop-zoom {
+            width: 160px;
+            accent-color: #fff;
+            cursor: pointer;
+        }
+        .crop-actions { display: flex; gap: 12px; }
+        .crop-actions .btn-outline-secondary {
+            border-color: rgba(255,255,255,0.35);
+            color: #fff;
+            background: transparent;
+        }
+        .crop-actions .btn-outline-secondary:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.6);
+        }
     </style>
     {% include 'partials/_form_style_bootstrap.html' %}
 {% endblock %}
@@ -412,20 +487,42 @@
         </div>
     </div>
 
-    <!-- Avatar lightbox -->
+    <!-- Avatar lightbox (view mode) + crop UI (file-select mode) -->
     <div id="avatar-lightbox"
          style="display:flex; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:1060;
-                align-items:center; justify-content:center; cursor:zoom-out;"
-         role="dialog" aria-modal="true" aria-label="Profile photo preview" aria-hidden="true">
+                align-items:center; justify-content:center;"
+         role="dialog" aria-modal="true" aria-label="Profile photo" aria-hidden="true">
+
+        <!-- View mode: just show the full photo -->
         <img id="avatar-lightbox-img"
              style="max-width:90vw; max-height:88vh; border-radius:14px;
-                    box-shadow:0 12px 48px rgba(0,0,0,0.6); object-fit:contain;">
+                    box-shadow:0 12px 48px rgba(0,0,0,0.6); object-fit:contain; cursor:zoom-out;">
+
+        <!-- Crop mode: drag-to-pan + zoom, shown when a new file is selected -->
+        <div id="avatar-crop-ui">
+            <p class="crop-hint">Drag to reposition &nbsp;·&nbsp; scroll or pinch to zoom</p>
+            <div id="crop-stage">
+                <img id="crop-img" draggable="false" alt="">
+                <div id="crop-mask"></div>
+                <div id="crop-ring"></div>
+            </div>
+            <div class="crop-zoom-row">
+                <i class="fas fa-search-minus"></i>
+                <input type="range" id="crop-zoom" min="100" max="300" step="1" value="100">
+                <i class="fas fa-search-plus"></i>
+            </div>
+            <div class="crop-actions">
+                <button id="crop-cancel-btn" class="btn btn-outline-secondary btn-sm">Cancel</button>
+                <button id="crop-confirm-btn" class="btn btn-success btn-sm">Use this photo</button>
+            </div>
+        </div>
+
         <button id="avatar-lightbox-close"
                 style="position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.18);
                        border:none; color:#fff; border-radius:50%; width:40px; height:40px;
                        font-size:1.1rem; cursor:pointer; display:flex; align-items:center;
                        justify-content:center; backdrop-filter:blur(4px);"
-                aria-label="Close preview">
+                aria-label="Close">
             <i class="fas fa-times"></i>
         </button>
     </div>
@@ -435,21 +532,28 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
-        // ── Avatar lightbox + file preview ──────────────────────────────────
-        const avatar       = document.getElementById('profile-avatar');
-        const lightbox     = document.getElementById('avatar-lightbox');
-        const lightboxImg  = document.getElementById('avatar-lightbox-img');
-        const lightboxClose= document.getElementById('avatar-lightbox-close');
-        const pictureInput = document.getElementById('picture');
+        // ── Avatar crop + lightbox ──────────────────────────────────────────
+        var STAGE_SIZE = 280, CROP_R = 130, OUT_SIZE = 512;
 
-        function openLightbox(src) {
-            lightboxImg.src = src;
+        var avatar        = document.getElementById('profile-avatar');
+        var lightbox      = document.getElementById('avatar-lightbox');
+        var lightboxImg   = document.getElementById('avatar-lightbox-img');
+        var lightboxClose = document.getElementById('avatar-lightbox-close');
+        var cropUI        = document.getElementById('avatar-crop-ui');
+        var cropStage     = document.getElementById('crop-stage');
+        var cropImg       = document.getElementById('crop-img');
+        var cropZoom      = document.getElementById('crop-zoom');
+        var pictureInput  = document.getElementById('picture');
+        var croppedBlob   = null;
+
+        // crop state
+        var cs = { panX: 0, panY: 0, scale: 1, minScale: 1 };
+
+        // ── Lightbox open/close ──────────────────────────────────────────────
+        function showLightbox() {
             lightbox.setAttribute('aria-hidden', 'false');
-            // Double rAF so display:flex is painted before the transition class fires
             requestAnimationFrame(function () {
-                requestAnimationFrame(function () {
-                    lightbox.classList.add('is-open');
-                });
+                requestAnimationFrame(function () { lightbox.classList.add('is-open'); });
             });
             document.body.style.overflow = 'hidden';
         }
@@ -457,39 +561,181 @@
             lightbox.classList.remove('is-open');
             lightbox.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = '';
-            // Wait for the opacity transition to finish before hiding from flow
-            lightboxImg.addEventListener('transitionend', function handler() {
-                lightboxImg.removeEventListener('transitionend', handler);
+            // Reset crop mode after transition
+            lightbox.addEventListener('transitionend', function h() {
+                lightbox.removeEventListener('transitionend', h);
+                cropUI.style.display = 'none';
+                lightboxImg.style.display = '';
+                cropImg.src = '';
             });
         }
 
-        if (avatar && lightbox) {
-            // Click avatar → open lightbox
-            avatar.addEventListener('click', function () { openLightbox(avatar.src); });
+        function openViewMode(src) {
+            lightboxImg.src = src;
+            lightboxImg.style.display = '';
+            cropUI.style.display = 'none';
+            lightbox.style.cursor = 'zoom-out';
+            showLightbox();
+        }
 
-            // Click backdrop or close button → close
+        function openCropMode(src) {
+            lightboxImg.style.display = 'none';
+            cropUI.style.display = 'flex';
+            lightbox.style.cursor = 'default';
+            cropZoom.value = 100;
+
+            cropImg.onload = function () {
+                var nat = Math.min(cropImg.naturalWidth, cropImg.naturalHeight);
+                cs.minScale = (CROP_R * 2) / nat;
+                cs.scale = cs.minScale;
+                cs.panX = 0;
+                cs.panY = 0;
+                applyCrop();
+            };
+            cropImg.src = src;
+            showLightbox();
+        }
+
+        // ── Crop transform math ──────────────────────────────────────────────
+        function applyCrop() {
+            var w = cropImg.naturalWidth  * cs.scale;
+            var h = cropImg.naturalHeight * cs.scale;
+            cropImg.style.width  = w + 'px';
+            cropImg.style.height = h + 'px';
+            cropImg.style.left   = (STAGE_SIZE / 2 + cs.panX - w / 2) + 'px';
+            cropImg.style.top    = (STAGE_SIZE / 2 + cs.panY - h / 2) + 'px';
+        }
+
+        function clampPan() {
+            var maxX = (cropImg.naturalWidth  * cs.scale) / 2 - CROP_R;
+            var maxY = (cropImg.naturalHeight * cs.scale) / 2 - CROP_R;
+            cs.panX = Math.max(-maxX, Math.min(maxX, cs.panX));
+            cs.panY = Math.max(-maxY, Math.min(maxY, cs.panY));
+        }
+
+        function applyZoom(newScale) {
+            cs.scale = Math.max(cs.minScale, Math.min(cs.minScale * 3, newScale));
+            clampPan();
+            applyCrop();
+            cropZoom.value = Math.round((cs.scale / cs.minScale) * 100);
+        }
+
+        // ── Drag (mouse) ─────────────────────────────────────────────────────
+        var drag = null;
+        cropStage.addEventListener('mousedown', function (e) {
+            drag = { x: e.clientX, y: e.clientY };
+            cropStage.classList.add('dragging');
+        });
+        document.addEventListener('mousemove', function (e) {
+            if (!drag) return;
+            cs.panX += e.clientX - drag.x;
+            cs.panY += e.clientY - drag.y;
+            drag.x = e.clientX; drag.y = e.clientY;
+            clampPan(); applyCrop();
+        });
+        document.addEventListener('mouseup', function () {
+            drag = null;
+            cropStage.classList.remove('dragging');
+        });
+
+        // ── Touch: single-finger pan + two-finger pinch ──────────────────────
+        var touchPrev = null, pinchDist = null;
+        cropStage.addEventListener('touchstart', function (e) {
+            if (e.touches.length === 1) {
+                touchPrev = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                pinchDist = null;
+            } else if (e.touches.length === 2) {
+                touchPrev = null;
+                pinchDist = Math.hypot(
+                    e.touches[1].clientX - e.touches[0].clientX,
+                    e.touches[1].clientY - e.touches[0].clientY
+                );
+            }
+        }, { passive: true });
+        cropStage.addEventListener('touchmove', function (e) {
+            e.preventDefault();
+            if (e.touches.length === 1 && touchPrev) {
+                cs.panX += e.touches[0].clientX - touchPrev.x;
+                cs.panY += e.touches[0].clientY - touchPrev.y;
+                touchPrev = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                clampPan(); applyCrop();
+            } else if (e.touches.length === 2 && pinchDist) {
+                var d = Math.hypot(
+                    e.touches[1].clientX - e.touches[0].clientX,
+                    e.touches[1].clientY - e.touches[0].clientY
+                );
+                applyZoom(cs.scale * (d / pinchDist));
+                pinchDist = d;
+            }
+        }, { passive: false });
+        cropStage.addEventListener('touchend', function () {
+            touchPrev = null; pinchDist = null;
+        }, { passive: true });
+
+        // ── Scroll zoom ──────────────────────────────────────────────────────
+        cropStage.addEventListener('wheel', function (e) {
+            e.preventDefault();
+            applyZoom(cs.scale * (e.deltaY < 0 ? 1.06 : 0.94));
+        }, { passive: false });
+
+        // ── Zoom slider ──────────────────────────────────────────────────────
+        cropZoom.addEventListener('input', function () {
+            applyZoom(cs.minScale * (this.value / 100));
+        });
+
+        // ── Confirm crop ─────────────────────────────────────────────────────
+        document.getElementById('crop-confirm-btn').addEventListener('click', function () {
+            var canvas = document.createElement('canvas');
+            canvas.width = canvas.height = OUT_SIZE;
+            var ctx = canvas.getContext('2d');
+
+            // Source rect in natural image coordinates
+            var sSize = (CROP_R * 2) / cs.scale;
+            var sx    = cropImg.naturalWidth  / 2 - cs.panX / cs.scale - sSize / 2;
+            var sy    = cropImg.naturalHeight / 2 - cs.panY / cs.scale - sSize / 2;
+
+            ctx.drawImage(cropImg, sx, sy, sSize, sSize, 0, 0, OUT_SIZE, OUT_SIZE);
+
+            avatar.src = canvas.toDataURL('image/jpeg', 0.92);
+            canvas.toBlob(function (blob) { croppedBlob = blob; }, 'image/jpeg', 0.92);
+            closeLightbox();
+        });
+
+        document.getElementById('crop-cancel-btn').addEventListener('click', closeLightbox);
+
+        // ── Wire avatar click → view mode ────────────────────────────────────
+        if (avatar) {
+            avatar.addEventListener('click', function () { openViewMode(avatar.src); });
             lightbox.addEventListener('click', function (e) {
-                if (e.target === lightbox) closeLightbox();
+                if (e.target === lightbox || e.target === lightboxImg) closeLightbox();
             });
             if (lightboxClose) lightboxClose.addEventListener('click', closeLightbox);
-
-            // Escape key → close
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape') closeLightbox();
             });
         }
 
-        // File picker → update avatar + auto-open lightbox as preview
-        if (pictureInput && avatar) {
+        // ── File picker → open crop mode ─────────────────────────────────────
+        if (pictureInput) {
             pictureInput.addEventListener('change', function () {
-                const file = this.files[0];
+                var file = this.files[0];
                 if (!file || !file.type.startsWith('image/')) return;
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    avatar.src = e.target.result;
-                    openLightbox(e.target.result);
-                };
+                var reader = new FileReader();
+                reader.onload = function (e) { openCropMode(e.target.result); };
                 reader.readAsDataURL(file);
+            });
+        }
+
+        // ── Inject cropped blob into form before submit ───────────────────────
+        var profileForm = document.querySelector('form[enctype="multipart/form-data"]');
+        if (profileForm) {
+            profileForm.addEventListener('submit', function () {
+                if (!croppedBlob || !pictureInput) return;
+                try {
+                    var dt = new DataTransfer();
+                    dt.items.add(new File([croppedBlob], 'profile-photo.jpg', { type: 'image/jpeg' }));
+                    pictureInput.files = dt.files;
+                } catch (e) { /* DataTransfer not supported — original file used */ }
             });
         }
 
