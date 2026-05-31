@@ -399,6 +399,19 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
+        // ── Avatar preview ───────────────────────────────────────────────────
+        const pictureInput = document.getElementById('picture');
+        const avatar = document.querySelector('.profile-avatar');
+        if (pictureInput && avatar) {
+            pictureInput.addEventListener('change', function () {
+                const file = this.files[0];
+                if (!file || !file.type.startsWith('image/')) return;
+                const reader = new FileReader();
+                reader.onload = function (e) { avatar.src = e.target.result; };
+                reader.readAsDataURL(file);
+            });
+        }
+
         // ── Notification button ──────────────────────────────────────────────
         const notifBtn = document.getElementById('notification-toggle-profile');
         const notifDesc = document.querySelector('#tab-settings .settings-item .settings-desc');
