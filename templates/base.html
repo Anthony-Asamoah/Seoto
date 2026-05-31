@@ -359,7 +359,7 @@
             border: 1.5px solid #fff;
         }
 
-        /* Notification overlay (behind panel, above page content) */
+        /* Notification overlay */
         .notif-overlay {
             display: none;
             position: fixed;
@@ -372,7 +372,7 @@
             display: block;
         }
 
-        /* Notification bottom-sheet panel */
+        /* Mobile: bottom sheet sliding up from above the nav */
         .notif-panel {
             position: fixed;
             left: 0;
@@ -391,6 +391,35 @@
 
         .notif-panel.open {
             transform: translateY(0);
+        }
+
+        /* Desktop: dropdown anchored below the top nav bell */
+        @media (min-width: 769px) {
+            .notif-overlay.active {
+                background: transparent;
+            }
+
+            .notif-panel {
+                left: auto;
+                right: 12px;
+                bottom: auto;
+                top: 58px;
+                width: 340px;
+                max-height: 480px;
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, .12), 0 0 0 1px rgba(0, 0, 0, .06);
+                transform: scale(0.95) translateY(-8px);
+                opacity: 0;
+                transform-origin: top right;
+                transition: transform 0.2s ease, opacity 0.2s ease;
+                pointer-events: none;
+            }
+
+            .notif-panel.open {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+                pointer-events: auto;
+            }
         }
 
         .notif-panel-header {

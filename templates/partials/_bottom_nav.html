@@ -133,13 +133,15 @@
     function openPanel() {
         var panel   = document.getElementById('notif-panel');
         var overlay = document.getElementById('notif-overlay');
-        var toggle  = document.getElementById('notif-toggle');
         if (!panel) return;
 
         panel.classList.add('open');
         panel.setAttribute('aria-hidden', 'false');
         overlay.classList.add('active');
-        if (toggle) toggle.setAttribute('aria-expanded', 'true');
+        ['notif-toggle', 'notification-toggle'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.setAttribute('aria-expanded', 'true');
+        });
 
         // Fetch notifications
         fetch(NOTIF_URL, { credentials: 'same-origin' })
@@ -165,12 +167,14 @@
     function closePanel() {
         var panel   = document.getElementById('notif-panel');
         var overlay = document.getElementById('notif-overlay');
-        var toggle  = document.getElementById('notif-toggle');
         if (!panel) return;
         panel.classList.remove('open');
         panel.setAttribute('aria-hidden', 'true');
         overlay.classList.remove('active');
-        if (toggle) toggle.setAttribute('aria-expanded', 'false');
+        ['notif-toggle', 'notification-toggle'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.setAttribute('aria-expanded', 'false');
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -188,18 +192,20 @@
             .catch(function () {});
         {% endif %}
 
-        // Bell toggle
-        var toggle = document.getElementById('notif-toggle');
-        if (toggle) {
-            toggle.addEventListener('click', function () {
-                var panel = document.getElementById('notif-panel');
-                if (panel && panel.classList.contains('open')) {
-                    closePanel();
-                } else {
-                    openPanel();
-                }
-            });
-        }
+        // Bell toggle — wired for both bottom nav (mobile) and top nav (desktop)
+        ['notif-toggle', 'notification-toggle'].forEach(function (id) {
+            var toggle = document.getElementById(id);
+            if (toggle) {
+                toggle.addEventListener('click', function () {
+                    var panel = document.getElementById('notif-panel');
+                    if (panel && panel.classList.contains('open')) {
+                        closePanel();
+                    } else {
+                        openPanel();
+                    }
+                });
+            }
+        });
 
         // Close button & overlay
         var closeBtn = document.getElementById('notif-close');
