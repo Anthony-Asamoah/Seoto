@@ -53,6 +53,66 @@
             font-weight: 300;
         }
 
+        /* ── Desktop nav buttons ── */
+        /* Logout — ghost pill that sits flush with nav links */
+        .nav-logout-btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 14px;
+            border-radius: 20px;
+            border: 1.5px solid rgba(0, 0, 0, 0.15);
+            background: transparent;
+            color: inherit;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            line-height: 1.3;
+            transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+            text-decoration: none;
+        }
+
+        .nav-logout-btn:hover {
+            border-color: #c0392b;
+            color: #c0392b;
+            background: rgba(192, 57, 43, 0.06);
+        }
+
+        .nav-logout-btn:focus-visible {
+            outline: 2px solid currentColor;
+            outline-offset: 2px;
+        }
+
+        /* Bell / Install — borderless icon circle */
+        .nav-icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: inherit;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .nav-icon-btn:hover {
+            background: rgba(0, 0, 0, 0.07);
+        }
+
+        .nav-icon-btn:focus-visible {
+            outline: 2px solid currentColor;
+            outline-offset: 2px;
+        }
+
+        /* Notification state colours — applied by notification-manager.js */
+        .nav-icon-btn.notif-enabled  { color: #175a9c; }
+        .nav-icon-btn.notif-disabled { color: #9ca3af; }
+
         .crumb {
             text-decoration: none;
             color: #175a9c;

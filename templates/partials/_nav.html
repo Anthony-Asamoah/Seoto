@@ -19,7 +19,7 @@
         {% endif %}
     </div>
     <div class="links" id="links" style="padding-right: 10px">
-        <div class="navbar-nav">
+        <div class="navbar-nav" style="align-items: center; gap: 4px;">
             <a class="nav-item nav-link active" href="{% url 'index' %}">Home</a>
             {% if user.is_authenticated %}
                 {% if IS_THEME_ENABLED %}
@@ -27,23 +27,24 @@
                 {% endif %}
                 <form method="POST" action="{% url 'logout' %}" style="display: inline;">
                     {% csrf_token %}
-                    <button type="submit" class="nav-item nav-link btn">Logout</button>
+                    <button type="submit" class="nav-logout-btn">Logout</button>
                 </form>
             {% else %}
                 <a class="nav-item nav-link" href="{% url 'login' %}">Login</a>
                 <a class="nav-item nav-link" href="{% url 'register' %}">Sign-up</a>
             {% endif %}
             <!-- PWA Install Button (shown when installable) -->
-            <button id="install-button" class="nav-item nav-link btn" style="display: none;" title="Install Seoto as an app">
-                <i class="fas fa-download"></i> Install
+            <button id="install-button" class="nav-icon-btn" style="display: none;" title="Install Seoto as an app">
+                <i class="fas fa-download"></i>
             </button>
             <!-- Notification Toggle Button (for authenticated users) -->
             {% if user.is_authenticated %}
-            <button id="notification-toggle" class="nav-item nav-link btn position-relative" title="Enable push notifications" onclick="window.SeotoPWA.requestNotificationPermission()">
-                <i class="fas fa-bell"></i>
+            <button id="notification-toggle" class="nav-icon-btn position-relative" title="Enable push notifications" onclick="window.SeotoPWA.requestNotificationPermission()">
+                <i class="far fa-bell"></i>
                 <span id="notification-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:.6rem;"></span>
             </button>
             {% endif %}
         </div>
     </div>
 </nav>
+

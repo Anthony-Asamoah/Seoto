@@ -27,19 +27,19 @@
     if (permission === 'granted') {
       icon.className = 'fas fa-bell';
       btn.title = 'Notifications enabled';
-      btn.classList.add('text-success');
-      btn.classList.remove('text-muted');
+      btn.classList.add('notif-enabled');
+      btn.classList.remove('notif-disabled');
       btn.disabled = false;
     } else if (permission === 'denied') {
       icon.className = 'fas fa-bell-slash';
       btn.title = 'Notifications blocked (check browser settings)';
-      btn.classList.add('text-muted');
-      btn.classList.remove('text-success');
+      btn.classList.add('notif-disabled');
+      btn.classList.remove('notif-enabled');
       btn.disabled = true;
     } else {
       icon.className = 'far fa-bell';
       btn.title = 'Enable push notifications';
-      btn.classList.remove('text-success', 'text-muted');
+      btn.classList.remove('notif-enabled', 'notif-disabled');
       btn.disabled = false;
     }
   }
