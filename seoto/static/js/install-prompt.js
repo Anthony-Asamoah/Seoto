@@ -29,9 +29,6 @@
   function showInstallButton() {
     if (!shouldShowPrompt()) return;
 
-    const bottomBtn = document.getElementById('install-button-bottom');
-    if (bottomBtn) bottomBtn.style.visibility = 'visible';
-
     ['install-button', 'install-button-profile'].forEach(function(id) {
       const btn = document.getElementById(id);
       if (btn) btn.style.display = 'flex';
@@ -40,9 +37,6 @@
 
   // Hide the install button
   function hideInstallButton() {
-    const bottomBtn = document.getElementById('install-button-bottom');
-    if (bottomBtn) bottomBtn.style.visibility = 'hidden';
-
     ['install-button', 'install-button-profile'].forEach(function(id) {
       const btn = document.getElementById(id);
       if (btn) btn.style.display = 'none';
@@ -114,7 +108,7 @@
 
   // Attach click handler when DOM is ready
   window.addEventListener('DOMContentLoaded', () => {
-    ['install-button', 'install-button-bottom', 'install-button-profile'].forEach(function(id) {
+    ['install-button', 'install-button-profile'].forEach(function(id) {
       const btn = document.getElementById(id);
       if (btn) {
         btn.addEventListener('click', handleInstallClick);
