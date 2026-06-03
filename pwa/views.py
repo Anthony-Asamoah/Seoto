@@ -83,22 +83,26 @@ def subscribe_push(request):
 @require_http_methods(["GET"])
 def notifications_list(request):
     """Return the 10 most recent notifications for the current user."""
-    qs = request.user.notifications.all()[:10]
-    unread_count = request.user.notifications.filter(is_read=False).count()
-    return JsonResponse({
-        'unread_count': unread_count,
-        'notifications': [
-            {
-                'id': n.id,
-                'title': n.title,
-                'body': n.body,
-                'url': n.url or '',
-                'is_read': n.is_read,
-                'created_at': n.created_at.isoformat(),
-            }
-            for n in qs
-        ],
-    })
+    try:
+        qs = request.user.notifications.all()[:10]
+        unread_count = request.user.notifications.filter(is_read=False).count()
+        return JsonResponse({
+            'unread_count': unread_count,
+            'notifications': [
+                {
+                    'id': n.id,
+                    'title': n.title,
+                    'body': n.body,
+                    'url': n.url or '',
+                    'is_read': n.is_read,
+                    'created_at': n.created_at.isoformat(),
+                }
+                for n in qs
+            ],
+        })
+    except Exception:
+        logger.exception("notifications_list failed for user %s", request.user.username)
+        return JsonResponse({'error': 'Failed to load notifications', 'notifications': [], 'unread_count': 0}, status=500)
 
 
 @login_required
