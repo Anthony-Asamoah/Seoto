@@ -52,26 +52,20 @@ jobs:
       - name: Reload web application
         env:
           PA_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
-          PA_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
           APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
         run: |
           set -euo pipefail
           HOST="${APP_DOMAIN:-seoto.org}"
-          RELOAD_URL="https://www.pythonanywhere.com/api/v0/user/${PA_USERNAME}/webapps/${HOST}/reload/"
+          # Touch the WSGI file to reload the webapp. This avoids the reload
+          # API's CNAME validation (it returns 409 cname_error for custom/apex
+          # domains) and needs no API token. PythonAnywhere names the file
+          # /var/www/<domain-with-dots-and-hyphens-as-underscores>_wsgi.py
+          WSGI="/var/www/$(echo "$HOST" | tr '.-' '__')_wsgi.py"
 
-          echo "🔄 Reloading web application ($HOST) ..."
-          HTTP_CODE=$(curl -s -o /tmp/reload_body.txt -w "%{http_code}" \
-            -X POST "$RELOAD_URL" \
-            -H "Authorization: Token ${PA_API_TOKEN}" \
-            --max-time 60)
-
-          echo "Reload response ($HTTP_CODE): $(cat /tmp/reload_body.txt)"
-          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-            echo "✅ Web application reloaded successfully"
-          else
-            echo "❌ Reload failed with status $HTTP_CODE"
-            exit 1
-          fi
+          echo "🔄 Reloading web application by touching $WSGI ..."
+          ssh "${PA_USERNAME}@ssh.pythonanywhere.com" \
+            "if [ -f '$WSGI' ]; then touch '$WSGI'; else echo 'WSGI file not found: $WSGI'; exit 1; fi"
+          echo "✅ Reload triggered"
 
       - name: Wait for deployment to settle
         run: sleep 10
