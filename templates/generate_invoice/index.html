@@ -550,6 +550,110 @@
             margin-left: 8px
         }
 
+        /* Invoice preview overlay */
+        #preview-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #e8eaed;
+            overflow-y: auto;
+            flex-direction: column
+        }
+
+        #preview-overlay.open {
+            display: flex
+        }
+
+        .preview-bar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            gap: 12px;
+            flex-shrink: 0
+        }
+
+        .preview-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px
+        }
+
+        .preview-bar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text)
+        }
+
+        .preview-bar-subtitle {
+            font-size: 12px;
+            color: var(--text-muted)
+        }
+
+        .btn-back {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            border: 1px solid var(--border2);
+            border-radius: var(--radius);
+            background: transparent;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all .15s
+        }
+
+        .btn-back:hover {
+            background: var(--surface2);
+            color: var(--text)
+        }
+
+        .btn-print {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 18px;
+            background: var(--navy);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            transition: background .15s
+        }
+
+        .btn-print:hover {
+            background: var(--navy-dark)
+        }
+
+        .preview-frame-wrap {
+            flex: 1;
+            padding: 28px 20px;
+            display: flex;
+            justify-content: center
+        }
+
+        #invoice-frame {
+            width: 100%;
+            max-width: 900px;
+            min-height: 600px;
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 32px rgba(0,0,0,.12);
+            background: #fff
+        }
+
         @media (max-width: 600px) {
             .grid2, .grid3, .grid4 {
                 grid-template-columns:1fr
@@ -566,10 +670,49 @@
             .item-row input:nth-child(2), .item-row input:nth-child(3) {
                 display: none
             }
+
+            .preview-bar {
+                flex-wrap: wrap;
+                gap: 8px
+            }
+
+            .preview-bar-subtitle {
+                display: none
+            }
         }
     </style>
 {% endblock %}
 {% block content %}
+
+    <!-- Invoice Preview Overlay -->
+    <div id="preview-overlay">
+        <div class="preview-bar">
+            <div class="preview-bar-left">
+                <button class="btn-back" onclick="closePreview()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                    Back to Editor
+                </button>
+                <div>
+                    <div class="preview-bar-title">Invoice Preview</div>
+                    <div class="preview-bar-subtitle">Review your invoice before printing</div>
+                </div>
+            </div>
+            <button class="btn-print" onclick="printInvoice()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 6 2 18 2 18 9"/>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                    <rect x="6" y="14" width="12" height="8"/>
+                </svg>
+                Print / Save as PDF
+            </button>
+        </div>
+        <div class="preview-frame-wrap">
+            <iframe id="invoice-frame" title="Invoice Preview"></iframe>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <div>
@@ -630,18 +773,18 @@
                     Your Business
                 </div>
                 <div class="grid2">
-                    <div class="field"><label>
-                        Business / your name
-                    </label><input type="text" id="from-name" placeholder="Your Agency"></div>
-                    <div class="field"><label>
-                        Email
-                    </label><input type="email" id="from-email" placeholder="you@example.com"></div>
-                    <div class="field"><label>
-                        Phone
-                    </label><input type="text" id="from-phone" placeholder="+233 XXX XXX XXX"></div>
-                    <div class="field"><label>
-                        Location
-                    </label><input type="text" id="from-location" placeholder="Accra, Ghana"></div>
+                    <div class="field"><label>Business / your name</label>
+                        <input type="text" id="from-name" placeholder="Your Agency"></div>
+                    <div class="field"><label>Email</label>
+                        <input type="email" id="from-email" placeholder="you@example.com"></div>
+                    <div class="field"><label>Phone</label>
+                        <input type="text" id="from-phone" placeholder="+233 XXX XXX XXX"></div>
+                    <div class="field"><label>Location</label>
+                        <input type="text" id="from-location" placeholder="Accra, Ghana"></div>
+                </div>
+                <div class="field" style="margin-top:14px">
+                    <label>Invoice description / service type</label>
+                    <input type="text" id="inv-desc" placeholder="e.g. Web Development Services">
                 </div>
             </div>
             <div class="card">
@@ -653,26 +796,20 @@
                     Bill To
                 </div>
                 <div class="grid2">
-                    <div class="field"><label>
-                        Client name
-                    </label><input type="text" id="to-name" required></div>
-                    <div class="field"><label>
-                        Client email
-                    </label><input type="email" id="to-email" placeholder="client@example.com"></div>
-                    <div class="field"><label>
-                        Location
-                    </label><input type="text" id="to-location" placeholder="Accra, Ghana"></div>
-                    <div class="field"><label>
-                        Invoice #
-                    </label><input type="text" id="inv-num" placeholder="INV-001" value="INV-001"></div>
+                    <div class="field"><label>Client name</label>
+                        <input type="text" id="to-name" required></div>
+                    <div class="field"><label>Client email</label>
+                        <input type="email" id="to-email" placeholder="client@example.com"></div>
+                    <div class="field"><label>Location</label>
+                        <input type="text" id="to-location" placeholder="Accra, Ghana"></div>
+                    <div class="field"><label>Invoice #</label>
+                        <input type="text" id="inv-num" placeholder="INV-001" value="INV-001"></div>
                 </div>
                 <div class="grid2" style="margin-top:14px">
-                    <div class="field"><label>
-                        Invoice date
-                    </label><input type="date" id="inv-date" oninput="updateDatePreview()"></div>
-                    <div class="field"><label>
-                        Due date
-                    </label><input type="date" id="due-date" oninput="updateDatePreview()"></div>
+                    <div class="field"><label>Invoice date</label>
+                        <input type="date" id="inv-date" oninput="updateDatePreview()"></div>
+                    <div class="field"><label>Due date</label>
+                        <input type="date" id="due-date" oninput="updateDatePreview()"></div>
                 </div>
                 <div id="date-preview"
                      style="margin-top:12px;padding:10px 14px;
@@ -703,10 +840,33 @@
                     Line Items
                     <span class="badge" id="item-count">3 items</span>
                 </div>
+
+                <div class="grid2" style="margin-bottom:16px">
+                    <div class="field">
+                        <label>Currency</label>
+                        <select id="currency" onchange="calcTotals()">
+                            <option value="GHC">GHC — Ghanaian Cedi</option>
+                            <option value="USD">USD — US Dollar</option>
+                            <option value="EUR">EUR — Euro</option>
+                            <option value="GBP">GBP — British Pound</option>
+                            <option value="NGN">NGN — Nigerian Naira</option>
+                            <option value="KES">KES — Kenyan Shilling</option>
+                            <option value="ZAR">ZAR — South African Rand</option>
+                            <option value="XOF">XOF — West African CFA franc</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Tax / VAT rate (%)</label>
+                        <input type="number" id="tax-rate" value="0" min="0" max="100" step="0.1"
+                               placeholder="0" oninput="calcTotals()">
+                    </div>
+                </div>
+
                 <div class="items-header">
-                    <span>
-                        Description
-                    </span><span>Details</span><span>Amount (GHC)</span><span></span>
+                    <span>Description</span>
+                    <span>Details</span>
+                    <span id="amount-header-label">Amount</span>
+                    <span></span>
                 </div>
                 <div id="items-container"></div>
                 <button class="btn-add" onclick="addItem()">
@@ -718,9 +878,12 @@
                     Add line item
                 </button>
                 <div class="totals-box">
-                    <div class="total-line"><span>Subtotal</span><span class="amt" id="subtotal">GHC 0.00</span></div>
-                    <div class="total-line main"><span>Total Due</span><span class="amt" id="total">GHC 0.00</span>
+                    <div class="total-line"><span>Subtotal</span><span class="amt" id="subtotal">0.00</span></div>
+                    <div class="total-line" id="tax-line" style="display:none">
+                        <span id="tax-label">Tax (0%)</span>
+                        <span class="amt" id="tax-amount">0.00</span>
                     </div>
+                    <div class="total-line main"><span>Total Due</span><span class="amt" id="total">0.00</span></div>
                 </div>
             </div>
         </div>
@@ -791,8 +954,7 @@
                     Colors
                 </div>
                 <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Choose a preset or pick your own
-                    custom
-                    colors.</p>
+                    custom colors.</p>
                 <div class="presets" id="presets"></div>
                 <div class="color-grid">
                     <div class="color-field">
@@ -816,7 +978,8 @@
                     <div class="color-field">
                         <label>Accent / totals</label>
                         <div class="color-row">
-                            <input type="color" id="c-accent" value="#1A3C5E" oninput="syncHex('c-accent','h-accent')">
+                            <input type="color" id="c-accent" value="#1A3C5E"
+                                   oninput="syncHex('c-accent','h-accent')">
                             <input type="text" class="color-hex" id="h-accent" value="#1A3C5E" maxlength="7"
                                    oninput="syncColor('h-accent','c-accent')">
                         </div>
@@ -833,7 +996,8 @@
                     <div class="color-field">
                         <label>Stripe / meta bg</label>
                         <div class="color-row">
-                            <input type="color" id="c-stripe" value="#E8EFF6" oninput="syncHex('c-stripe','h-stripe')">
+                            <input type="color" id="c-stripe" value="#E8EFF6"
+                                   oninput="syncHex('c-stripe','h-stripe')">
                             <input type="text" class="color-hex" id="h-stripe" value="#E8EFF6" maxlength="7"
                                    oninput="syncColor('h-stripe','c-stripe')">
                         </div>
@@ -862,18 +1026,19 @@
                     Payment Details
                 </div>
                 <div class="grid2">
-                    <div class="field"><label>Bank name</label><input type="text" id="bank-name"
-                                                                      placeholder="Your bank name"></div>
-                    <div class="field"><label>Account name</label><input type="text" id="acc-name"
-                                                                         placeholder="Account holder name"></div>
-                    <div class="field"><label>Account number</label><input type="text" id="acc-num"
-                                                                           placeholder="XXXXXXXXXX"></div>
-                    <div class="field"><label>Mobile money (MoMo)</label><input type="text" id="momo"
-                                                                                placeholder="+233 XXX XXX XXX"></div>
+                    <div class="field"><label>Bank name</label>
+                        <input type="text" id="bank-name" placeholder="Your bank name"></div>
+                    <div class="field"><label>Account name</label>
+                        <input type="text" id="acc-name" placeholder="Account holder name"></div>
+                    <div class="field"><label>Account number</label>
+                        <input type="text" id="acc-num" placeholder="XXXXXXXXXX"></div>
+                    <div class="field"><label>Mobile money (MoMo)</label>
+                        <input type="text" id="momo" placeholder="+233 XXX XXX XXX"></div>
                 </div>
                 <div class="field" style="margin-top:14px">
                     <label>Notes / footer message</label>
-                    <textarea id="notes" placeholder="e.g. Thank you for your patronage!">Thank you for your patronage! Please make payment within 14 days of invoice date.</textarea>
+                    <textarea id="notes"
+                              placeholder="e.g. Thank you for your patronage!">Thank you for your patronage! Please make payment within 14 days of invoice date.</textarea>
                 </div>
             </div>
         </div>
@@ -881,11 +1046,10 @@
         <div class="actions">
             <button class="btn-generate" onclick="generateInvoice()">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="6 9 6 2 18 2 18 9"/>
-                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                    <rect x="6" y="14" width="12" height="8"/>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
                 </svg>
-                Generate &amp; Print Invoice
+                Preview Invoice
             </button>
             <button class="btn-clear" onclick="clearForm()">Reset Form</button>
         </div>
@@ -947,9 +1111,7 @@
                 id: 'dmy-long', label: 'DD Month YYYY', example: '20 May 2026', fn: d => {
                     const p = d.split('-');
                     return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric'
+                        day: '2-digit', month: 'long', year: 'numeric'
                     });
                 }
             },
@@ -957,9 +1119,7 @@
                 id: 'mdy-long', label: 'Month DD, YYYY', example: 'May 20, 2026', fn: d => {
                     const p = d.split('-');
                     return new Date(p[0], p[1] - 1, p[2]).toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric'
+                        month: 'long', day: 'numeric', year: 'numeric'
                     });
                 }
             },
@@ -1042,6 +1202,11 @@
             };
         }
 
+        /* ---- CURRENCY ---- */
+        function getCurrency() {
+            return document.getElementById('currency').value;
+        }
+
         /* ---- LOGO ---- */
         function handleLogo(e) {
             const f = e.target.files[0];
@@ -1102,10 +1267,24 @@
         }
 
         function calcTotals() {
-            const s = items.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
-            const f = 'GHC ' + s.toLocaleString('en-GH', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('subtotal').textContent = f;
-            document.getElementById('total').textContent = f;
+            const cur = getCurrency();
+            const subtotal = items.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
+            const taxRate = parseFloat(document.getElementById('tax-rate').value) || 0;
+            const taxAmt = subtotal * (taxRate / 100);
+            const total = subtotal + taxAmt;
+
+            document.getElementById('amount-header-label').textContent = 'Amount (' + cur + ')';
+            document.getElementById('subtotal').textContent = cur + ' ' + fmt(subtotal);
+            document.getElementById('total').textContent = cur + ' ' + fmt(total);
+
+            const taxLine = document.getElementById('tax-line');
+            if (taxRate > 0) {
+                document.getElementById('tax-label').textContent = 'Tax (' + taxRate + '%)';
+                document.getElementById('tax-amount').textContent = cur + ' ' + fmt(taxAmt);
+                taxLine.style.display = 'flex';
+            } else {
+                taxLine.style.display = 'none';
+            }
         }
 
         /* ---- HELPERS ---- */
@@ -1129,14 +1308,31 @@
             document.getElementById('prev-due-date').textContent = due ? fmtDate(due) : '—';
         }
 
+        /* ---- PREVIEW OVERLAY ---- */
+        function closePreview() {
+            document.getElementById('preview-overlay').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function printInvoice() {
+            document.getElementById('invoice-frame').contentWindow.print();
+        }
+
         /* ---- GENERATE ---- */
         function generateInvoice() {
             const C = getColors();
+            const cur = getCurrency();
+            const taxRate = parseFloat(g('tax-rate')) || 0;
+            const subtotal = items.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
+            const taxAmt = subtotal * (taxRate / 100);
+            const total = subtotal + taxAmt;
+
             const v = {
                 fromName: g('from-name') || 'Your Business',
                 fromEmail: g('from-email'),
                 fromPhone: g('from-phone'),
                 fromLoc: g('from-location'),
+                invDesc: g('inv-desc') || 'Professional Services',
                 toName: g('to-name') || 'Client',
                 toEmail: g('to-email'),
                 toLoc: g('to-location'),
@@ -1149,15 +1345,13 @@
                 momo: g('momo'),
                 notes: g('notes') || 'Thank you for your patronage!'
             };
-            const total = items.reduce((a, b) => a + (parseFloat(b.amount) || 0), 0);
 
-            // darken header bg slightly for total row
             const rows = items.map((it, i) => `
     <tr style="background:${i % 2 === 0 ? '#fff' : C.stripe}">
       <td style="padding:11px 16px;border:1px solid #e2e5ea;font-weight:600;color:${C.accent};font-family:'DM Mono',monospace;font-size:13px">${i + 1}</td>
       <td style="padding:11px 16px;border:1px solid #e2e5ea;font-weight:600;font-size:14px;color:${C.bodyText}">${it.desc}</td>
       <td style="padding:11px 16px;border:1px solid #e2e5ea;color:#777;font-size:13px">${it.detail}</td>
-      <td style="padding:11px 16px;border:1px solid #e2e5ea;text-align:right;font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:${C.bodyText}">GHC ${fmt(it.amount)}</td>
+      <td style="padding:11px 16px;border:1px solid #e2e5ea;text-align:right;font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:${C.bodyText}">${cur} ${fmt(it.amount)}</td>
     </tr>`).join('');
 
             const logoHtml = logoData ? `<img src="${logoData}" style="max-height:64px;max-width:180px;object-fit:contain;display:block;margin-bottom:8px" alt="Logo">` : '';
@@ -1167,6 +1361,9 @@
             if (v.accName) payParts.push(`<b>Account name:</b> ${v.accName}`);
             if (v.accNum) payParts.push(`<b>Account no:</b> ${v.accNum}`);
             if (v.momo) payParts.push(`<b>Mobile money:</b> ${v.momo}`);
+
+            const taxRowHtml = taxRate > 0 ? `
+      <tr class="sub-row"><td colspan="3">Tax (${taxRate}%)</td><td>${cur} ${fmt(taxAmt)}</td></tr>` : '';
 
             const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
 <title>Invoice ${v.invNum} — ${v.toName}</title>
@@ -1195,11 +1392,12 @@ thead th:last-child{text-align:right}
 .payment{margin:22px 36px;padding:16px 18px;background:${C.stripe};border-radius:8px;font-size:13px;color:#333;line-height:1.9;border-left:4px solid ${C.accent}}
 .payment .plbl{font-size:10px;font-weight:700;color:${C.accent};text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
 .footer{margin:0 36px 28px;padding-top:16px;border-top:1px solid #e2e5ea;font-size:12px;color:#aaa;text-align:center;font-style:italic}
-@media print{body{background:#fff;padding:0}.page{box-shadow:none;border-radius:0}}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+@media print{body{background:#fff;padding:0}.page{box-shadow:none;border-radius:0}}
+*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
 </style></head><body>
 <div class="page">
   <div class="header">
-    <div class="hl">${logoHtml}<h1>INVOICE</h1><p>Web Development Services</p></div>
+    <div class="hl">${logoHtml}<h1>INVOICE</h1>${v.invDesc ? `<p>${v.invDesc}</p>` : ''}</div>
     <div class="hr">
       <div class="inv"># ${v.invNum}</div>
       ${v.invDate ? `<p>Date: ${v.invDate}</p>` : ''}
@@ -1227,30 +1425,31 @@ thead th:last-child{text-align:right}
     </tr></thead>
     <tbody>${rows}</tbody>
     <tfoot>
-      <tr class="sub-row"><td colspan="3">Subtotal</td><td>GHC ${fmt(total)}</td></tr>
-      <tr class="total-row"><td colspan="3">Total Due</td><td>GHC ${fmt(total)}</td></tr>
+      <tr class="sub-row"><td colspan="3">Subtotal</td><td>${cur} ${fmt(subtotal)}</td></tr>
+      ${taxRowHtml}
+      <tr class="total-row"><td colspan="3">Total Due</td><td>${cur} ${fmt(total)}</td></tr>
     </tfoot>
   </table>
   ${payParts.length ? `<div class="payment"><div class="plbl">Payment information</div>${payParts.join(' &nbsp;&bull;&nbsp; ')}</div>` : ''}
   <div class="footer">${v.notes}</div>
 </div>
-<script>window.onload=function(){window.print();}<\/script>
 </body></html>`;
 
-            const w = window.open('', '_blank');
-            if (w) {
-                w.document.write(html);
-                w.document.close();
-            } else {
-                alert('Please allow pop-ups to generate the invoice.');
-            }
+            const frame = document.getElementById('invoice-frame');
+            frame.srcdoc = html;
+            document.getElementById('preview-overlay').classList.add('open');
+            document.body.style.overflow = 'hidden';
         }
 
         /* ---- CLEAR ---- */
         function clearForm() {
-            ['from-name', 'from-email', 'from-phone', 'from-location', 'to-name', 'to-email', 'to-location', 'inv-num', 'bank-name', 'acc-name', 'acc-num', 'momo'].forEach(id => document.getElementById(id).value = '');
+            ['from-name', 'from-email', 'from-phone', 'from-location', 'inv-desc',
+                'to-name', 'to-email', 'to-location', 'inv-num',
+                'bank-name', 'acc-name', 'acc-num', 'momo'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('inv-num').value = 'INV-001';
+            document.getElementById('tax-rate').value = '0';
             document.getElementById('notes').value = 'Thank you for your patronage! Please make payment within 14 days of invoice date.';
+            document.getElementById('currency').value = 'GHC';
             items = [{desc: '', detail: '', amount: ''}];
             removeLogo();
             renderItems();
