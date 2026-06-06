@@ -109,7 +109,7 @@
     function renderNotifications(items) {
         var list = document.getElementById('notif-list');
         if (!list) return;
-        if (!items.length) {
+        if (!items || !items.length) {
             list.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash"></i><span>No notifications yet</span></div>';
             return;
         }
@@ -145,7 +145,13 @@
 
         // Fetch notifications
         fetch(NOTIF_URL, { credentials: 'same-origin' })
-            .then(function (r) { return r.json(); })
+            .then(function (r) {
+                if (!r.ok) {
+                    console.error('[Seoto] Notifications API returned HTTP ' + r.status + ' — check server logs or run migrations');
+                    throw new Error('HTTP ' + r.status);
+                }
+                return r.json();
+            })
             .then(function (data) {
                 renderNotifications(data.notifications);
                 setBadge(0); // clear badge once panel is open
@@ -158,7 +164,8 @@
                 })
                 .catch(function () {});
             })
-            .catch(function () {
+            .catch(function (err) {
+                console.error('[Seoto] Notifications fetch failed:', err && err.message);
                 var list = document.getElementById('notif-list');
                 if (list) list.innerHTML = '<div class="notif-empty"><i class="fas fa-exclamation-circle"></i><span>Could not load notifications</span></div>';
             });
