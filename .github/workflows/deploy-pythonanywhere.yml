@@ -4,138 +4,80 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install httpx
-
-      - name: Deploy to PythonAnywhere
+      - name: Configure SSH
         env:
-          PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
-          PYTHONANYWHERE_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
+          SSH_KEY: ${{ secrets.PYTHONANYWHERE_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ssh.pythonanywhere.com >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy over SSH
+        env:
+          PA_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+          PA_PROJECT_PATH: ${{ secrets.PYTHONANYWHERE_PROJECT_PATH }}
+          PA_VIRTUALENV: ${{ secrets.PYTHONANYWHERE_VIRTUALENV }}
+        run: |
+          set -euo pipefail
+
+          PROJECT_PATH="${PA_PROJECT_PATH:-~/seoto.org}"
+          VIRTUALENV="${PA_VIRTUALENV:-seoto.org}"
+
+          echo "🚀 Deploying to PythonAnywhere ($PA_USERNAME) ..."
+
+          # Run the deploy remotely. Output streams back live and the remote
+          # exit code propagates, so any failure (set -e) fails this job.
+          ssh "${PA_USERNAME}@ssh.pythonanywhere.com" \
+            "PROJECT_PATH='${PROJECT_PATH}' VIRTUALENV='${VIRTUALENV}' bash -l" <<'REMOTE'
+          set -e
+          eval cd "$PROJECT_PATH"
+          git checkout master
+          git pull --ff-only
+          source ~/.virtualenvs/"$VIRTUALENV"/bin/activate
+          pip install -r requirements.txt
+          python manage.py migrate --noinput
+          python manage.py collectstatic --noinput
+          echo DEPLOYMENT_SUCCESS
+          REMOTE
+
+      - name: Reload web application
+        env:
+          PA_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
+          PA_API_TOKEN: ${{ secrets.PYTHONANYWHERE_API_TOKEN }}
           APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
         run: |
-          python - <<'PYTHON_SCRIPT'
-          import sys, os, time
-          import httpx
+          set -euo pipefail
+          HOST="${APP_DOMAIN:-seoto.org}"
+          RELOAD_URL="https://www.pythonanywhere.com/api/v0/user/${PA_USERNAME}/webapps/${HOST}/reload/"
 
-          # Get environment variables
-          host = os.environ.get('APP_DOMAIN')
-          username = os.environ.get('PYTHONANYWHERE_USERNAME')
-          api_token = os.environ.get('PYTHONANYWHERE_API_TOKEN')
-          directory = f'{username}.pythonanywhere.com'
+          echo "🔄 Reloading web application ($HOST) ..."
+          HTTP_CODE=$(curl -s -o /tmp/reload_body.txt -w "%{http_code}" \
+            -X POST "$RELOAD_URL" \
+            -H "Authorization: Token ${PA_API_TOKEN}" \
+            --max-time 60)
 
-          if not username or not api_token:
-              print("Error: PYTHONANYWHERE_USERNAME and PYTHONANYWHERE_API_TOKEN must be set")
-              sys.exit(1)
-
-          console_api_url = f'https://www.pythonanywhere.com/api/v0/user/{username}/consoles/'
-          webapp_api_url = f'https://www.pythonanywhere.com/api/v0/user/{username}/webapps/{host}/reload/'
-          headers = {
-              'Authorization': f'Token {api_token}',
-              'Content-Type': 'application/json'
-          }
-
-          print("=" * 60)
-          print("Starting PythonAnywhere Deployment")
-          print("=" * 60)
-
-          # Build a single-line bash script (~ expands correctly on the remote shell)
-          bash_script = (
-              f"set -e; "
-              f"cd ~/{directory}; "
-              f"git checkout master; "
-              f"git pull; "
-              f"source ~/.virtualenvs/{directory}/bin/activate; "
-              f"pip install -r requirements.txt; "
-              f"python manage.py migrate --noinput; "
-              f"python manage.py collectstatic --noinput --clear; "
-              f"echo DEPLOYMENT_SUCCESS"
-          )
-
-          try:
-              # Create a console — bash runs the script immediately at startup.
-              # No send_input or browser initialization needed.
-              print("\n🔌 Creating bash console on PythonAnywhere...")
-              console_data = {
-                  'executable': 'bash',
-                  'arguments': f"-c '{bash_script}'"
-              }
-              response = httpx.post(console_api_url, json=console_data, headers=headers)
-              console_result = response.json()
-              console_id = console_result.get('id')
-              print(f"✅ Console created (ID: {console_id})")
-              print(f"   Response: {console_result}")
-
-              if not console_id:
-                  raise Exception(f"Failed to create console: {response.text}")
-
-              # Wait for deployment commands to finish
-              print("\n⏳ Waiting 90 seconds for deployment to complete...")
-              time.sleep(90)
-
-              # Fetch latest output (~500 chars — DEPLOYMENT_SUCCESS will be last if all succeeded)
-              print("\n📋 Fetching deployment output...")
-              print("=" * 60)
-              output_response = httpx.get(
-                  console_api_url + f'{console_id}/get_latest_output/',
-                  headers=headers
-              )
-              output = ''
-              if output_response.status_code == 200:
-                  output = output_response.json().get('output', '')
-                  print(output)
-              else:
-                  print(f"⚠️  Could not fetch output: {output_response.status_code} {output_response.text}")
-              print("=" * 60)
-
-              # Clean up the console
-              httpx.delete(console_api_url + f'{console_id}/', headers=headers)
-
-              if 'DEPLOYMENT_SUCCESS' not in output:
-                  raise Exception("Deployment did not complete successfully. Check output above.")
-
-              # Reload the web app
-              print("\n🔄 Reloading web application...")
-              reload_response = httpx.post(webapp_api_url, headers=headers, timeout=60)
-              print(f"   Reload response ({reload_response.status_code}): {reload_response.text}")
-              if 300 > reload_response.status_code >= 200:
-                  print("✅ Web application reloaded successfully")
-              else:
-                  raise Exception(f"Reload failed with status {reload_response.status_code}")
-
-              print("\n" + "=" * 60)
-              print("🎉 Deployment completed successfully!")
-              print(f"🌐 Your app should be live at: https://{host}")
-              print("=" * 60)
-
-          except Exception as e:
-              print(f"\n❌ Deployment failed: {str(e)}")
-              sys.exit(1)
-
-          PYTHON_SCRIPT
+          echo "Reload response ($HTTP_CODE): $(cat /tmp/reload_body.txt)"
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ Web application reloaded successfully"
+          else
+            echo "❌ Reload failed with status $HTTP_CODE"
+            exit 1
+          fi
 
       - name: Wait for deployment to settle
         run: sleep 10
 
       - name: Health check
         env:
-          PYTHONANYWHERE_HOST: ${{ secrets.PYTHONANYWHERE_HOST }}
-          PYTHONANYWHERE_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
           APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
         run: |
           HOST="${APP_DOMAIN:-seoto.org}"
