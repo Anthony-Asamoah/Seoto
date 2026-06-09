@@ -20,7 +20,11 @@
     </div>
     <div class="links" id="links" style="padding-right: 10px">
         <div class="navbar-nav" style="align-items: center; gap: 4px;">
-            <a class="nav-item nav-link active" href="{% url 'index' %}">Home</a>
+            {% if request.resolver_match.url_name == 'index' %}
+                <a class="nav-item nav-link active" href="{% url 'apps' %}">Apps</a>
+            {% else %}
+                <a class="nav-item nav-link{% if request.resolver_match.url_name == 'apps' %} active{% endif %}" href="{% url 'index' %}">Home</a>
+            {% endif %}
             {% if user.is_authenticated %}
                 {% if IS_THEME_ENABLED %}
                     <a class="nav-item nav-link" href="{% url 'theme:theme_home' %}">Theme</a>

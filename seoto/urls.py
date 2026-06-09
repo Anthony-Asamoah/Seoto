@@ -9,7 +9,7 @@ from author.views import About, ReachOut
 from flip_a_coin.views import Coin
 from generate_invoice.views import generate_invoice
 from home.views import (
-    Home, error404, error500
+    Home, Apps, error404, error500
 )
 from interest_calc.views import Interest
 from rhymes.views import Rhymes
@@ -26,6 +26,7 @@ urlpatterns = [
     path('robots.txt', lambda request: HttpResponse(ROBOTS_TXT, content_type='text/plain')),
     path('ckeditor5/', include('django_ckeditor_5.urls')),
     path('', Home.as_view(), name='index'),
+    path('apps/', Apps.as_view(), name='apps'),
     path('admin/', admin.site.urls, name='admin'),
     path('accounts/', include('accounts.urls')),
     path('home/', include("home.urls")),

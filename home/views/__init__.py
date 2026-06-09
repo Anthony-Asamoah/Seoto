@@ -3,6 +3,7 @@ __all__ = [
     "error500",
     "incoming",
     "Home",
+    "Apps",
     "dashboard",
     "errors_list",
     "user_analytics",
@@ -13,7 +14,7 @@ __all__ = [
 
 from home.views.dash import dashboard
 from home.views.error_handlers import error500, error404
-from home.views.index import Home
+from home.views.index import Home, Apps
 from home.views.incoming import incoming
 from home.views.monitoring import (
     app_usage,
