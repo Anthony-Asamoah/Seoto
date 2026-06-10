@@ -1,100 +1,404 @@
-{% extends 'base.html' %}
-
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Schedule a Discovery Call — SEOTO</title>
+    <meta name="description"
+          content="Tell us about your goals, challenges, and budget. We'll help determine whether a website, proven software, or a custom platform is the best fit — a relaxed 30-minute call, no obligation.">
 
-{% block style %}
-    {% include 'partials/_form_style_bootstrap.html' %}
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/pwa/favicon-32x32.png' %}">
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'img/logo.ico' %}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+          rel="stylesheet">
+
     <style>
-        .main {
-            max-width: 680px;
-            margin: 40px auto;
-            padding: 0 16px;
+        /* ════════════ Shared design system (matches homepage) ════════════ */
+        :root {
+            --warm-white: #f7f4ee; --cream: #efe8db; --sand: #e4dac8; --paper: #fffdf9;
+            --charcoal: #1a1612; --charcoal-soft: #241f18; --line-dark-2: rgba(247,244,238,0.10);
+            --ink: #221d17; --ink-soft: #595046; --ink-faint: #8a8073;
+            --blue: #2f6098; --blue-bright: #4f86c6; --gold: #b48a4d; --gold-soft: #cdb083; --gold-deep: #8a6a34;
+            --red: #b4513f;
+            --maxw: 1180px; --ease: cubic-bezier(0.22, 1, 0.36, 1); --pad-x: clamp(28px, 6vw, 68px);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; }
+        body { font-family: 'Hanken Grotesk', system-ui, sans-serif; background: var(--warm-white); color: var(--ink);
+            line-height: 1.6; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: hidden; }
+        html.lenis, html.lenis body { height: auto; }
+        .lenis.lenis-smooth { scroll-behavior: auto !important; }
+        ::selection { background: var(--gold); color: #fff; }
+        a { color: inherit; text-decoration: none; }
+        .serif { font-family: 'Fraunces', Georgia, serif; font-weight: 400; font-optical-sizing: auto; letter-spacing: -0.012em; }
+        .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+        .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 var(--pad-x); }
+        .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.14em;
+            text-transform: uppercase; color: var(--gold-deep); display: inline-flex; align-items: center; gap: 11px; }
+        .eyebrow::before { content: ''; width: 22px; height: 1px; background: currentColor; opacity: 0.65; }
+
+        /* buttons */
+        .btn-x { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 16px 28px; border-radius: 100px; font-size: 0.95rem; font-weight: 500; cursor: pointer;
+            border: 1px solid transparent; font-family: inherit;
+            transition: transform 0.3s var(--ease), background 0.3s var(--ease), color 0.3s var(--ease), border-color 0.3s var(--ease), box-shadow 0.3s var(--ease); will-change: transform; }
+        .btn-x svg { width: 16px; height: 16px; transition: transform 0.4s var(--ease); }
+        .btn-x:hover svg { transform: translateX(4px); }
+        .btn-primary-x { background: var(--ink); color: var(--warm-white); }
+        .btn-primary-x:hover { background: var(--blue); box-shadow: 0 12px 30px -12px rgba(47,96,152,0.5); }
+        .btn-ghost-x { background: transparent; color: var(--ink); border-color: rgba(34,29,23,0.2); }
+        .btn-ghost-x:hover { border-color: var(--ink); }
+
+        /* cursor */
+        .cursor { display: none; }
+        @media (hover: hover) and (pointer: fine) {
+            body.cursor-on, body.cursor-on * { cursor: none !important; }
+            .cursor { display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0;
+                z-index: 10000; pointer-events: none; width: 8px; height: 8px; border-radius: 100px; background: var(--ink);
+                transform: translate(-50%, -50%); mix-blend-mode: difference;
+                transition: width 0.32s var(--ease), height 0.32s var(--ease), background 0.32s var(--ease), border-color 0.32s var(--ease); }
+            .cursor.on-dark { background: var(--warm-white); }
+            .cursor.cta { width: 60px; height: 60px; background: var(--gold); mix-blend-mode: normal; }
+            .cursor.ring { width: 44px; height: 44px; background: transparent; border: 1px solid var(--ink); mix-blend-mode: normal; }
         }
 
-        .main h2, h3, h4, h5, h6 {
-            color: #00695f;
-            transition: 1s ease;
+        /* nav */
+        .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 900; display: flex; align-items: center;
+            justify-content: space-between; padding: 18px var(--pad-x); color: var(--ink);
+            background: rgba(247,244,238,0.8); backdrop-filter: blur(14px) saturate(120%); -webkit-backdrop-filter: blur(14px) saturate(120%);
+            border-bottom: 1px solid var(--sand); }
+        .nav-logo { font-family: 'Fraunces', serif; font-size: 1.5rem; letter-spacing: 0.03em; display: flex; align-items: center; gap: 9px; font-weight: 500; }
+        .nav-logo .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); }
+        .nav-back { font-size: 0.86rem; display: inline-flex; align-items: center; gap: 8px; color: var(--ink-soft); transition: color 0.25s var(--ease); }
+        .nav-back svg { width: 15px; height: 15px; transition: transform 0.3s var(--ease); }
+        .nav-back:hover { color: var(--ink); } .nav-back:hover svg { transform: translateX(-4px); }
+
+        /* layout */
+        .page { padding-top: 78px; }
+        .reach { display: grid; grid-template-columns: 0.85fr 1.15fr; grid-template-rows: auto 1fr;
+            grid-template-areas: "intro form" "extra form"; gap: 40px clamp(32px, 6vw, 88px);
+            padding: clamp(48px, 8vh, 96px) 0 clamp(64px, 10vh, 120px); align-items: start; }
+        .rail { grid-area: intro; }
+        .form-card { grid-area: form; }
+        .rail-extra { grid-area: extra; }
+        /* on mobile the form rises above the steps/contact so it's reachable right after the intro */
+        @media (max-width: 920px) {
+            .reach { grid-template-columns: 1fr; grid-template-rows: auto; grid-template-areas: "intro" "form" "extra"; gap: 40px; }
+            /* inset the intro + steps text so it lines up with the form card's content, not the screen edge */
+            .rail, .rail-extra { padding-inline: clamp(22px, 4vw, 44px); }
+        }
+        .rail h1 { font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(2.3rem, 5vw, 3.6rem);
+            line-height: 1.04; letter-spacing: -0.02em; margin-top: 18px; max-width: 14ch; }
+        .rail h1 em { font-style: italic; color: var(--gold-deep); }
+        .rail .lead { margin-top: 20px; color: var(--ink-soft); font-size: 1.08rem; max-width: 44ch; }
+        .steps { display: grid; gap: 2px; }
+        .step { display: flex; gap: 16px; padding: 18px 0; border-top: 1px solid var(--sand); }
+        .step:last-child { border-bottom: 1px solid var(--sand); }
+        .step .sidx { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--gold-deep); flex-shrink: 0; padding-top: 2px; }
+        .step h4 { font-size: 1rem; font-weight: 600; }
+        .step p { font-size: 0.88rem; color: var(--ink-soft); margin-top: 2px; }
+        .rail-contact { margin-top: 30px; display: grid; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--ink-soft); }
+        .rail-contact a:hover { color: var(--gold-deep); }
+
+        /* form card */
+        .form-card { background: var(--paper); border: 1px solid var(--sand); border-radius: 24px;
+            padding: clamp(26px, 4vw, 44px); box-shadow: 0 30px 70px -50px rgba(34,29,23,0.4); }
+        .form-card .fc-head { margin-bottom: 26px; }
+        .form-card .fc-head h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.6rem; letter-spacing: -0.01em; }
+        .form-card .fc-head p { color: var(--ink-soft); font-size: 0.92rem; margin-top: 6px; }
+
+        .frow { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 540px) { .frow { grid-template-columns: 1fr; } }
+        .field { margin-bottom: 18px; }
+        .field > label, .field-label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+            font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+        .req { color: var(--gold-deep); }
+
+        .field input[type=text], .field input[type=email], .field input[type=tel], .field select, .field textarea,
+        .reach input[type=text], .reach input[type=email], .reach input[type=tel], .reach select, .reach textarea {
+            width: 100%; font-family: inherit; font-size: 0.95rem; color: var(--ink);
+            background: var(--warm-white); border: 1.5px solid var(--sand); border-radius: 12px;
+            padding: 13px 15px; transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease); }
+        .reach textarea { resize: vertical; min-height: 120px; line-height: 1.55; }
+        .reach select { appearance: none; -webkit-appearance: none; cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a8073' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center; padding-right: 40px; }
+        .reach input::placeholder, .reach textarea::placeholder { color: var(--ink-faint); }
+        .reach input:focus, .reach select:focus, .reach textarea:focus { outline: none; border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(180,138,77,0.15); background: var(--paper); }
+
+        /* interest radio cards */
+        .interest-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media (max-width: 540px) { .interest-grid { grid-template-columns: 1fr; } }
+        .interest-grid label { display: flex; align-items: flex-start; gap: 11px; cursor: pointer;
+            border: 1.5px solid var(--sand); border-radius: 13px; padding: 14px 15px; background: var(--warm-white);
+            font-size: 0.9rem; line-height: 1.35; transition: border-color 0.2s var(--ease), background 0.2s var(--ease); }
+        .interest-grid label:hover { border-color: var(--gold-soft); }
+        .interest-grid input { position: absolute; opacity: 0; pointer-events: none; }
+        .interest-grid .dotmark { flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--ink-faint);
+            margin-top: 1px; position: relative; transition: 0.2s var(--ease); }
+        .interest-grid input:checked + .dotmark { border-color: var(--gold-deep); }
+        .interest-grid input:checked + .dotmark::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--gold-deep); }
+        .interest-grid label:has(input:checked) { border-color: var(--gold-deep); background: #fbf7ef; }
+        .interest-grid input:focus-visible + .dotmark { box-shadow: 0 0 0 3px rgba(180,138,77,0.25); }
+
+        /* honeypot */
+        .hp-field { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; overflow: hidden; }
+
+        /* errors + flash */
+        .errlist { list-style: none; margin-top: 6px; }
+        .errlist li, .field .errorlist li { color: var(--red); font-size: 0.8rem; }
+        .field .errorlist { list-style: none; margin-top: 6px; }
+        .flash-tray { display: grid; gap: 10px; margin-bottom: 24px; }
+        .flash { border-radius: 12px; padding: 13px 16px; font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
+        .flash svg { width: 18px; height: 18px; flex-shrink: 0; }
+        .flash-success { background: #eef5ee; border: 1px solid #cfe3cf; color: #2f6b3a; }
+        .flash-error { background: #fbeeea; border: 1px solid #f0d2c9; color: var(--red); }
+
+        .submit-row { margin-top: 8px; }
+        .submit-row .btn-x { width: 100%; }
+        .reassure { margin-top: 14px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--ink-faint); }
+        .recaptcha-disclosure { color: var(--ink-faint) !important; }
+        .recaptcha-disclosure a { color: var(--gold-deep); text-decoration: underline; }
+        .form-card hr { border: 0; border-top: 1px solid var(--sand); margin: 18px 0 0; }
+
+        /* ── small-screen / mobile refinements ── */
+        @media (max-width: 600px) {
+            .nav { padding: 13px var(--pad-x); }
+            .nav-logo { font-size: 1.3rem; }
+            .nav-back { font-size: 0.8rem; }
+            .page { padding-top: 64px; }
+            .rail { top: 88px; }
+            /* trim the dead space up top and the gap before the form */
+            .reach { padding: 28px 0 48px; gap: 32px; }
+            .rail h1 { margin-top: 14px; }
+            .rail .lead { font-size: 1rem; margin-top: 16px; }
+            /* condense the secondary steps so they stay tidy below the form */
+            .step { padding: 14px 0; gap: 14px; }
+            .step p { font-size: 0.86rem; }
+            .rail-contact { margin-top: 24px; }
+            .form-card { border-radius: 18px; }
+            .form-card .fc-head h2 { font-size: 1.38rem; }
+            /* 16px inputs stop iOS Safari from zooming in on focus */
+            .field input[type=text], .field input[type=email], .field input[type=tel], .field select, .field textarea,
+            .reach input[type=text], .reach input[type=email], .reach input[type=tel], .reach select, .reach textarea { font-size: 16px; }
+        }
+        @media (max-width: 380px) {
+            .interest-grid label { font-size: 0.85rem; padding: 13px 13px; }
+            .foot-inner { flex-direction: column; align-items: flex-start; gap: 14px; }
         }
 
-        .main > div {
-            padding: 20px;
-            transition: 0.5s ease;
-        }
+        /* footer */
+        .foot { background: var(--charcoal); color: var(--warm-white); padding: 46px 0; }
+        .foot-inner { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; align-items: center; }
+        .foot .nav-logo { color: var(--warm-white); }
+        .foot-inner .fmeta { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: rgba(247,244,238,0.5); }
 
-        .main > div:hover {
-            background-color: #d9d9d9;
-            padding-bottom: 50px;
-        }
-
-        a.warning {
-            color: darkgoldenrod;
-        }
+        .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.9s var(--ease), transform 0.9s var(--ease); }
+        .reveal.in { opacity: 1; transform: none; }
+        [data-delay="1"] { transition-delay: 0.08s; } [data-delay="2"] { transition-delay: 0.16s; }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0.001ms !important; } .reveal { opacity: 1 !important; transform: none !important; } }
     </style>
-{% endblock %}
+</head>
+<body data-theme="light">
 
-{% block content %}
-    <div class="main">
-        <div class="contact">
-            <div class="social">
-                <h2>Reach out</h2>
-                <div class="contact_form mt-4">
-                    <div class="form-header mb-4">
-                        <h3>Send me a message with the form below</h3>
-                    </div>
-                    <form action="{% url 'reach_out' %}" method="post" id="contactForm">
-                        {% csrf_token %}
-                        <div class="hp-field">  {# special honeypot #}
-                            <label for="id_website">Website</label>
-                            {{ form.website }}
+<div class="cursor" id="cursor"></div>
+
+<header class="nav">
+    <a href="{% url 'index' %}" class="nav-logo" data-cursor="cta"><span>SEOTO</span><span class="dot"></span></a>
+    <a href="{% url 'index' %}" class="nav-back" data-cursor="cta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        Back to home
+    </a>
+</header>
+
+<main class="page">
+    <div class="wrap reach">
+
+        {# ── Left rail: intro ── #}
+        <aside class="rail reveal">
+            <span class="eyebrow">Discovery call</span>
+            <h1 class="serif">Let's figure out what you <em>actually</em> need.</h1>
+            <p class="lead">No pressure, no jargon. Tell us about your goals and we'll help determine whether a website, proven software, or a custom platform is the right fit.</p>
+        </aside>
+
+        {# ── Form card ── #}
+        <section class="form-card reveal" data-delay="1">
+            <div class="fc-head">
+                <h2 class="serif">Request your discovery call</h2>
+                <p>Fields marked <span class="req">*</span> are required. Everything else helps us prepare.</p>
+            </div>
+
+            {% if messages %}
+                <div class="flash-tray">
+                    {% for m in messages %}
+                        <div class="flash flash-{{ m.tags }}">
+                            {% if m.tags == 'success' %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                            {% else %}
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                            {% endif %}
+                            <span>{{ m }}</span>
                         </div>
-                        <div class="form-group">
-                            <div class="form-row">
-                                <div class="col-sm-4">
-                                    <label for="{{ form.name.id_for_label }}">Your name</label>
-                                </div>
-                                <div class="col-md">
-                                    {{ form.name }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="form-row">
-                                <div class="col-sm-4">
-                                    <label for="{{ form.email.id_for_label }}">Your email</label>
-                                </div>
-                                <div class="col-md">
-                                    {{ form.email }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="form-row">
-                                <div class="col-sm-4">
-                                    <label for="{{ form.subject.id_for_label }}">Subject</label>
-                                </div>
-                                <div class="col-md">
-                                    {{ form.subject }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="form-row">
-                                <div class="col-sm-4">
-                                    <label for="{{ form.message.id_for_label }}">Your message</label>
-                                </div>
-                                <div class="col-md">
-                                    {{ form.message }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-actions mt-3">
-                            <button class="btn btn-primary" type="submit">Send</button>
-                            <button class="btn btn-warning pl-4 pr-4" type="reset">Clear</button>
-                        </div>
-                        {% include 'partials/_recaptcha.html' with action='contact' form_id='contactForm' %}
-                    </form>
+                    {% endfor %}
                 </div>
+            {% endif %}
+
+            <form action="{% url 'reach_out' %}" method="post" id="discoveryForm" novalidate>
+                {% csrf_token %}
+
+                {# honeypot #}
+                <div class="hp-field" aria-hidden="true">
+                    <label for="id_website">Website</label>{{ form.website }}
+                </div>
+
+                {% if form.non_field_errors %}
+                    <ul class="errlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+                {% endif %}
+
+                <div class="frow">
+                    <div class="field">
+                        <label for="{{ form.name.id_for_label }}">Your name <span class="req">*</span></label>
+                        {{ form.name }}
+                        {{ form.name.errors }}
+                    </div>
+                    <div class="field">
+                        <label for="{{ form.email.id_for_label }}">Email <span class="req">*</span></label>
+                        {{ form.email }}
+                        {{ form.email.errors }}
+                    </div>
+                </div>
+
+                <div class="frow">
+                    <div class="field">
+                        <label for="{{ form.company.id_for_label }}">Organization</label>
+                        {{ form.company }}
+                    </div>
+                    <div class="field">
+                        <label for="{{ form.phone.id_for_label }}">Phone</label>
+                        {{ form.phone }}
+                    </div>
+                </div>
+
+                <div class="field">
+                    <span class="field-label">What are you looking for? <span class="req">*</span></span>
+                    <div class="interest-grid">
+                        {% for radio in form.interest %}
+                            <label for="{{ radio.id_for_label }}">
+                                {{ radio.tag }}<span class="dotmark"></span>
+                                <span>{{ radio.choice_label }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    {{ form.interest.errors }}
+                </div>
+
+                <div class="frow">
+                    <div class="field">
+                        <label for="{{ form.budget.id_for_label }}">Budget range</label>
+                        {{ form.budget }}
+                    </div>
+                    <div class="field">
+                        <label for="{{ form.timeline.id_for_label }}">Timeline</label>
+                        {{ form.timeline }}
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="{{ form.availability.id_for_label }}">Best times for a call</label>
+                    {{ form.availability }}
+                </div>
+
+                <div class="field">
+                    <label for="{{ form.message.id_for_label }}">Tell us about your project <span class="req">*</span></label>
+                    {{ form.message }}
+                    {{ form.message.errors }}
+                </div>
+
+                <div class="submit-row">
+                    <button class="btn-x btn-primary-x" type="submit" data-cursor="cta">
+                        Request my discovery call
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                    </button>
+                    <p class="reassure">No obligation · we reply within 1 business day</p>
+                </div>
+
+                {% include 'partials/_recaptcha.html' with action='contact' form_id='discoveryForm' %}
+            </form>
+        </section>
+
+        {# ── Left rail: steps + contact (sits below the intro on desktop, below the form on mobile) ── #}
+        <div class="rail-extra reveal" data-delay="2">
+            <div class="steps">
+                <div class="step"><span class="sidx">01</span><div><h4>Share your goals</h4><p>A few details about your business and what you're trying to solve.</p></div></div>
+                <div class="step"><span class="sidx">02</span><div><h4>We review &amp; reply</h4><p>We get back to you within 1 business day to set up a time.</p></div></div>
+                <div class="step"><span class="sidx">03</span><div><h4>A relaxed 30-min call</h4><p>Honest advice on your options — whether or not you work with us.</p></div></div>
+            </div>
+
+            <div class="rail-contact">
+                <a href="mailto:front-desk@seoto.org">front-desk@seoto.org</a>
+                <a href="tel:+233503032976">+233 50 303 2976</a>
+                <span>Accra, Ghana</span>
             </div>
         </div>
     </div>
-{% endblock %}
+</main>
+
+<footer class="foot">
+    <div class="wrap foot-inner">
+        <a href="{% url 'index' %}" class="nav-logo"><span>SEOTO</span><span class="dot"></span></a>
+        <span class="fmeta">© <span id="year"></span> SEOTO · Software that fits your business.</span>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.42/bundled/lenis.min.js"></script>
+<script>
+(function () {
+    'use strict';
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    var y = document.getElementById('year'); if (y) y.textContent = new Date().getFullYear();
+
+    if (!reduceMotion && typeof Lenis !== 'undefined') {
+        var lenis = new Lenis({ duration: 1.1, smoothWheel: true });
+        (function raf(t) { lenis.raf(t); requestAnimationFrame(raf); })();
+    }
+
+    /* reveals */
+    var els = document.querySelectorAll('.reveal');
+    if (reduceMotion) { els.forEach(function (e) { e.classList.add('in'); }); }
+    else {
+        var io = new IntersectionObserver(function (en) { en.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: 0.14 });
+        els.forEach(function (e) { io.observe(e); });
+    }
+
+    /* cursor + magnetic */
+    if (fine && !reduceMotion) {
+        document.body.classList.add('cursor-on');
+        var cursor = document.getElementById('cursor');
+        var cx = innerWidth / 2, cy = innerHeight / 2, tx = cx, ty = cy;
+        addEventListener('mousemove', function (e) { tx = e.clientX; ty = e.clientY; });
+        (function loop() { cx += (tx - cx) * 0.2; cy += (ty - cy) * 0.2; cursor.style.transform = 'translate(' + cx + 'px,' + cy + 'px) translate(-50%,-50%)'; requestAnimationFrame(loop); })();
+        function clear() { cursor.classList.remove('cta', 'ring'); }
+        document.querySelectorAll('[data-cursor]').forEach(function (el) {
+            var ty2 = el.getAttribute('data-cursor');
+            el.addEventListener('mouseenter', function () { clear(); cursor.classList.add(ty2 === 'cta' ? 'cta' : 'ring'); });
+            el.addEventListener('mouseleave', clear);
+        });
+        document.querySelectorAll('input, select, textarea').forEach(function (el) {
+            el.addEventListener('mouseenter', function () { clear(); cursor.classList.add('ring'); });
+            el.addEventListener('mouseleave', clear);
+        });
+        document.querySelectorAll('.btn-x, .nav-logo, .nav-back').forEach(function (el) {
+            el.addEventListener('mousemove', function (e) { var r = el.getBoundingClientRect(); el.style.transform = 'translate(' + (e.clientX - (r.left + r.width / 2)) * 0.18 + 'px,' + (e.clientY - (r.top + r.height / 2)) * 0.26 + 'px)'; });
+            el.addEventListener('mouseleave', function () { el.style.transform = ''; });
+        });
+    }
+})();
+</script>
+</body>
+</html>

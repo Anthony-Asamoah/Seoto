@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.views import View
 
-from .forms import ContactForm
+from .forms import ContactForm, DiscoveryCallForm
 from .models import (
     Stack, Intro, Education, JobExperience, Hobby
 )
@@ -23,9 +23,9 @@ def get_context(request):
 class ReachOut(View):
     def get(self, request):
         user = request.user
-        form = ContactForm(request=request)
+        form = DiscoveryCallForm(request=request)
         if user.is_authenticated:
-            form = ContactForm(
+            form = DiscoveryCallForm(
                 request=request,
                 initial={
                     'name': f'{user.first_name.title()} {user.last_name.title()}',
@@ -35,7 +35,7 @@ class ReachOut(View):
         return render(request, 'author/reach_out.html', {'form': form})
 
     def post(self, request):
-        form = ContactForm(request.POST, request=request)
+        form = DiscoveryCallForm(request.POST, request=request)
         if form.is_valid():
             details = form.save()
             msg = 'Message Sent.'
