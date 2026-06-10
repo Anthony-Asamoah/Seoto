@@ -77,8 +77,13 @@ jobs:
           HOST="${APP_DOMAIN:-seoto.org}"
           echo "🏥 Running health check on https://$HOST"
 
-          # Try to fetch the homepage
-          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 "https://$HOST" || echo "000")
+          # Try to fetch the homepage. Send a browser-like User-Agent and
+          # follow redirects: PythonAnywhere's edge proxy returns 403 to
+          # automated clients (e.g. the default curl/x.y UA), even though the
+          # homepage is public and serves 200 to real browsers.
+          HTTP_CODE=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 30 \
+            -A "Mozilla/5.0 (compatible; SeotoHealthCheck/1.0)" \
+            "https://$HOST" || echo "000")
 
           if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 302 ]; then
             echo "✅ Health check passed (HTTP $HTTP_CODE)"
