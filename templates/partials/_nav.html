@@ -1,6 +1,6 @@
 <nav class="navbar navbar-expand navbar-light bg-light d-flex justify-content-between">
     <div class="brand">
-        <a class="navbar-brand navbar-home" href="{% url 'index' %}">Seoto</a>
+        <a class="navbar-brand navbar-home" href="{% url 'apps' %}">Seoto</a>
         {% if user.is_authenticated %}
             <a class="navbar-brand navbar-profile" href="
             {% if user.username in request.path_info %}
@@ -20,10 +20,10 @@
     </div>
     <div class="links" id="links" style="padding-right: 10px">
         <div class="navbar-nav" style="align-items: center; gap: 4px;">
-            {% if request.resolver_match.url_name == 'index' %}
-                <a class="nav-item nav-link active" href="{% url 'apps' %}">Apps</a>
+            {% if request.resolver_match.url_name == 'apps' %}
+{#                <a class="nav-item nav-link active" href="{% url 'apps' %}">Apps</a>#}
             {% else %}
-                <a class="nav-item nav-link{% if request.resolver_match.url_name == 'apps' %} active{% endif %}" href="{% url 'index' %}">Home</a>
+                <a class="nav-item nav-link{% if request.resolver_match.url_name == 'apps' %} active{% endif %}" href="{% url 'apps' %}">Home</a>
             {% endif %}
             {% if user.is_authenticated %}
                 {% if IS_THEME_ENABLED %}

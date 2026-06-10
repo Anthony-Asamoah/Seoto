@@ -25,8 +25,8 @@ Allow: /
 urlpatterns = [
     path('robots.txt', lambda request: HttpResponse(ROBOTS_TXT, content_type='text/plain')),
     path('ckeditor5/', include('django_ckeditor_5.urls')),
-    path('', Home.as_view(), name='index'),
-    path('apps/', Apps.as_view(), name='apps'),
+    path('', Apps.as_view(), name='apps'),
+    path('info/', Home.as_view(), name='index'),
     path('admin/', admin.site.urls, name='admin'),
     path('accounts/', include('accounts.urls')),
     path('home/', include("home.urls")),
