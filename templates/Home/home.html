@@ -733,6 +733,82 @@
         .partner-txt b { color: var(--ink); font-weight: 600; }
         .partner-note svg { width: 18px; height: 18px; color: var(--gold); transition: transform 0.4s var(--ease); }
         .partner-note:hover svg { transform: translateX(4px); }
+        /* product screenshot (replaces placeholder mockwin) */
+        .prod-shot { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; display: block; overflow: hidden; }
+        .prod-shot img { width: 100%; height: 100%; object-fit: cover; object-position: top center; transition: transform 0.6s var(--ease); }
+        .prod-shot:hover img { transform: scale(1.04); }
+        .prod-shot::after { content: ''; position: absolute; inset: 0; background: linear-gradient(160deg, transparent 45%, rgba(20,16,12,0.5)); pointer-events: none; }
+        .prod-shot-hint { position: absolute; bottom: 16px; right: 16px; z-index: 2; display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warm-white); background: rgba(20,16,12,0.55); border: 1px solid rgba(247,244,238,0.25); backdrop-filter: blur(6px); padding: 7px 12px; border-radius: 100px; transition: 0.4s var(--ease); }
+        .prod-shot:hover .prod-shot-hint { background: var(--gold); border-color: var(--gold); }
+        .prod-shot-hint svg { width: 13px; height: 13px; transition: transform 0.4s var(--ease); }
+        .prod-shot:hover .prod-shot-hint svg { transform: translateX(3px); }
+        /* logo-on-stage variant (homepage card) */
+        .prod-shot--logo { display: flex; align-items: center; justify-content: center; padding: clamp(28px, 5vw, 56px); }
+        .prod-shot--logo::after { display: none; }
+        .prod-logo-card { width: 100%; max-width: 360px; border-radius: 18px; background: var(--warm-white); box-shadow: 0 24px 60px rgba(20,16,12,0.35); padding: clamp(26px, 4vw, 42px); overflow: hidden; transition: transform 0.55s var(--ease), box-shadow 0.55s var(--ease); }
+        .prod-shot--logo img { width: 100%; height: auto; object-fit: contain; transform: scale(1.22); transition: none; }
+        .prod-shot--logo:hover img { transform: scale(1.22); }
+        .prod-shot--logo:hover .prod-logo-card { transform: translateY(-5px); box-shadow: 0 34px 82px rgba(20,16,12,0.46); }
+        /* product detail modal */
+        .prod-modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: clamp(14px, 3vw, 44px); visibility: hidden; opacity: 0; transition: opacity 0.45s var(--ease), visibility 0.45s var(--ease); }
+        .prod-modal.open { visibility: visible; opacity: 1; }
+        .prod-modal-backdrop { position: absolute; inset: 0; background: rgba(18,14,10,0.62); backdrop-filter: blur(9px); }
+        .prod-modal-panel { position: relative; z-index: 1; display: flex; flex-direction: column; width: min(1080px, 100%); max-height: 90vh; background: var(--paper); border: 1px solid var(--sand); border-radius: 24px; overflow: hidden; box-shadow: 0 50px 130px rgba(20,16,12,0.45); transform: translateY(22px) scale(0.975); transition: transform 0.55s var(--ease); }
+        .prod-modal.open .prod-modal-panel { transform: none; }
+        /* header band */
+        .prod-modal-head { position: relative; flex-shrink: 0; padding: clamp(24px, 3vw, 36px) clamp(26px, 3.4vw, 46px); border-bottom: 1px solid var(--sand); background: radial-gradient(130% 180% at 92% -30%, rgba(180,138,77,0.14), transparent 60%); }
+        .prod-modal-head h3 { font-size: clamp(1.8rem, 3.2vw, 2.5rem); font-weight: 500; letter-spacing: -0.02em; margin-top: 9px; }
+        .prod-modal-head .prod-modal-tag { margin-top: 10px; font-size: clamp(0.98rem, 1.5vw, 1.12rem); color: var(--ink); font-weight: 500; line-height: 1.5; max-width: 62ch; }
+        .prod-modal-x { position: absolute; top: clamp(18px, 2.4vw, 26px); right: clamp(18px, 2.4vw, 26px); z-index: 4; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--sand); background: var(--warm-white); color: var(--ink); font-size: 1.45rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.35s var(--ease); }
+        .prod-modal-x:hover { background: var(--gold); border-color: var(--gold); color: #fff; transform: rotate(90deg); }
+        /* scroll body */
+        .prod-modal-body { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(22px, 2.8vw, 40px); padding: clamp(22px, 3vw, 38px) clamp(26px, 3.4vw, 46px); overflow-y: auto; }
+        /* gallery */
+        .prod-modal-shots { display: flex; flex-direction: column; gap: 18px; align-self: start; position: sticky; top: 0; }
+        .shot-frame { margin: 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--sand); background: linear-gradient(135deg, #241f18, #1a1612); box-shadow: 0 18px 50px rgba(20,16,12,0.16); transition: transform 0.5s var(--ease), box-shadow 0.5s var(--ease); }
+        .shot-frame:hover { transform: translateY(-4px); box-shadow: 0 28px 72px rgba(20,16,12,0.26); }
+        .shot-frame .bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid rgba(247,244,238,0.1); }
+        .shot-frame .bar i { width: 9px; height: 9px; border-radius: 50%; background: rgba(247,244,238,0.22); }
+        .shot-frame .bar span { margin-left: 9px; font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(247,244,238,0.5); }
+        .shot-zoom { display: block; position: relative; width: 100%; padding: 0; margin: 0; border: 0; background: none; cursor: zoom-in; overflow: hidden; }
+        .shot-zoom img { width: 100%; height: auto; display: block; transition: transform 0.6s var(--ease); }
+        .shot-zoom:hover img { transform: scale(1.05); }
+        .shot-zoom-ico { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--warm-white); background: rgba(20,16,12,0.5); border: 1px solid rgba(247,244,238,0.25); backdrop-filter: blur(6px); opacity: 0; transform: translateY(-4px); transition: 0.4s var(--ease); }
+        .shot-zoom-ico svg { width: 17px; height: 17px; }
+        .shot-zoom:hover .shot-zoom-ico, .shot-zoom:focus-visible .shot-zoom-ico { opacity: 1; transform: none; }
+        .shot-zoom:hover .shot-zoom-ico { background: var(--gold); border-color: var(--gold); }
+        /* full-size lightbox */
+        .img-lightbox { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: clamp(16px, 4vw, 56px); background: rgba(12,9,6,0.86); backdrop-filter: blur(10px); cursor: zoom-out; visibility: hidden; opacity: 0; transition: opacity 0.4s var(--ease), visibility 0.4s var(--ease); }
+        .img-lightbox.open { visibility: visible; opacity: 1; }
+        .img-lightbox-stage { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 100%; max-height: 100%; }
+        .img-lightbox-stage img { max-width: 100%; max-height: 84vh; width: auto; height: auto; object-fit: contain; border-radius: 12px; border: 1px solid rgba(247,244,238,0.12); box-shadow: 0 40px 120px rgba(0,0,0,0.55); transform: scale(0.95); transition: transform 0.45s var(--ease); }
+        .img-lightbox.open .img-lightbox-stage img { transform: none; }
+        .img-lightbox-stage figcaption { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(247,244,238,0.6); }
+        .img-lightbox-x { position: absolute; top: clamp(16px, 3vw, 28px); right: clamp(16px, 3vw, 28px); z-index: 2; width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(247,244,238,0.28); background: rgba(20,16,12,0.5); color: var(--warm-white); font-size: 1.5rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(6px); transition: 0.35s var(--ease); }
+        .img-lightbox-x:hover { background: var(--gold); border-color: var(--gold); transform: rotate(90deg); }
+        /* copy */
+        .prod-modal-copy { min-width: 0; }
+        .pv-label { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
+        .pv-summary p { margin-top: 10px; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.65; }
+        .pv-group { margin-top: 28px; }
+        .pv-group-head { display: flex; align-items: center; gap: 12px; }
+        .pv-ico { width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--gold) 13%, transparent); border: 1px solid color-mix(in srgb, var(--gold) 30%, transparent); }
+        .pv-ico svg { width: 19px; height: 19px; stroke: var(--gold); fill: none; }
+        .pv-group-head h4 { font-size: 1.08rem; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
+        .pv-list { margin-top: 13px; display: flex; flex-direction: column; gap: 8px; padding: 0; }
+        .pv-list li { list-style: none; display: flex; align-items: flex-start; gap: 11px; font-size: 0.9rem; line-height: 1.5; color: var(--ink-soft); padding: 9px 12px; border-radius: 11px; border: 1px solid transparent; transition: 0.35s var(--ease); }
+        .pv-list li:hover { border-color: var(--sand); background: var(--warm-white); transform: translateX(3px); }
+        .pv-list li svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; stroke: var(--gold); fill: none; }
+        /* stagger reveal */
+        .prod-modal .pv-anim { opacity: 0; transform: translateY(16px); }
+        .prod-modal.open .pv-anim { opacity: 1; transform: none; transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); transition-delay: var(--d, 0s); }
+        @media (max-width: 900px) {
+            .prod-modal-body { grid-template-columns: 1fr; }
+            .prod-modal-shots { position: static; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .prod-modal .pv-anim, .prod-modal.open .pv-anim { opacity: 1; transform: none; transition: none; }
+        }
         @media (max-width: 540px) {
             /* 4 squares-at-84% is too cramped on phones — go wide, 2-col list tiles */
             .prod-visual { min-height: 0; padding: 26px 20px; }
@@ -1101,8 +1177,11 @@
                         <div class="dtags" style="margin-top:20px;"><span class="dtag">Stock control</span><span class="dtag">Suppliers</span><span class="dtag">Reporting</span></div>
                     </div>
                     <div class="prod-visual">
-                        <span class="ph-badge">Placeholder</span>
-                        <div class="mockwin"><div class="bar"><i></i><i></i><i></i></div><div class="rows"><div class="r g"></div><div class="r"></div><div class="r s"></div><div class="r"></div><div class="r s"></div></div></div>
+                        <span class="ph-badge">PharmaVault</span>
+                        <button class="prod-shot prod-shot--logo" type="button" data-prod-open aria-label="Explore PharmaVault" aria-haspopup="dialog">
+                            <span class="prod-logo-card"><img src="{% static 'img/pharma/pharma-logo.png' %}" alt="PharmaVault logo" loading="lazy" decoding="async"></span>
+                            <span class="prod-shot-hint">Click to explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+                        </button>
                     </div>
                 </article>
 
@@ -1148,6 +1227,93 @@
             </div>
         </div>
     </section>
+
+    {# ──── PharmaVault detail modal ──── #}
+    <div class="prod-modal" id="pharmaModal" aria-hidden="true">
+        <div class="prod-modal-backdrop" data-prod-close></div>
+        <div class="prod-modal-panel" role="dialog" aria-modal="true" aria-labelledby="pharmaModalTitle">
+            <div class="prod-modal-head">
+                <button class="prod-modal-x" type="button" data-prod-close aria-label="Close">&times;</button>
+                <span class="pv-label">Product 01 · Pharmacy POS &amp; Inventory</span>
+                <h3 id="pharmaModalTitle">PharmaVault</h3>
+                <p class="prod-modal-tag">Every sale counted, every shelf in check — the smart way to run your pharmacy.</p>
+            </div>
+            <div class="prod-modal-body">
+                <div class="prod-modal-shots">
+                    <figure class="shot-frame pv-anim" style="--d:.05s">
+                        <div class="bar"><i></i><i></i><i></i><span>Dashboard</span></div>
+                        <button class="shot-zoom" type="button" data-lightbox="{% static 'img/pharma/mockup.png' %}" data-caption="PharmaVault — live dashboard" aria-label="Preview the dashboard full size">
+                            <img src="{% static 'img/pharma/mockup.png' %}" alt="PharmaVault live dashboard" loading="lazy" decoding="async">
+                            <span class="shot-zoom-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg></span>
+                        </button>
+                    </figure>
+                    <figure class="shot-frame pv-anim" style="--d:.13s">
+                        <div class="bar"><i></i><i></i><i></i><span>Secure login</span></div>
+                        <button class="shot-zoom" type="button" data-lightbox="{% static 'img/pharma/login.png' %}" data-caption="PharmaVault — secure login" aria-label="Preview the login screen full size">
+                            <img src="{% static 'img/pharma/login.png' %}" alt="PharmaVault secure login screen" loading="lazy" decoding="async">
+                            <span class="shot-zoom-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg></span>
+                        </button>
+                    </figure>
+                </div>
+
+                <div class="prod-modal-copy">
+                    <div class="pv-summary pv-anim" style="--d:.08s">
+                        <span class="pv-label">Executive Summary</span>
+                        <p>PharmaVault is an all-in-one point-of-sale and inventory platform that helps pharmacies sell faster, waste less, and always know where they stand. From the front counter to the back office, it keeps your stock, your sales, and your numbers in perfect sync.</p>
+                    </div>
+
+                    <div class="pv-group pv-anim" style="--d:.16s">
+                        <div class="pv-group-head">
+                            <span class="pv-ico"><svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M3 3v18h18"/><path d="M7 14l3.5-4 3 3L21 7"/></svg></span>
+                            <h4>Insights at a glance</h4>
+                        </div>
+                        <ul class="pv-list">
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Live dashboard with revenue, profit, expense, and inventory-health KPIs</li>
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Clean visual charts that turn daily activity into clear trends</li>
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>One-tap date shortcuts — from today's takings to the full year</li>
+                        </ul>
+                    </div>
+
+                    <div class="pv-group pv-anim" style="--d:.24s">
+                        <div class="pv-group-head">
+                            <span class="pv-ico"><svg viewBox="0 0 24 24" stroke-width="1.7"><circle cx="9" cy="8" r="3.2"/><path d="M2 20c0-3.3 3.1-5 7-5s7 1.7 7 5"/><path d="M16 5.5a3 3 0 010 5.4M17 15c2.6.4 5 1.9 5 5"/></svg></span>
+                            <h4>Built for your team</h4>
+                        </div>
+                        <ul class="pv-list">
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Role-based access for staff, managers, and owners</li>
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Fast, focused checkout screen for counter staff</li>
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Full control over pricing, suppliers, stock, and accounts for managers</li>
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Staff management that keeps sensitive controls in the right hands</li>
+                        </ul>
+                    </div>
+
+                    <div class="pv-group pv-anim" style="--d:.32s">
+                        <div class="pv-group-head">
+                            <span class="pv-ico"><svg viewBox="0 0 24 24" stroke-width="1.7"><path d="M21 12a9 9 0 11-3.5-7.1"/><path d="M21 3v5h-5"/></svg></span>
+                            <h4>Stock, sales &amp; purchases in sync</h4>
+                        </div>
+                        <ul class="pv-list">
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Search-as-you-type checkout that rings up customers in seconds</li>
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Automatic taxes, discounts, and clean refund handling</li>
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Batch and expiry tracking that always sells the right stock first</li>
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Early warnings before products expire</li>
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Purchases flow straight into inventory, with shortfalls auto-reconciled</li>
+                            <li><svg viewBox="0 0 24 24" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Expired and damaged goods written off automatically — books you can trust</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ──── Full-size image preview (lightbox) ──── #}
+    <div class="img-lightbox" id="imgLightbox" aria-hidden="true">
+        <button class="img-lightbox-x" type="button" data-lb-close aria-label="Close preview">&times;</button>
+        <figure class="img-lightbox-stage" role="dialog" aria-modal="true" aria-label="Image preview">
+            <img id="imgLightboxImg" alt="">
+            <figcaption id="imgLightboxCap"></figcaption>
+        </figure>
+    </div>
 
     {# ════════════ SECTION 4.5 — TRUSTED PARTNER ════════════ #}
     <section class="sec-pad" id="partner" data-theme="light">
@@ -1716,6 +1882,52 @@
     });
     var erpWrap = document.getElementById('erpModules');
     if (erpWrap && fine) erpWrap.addEventListener('mouseleave', function () { setErp(defaultErp); });
+
+    /* ── PharmaVault product modal ── */
+    var pharmaModal = document.getElementById('pharmaModal');
+    if (pharmaModal) {
+        var lastFocus = null;
+        var pharmaScroll = pharmaModal.querySelector('.prod-modal-body');
+        function openPharma() {
+            lastFocus = document.activeElement;
+            if (pharmaScroll) pharmaScroll.scrollTop = 0;
+            pharmaModal.classList.add('open');
+            pharmaModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            pharmaModal.querySelector('.prod-modal-x').focus();
+        }
+        function closePharma() {
+            pharmaModal.classList.remove('open');
+            pharmaModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            if (lastFocus) lastFocus.focus();
+        }
+        document.querySelectorAll('[data-prod-open]').forEach(function (b) { b.addEventListener('click', openPharma); });
+        pharmaModal.querySelectorAll('[data-prod-close]').forEach(function (b) { b.addEventListener('click', closePharma); });
+
+        /* full-size image preview (lightbox over the modal) */
+        var lightbox = document.getElementById('imgLightbox');
+        var lbImg = document.getElementById('imgLightboxImg');
+        var lbCap = document.getElementById('imgLightboxCap');
+        function openLightbox(src, cap) {
+            lbImg.src = src; lbImg.alt = cap || ''; lbCap.textContent = cap || '';
+            lightbox.classList.add('open'); lightbox.setAttribute('aria-hidden', 'false');
+        }
+        function closeLightbox() {
+            lightbox.classList.remove('open'); lightbox.setAttribute('aria-hidden', 'true');
+        }
+        pharmaModal.querySelectorAll('[data-lightbox]').forEach(function (b) {
+            b.addEventListener('click', function () { openLightbox(b.getAttribute('data-lightbox'), b.getAttribute('data-caption')); });
+        });
+        lightbox.addEventListener('click', closeLightbox);
+        lightbox.querySelector('.img-lightbox-x').addEventListener('click', function (e) { e.stopPropagation(); closeLightbox(); });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            if (lightbox.classList.contains('open')) { closeLightbox(); return; }
+            if (pharmaModal.classList.contains('open')) closePharma();
+        });
+    }
 
     /* ── Custom cursor + magnetic ── */
     if (fine && !reduceMotion) {
