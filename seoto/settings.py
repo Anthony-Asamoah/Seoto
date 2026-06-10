@@ -3,35 +3,34 @@ Django settings for Seoto project.
 """
 
 import logging
-import os
 from os import path
 from pathlib import Path as pathlib
 
+from decouple import Config, Csv, RepositoryEnv
 from django.contrib.messages import constants as messages
-from dotenv import load_dotenv
 
-from seoto.utils import GetEnv as Env
-
-load_dotenv(pathlib(__file__).resolve().parent.parent / '.env')
-
-logging.basicConfig(
-    level=Env.int('LOG_LEVEL'),
-    format=Env.str('LOG_FORMAT')
-)
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = pathlib(__file__).resolve().parent.parent
 
-SECRET_KEY = Env.str('SECRET_KEY')
+# Read settings from .env; OS environment variables take precedence.
+config = Config(RepositoryEnv(BASE_DIR / '.env'))
+
+logging.basicConfig(
+    level=config('LOG_LEVEL', cast=int),
+    format=config('LOG_FORMAT')
+)
+
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = Env.bool('DEBUG')
+DEBUG = config('DEBUG', cast=bool)
 
 # Enforce HTTPS instead of HTTP
 SECURE_SSL_REDIRECT = not DEBUG
 
-CSRF_TRUSTED_ORIGINS = Env.tuple('CSRF_TRUSTED_ORIGINS')
-ALLOWED_HOSTS = Env.tuple('ALLOWED_HOSTS')
-APP_DOMAIN = Env.str('APP_DOMAIN')
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', cast=Csv(post_process=tuple))
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv(post_process=tuple))
+APP_DOMAIN = config('APP_DOMAIN')
 
 # Application definition
 INSTALLED_APPS = [
@@ -114,15 +113,15 @@ DATABASES = {
     },
     "postgres": {
         "ENGINE": "django.db.backends.postgresql",
-        "HOST": Env.str('PG_DB_HOST'),
-        "PORT": Env.int('PG_DB_PORT'),
-        "NAME": Env.str('PG_DB_NAME'),
-        "USER": Env.str('PG_DB_USER'),
-        "PASSWORD": Env.str('PG_DB_PASSWORD'),
+        "HOST": config('PG_DB_HOST'),
+        "PORT": config('PG_DB_PORT', cast=int),
+        "NAME": config('PG_DB_NAME'),
+        "USER": config('PG_DB_USER'),
+        "PASSWORD": config('PG_DB_PASSWORD'),
     },
 }
 
-DATABASES['default'] = DATABASES[Env.str('DEFAULT_DB')]
+DATABASES['default'] = DATABASES[config('DEFAULT_DB')]
 
 # Cache configuration (used by rate limiting middleware)
 CACHES = {
@@ -178,14 +177,14 @@ MEDIA_ROOT = path.join(BASE_DIR, 'media')
 MEDIA_URL = 'media/'
 
 # Storage backend: LOCAL | AWS
-MEDIA_STORAGE = Env.str('MEDIA_STORAGE', default='LOCAL')
+MEDIA_STORAGE = config('MEDIA_STORAGE', default='LOCAL')
 
 if MEDIA_STORAGE == 'AWS':
-    AWS_ACCESS_KEY_ID = Env.str('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY = Env.str('AWS_SECRET_ACCESS_KEY')
-    AWS_STORAGE_BUCKET_NAME = Env.str('AWS_STORAGE_BUCKET_NAME')
-    AWS_S3_REGION_NAME = Env.str('AWS_S3_REGION_NAME', default='us-east-1')
-    AWS_S3_BUCKET_PREFIX = Env.str('AWS_S3_BUCKET_PREFIX', default='')
+    AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME', default='us-east-1')
+    AWS_S3_BUCKET_PREFIX = config('AWS_S3_BUCKET_PREFIX', default='')
     AWS_DEFAULT_ACL = 'private'
     AWS_S3_FILE_OVERWRITE = False
     AWS_QUERYSTRING_AUTH = True
@@ -208,15 +207,15 @@ if MEDIA_STORAGE == 'AWS':
 
 # Email config
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = Env.str('EMAIL_HOST')
-EMAIL_PORT = Env.int('EMAIL_PORT')
-EMAIL_HOST_USER = Env.str('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = Env.str('EMAIL_PASSWORD')
-EMAIL_USE_TLS = Env.bool('EMAIL_USE_TLS')
-DEFAULT_FROM_EMAIL = Env.str('EMAIL_HOST_USER')
+EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_PORT = config('EMAIL_PORT', cast=int)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_PASSWORD')
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', cast=bool)
+DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')
 
 # Theme feature flag
-IS_THEME_ENABLED = Env.bool('IS_THEME_ENABLED', default=False)
+IS_THEME_ENABLED = config('IS_THEME_ENABLED', default=False, cast=bool)
 
 # Accounts config
 LOGIN_REDIRECT_URL = 'index'
@@ -266,32 +265,32 @@ MESSAGE_TAGS = {
 }
 
 # Sessions Config
-SESSION_EXPIRE_AT_BROWSER_CLOSE = Env.bool('SESSION_EXPIRE_AT_BROWSER_CLOSE')
+SESSION_EXPIRE_AT_BROWSER_CLOSE = config('SESSION_EXPIRE_AT_BROWSER_CLOSE', cast=bool)
 
 # PWA Configuration
-VAPID_PUBLIC_KEY = Env.str('VAPID_PUBLIC_KEY')
-VAPID_PRIVATE_KEY = Env.str('VAPID_PRIVATE_KEY')
-VAPID_ADMIN_EMAIL = Env.str('VAPID_ADMIN_EMAIL')
+VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY')
+VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY')
+VAPID_ADMIN_EMAIL = config('VAPID_ADMIN_EMAIL')
 
 # reCAPTCHA v3 Configuration
-RECAPTCHA_VERIFY_URL = Env.str('RECAPTCHA_VERIFY_URL')
-RECAPTCHA_SITE_KEY = Env.str('RECAPTCHA_SITE_KEY')
-RECAPTCHA_SECRET_KEY = Env.str('RECAPTCHA_SECRET_KEY')
-RECAPTCHA_SCORE_THRESHOLD = Env.float('RECAPTCHA_SCORE_THRESHOLD', default=0.5)
+RECAPTCHA_VERIFY_URL = config('RECAPTCHA_VERIFY_URL', default='')
+RECAPTCHA_SITE_KEY = config('RECAPTCHA_SITE_KEY', default='')
+RECAPTCHA_SECRET_KEY = config('RECAPTCHA_SECRET_KEY', default='')
+RECAPTCHA_SCORE_THRESHOLD = config('RECAPTCHA_SCORE_THRESHOLD', default=0.5, cast=float)
 
 # Only enforce reCAPTCHA when fully configured (keys present). Lets local/dev
 # skip verification by leaving the keys unset/None.
 RECAPTCHA_ENABLED = all([RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY, RECAPTCHA_VERIFY_URL])
 
 # IP Quality Score API Key
-IP_QUALITY_SCORE_API_KEY = Env.str('IP_QUALITY_SCORE_API_KEY', default="None")
+IP_QUALITY_SCORE_API_KEY = config('IP_QUALITY_SCORE_API_KEY', default="None")
 
 # Calendly — consultation booking link shown on the reach-out page after the
 # qualifying form is submitted. Swap the default for your real scheduling URL.
-CALENDLY_URL = Env.str('CALENDLY_URL', default='https://calendly.com/anthony-asamoah/30min')
+CALENDLY_URL = config('CALENDLY_URL', default='https://calendly.com/anthony-asamoah/30min')
 
 # Blog media upload limits (MB)
-BLOG_UPLOAD_MAX_SIZE_MB = Env.int('BLOG_UPLOAD_MAX_SIZE_MB', default=10)
+BLOG_UPLOAD_MAX_SIZE_MB = config('BLOG_UPLOAD_MAX_SIZE_MB', default=10, cast=int)
 
 # Structured logging — write ERROR+ to the database via home.log_handler
 LOGGING = {
@@ -316,5 +315,5 @@ LOGGING = {
         },
     },
 }
-BLOG_VIDEO_MAX_SIZE_MB = Env.int('BLOG_VIDEO_MAX_SIZE_MB', default=60)
+BLOG_VIDEO_MAX_SIZE_MB = config('BLOG_VIDEO_MAX_SIZE_MB', default=60, cast=int)
 DATA_UPLOAD_MAX_MEMORY_SIZE = BLOG_VIDEO_MAX_SIZE_MB * 1024 * 1024

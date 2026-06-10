@@ -283,14 +283,17 @@
         .mask-img.in::after { transform: scaleX(0); }
 
         /* ════════════ TRUSTED-BY BAND ════════════ */
-        .trusted { padding: 30px 0; border-bottom: 1px solid var(--sand); background: var(--warm-white); }
-        .trusted-inner { display: flex; align-items: center; gap: clamp(20px, 5vw, 56px); flex-wrap: wrap; justify-content: center; }
-        .trusted-label { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
-        .logo-ph { /* PLACEHOLDER — swap for real client logos */
-            font-family: 'Fraunces', serif; font-size: 1.15rem; color: var(--ink-faint); opacity: 0.7;
+        .trusted { padding: 34px 0; border-bottom: 1px solid var(--sand); background: var(--warm-white); }
+        .trusted-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+        .trusted-row { display: flex; align-items: center; gap: clamp(14px, 4vw, 40px); flex-wrap: wrap; justify-content: center; }
+        .trusted-label { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); flex-shrink: 0; }
+        .client-name {
+            font-family: 'Fraunces', serif; font-size: 1.1rem; color: var(--ink-faint); opacity: 0.72;
             filter: grayscale(1); transition: opacity 0.3s var(--ease), color 0.3s var(--ease); letter-spacing: 0.02em;
         }
-        .logo-ph:hover { opacity: 1; color: var(--ink-soft); }
+        .client-name:hover { opacity: 1; color: var(--ink-soft); }
+        .trusted-note { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.05em; color: var(--ink-faint); opacity: 0.62; text-align: center; max-width: 60ch; line-height: 1.6; }
+        @media (max-width: 640px) { .trusted-row { gap: 12px 18px; } .client-name { font-size: 1rem; } }
 
         /* ════════════ DECISION PATH ════════════ */
         .decision-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
@@ -586,16 +589,24 @@
         <div class="scroll-hint"><span>Scroll</span><span class="line"></span></div>
     </section>
 
-    {# ════════════ TRUSTED-BY BAND (placeholder logos) ════════════ #}
+    {# ════════════ TRUSTED-BY BAND ════════════ #}
     <section class="trusted" data-theme="light">
         <div class="wrap trusted-inner">
-            <span class="trusted-label">Trusted by teams in</span>
-            {# PLACEHOLDER: replace with real client logos #}
-            <span class="logo-ph">OkodieNkwan</span>
-            <span class="logo-ph">JILCE</span>
-            <span class="logo-ph">MediCare Rx</span>
-            <span class="logo-ph">Retail Co.</span>
-            <span class="logo-ph">HopeWorks NGO</span>
+            <div class="trusted-row">
+                <span class="trusted-label">Running Seoto software</span>
+                <span class="client-name">Williana Pharmacy</span>
+                <span class="client-name">Okodienkwan</span>
+                <span class="client-name">JILCE</span>
+            </div>
+            <div class="trusted-row">
+                <span class="trusted-label">Work delivered for</span>
+                <span class="client-name">UNDP</span>
+                <span class="client-name">GIZ</span>
+                <span class="client-name">Mastercard Foundation</span>
+                <span class="client-name">GEA</span>
+                <span class="client-name">GI-KACE</span>
+            </div>
+            <p class="trusted-note">Institutional project work delivered through GI-KACE &amp; partners · plus international contracts under NDA</p>
         </div>
     </section>
 
