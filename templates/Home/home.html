@@ -324,6 +324,94 @@
         .dcard:hover .darrow svg { transform: translateX(5px); }
 
         /* ════════════ PROCESS (now warm/light) ════════════ */
+        @media (min-width: 981px) {
+            .process-pin {
+                position: relative;
+                height: calc(100vh + 300vh);
+                --phase-blend: 0;
+                --reveal-lift: 0;
+                --reveal-shift: 0px;
+                --reveal-pad-trim: 0px;
+            }
+            .process-pin-panel {
+                position: sticky;
+                top: 0;
+                min-height: 100vh;
+                display: flex;
+                align-items: flex-start;
+                z-index: 2;
+                padding-bottom: max(0px, calc(clamp(48px, 7vh, 96px) - var(--reveal-pad-trim, 0px)));
+            }
+            .process-pin[data-phase="done"] .process-pin-panel,
+            .process-pin[data-phase="idle"] .process-pin-panel {
+                min-height: auto;
+            }
+            .process-pin-panel > .wrap {
+                width: 100%;
+                transform: translateY(calc(var(--reveal-lift, 0) * var(--reveal-shift, 0px)));
+            }
+            .process-pin .sec-head,
+            .process-pin #processTrack {
+                opacity: calc(1 - var(--phase-blend, 0) * 0.15);
+                pointer-events: none;
+            }
+            .process-pin .process-outro.reveal,
+            .process-pin .process-outro.reveal.in {
+                opacity: calc(0.18 + var(--phase-blend, 0) * 0.82);
+                filter: blur(calc((1 - var(--phase-blend, 0)) * 2.5px));
+                margin-top: clamp(50px, 7vw, 88px);
+                transform: translateY(calc((1 - var(--phase-blend, 0)) * 10px));
+            }
+            .process-pin[data-phase="done"] .sec-head,
+            .process-pin[data-phase="done"] #processTrack {
+                opacity: 1;
+            }
+            .process-pin[data-phase="done"] .process-outro.reveal,
+            .process-pin[data-phase="done"] .process-outro.reveal.in {
+                opacity: 1;
+                filter: none;
+                transform: none;
+            }
+            .process-pin[data-phase="outro"] .process-outro,
+            .process-pin[data-phase="done"] .process-outro {
+                pointer-events: auto;
+            }
+            .process-pin[data-phase="steps"] .process-outro,
+            .process-pin[data-phase="idle"] .process-outro {
+                pointer-events: none;
+            }
+            .process-pin-hint {
+                display: block;
+                position: absolute;
+                bottom: clamp(20px, 4vh, 36px);
+                left: 50%;
+                transform: translateX(-50%);
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.6rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--ink-faint);
+                opacity: 0;
+                transition: opacity 0.45s var(--ease);
+                pointer-events: none;
+                white-space: nowrap;
+            }
+            .process-pin[data-phase="steps"] .process-pin-hint,
+            .process-pin[data-phase="outro"] .process-pin-hint {
+                opacity: 0.72;
+            }
+        }
+        #processTrack { transition: opacity 0.65s var(--ease); }
+        @media (min-width: 981px) {
+            .process-pin .sec-head,
+            .process-pin #processTrack,
+            .process-pin-panel > .wrap,
+            .process-pin .process-outro.reveal,
+            .process-pin .process-outro.reveal.in {
+                transition: none;
+            }
+        }
+        .process-pin-hint { display: none; }
         .process-rail { position: relative; height: 2px; background: var(--sand); margin: 56px 0 46px; border-radius: 2px; }
         .process-rail .fill { position: absolute; left: 0; top: 0; height: 100%; width: 0; background: var(--gold); transition: width 0.1s linear; border-radius: 2px; }
         .process-steps { display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px; }
@@ -389,6 +477,9 @@
         }
         .process-outro[data-in-zone="0"][data-active-sol="-1"] .pls-stage { opacity: 0.72; }
         .process-outro[data-in-zone="1"] .pls-stage { opacity: 1; transition: opacity 0.5s var(--ease); }
+        @media (min-width: 981px) {
+            .process-pin .pls-stage { transition: none; }
+        }
         @media (max-width: 980px) {
             .process-statement { max-width: none; }
             .ps-sol {
@@ -527,8 +618,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 14px;
-            padding: 22px 18px 16px;
+            gap: 0;
+            padding: 18px 14px;
             border-radius: 26px;
             background: var(--paper);
             border: 1px solid var(--sand);
@@ -547,26 +638,15 @@
             pointer-events: none;
         }
         .pls-card img {
-            width: 58%;
+            width: 74%;
             height: auto;
-            max-height: 58%;
+            max-height: 82%;
             object-fit: contain;
             will-change: transform;
         }
-        .process-logo--wordpress .pls-card img { width: 52%; }
-        .process-logo--wagtail .pls-card img { width: 48%; }
-        .process-logo--custom .pls-card img { width: 56%; }
-        .pls-tag {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.62rem;
-            font-weight: 500;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--gold-deep);
-            opacity: 0;
-            transform: translateY(6px);
-            will-change: transform, opacity;
-        }
+        .process-logo--wordpress .pls-card img { width: 68%; }
+        .process-logo--wagtail .pls-card img { width: 64%; }
+        .process-logo--custom .pls-card img { width: 72%; }
         .pls-readout {
             position: absolute;
             bottom: -6px;
@@ -581,6 +661,14 @@
             text-transform: uppercase;
             color: var(--ink-faint);
             white-space: nowrap;
+            opacity: 0.38;
+            transition: opacity 0.45s var(--ease);
+        }
+        .process-outro[data-in-zone="1"] .pls-readout { opacity: 1; }
+        .pls-readout-text {
+            display: inline-block;
+            /* Light smoothing only — opacity/transform are driven per scroll frame. */
+            transition: opacity 0.12s linear, transform 0.12s linear;
         }
         .pls-readout-dot {
             width: 6px;
@@ -598,7 +686,6 @@
             .pls-card { width: 100%; padding: 12px; box-shadow: none; opacity: 1 !important; transform: none !important; }
             .pls-card::after { display: none; }
             .pls-card img { width: 100% !important; max-height: none; transform: none !important; }
-            .pls-tag { opacity: 1; transform: none; font-size: 0.52rem; }
             .ps-sol { opacity: 1 !important; color: inherit !important; transform: none !important; }
             .process-outro[data-active-sol="1"] .ps-sol[data-sol="1"] { color: #092e20; }
             .process-outro[data-active-sol="2"] .ps-sol[data-sol="2"] { color: var(--gold-deep); }
@@ -926,7 +1013,8 @@
     </section>
 
     {# ════════════ SECTION 3 — PROCESS ════════════ #}
-    <section class="sec-pad bg-cream" id="process" data-theme="light">
+    <div class="process-pin" id="processPin" data-phase="idle">
+    <section class="sec-pad bg-cream process-pin-panel" id="process" data-theme="light">
         <div class="wrap">
             <div class="sec-head reveal">
                 <span class="eyebrow">How we work</span>
@@ -965,32 +1053,31 @@
                                 <div class="process-logo process-logo--wordpress" data-logo="0" data-aura="rgba(89,80,70,0.38)">
                                     <div class="pls-card">
                                         <img src="{% static 'svg/wordpress-icon.svg' %}" alt="" width="220" height="220" loading="lazy" decoding="async">
-                                        <span class="pls-tag">WordPress</span>
                                     </div>
                                 </div>
                                 <div class="process-logo process-logo--wagtail" data-logo="1" data-aura="rgba(9,46,32,0.34)">
                                     <div class="pls-card">
                                         <img src="{% static 'svg/wagtail-icon.svg' %}" alt="" width="220" height="220" loading="lazy" decoding="async">
-                                        <span class="pls-tag">Wagtail</span>
                                     </div>
                                 </div>
                                 <div class="process-logo process-logo--custom" data-logo="2" data-aura="rgba(180,138,77,0.44)">
                                     <div class="pls-card">
                                         <img src="{% static 'svg/tools-and-utensils-programmer.svg' %}" alt="" width="220" height="220" loading="lazy" decoding="async">
-                                        <span class="pls-tag">Custom build</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="pls-readout" id="plsReadout">
                             <span class="pls-readout-dot"></span>
-                            <span id="plsReadoutText">Step 01 · WordPress</span>
+                            <span class="pls-readout-text" id="plsReadoutText">Off-the-shelf · WordPress</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+        <span class="process-pin-hint" id="processPinHint" aria-hidden="true">Scroll — steps, then solutions</span>
     </section>
+    </div>
 
     {# ════════════ SECTION 4 — PRODUCTS ════════════ #}
     <section class="sec-pad" id="products" data-theme="light">
@@ -1342,8 +1429,14 @@
     /* ── Nav state + process rail ── */
     var nav = document.getElementById('nav');
     function onScroll(y) { nav.classList.toggle('scrolled', y > 40); }
+    var processPin = document.getElementById('processPin');
+    var processPinHint = document.getElementById('processPinHint');
     var track = document.getElementById('processTrack'), fill = document.getElementById('processFill'), psteps = document.querySelectorAll('.pstep');
     var processOutro = document.getElementById('processOutro');
+    var PIN_STEPS = 0.46;
+    var PIN_CROSS = 0.06;
+    var PIN_LOGO_END = 0.96;
+    var REVEAL_LIFT_VH = 0.2;
     var processLogoTrack = document.getElementById('processLogoTrack');
     var processLogos = document.querySelectorAll('.process-logo');
     var plsAura = document.getElementById('plsAura');
@@ -1353,6 +1446,25 @@
     var plsField = document.getElementById('plsField');
     var plsSpotlight = document.getElementById('plsSpotlight');
     var plsReadoutText = document.getElementById('plsReadoutText');
+    var plsReadoutLastActive = -2;
+    function updatePlsReadout(pos, active, animate) {
+        if (!plsReadoutText) return;
+        if (active !== plsReadoutLastActive) {
+            plsReadoutText.textContent = solDescriptors[active] + ' · ' + solLabels[active];
+            plsReadoutLastActive = active;
+        }
+        if (!animate || reduceMotion) {
+            plsReadoutText.style.opacity = '1';
+            plsReadoutText.style.transform = 'none';
+            return;
+        }
+        // Scroll-bound fade: hold while a solution is centred, then fade across the
+        // back half of the travel toward the hand-off (where the label swaps).
+        var edge = Math.min(1, Math.abs(pos - active) / 0.5); // 0 centred → 1 at hand-off
+        var fade = smoothstep(Math.max(0, (edge - 0.5) / 0.5));
+        plsReadoutText.style.opacity = String(1 - fade);
+        plsReadoutText.style.transform = 'translateY(' + (fade * 5) + 'px)';
+    }
     var plsParticles = plsField ? plsField.querySelectorAll('i') : [];
     var plsParticleSeeds = [];
     plsParticles.forEach(function (p, i) {
@@ -1363,7 +1475,9 @@
             wobble: 0.18 + (i % 3) * 0.11
         };
     });
-    var solLabels = ['WordPress', 'Wagtail', 'Custom build'];
+    var solDescriptors = ['Off-the-shelf', 'Content platform', 'Tailored build'];
+    var solLabels = ['WordPress', 'Wagtail', 'Custom software'];
+    var SOL_ORBIT_DEG = 90;
     function smoothstep(t) { return t * t * (3 - 2 * t); }
     function outroZoneProg(rect, vh, narrow) {
         var startLine = vh * (narrow ? 0.8 : 0.76);
@@ -1381,16 +1495,87 @@
     }
     function processScroll() {
         var vh = window.innerHeight;
+        var desktopPin = window.innerWidth >= 981 && processPin && !reduceMotion;
         var railProg = 0;
         var logoProg = 0;
-        if (track) {
-            var tr = track.getBoundingClientRect();
-            railProg = Math.max(0, Math.min(1, (vh * 0.82 - tr.top) / (tr.height + vh * 0.32)));
-        }
+        var phaseBlend = 0;
+        var revealLift = 0;
         var zone = { prog: 0, inZone: false, past: false };
-        if (processOutro) {
-            zone = outroZoneProg(processOutro.getBoundingClientRect(), vh, window.innerWidth < 981);
-            logoProg = zone.prog;
+
+        if (desktopPin) {
+            var pinRange = processPin.offsetHeight - vh;
+            var pinProg = pinRange > 0 ? Math.max(0, Math.min(1, -processPin.getBoundingClientRect().top / pinRange)) : 0;
+            var crossStart = PIN_STEPS - PIN_CROSS * 0.5;
+            var crossEnd = PIN_STEPS + PIN_CROSS * 0.5;
+            var logoStart = crossEnd;
+
+            if (pinProg > 0 && processOutro) processOutro.classList.add('in');
+
+            if (pinProg <= 0) {
+                processPin.setAttribute('data-phase', 'idle');
+                if (processPinHint) processPinHint.textContent = 'Scroll — steps, then solutions';
+            } else if (pinProg >= 1) {
+                railProg = 1;
+                logoProg = 1;
+                phaseBlend = 1;
+                var pinPast = processPin.getBoundingClientRect().bottom < vh * 0.15;
+                revealLift = pinPast ? 0 : 1;
+                zone = { prog: 1, inZone: false, past: true };
+                processPin.setAttribute('data-phase', pinPast ? 'done' : 'outro');
+                if (processPinHint) processPinHint.textContent = 'Continue scrolling';
+            } else if (pinProg < crossStart) {
+                railProg = pinProg / crossStart;
+                logoProg = 0;
+                zone = { prog: 0, inZone: false, past: false };
+                processPin.setAttribute('data-phase', 'steps');
+                if (processPinHint) processPinHint.textContent = 'Scroll — activating steps';
+            } else if (pinProg < crossEnd) {
+                railProg = 1;
+                logoProg = 0;
+                var crossT = (pinProg - crossStart) / (crossEnd - crossStart);
+                phaseBlend = smoothstep(crossT);
+                revealLift = smoothstep(crossT);
+                zone = { prog: 0, inZone: false, past: false };
+                processPin.setAttribute('data-phase', phaseBlend > 0.5 ? 'outro' : 'steps');
+                if (processPinHint) processPinHint.textContent = 'Scroll — revealing solutions';
+            } else if (pinProg < PIN_LOGO_END) {
+                railProg = 1;
+                logoProg = (pinProg - logoStart) / (PIN_LOGO_END - logoStart);
+                phaseBlend = 1;
+                revealLift = 1;
+                zone = { prog: logoProg, inZone: true, past: false };
+                processPin.setAttribute('data-phase', 'outro');
+                if (processPinHint) processPinHint.textContent = 'Scroll — exploring solutions';
+            } else {
+                railProg = 1;
+                logoProg = 1;
+                phaseBlend = 1;
+                revealLift = 1;
+                zone = { prog: 1, inZone: true, past: false };
+                processPin.setAttribute('data-phase', 'outro');
+                if (processPinHint) processPinHint.textContent = 'Continue scrolling';
+            }
+            var revealShiftPx = vh * REVEAL_LIFT_VH;
+            processPin.style.setProperty('--phase-blend', String(phaseBlend));
+            processPin.style.setProperty('--reveal-lift', String(revealLift));
+            processPin.style.setProperty('--reveal-shift', (-revealShiftPx) + 'px');
+            processPin.style.setProperty('--reveal-pad-trim', (revealLift * revealShiftPx) + 'px');
+        } else {
+            if (processPin) {
+                processPin.setAttribute('data-phase', 'idle');
+                processPin.style.setProperty('--phase-blend', '0');
+                processPin.style.setProperty('--reveal-lift', '0');
+                processPin.style.setProperty('--reveal-shift', '0px');
+                processPin.style.setProperty('--reveal-pad-trim', '0px');
+            }
+            if (track) {
+                var tr = track.getBoundingClientRect();
+                railProg = Math.max(0, Math.min(1, (vh * 0.82 - tr.top) / (tr.height + vh * 0.32)));
+            }
+            if (processOutro) {
+                zone = outroZoneProg(processOutro.getBoundingClientRect(), vh, window.innerWidth < 981);
+                logoProg = zone.prog;
+            }
         }
         if (fill) fill.style.width = (railProg * 100) + '%';
         if (psteps.length) {
@@ -1410,13 +1595,10 @@
                 processOutro.setAttribute('data-active-sol', '-1');
             }
         }
-        var stageLive = zone.inZone;
+        var stageLive = desktopPin ? logoProg > 0.02 && phaseBlend > 0.85 : zone.inZone;
         var stageProg = logoProg;
         if (!reduceMotion && processLogoTrack && processLogos.length && window.innerWidth >= 981) {
-            var stepNum = Math.min(8, Math.max(1, Math.ceil(railProg * 8)));
-            if (plsReadoutText) {
-                plsReadoutText.textContent = 'Step ' + (stepNum < 10 ? '0' : '') + stepNum + ' · ' + solLabels[active];
-            }
+            updatePlsReadout(pos, active, zone.inZone || stageLive);
 
             if (processLogoTrack) processLogoTrack.style.transform = 'none';
 
@@ -1428,16 +1610,17 @@
                 plsAura.style.opacity = String(stageLive ? 0.55 + Math.sin(motion * Math.PI) * 0.35 : 0.4);
                 plsAura.style.transform = 'scale(' + (0.92 + motion * 0.14) + ')';
             }
-            if (plsOrbitOuter) plsOrbitOuter.style.transform = 'rotate(' + (motion * 280 - 24) + 'deg) scale(' + (1 + motion * 0.06) + ')';
-            if (plsOrbitMid) plsOrbitMid.style.transform = 'rotate(' + (-motion * 210 + 18) + 'deg)';
-            if (plsOrbitInner) plsOrbitInner.style.transform = 'rotate(' + (motion * 140) + 'deg) scale(' + (0.96 + motion * 0.08) + ')';
+            var orbitRot = pos * SOL_ORBIT_DEG;
+            if (plsOrbitOuter) plsOrbitOuter.style.transform = 'rotate(' + (orbitRot - 8) + 'deg) scale(' + (1 + pos * 0.03) + ')';
+            if (plsOrbitMid) plsOrbitMid.style.transform = 'rotate(' + (-orbitRot * 0.75 + 6) + 'deg)';
+            if (plsOrbitInner) plsOrbitInner.style.transform = 'rotate(' + (orbitRot * 0.5) + 'deg) scale(' + (0.96 + pos * 0.04) + ')';
             if (plsSpotlight) {
                 plsSpotlight.style.transform = 'translate3d(0, ' + (Math.sin(motion * Math.PI) * -8) + 'px, 0) scale(' + (0.9 + Math.sin(motion * Math.PI) * 0.14) + ')';
                 plsSpotlight.style.opacity = String(stageLive ? 0.45 + Math.sin(motion * Math.PI) * 0.45 : 0.35);
             }
             plsParticles.forEach(function (p, i) {
                 var seed = plsParticleSeeds[i] || { phase: i, sizeBase: 0.6, freq: 1.5, wobble: 0.2 };
-                var angle = (i / plsParticles.length) * 360 + motion * (stageLive ? 480 : 0);
+                var angle = (i / plsParticles.length) * 360 + pos * (stageLive ? SOL_ORBIT_DEG : 0);
                 var radius = 112 + (i % 2) * 18 + motion * (stageLive ? 26 : 0);
                 var sizeVar = seed.sizeBase
                     + Math.sin(motion * Math.PI * seed.freq + seed.phase) * (stageLive ? 0.38 : 0)
@@ -1466,7 +1649,6 @@
                 var tiltX = (1 - focus) * 6;
                 var card = logo.querySelector('.pls-card');
                 var img = logo.querySelector('img');
-                var tag = logo.querySelector('.pls-tag');
                 logo.style.zIndex = String(Math.round(focus * 100));
                 logo.style.opacity = String(0.12 + focus * 0.88);
                 logo.style.transform = 'translate3d(' + slotX + 'px, ' + slotY + 'px, 0)';
@@ -1482,17 +1664,14 @@
                 if (img) {
                     var lagX = offset * 36 * (1 - focus);
                     var lagY = (1 - focus) * 10 - focus * 3;
-                    img.style.transform = 'translate3d(' + lagX + 'px, ' + lagY + 'px, ' + (focus * 22) + 'px) scale(' + (0.76 + focus * 0.24) + ')';
-                }
-                if (tag) {
-                    tag.style.opacity = String(focus * focus);
-                    tag.style.transform = 'translate3d(0, ' + (8 - focus * 8) + 'px, 0)';
+                    img.style.transform = 'translate3d(' + lagX + 'px, ' + lagY + 'px, ' + (focus * 22) + 'px) scale(' + (0.82 + focus * 0.18) + ')';
                 }
             });
         }
     }
     if (lenis) lenis.on('scroll', function (e) { onScroll(e.scroll); processScroll(); });
     window.addEventListener('scroll', function () { onScroll(window.scrollY); processScroll(); }, { passive: true });
+    window.addEventListener('resize', processScroll, { passive: true });
     processScroll();
 
     /* ── Mobile menu ── */
