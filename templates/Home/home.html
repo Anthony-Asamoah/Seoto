@@ -272,17 +272,34 @@
         }
 
         /* ════════════ REVEAL PRIMITIVES ════════════ */
-        .reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.95s var(--ease), transform 0.95s var(--ease); }
+        .reveal { opacity: 0; transform: translateY(30px); transition: opacity 1.5s var(--ease), transform 1.5s var(--ease); }
         .reveal.in { opacity: 1; transform: none; }
-        [data-delay="1"] { transition-delay: 0.08s; }
-        [data-delay="2"] { transition-delay: 0.16s; }
-        [data-delay="3"] { transition-delay: 0.24s; }
-        [data-delay="4"] { transition-delay: 0.32s; }
+        [data-delay="1"] { transition-delay: 0.14s; }
+        [data-delay="2"] { transition-delay: 0.28s; }
+        [data-delay="3"] { transition-delay: 0.42s; }
+        [data-delay="4"] { transition-delay: 0.56s; }
         .lines .line-mask { display: block; overflow: hidden; }
-        .lines .line-inner { display: block; transform: translateY(105%); transition: transform 0.85s var(--ease); }
+        .lines .line-inner { display: block; transform: translateY(105%); transition: transform 1.2s var(--ease); }
         .lines.in .line-inner { transform: translateY(0); }
-        .lines.in .line-mask:nth-child(2) .line-inner { transition-delay: 0.09s; }
-        .lines.in .line-mask:nth-child(3) .line-inner { transition-delay: 0.18s; }
+        .lines.in .line-mask:nth-child(2) .line-inner { transition-delay: 0.14s; }
+        .lines.in .line-mask:nth-child(3) .line-inner { transition-delay: 0.28s; }
+
+        /* ── Hero typewriter ── */
+        .hero h1.typing .line-mask { overflow: visible; }
+        .hero h1.typing .line-inner { transform: none; }
+        .type-caret {
+            display: inline-block; width: 3px; height: 0.92em; margin-left: 3px;
+            vertical-align: -0.08em; border-radius: 1px; background: var(--gold-soft);
+            box-shadow: 0 0 12px rgba(205,176,131,0.55);
+            animation: caretBlink 1.05s steps(1) infinite;
+        }
+        .type-caret.done { animation: caretFade 0.8s var(--ease) forwards; }
+        @keyframes caretBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+        @keyframes caretFade { to { opacity: 0; } }
+        /* hero supporting copy trails the headline typing for a sequenced reveal */
+        .hero-sub.reveal { transition-delay: 0.9s; }
+        .hero-cta.reveal { transition-delay: 1.2s; }
+        .hero-reassure.reveal { transition-delay: 1.5s; }
         .mask-img { position: relative; overflow: hidden; }
         .mask-img::after { content: ''; position: absolute; inset: 0; background: var(--sand); transform: scaleX(1); transform-origin: right; transition: transform 1s var(--ease); }
         .mask-img.in::after { transform: scaleX(0); }
@@ -742,13 +759,50 @@
         .prod-shot:hover .prod-shot-hint { background: var(--gold); border-color: var(--gold); }
         .prod-shot-hint svg { width: 13px; height: 13px; transition: transform 0.4s var(--ease); }
         .prod-shot:hover .prod-shot-hint svg { transform: translateX(3px); }
-        /* logo-on-stage variant (homepage card) */
-        .prod-shot--logo { display: flex; align-items: center; justify-content: center; padding: clamp(28px, 5vw, 56px); }
+        /* logo-on-stage variant (homepage card) — floating brand on a luminous gradient */
+        .prod-shot--logo { display: flex; align-items: center; justify-content: center; padding: clamp(30px, 5vw, 60px);
+            background: linear-gradient(155deg, #fcfbf7 0%, #f5f0e6 55%, #efe8da 100%); }
         .prod-shot--logo::after { display: none; }
-        .prod-logo-card { width: 100%; max-width: 360px; border-radius: 18px; background: var(--warm-white); box-shadow: 0 24px 60px rgba(20,16,12,0.35); padding: clamp(26px, 4vw, 42px); overflow: hidden; transition: transform 0.55s var(--ease), box-shadow 0.55s var(--ease); }
-        .prod-shot--logo img { width: 100%; height: auto; object-fit: contain; transform: scale(1.22); transition: none; }
-        .prod-shot--logo:hover img { transform: scale(1.22); }
-        .prod-shot--logo:hover .prod-logo-card { transform: translateY(-5px); box-shadow: 0 34px 82px rgba(20,16,12,0.46); }
+        /* ambient mesh blooms */
+        .pv-stage { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .pv-orb { position: absolute; border-radius: 50%; filter: blur(46px); will-change: transform; }
+        .pv-orb-1 { width: 42%; aspect-ratio: 1; top: -14%; left: -10%; background: radial-gradient(circle, rgba(79,134,198,0.55), transparent 70%); animation: pvDrift1 16s ease-in-out infinite; }
+        .pv-orb-2 { width: 46%; aspect-ratio: 1; bottom: -18%; right: -12%; background: radial-gradient(circle, rgba(96,186,140,0.5), transparent 70%); animation: pvDrift2 19s ease-in-out infinite; }
+        .pv-orb-3 { width: 34%; aspect-ratio: 1; top: 30%; right: 14%; background: radial-gradient(circle, rgba(180,138,77,0.42), transparent 70%); animation: pvDrift3 22s ease-in-out infinite; }
+        .pv-grid { position: absolute; inset: 0; opacity: 0.5;
+            background-image: linear-gradient(rgba(34,29,23,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(34,29,23,0.05) 1px, transparent 1px);
+            background-size: 34px 34px;
+            -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 35%, transparent 78%);
+            mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 35%, transparent 78%); }
+        @keyframes pvDrift1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(22px, 26px); } }
+        @keyframes pvDrift2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-26px, -20px); } }
+        @keyframes pvDrift3 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-18px, 24px); } }
+        /* floating logo + contact shadow */
+        .pv-logo-wrap { position: relative; z-index: 2; width: 100%; max-width: 380px; transition: transform 0.5s var(--ease); }
+        .prod-shot--logo .pv-logo { width: 100%; height: auto; object-fit: contain; display: block; opacity: 0; transform: translateY(-130px) scale(0.55); transform-origin: 50% 100%;
+            filter: drop-shadow(0 12px 22px rgba(20,16,12,0.16)); will-change: transform, opacity; }
+        .prod-shot--logo .pv-shadow { position: absolute; left: 16%; right: 16%; bottom: -26px; height: 26px; border-radius: 50%; z-index: -1;
+            background: radial-gradient(ellipse at center, rgba(20,16,12,0.34), transparent 72%); filter: blur(9px); transform-origin: 50% 50%; opacity: 0; will-change: transform, opacity; }
+        /* trigger entrance + idle float once the card scrolls into view */
+        .prod.in .pv-logo { animation: pvLogoIn 1.15s cubic-bezier(0.34, 1.3, 0.5, 1) 0.15s both, pvLogoFloat 5s ease-in-out 1.3s infinite; }
+        .prod.in .pv-shadow { animation: pvShadowIn 1.15s cubic-bezier(0.34, 1.3, 0.5, 1) 0.15s both, pvShadowFloat 5s ease-in-out 1.3s infinite; }
+        @keyframes pvLogoIn {
+            0%   { opacity: 0; transform: translateY(-130px) scale(0.55); }
+            55%  { opacity: 1; transform: translateY(14px) scale(1.05); }
+            70%  { transform: translateY(-8px) scale(0.985); }
+            84%  { transform: translateY(4px) scale(1.006); }
+            100% { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes pvShadowIn {
+            0%   { opacity: 0; transform: scaleX(0.35); }
+            55%  { opacity: 0.5; transform: scaleX(1.12); }
+            70%  { opacity: 0.34; transform: scaleX(0.9); }
+            100% { opacity: 0.42; transform: scaleX(1); } }
+        @keyframes pvLogoFloat { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-10px) scale(1.012); } }
+        @keyframes pvShadowFloat { 0%,100% { transform: scaleX(1); opacity: 0.42; } 50% { transform: scaleX(0.82); opacity: 0.28; } }
+        .prod-shot--logo:hover .pv-logo-wrap { transform: translateY(-7px); }
+        .prod-shot--logo:hover .pv-shadow { background: radial-gradient(ellipse at center, rgba(79,134,198,0.4), rgba(96,186,140,0.22) 45%, transparent 72%); }
+        /* badge + hint re-tuned for the light stage */
+        .prod-shot--logo .ph-badge { z-index: 3; color: var(--gold); border-color: color-mix(in srgb, var(--gold) 42%, transparent); background: rgba(255,253,249,0.65); backdrop-filter: blur(4px); }
         /* product detail modal */
         .prod-modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: clamp(14px, 3vw, 44px); visibility: hidden; opacity: 0; transition: opacity 0.45s var(--ease), visibility 0.45s var(--ease); }
         .prod-modal.open { visibility: visible; opacity: 1; }
@@ -808,10 +862,17 @@
         }
         @media (prefers-reduced-motion: reduce) {
             .prod-modal .pv-anim, .prod-modal.open .pv-anim { opacity: 1; transform: none; transition: none; }
+            .pv-orb, .prod.in .pv-logo, .prod.in .pv-shadow { animation: none; }
+            .prod-shot--logo .pv-logo { opacity: 1; transform: none; }
+            .prod-shot--logo .pv-shadow { opacity: 0.4; transform: none; }
         }
         @media (max-width: 540px) {
             /* 4 squares-at-84% is too cramped on phones — go wide, 2-col list tiles */
             .prod-visual { min-height: 0; padding: 26px 20px; }
+            /* logo stage is absolutely positioned, so it needs its own height back on mobile */
+            .prod-visual.prod-visual--logo { min-height: 280px; padding: 0; }
+            .prod-shot--logo { padding: 36px 26px; }
+            .pv-logo-wrap { max-width: 300px; }
             .erp-modules { width: 100%; grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .mod { aspect-ratio: auto; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 14px 14px; border-radius: 14px; }
             .mod svg { width: 24px; height: 24px; flex-shrink: 0; }
@@ -1176,10 +1237,19 @@
                         <p>Track stock, movements, and suppliers in real time. Built for small teams that need clarity without enterprise overhead.</p>
                         <div class="dtags" style="margin-top:20px;"><span class="dtag">Stock control</span><span class="dtag">Suppliers</span><span class="dtag">Reporting</span></div>
                     </div>
-                    <div class="prod-visual">
+                    <div class="prod-visual prod-visual--logo">
                         <span class="ph-badge">PharmaVault</span>
                         <button class="prod-shot prod-shot--logo" type="button" data-prod-open aria-label="Explore PharmaVault" aria-haspopup="dialog">
-                            <span class="prod-logo-card"><img src="{% static 'img/pharma/pharma-logo.png' %}" alt="PharmaVault logo" loading="lazy" decoding="async"></span>
+                            <span class="pv-stage" aria-hidden="true">
+                                <span class="pv-orb pv-orb-1"></span>
+                                <span class="pv-orb pv-orb-2"></span>
+                                <span class="pv-orb pv-orb-3"></span>
+                                <span class="pv-grid"></span>
+                            </span>
+                            <span class="pv-logo-wrap">
+                                <img class="pv-logo" src="{% static 'img/pharma/pharma-logo.png' %}" alt="PharmaVault logo" loading="lazy" decoding="async">
+                                <span class="pv-shadow" aria-hidden="true"></span>
+                            </span>
                             <span class="prod-shot-hint">Click to explore <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
                         </button>
                     </div>
@@ -1592,10 +1662,60 @@
         setTimeout(next, 240);
     })();
 
+    /* ── Hero typewriter ── slow, character-by-character with a blinking caret */
+    function startHeroTyping(title) {
+        if (!title) return;
+        title.classList.add('in');
+        var lines = [];
+        title.querySelectorAll('.line-inner').forEach(function (inner) {
+            var muted = inner.querySelector('.muted');
+            lines.push({ el: inner, text: (muted ? muted.textContent : inner.textContent), muted: !!muted });
+            inner.textContent = '';
+        });
+        title.classList.add('typing');
+        var caret = document.createElement('span');
+        caret.className = 'type-caret';
+        var li = 0;
+        function typeLine() {
+            if (li >= lines.length) {
+                caret.classList.add('done');
+                setTimeout(function () { if (caret.parentNode) caret.parentNode.removeChild(caret); }, 900);
+                return;
+            }
+            var L = lines[li], target = L.el;
+            if (L.muted) { var m = document.createElement('span'); m.className = 'muted'; L.el.appendChild(m); target = m; }
+            target.appendChild(caret);
+            var chars = L.text.split(''), ci = 0;
+            (function typeChar() {
+                if (ci < chars.length) {
+                    var ch = chars[ci++];
+                    target.insertBefore(document.createTextNode(ch), caret);
+                    var d = 42 + Math.random() * 32;          // ~42–74ms per character
+                    if (/[.,—]/.test(ch)) d += 240;           // linger on punctuation
+                    else if (ch === ' ') d += 26;
+                    setTimeout(typeChar, d);
+                } else {
+                    li++;
+                    setTimeout(typeLine, 340);                // pause between lines
+                }
+            })();
+        }
+        setTimeout(typeLine, 220);
+    }
+
     /* ── Reveal on scroll ── */
     function startReveal() {
-        var els = document.querySelectorAll('.reveal, .lines, .mask-img');
-        if (reduceMotion) { els.forEach(function (el) { el.classList.add('in'); }); return; }
+        var heroTitle = document.getElementById('heroTitle');
+        var els = Array.prototype.filter.call(
+            document.querySelectorAll('.reveal, .lines, .mask-img'),
+            function (el) { return el !== heroTitle; }
+        );
+        if (reduceMotion) {
+            els.forEach(function (el) { el.classList.add('in'); });
+            if (heroTitle) heroTitle.classList.add('in');
+            return;
+        }
+        startHeroTyping(heroTitle);
         var io = new IntersectionObserver(function (entries) {
             entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
         }, { threshold: 0.16, rootMargin: '0px 0px -8% 0px' });
