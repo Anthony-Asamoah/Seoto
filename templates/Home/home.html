@@ -246,7 +246,7 @@
 
         /* ════════════ HERO ════════════ */
         .hero { position: relative; min-height: 100svh; display: flex; align-items: center; background: var(--charcoal); color: var(--warm-white); overflow: hidden; }
-        #net { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+        #net { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
         @media (max-width: 760px) { #net { opacity: 0.5; } }
         .hero-grad { position: absolute; inset: 0; z-index: 1; pointer-events: none;
             background: linear-gradient(100deg, var(--charcoal) 30%, rgba(26,22,18,0.55) 55%, transparent 80%); }
@@ -1780,7 +1780,7 @@
                 var jr = 0.78 + (i % 3) * 0.12;
                 var ax = hx + Math.cos(ang) * rx * jr;
                 var ay = hy + Math.sin(ang) * ry * jr;
-                spokes.push({ ax: ax, ay: ay, x: ax, y: ay, label: SPOKE_LABELS[i], r: 3, phase: Math.random() * Math.PI * 2, lit: 0 });
+                spokes.push({ ax: ax, ay: ay, x: ax, y: ay, label: SPOKE_LABELS[i], r: 3, phase: Math.random() * Math.PI * 2, lit: 0, hold: 0 });
             }
             edges = [];
             for (var i = 0; i < spokes.length; i++) edges.push({ a: hub, b: spokes[i], spoke: spokes[i] });
@@ -1804,7 +1804,15 @@
                 var s = spokes[i];
                 s.x = s.ax + Math.sin(t + s.phase) * 7;
                 s.y = s.ay + Math.cos(t * 0.9 + s.phase) * 7;
-                s.lit += ((distToMouse(s) < 120 ? 1 : 0) - s.lit) * 0.12;
+                if (s.hold > 0) {
+                    // freshly lit by a pulse — stay bright, then fade gently
+                    s.hold--;
+                    s.lit += (1 - s.lit) * 0.12;
+                } else {
+                    var ml = distToMouse(s) < 120 ? 1 : 0;
+                    // snap up on hover, but linger on the way down so the label stays readable
+                    s.lit += (ml - s.lit) * (ml > s.lit ? 0.12 : 0.035);
+                }
             }
             // nearest node to cursor (for active path)
             var near = null, nd = 130;
@@ -1826,7 +1834,7 @@
                 var px = hub.x + (pu.s.x - hub.x) * pu.p, py = hub.y + (pu.s.y - hub.y) * pu.p;
                 ctx.beginPath(); ctx.arc(px, py, 2.4, 0, Math.PI * 2);
                 ctx.fillStyle = 'rgba(205,176,131,' + (1 - pu.p) * 0.9 + ')'; ctx.fill();
-                if (pu.p >= 1) { pu.s.lit = Math.max(pu.s.lit, 0.85); pulses.splice(i, 1); }
+                if (pu.p >= 1) { pu.s.lit = Math.max(pu.s.lit, 0.85); pu.s.hold = 200; pulses.splice(i, 1); }
             }
 
             // nodes + on-demand labels
