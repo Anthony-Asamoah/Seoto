@@ -2,6 +2,7 @@ from django import forms
 from django.forms import ModelForm, TextInput
 
 from seoto.mixins.views import HoneypotMixin, RecaptchaMixin
+from seoto.utils.profanity import contains_profanity
 from author.models import Message
 
 
@@ -76,10 +77,6 @@ class DiscoveryCallForm(RecaptchaMixin, HoneypotMixin, ModelForm):
         choices=TIMELINE_CHOICES, required=False, label='Timeline',
         widget=forms.Select,
     )
-    availability = forms.CharField(
-        required=False, max_length=200, label='Best times for a call',
-        widget=forms.TextInput(attrs={'placeholder': 'e.g. weekday mornings'}),
-    )
 
     class Meta:
         model = Message
@@ -97,6 +94,12 @@ class DiscoveryCallForm(RecaptchaMixin, HoneypotMixin, ModelForm):
     def _label(self, choices, value):
         return dict(choices).get(value) or '—'
 
+    def clean_message(self):
+        message = self.cleaned_data.get('message', '')
+        if contains_profanity(message):
+            raise forms.ValidationError("We don't tolerate profanity.")
+        return message
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         cd = self.cleaned_data
@@ -113,8 +116,6 @@ class DiscoveryCallForm(RecaptchaMixin, HoneypotMixin, ModelForm):
             details.append(f'Budget: {self._label(self.BUDGET_CHOICES, cd["budget"])}')
         if cd.get('timeline'):
             details.append(f'Timeline: {self._label(self.TIMELINE_CHOICES, cd["timeline"])}')
-        if cd.get('availability'):
-            details.append(f"Best times for a call: {cd['availability']}")
 
         instance.message = (
             '— Discovery call request —\n'

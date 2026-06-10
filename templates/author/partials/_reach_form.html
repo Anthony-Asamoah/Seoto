@@ -1,0 +1,102 @@
+{# Qualifying form. Submits via HTMX (hx-post) and swaps #reach-panel; falls back to a normal POST when JS is off. #}
+<section class="form-card reveal" data-delay="1">
+    <div class="fc-head">
+        <h2 class="serif">Tell us about your project</h2>
+        <p>A few details so we come prepared — then you'll pick a time. Fields marked <span class="req">*</span> are required.</p>
+    </div>
+
+    {% if messages %}
+        <div class="flash-tray">
+            {% for m in messages %}
+                <div class="flash flash-{{ m.tags }}">
+                    {% if m.tags == 'success' %}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+                    {% else %}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                    {% endif %}
+                    <span>{{ m }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form action="{% url 'reach_out' %}" method="post" id="discoveryForm" novalidate
+          hx-post="{% url 'reach_out' %}" hx-target="#reach-panel" hx-swap="innerHTML"
+          hx-disabled-elt="find button[type=submit]">
+        {% csrf_token %}
+
+        {# honeypot #}
+        <div class="hp-field" aria-hidden="true">
+            <label for="id_website">Website</label>{{ form.website }}
+        </div>
+
+        {% if form.non_field_errors %}
+            <ul class="errlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+        {% endif %}
+
+        <div class="frow">
+            <div class="field">
+                <label for="{{ form.name.id_for_label }}">Your name <span class="req">*</span></label>
+                {{ form.name }}
+                {{ form.name.errors }}
+            </div>
+            <div class="field">
+                <label for="{{ form.email.id_for_label }}">Email <span class="req">*</span></label>
+                {{ form.email }}
+                {{ form.email.errors }}
+            </div>
+        </div>
+
+        <div class="frow">
+            <div class="field">
+                <label for="{{ form.company.id_for_label }}">Organization</label>
+                {{ form.company }}
+            </div>
+            <div class="field">
+                <label for="{{ form.phone.id_for_label }}">Phone</label>
+                {{ form.phone }}
+            </div>
+        </div>
+
+        <div class="field">
+            <span class="field-label">What are you looking for? <span class="req">*</span></span>
+            <div class="interest-grid">
+                {% for radio in form.interest %}
+                    <label for="{{ radio.id_for_label }}">
+                        {{ radio.tag }}<span class="dotmark"></span>
+                        <span>{{ radio.choice_label }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+            {{ form.interest.errors }}
+        </div>
+
+        <div class="frow">
+            <div class="field">
+                <label for="{{ form.budget.id_for_label }}">Budget range</label>
+                {{ form.budget }}
+            </div>
+            <div class="field">
+                <label for="{{ form.timeline.id_for_label }}">Timeline</label>
+                {{ form.timeline }}
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="{{ form.message.id_for_label }}">Tell us about your project <span class="req">*</span></label>
+            {{ form.message }}
+            {{ form.message.errors }}
+        </div>
+
+        <div class="submit-row">
+            <button class="btn-x btn-primary-x" type="submit" data-cursor="cta">
+                <span class="btn-label">Continue to pick a time</span>
+                <span class="btn-loading">Sending…</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+            <p class="reassure">Next: choose a slot that suits you · no obligation</p>
+        </div>
+
+        {% include 'partials/_recaptcha.html' with action='contact' form_id='discoveryForm' %}
+    </form>
+</section>

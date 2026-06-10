@@ -1,6 +1,7 @@
 import logging
 
 from django import forms
+from django.conf import settings
 from django.core.exceptions import ValidationError
 
 from seoto.external_services.recaptcha import is_human
@@ -40,7 +41,7 @@ class RecaptchaMixin:
     def clean(self):
         cleaned_data = super().clean()
 
-        if self.request:
+        if self.request and getattr(settings, 'RECAPTCHA_ENABLED', True):
             token = self.request.POST.get('g-recaptcha-response', '')
             human, score = is_human(token, action=self.recaptcha_action)
 

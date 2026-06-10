@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>Schedule a Discovery Call — SEOTO</title>
+    <title>Book a Consultation — SEOTO</title>
     <meta name="description"
-          content="Tell us about your goals, challenges, and budget. We'll help determine whether a website, proven software, or a custom platform is the best fit — a relaxed 30-minute call, no obligation.">
+          content="Tell us about your goals, challenges, and budget, then pick a time that suits you. A focused 30-minute consultation to determine whether a website, proven software, or a custom platform is the best fit — no obligation.">
 
     <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/pwa/favicon-32x32.png' %}">
     <link rel="shortcut icon" type="image/x-icon" href="{% static 'img/logo.ico' %}">
@@ -83,7 +83,7 @@
             grid-template-areas: "intro form" "extra form"; gap: 40px clamp(32px, 6vw, 88px);
             padding: clamp(48px, 8vh, 96px) 0 clamp(64px, 10vh, 120px); align-items: start; }
         .rail { grid-area: intro; }
-        .form-card { grid-area: form; }
+        #reach-panel { grid-area: form; min-width: 0; }
         .rail-extra { grid-area: extra; }
         /* on mobile the form rises above the steps/contact so it's reachable right after the intro */
         @media (max-width: 920px) {
@@ -166,6 +166,28 @@
         .recaptcha-disclosure a { color: var(--gold-deep); text-decoration: underline; }
         .form-card hr { border: 0; border-top: 1px solid var(--sand); margin: 18px 0 0; }
 
+        /* ── consultation booking step (Calendly) ── */
+        .book-card { grid-area: form; background: var(--paper); border: 1px solid var(--sand); border-radius: 24px;
+            padding: clamp(22px, 3.5vw, 38px); box-shadow: 0 30px 70px -50px rgba(34,29,23,0.4); }
+        .book-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 24px; }
+        .book-tick { flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px; background: #eef5ee;
+            border: 1px solid #cfe3cf; display: flex; align-items: center; justify-content: center; }
+        .book-tick svg { width: 20px; height: 20px; stroke: #2f6b3a; fill: none; stroke-width: 2.2; }
+        .book-head h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 1.55rem; letter-spacing: -0.01em; }
+        .book-head p { color: var(--ink-soft); font-size: 0.92rem; margin-top: 5px; max-width: 46ch; }
+        .calendly-inline-widget { min-width: 320px; height: 700px; border-radius: 14px; overflow: hidden;
+            border: 1px solid var(--sand); }
+        .book-fallback { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--sand);
+            font-size: 0.86rem; color: var(--ink-soft); }
+        .book-fallback a { color: var(--gold-deep); font-weight: 500; }
+
+        /* ── HTMX in-flight state on the submit button ── */
+        .btn-loading { display: none; }
+        form.htmx-request .btn-label { display: none; }
+        form.htmx-request .btn-loading { display: inline; }
+        form.htmx-request .btn-primary-x { opacity: 0.7; }
+        .btn-x:disabled { cursor: default; opacity: 0.7; }
+
         /* ── small-screen / mobile refinements ── */
         @media (max-width: 600px) {
             .nav { padding: 13px var(--pad-x); }
@@ -186,6 +208,7 @@
             /* 16px inputs stop iOS Safari from zooming in on focus */
             .field input[type=text], .field input[type=email], .field input[type=tel], .field select, .field textarea,
             .reach input[type=text], .reach input[type=email], .reach input[type=tel], .reach select, .reach textarea { font-size: 16px; }
+            .calendly-inline-widget { height: 640px; }
         }
         @media (max-width: 380px) {
             .interest-grid label { font-size: 0.85rem; padding: 13px 13px; }
@@ -221,127 +244,32 @@
 
         {# ── Left rail: intro ── #}
         <aside class="rail reveal">
-            <span class="eyebrow">Discovery call</span>
+            <span class="eyebrow">Free consultation</span>
             <h1 class="serif">Let's figure out what you <em>actually</em> need.</h1>
-            <p class="lead">No pressure, no jargon. Tell us about your goals and we'll help determine whether a website, proven software, or a custom platform is the right fit.</p>
+            <p class="lead">No pressure, no jargon. Share your goals, pick a time, and we'll help determine whether a website, proven software, or a custom platform is the right fit.</p>
         </aside>
 
-        {# ── Form card ── #}
-        <section class="form-card reveal" data-delay="1">
-            <div class="fc-head">
-                <h2 class="serif">Request your discovery call</h2>
-                <p>Fields marked <span class="req">*</span> are required. Everything else helps us prepare.</p>
-            </div>
-
-            {% if messages %}
-                <div class="flash-tray">
-                    {% for m in messages %}
-                        <div class="flash flash-{{ m.tags }}">
-                            {% if m.tags == 'success' %}
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
-                            {% else %}
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                            {% endif %}
-                            <span>{{ m }}</span>
-                        </div>
-                    {% endfor %}
-                </div>
+        {# ── Panel: form → (HTMX swap) → calendar. Single grid cell so only this reloads. ── #}
+        <div id="reach-panel">
+            {% if booking %}
+                {% include 'author/partials/_reach_booking.html' %}
+            {% else %}
+                {% include 'author/partials/_reach_form.html' %}
             {% endif %}
-
-            <form action="{% url 'reach_out' %}" method="post" id="discoveryForm" novalidate>
-                {% csrf_token %}
-
-                {# honeypot #}
-                <div class="hp-field" aria-hidden="true">
-                    <label for="id_website">Website</label>{{ form.website }}
-                </div>
-
-                {% if form.non_field_errors %}
-                    <ul class="errlist">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul>
-                {% endif %}
-
-                <div class="frow">
-                    <div class="field">
-                        <label for="{{ form.name.id_for_label }}">Your name <span class="req">*</span></label>
-                        {{ form.name }}
-                        {{ form.name.errors }}
-                    </div>
-                    <div class="field">
-                        <label for="{{ form.email.id_for_label }}">Email <span class="req">*</span></label>
-                        {{ form.email }}
-                        {{ form.email.errors }}
-                    </div>
-                </div>
-
-                <div class="frow">
-                    <div class="field">
-                        <label for="{{ form.company.id_for_label }}">Organization</label>
-                        {{ form.company }}
-                    </div>
-                    <div class="field">
-                        <label for="{{ form.phone.id_for_label }}">Phone</label>
-                        {{ form.phone }}
-                    </div>
-                </div>
-
-                <div class="field">
-                    <span class="field-label">What are you looking for? <span class="req">*</span></span>
-                    <div class="interest-grid">
-                        {% for radio in form.interest %}
-                            <label for="{{ radio.id_for_label }}">
-                                {{ radio.tag }}<span class="dotmark"></span>
-                                <span>{{ radio.choice_label }}</span>
-                            </label>
-                        {% endfor %}
-                    </div>
-                    {{ form.interest.errors }}
-                </div>
-
-                <div class="frow">
-                    <div class="field">
-                        <label for="{{ form.budget.id_for_label }}">Budget range</label>
-                        {{ form.budget }}
-                    </div>
-                    <div class="field">
-                        <label for="{{ form.timeline.id_for_label }}">Timeline</label>
-                        {{ form.timeline }}
-                    </div>
-                </div>
-
-                <div class="field">
-                    <label for="{{ form.availability.id_for_label }}">Best times for a call</label>
-                    {{ form.availability }}
-                </div>
-
-                <div class="field">
-                    <label for="{{ form.message.id_for_label }}">Tell us about your project <span class="req">*</span></label>
-                    {{ form.message }}
-                    {{ form.message.errors }}
-                </div>
-
-                <div class="submit-row">
-                    <button class="btn-x btn-primary-x" type="submit" data-cursor="cta">
-                        Request my discovery call
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                    </button>
-                    <p class="reassure">No obligation · we reply within 1 business day</p>
-                </div>
-
-                {% include 'partials/_recaptcha.html' with action='contact' form_id='discoveryForm' %}
-            </form>
-        </section>
+        </div>
 
         {# ── Left rail: steps + contact (sits below the intro on desktop, below the form on mobile) ── #}
         <div class="rail-extra reveal" data-delay="2">
             <div class="steps">
                 <div class="step"><span class="sidx">01</span><div><h4>Share your goals</h4><p>A few details about your business and what you're trying to solve.</p></div></div>
-                <div class="step"><span class="sidx">02</span><div><h4>We review &amp; reply</h4><p>We get back to you within 1 business day to set up a time.</p></div></div>
-                <div class="step"><span class="sidx">03</span><div><h4>A relaxed 30-min call</h4><p>Honest advice on your options — whether or not you work with us.</p></div></div>
+                <div class="step"><span class="sidx">02</span><div><h4>Pick a time</h4><p>Choose a slot that suits you — confirmed instantly, no back-and-forth.</p></div></div>
+                <div class="step"><span class="sidx">03</span><div><h4>A 30-minute consultation</h4><p>Honest advice on your options — whether or not you work with us.</p></div></div>
             </div>
 
             <div class="rail-contact">
                 <a href="mailto:front-desk@seoto.org">front-desk@seoto.org</a>
                 <a href="tel:+233503032976">+233 50 303 2976</a>
+                <a href="https://wa.me/233503032976" target="_blank" rel="noopener">Message us on WhatsApp</a>
                 <span>Accra, Ghana</span>
             </div>
         </div>
@@ -355,12 +283,14 @@
     </div>
 </footer>
 
+<script src="https://unpkg.com/htmx.org@2.0.3/dist/htmx.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.42/bundled/lenis.min.js"></script>
 <script>
 (function () {
     'use strict';
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    var cursor = document.getElementById('cursor');
     var y = document.getElementById('year'); if (y) y.textContent = new Date().getFullYear();
 
     if (!reduceMotion && typeof Lenis !== 'undefined') {
@@ -368,36 +298,53 @@
         (function raf(t) { lenis.raf(t); requestAnimationFrame(raf); })();
     }
 
-    /* reveals */
-    var els = document.querySelectorAll('.reveal');
-    if (reduceMotion) { els.forEach(function (e) { e.classList.add('in'); }); }
-    else {
-        var io = new IntersectionObserver(function (en) { en.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: 0.14 });
-        els.forEach(function (e) { io.observe(e); });
+    /* reveals — observe a subtree so HTMX-swapped content animates in too */
+    var io = (!reduceMotion && 'IntersectionObserver' in window)
+        ? new IntersectionObserver(function (en) { en.forEach(function (x) { if (x.isIntersecting) { x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold: 0.14 })
+        : null;
+    function observeReveals(root) {
+        root.querySelectorAll('.reveal').forEach(function (e) { if (io) io.observe(e); else e.classList.add('in'); });
     }
+    observeReveals(document);
 
-    /* cursor + magnetic */
-    if (fine && !reduceMotion) {
-        document.body.classList.add('cursor-on');
-        var cursor = document.getElementById('cursor');
-        var cx = innerWidth / 2, cy = innerHeight / 2, tx = cx, ty = cy;
-        addEventListener('mousemove', function (e) { tx = e.clientX; ty = e.clientY; });
-        (function loop() { cx += (tx - cx) * 0.2; cy += (ty - cy) * 0.2; cursor.style.transform = 'translate(' + cx + 'px,' + cy + 'px) translate(-50%,-50%)'; requestAnimationFrame(loop); })();
-        function clear() { cursor.classList.remove('cta', 'ring'); }
-        document.querySelectorAll('[data-cursor]').forEach(function (el) {
+    /* cursor + magnetic — bindable per subtree so swapped content keeps the interactions */
+    function clear() { if (cursor) cursor.classList.remove('cta', 'ring'); }
+    function bindCursor(root) {
+        if (!(fine && !reduceMotion) || !cursor) return;
+        root.querySelectorAll('[data-cursor]').forEach(function (el) {
             var ty2 = el.getAttribute('data-cursor');
             el.addEventListener('mouseenter', function () { clear(); cursor.classList.add(ty2 === 'cta' ? 'cta' : 'ring'); });
             el.addEventListener('mouseleave', clear);
         });
-        document.querySelectorAll('input, select, textarea').forEach(function (el) {
+        root.querySelectorAll('input, select, textarea').forEach(function (el) {
             el.addEventListener('mouseenter', function () { clear(); cursor.classList.add('ring'); });
             el.addEventListener('mouseleave', clear);
         });
-        document.querySelectorAll('.btn-x, .nav-logo, .nav-back').forEach(function (el) {
+        root.querySelectorAll('.btn-x, .nav-logo, .nav-back').forEach(function (el) {
             el.addEventListener('mousemove', function (e) { var r = el.getBoundingClientRect(); el.style.transform = 'translate(' + (e.clientX - (r.left + r.width / 2)) * 0.18 + 'px,' + (e.clientY - (r.top + r.height / 2)) * 0.26 + 'px)'; });
             el.addEventListener('mouseleave', function () { el.style.transform = ''; });
         });
     }
+    if (fine && !reduceMotion && cursor) {
+        document.body.classList.add('cursor-on');
+        var cx = innerWidth / 2, cy = innerHeight / 2, tx = cx, ty = cy;
+        addEventListener('mousemove', function (e) { tx = e.clientX; ty = e.clientY; });
+        (function loop() { cx += (tx - cx) * 0.2; cy += (ty - cy) * 0.2; cursor.style.transform = 'translate(' + cx + 'px,' + cy + 'px) translate(-50%,-50%)'; requestAnimationFrame(loop); })();
+    }
+    bindCursor(document);
+
+    /* HTMX: animate + re-bind the freshly swapped panel, and ease it into view */
+    document.body.addEventListener('htmx:afterSwap', function (evt) {
+        var panel = document.getElementById('reach-panel');
+        if (!panel || !panel.contains(evt.target) && evt.target !== panel) return;
+        bindCursor(panel);
+        panel.querySelectorAll('.reveal').forEach(function (e) {
+            requestAnimationFrame(function () { requestAnimationFrame(function () { e.classList.add('in'); }); });
+        });
+        var top = panel.getBoundingClientRect().top + window.pageYOffset - 90;
+        if (typeof lenis !== 'undefined' && lenis) lenis.scrollTo(top, { duration: 0.8 });
+        else window.scrollTo({ top: top, behavior: reduceMotion ? 'auto' : 'smooth' });
+    });
 })();
 </script>
 </body>

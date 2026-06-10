@@ -229,6 +229,8 @@
             margin-top: auto; align-self: stretch; justify-content: center;
             padding: 17px 26px;
         }
+        .mobile-menu .mm-quickcall { text-align: center; margin-top: 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: rgba(247,244,238,0.55); }
+        .mobile-menu .mm-quickcall a { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--gold-soft); padding: 0; border-bottom: 1px solid rgba(205,176,131,0.4); border-radius: 0; }
         /* short / landscape phones: tighten the rhythm, don't pin CTA to the floor */
         @media (max-height: 560px) {
             .mobile-menu { gap: 2px; }
@@ -250,7 +252,9 @@
         .hero h1 .muted { color: var(--gold-soft); font-style: italic; }
         .hero-sub { margin-top: 28px; max-width: 50ch; font-size: clamp(1rem, 1.5vw, 1.16rem); color: rgba(247,244,238,0.82); font-weight: 300; }
         .hero-cta { margin-top: 34px; display: flex; gap: 13px; flex-wrap: wrap; align-items: center; }
-        .hero-reassure { margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.02em; color: rgba(247,244,238,0.5); }
+        .hero-reassure { margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.02em; color: rgba(247,244,238,0.5); max-width: 52ch; line-height: 1.7; }
+        .hero-reassure a { color: var(--gold-soft); border-bottom: 1px solid rgba(205,176,131,0.4); transition: color 0.3s var(--ease), border-color 0.3s var(--ease); }
+        .hero-reassure a:hover { color: var(--warm-white); border-bottom-color: var(--gold-soft); }
         .scroll-hint { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 2; font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(247,244,238,0.45); display: flex; flex-direction: column; align-items: center; gap: 9px; }
         .scroll-hint .line { width: 1px; height: 38px; background: linear-gradient(rgba(247,244,238,0.5), transparent); animation: scrollLine 2s var(--ease) infinite; }
         @keyframes scrollLine { 0% { transform: scaleY(0); transform-origin: top; } 45% { transform: scaleY(1); transform-origin: top; } 55% { transform: scaleY(1); transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
@@ -317,7 +321,21 @@
         .process-rail .fill { position: absolute; left: 0; top: 0; height: 100%; width: 0; background: var(--gold); transition: width 0.1s linear; border-radius: 2px; }
         .process-steps { display: grid; grid-template-columns: repeat(8, 1fr); gap: 14px; }
         @media (max-width: 980px) { .process-steps { grid-template-columns: repeat(4, 1fr); row-gap: 32px; } }
-        @media (max-width: 540px) { .process-steps { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 540px) {
+            /* Vertical timeline: the horizontal rail metaphor doesn't survive stacking */
+            .process-rail { display: none; }
+            .process-steps { grid-template-columns: 1fr; gap: 0; margin-top: 8px; }
+            .pstep { position: relative; padding: 0 0 30px 38px; opacity: 0.5; }
+            .pstep:last-child { padding-bottom: 0; }
+            /* connector line down the left — fills gold as steps activate */
+            .pstep::before { content: ''; position: absolute; left: 5px; top: 5px; bottom: -5px; width: 1.5px; background: var(--sand); transition: background 0.5s var(--ease); }
+            .pstep:last-child::before { display: none; }
+            .pstep.active::before { background: var(--gold); }
+            .pstep .pnode { position: absolute; left: 0; top: 2px; margin: 0; box-sizing: border-box; }
+            .pstep .pidx { display: inline-block; }
+            .pstep h4 { margin-top: 2px; font-size: 1.08rem; }
+            .pstep p { font-size: 0.86rem; max-width: 40ch; }
+        }
         .pstep { opacity: 0.4; transition: opacity 0.6s var(--ease); }
         .pstep.active { opacity: 1; }
         .pstep .pnode { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--gold); background: var(--warm-white); margin-bottom: 15px; transition: 0.5s var(--ease); }
@@ -357,6 +375,24 @@
         .mod:hover span, .mod.active span { color: #fff; }
         .erp-detail { margin-top: 18px; min-height: 46px; font-size: 0.92rem; color: var(--ink-soft); transition: opacity 0.3s var(--ease); }
         .erp-detail b { color: var(--ink); font-weight: 600; }
+        .inline-partner { color: var(--gold); font-weight: 500; text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--gold) 35%, transparent); transition: border-color 0.3s var(--ease); }
+        .inline-partner:hover { border-bottom-color: var(--gold); }
+        .partner-note { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 14px; margin-top: 20px; padding: 16px 18px; border: 1px solid var(--sand); border-radius: 14px; background: var(--warm-white); text-decoration: none; transition: 0.4s var(--ease); }
+        .partner-note:hover { border-color: var(--gold); transform: translateY(-2px); }
+        .partner-tag { grid-column: 1 / -1; font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); }
+        .partner-txt { font-size: 0.88rem; line-height: 1.5; color: var(--ink-soft); }
+        .partner-txt b { color: var(--ink); font-weight: 600; }
+        .partner-note svg { width: 18px; height: 18px; color: var(--gold); transition: transform 0.4s var(--ease); }
+        .partner-note:hover svg { transform: translateX(4px); }
+        @media (max-width: 540px) {
+            /* 4 squares-at-84% is too cramped on phones — go wide, 2-col list tiles */
+            .prod-visual { min-height: 0; padding: 26px 20px; }
+            .erp-modules { width: 100%; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .mod { aspect-ratio: auto; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 14px 14px; border-radius: 14px; }
+            .mod svg { width: 24px; height: 24px; flex-shrink: 0; }
+            .mod span { font-size: 0.74rem; text-align: left; line-height: 1.25; }
+            .mod:hover, .mod.active { transform: none; }
+        }
 
         /* ════════════ CASE STUDIES (light, mobile-safe, metrics) ════════════ */
         .cases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
@@ -377,6 +413,26 @@
         .case-visit { margin-top: 18px; display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.02em; color: var(--blue); }
         .case-visit svg { width: 14px; height: 14px; transition: transform 0.4s var(--ease); }
         .case:hover .case-visit svg { transform: translateX(4px); }
+
+        /* Featured client */
+        .feature { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 48px; align-items: center; }
+        @media (max-width: 980px) { .feature { grid-template-columns: 1fr; gap: 32px; max-width: 600px; margin: 0 auto; } }
+        .feature-frame { border-radius: 16px; overflow: hidden; background: #1a1612; box-shadow: 0 30px 60px -28px rgba(34,29,23,0.5); border: 1px solid rgba(34,29,23,0.08); }
+        .browser-bar { display: flex; align-items: center; gap: 12px; padding: 11px 16px; background: linear-gradient(135deg, #2a241c, #1a1612); }
+        .browser-bar .dots { display: inline-flex; gap: 7px; }
+        .browser-bar .dots i { width: 11px; height: 11px; border-radius: 50%; background: rgba(247,244,238,0.22); }
+        .browser-bar .dots i:first-child { background: rgba(180,138,77,0.7); }
+        .browser-bar .url { flex: 1; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.04em; color: rgba(247,244,238,0.6); background: rgba(247,244,238,0.06); padding: 4px 12px; border-radius: 100px; }
+        .feature-screen { position: relative; aspect-ratio: 4/3; overflow: hidden; }
+        .feature-screen iframe { position: absolute; top: 0; left: 0; width: 142.857%; height: 142.857%; border: 0; transform: scale(0.7); transform-origin: top left; background: var(--cream); }
+        .feature-screen-link { position: absolute; inset: 0; z-index: 2; }
+        .feature-body .crole { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--gold-deep); letter-spacing: 0.04em; }
+        .feature-body .personal-note { margin-top: 14px; font-family: 'Fraunces', serif; font-size: 1.18rem; line-height: 1.55; color: var(--ink); font-style: italic; }
+        .feature-body .case-story { margin-top: 22px; }
+        /* Trusted partner */
+        .partner-feature .feature-frame { position: relative; }
+        .partner-ribbon { position: absolute; top: 14px; right: 14px; z-index: 4; font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; background: var(--gold); padding: 5px 11px; border-radius: 100px; box-shadow: 0 4px 14px -4px rgba(34,29,23,0.45); }
+        .partner-visit { color: var(--gold-deep); }
 
         /* ════════════ TESTIMONIALS ════════════ */
         .tgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
@@ -483,7 +539,7 @@
         <a href="#products" class="nav-link">Products</a>
         <a href="#work" class="nav-link">Work</a>
         <a href="#faq" class="nav-link">FAQ</a>
-        <a href="{% url 'reach_out' %}" class="nav-cta" data-cursor="cta">Schedule a call</a>
+        <a href="{% url 'reach_out' %}" class="nav-cta" data-cursor="cta">Book a Consultation</a>
     </nav>
     <button class="nav-burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
 </header>
@@ -495,8 +551,9 @@
     <a href="#products">Products</a>
     <a href="#work">Work</a>
     <a href="#faq">FAQ</a>
-    <a href="{% url 'reach_out' %}" class="btn-x btn-on-dark mm-cta">Schedule Discovery Call
+    <a href="{% url 'reach_out' %}" class="btn-x btn-on-dark mm-cta">Book a Consultation
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <p class="mm-quickcall">Or talk now — <a href="tel:+233503032976">call</a> or <a href="https://wa.me/233503032976" target="_blank" rel="noopener">WhatsApp</a> us</p>
 </div>
 
 <main id="top">
@@ -519,12 +576,12 @@
             </p>
             <div class="hero-cta reveal" data-delay="3">
                 <a href="{% url 'reach_out' %}" class="btn-x btn-on-dark" data-cursor="cta">
-                    Schedule Discovery Call
+                    Book a Consultation
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                 </a>
                 <a href="#decision" class="btn-x btn-ghost-dark" data-cursor="cta">Explore Solutions</a>
             </div>
-            <p class="hero-reassure reveal" data-delay="4">30-min call · no obligation · we reply within 1 business day</p>
+            <p class="hero-reassure reveal" data-delay="4">Free 30-min consultation, no obligation — or, prefer to talk now? <a href="tel:+233503032976">Call</a> or <a href="https://wa.me/233503032976" target="_blank" rel="noopener">WhatsApp</a> us for a quick 5-min chat.</p>
         </div>
         <div class="scroll-hint"><span>Scroll</span><span class="line"></span></div>
     </section>
@@ -612,7 +669,7 @@
             <div class="sec-head reveal">
                 <span class="eyebrow">Products</span>
                 <h2 class="section-title serif">Battle-tested solutions.</h2>
-                <p>Three products we've refined in the field — ready to deploy, and built to adapt to how you actually work.</p>
+                <p>Our own products, refined in the field and ready to deploy — and when you need the full enterprise suite, we bring in our partner, <a href="https://trovesuite.com/" target="_blank" rel="noopener" class="inline-partner" data-cursor="cta">Trove Suite</a>.</p>
             </div>
             <div class="products">
                 <article class="prod reveal" data-cursor="ring">
@@ -632,8 +689,13 @@
                     <div class="prod-body">
                         <span class="eyebrow">Product 02</span>
                         <h3>Modular ERP</h3>
-                        <p>Select only the modules you need. Start lean, switch on more as you grow — no rip-and-replace.</p>
+                        <p>Need just one or two functions? We build and deploy these as standalone modules — start lean, switch on more as you grow. No rip-and-replace.</p>
                         <div class="erp-detail" id="erpDetail"><b>Hover a module</b> to see what it handles.</div>
+                        <a class="partner-note" href="#partner" data-cursor="cta">
+                            <span class="partner-tag">Enterprise partner</span>
+                            <span class="partner-txt">Need the complete suite, fully integrated? Meet our trusted partner, <b>Trove Suite</b>.</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        </a>
                     </div>
                     <div class="prod-visual">
                         <span class="ph-badge">Interactive</span>
@@ -666,48 +728,69 @@
         </div>
     </section>
 
-    {# ════════════ SECTION 5 — CASE STUDIES ════════════ #}
+    {# ════════════ SECTION 4.5 — TRUSTED PARTNER ════════════ #}
+    <section class="sec-pad" id="partner" data-theme="light">
+        <div class="wrap">
+            <div class="sec-head reveal">
+                <span class="eyebrow">Trusted partner</span>
+                <h2 class="section-title serif">For enterprise scale,<br>we trust Trove Suite.</h2>
+                <p>Our own modules are built for lean teams. When a larger organisation needs a complete, deeply-integrated ERP, we don't improvise — we bring in the platform we trust to run it.</p>
+            </div>
+            <div class="feature partner-feature reveal" data-cursor="project">
+                <div class="feature-frame mask-img">
+                    <span class="partner-ribbon">Recommended partner</span>
+                    <div class="browser-bar">
+                        <span class="dots"><i></i><i></i><i></i></span>
+                        <span class="url">trovesuite.com</span>
+                    </div>
+                    <div class="feature-screen">
+                        <iframe src="https://trovesuite.com/" title="Live preview of trovesuite.com" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                        <a href="https://trovesuite.com/" target="_blank" rel="noopener" class="feature-screen-link" aria-label="Open trovesuite.com in a new tab" data-cursor="cta"></a>
+                    </div>
+                </div>
+                <div class="feature-body">
+                    <div class="crole">Enterprise ERP · Our go-to platform</div>
+                    <p class="personal-note">When the scale and the budget are there, Trove Suite is honestly my first recommendation — enterprise-grade ERP, done properly.</p>
+                    <div class="case-story">
+                        <div class="cs-row"><span class="k">When it fits</span><span class="v">Larger organisations that need every function working as one connected system.</span></div>
+                        <div class="cs-row"><span class="k">What you get</span><span class="v">A mature, fully-integrated suite — finance, HR, operations and more, enterprise-grade.</span></div>
+                        <div class="cs-row"><span class="k">Our role</span><span class="v">We help you scope, adopt and roll it out — the same honest guidance, on a bigger platform.</span></div>
+                    </div>
+                    <a href="https://trovesuite.com/" target="_blank" rel="noopener" class="case-visit partner-visit" data-cursor="cta">Explore Trove Suite <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    {# ════════════ SECTION 5 — FEATURED CLIENT ════════════ #}
     <section class="sec-pad bg-cream" id="work" data-theme="light">
         <div class="wrap">
             <div class="sec-head reveal">
-                <span class="eyebrow">Selected work</span>
-                <h2 class="section-title serif">Selected Work.</h2>
-                <p>A few projects where understanding the business came first — and shaped everything that followed.</p>
+                <span class="eyebrow">Featured client</span>
+                <h2 class="section-title serif">Ɔkɔdeɛ Nkwan.</h2>
+                <p>A few projects where understanding the business came first — but this one I know from both sides of the counter.</p>
             </div>
-            <div class="cases">
-                <article class="case reveal" data-cursor="project" data-delay="1">
-                    <div class="case-img mask-img"><span class="case-tag">Restaurant · Brand site</span><div class="case-ph">Ɔkɔdeɛ Nkwan</div><div class="case-metric"><div class="cm-num serif">Live</div><div class="cm-lbl">okodienkwan.com</div></div></div>
-                    <h3>Ɔkɔdeɛ Nkwan</h3>
+            <div class="feature reveal" data-cursor="project">
+                <div class="feature-frame mask-img">
+                    <div class="browser-bar">
+                        <span class="dots"><i></i><i></i><i></i></span>
+                        <span class="url">okodienkwan.com</span>
+                    </div>
+                    <div class="feature-screen">
+                        <iframe src="https://okodienkwan.com" title="Live preview of okodienkwan.com" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                        <a href="https://okodienkwan.com" target="_blank" rel="noopener" class="feature-screen-link" aria-label="Open okodienkwan.com in a new tab" data-cursor="cta"></a>
+                    </div>
+                </div>
+                <div class="feature-body">
                     <div class="crole">Ghanaian chop bar · Accra</div>
+                    <p class="personal-note">Full disclosure: this isn't just a client — it's my go-to food joint whenever I'm in Accra. The hot spicy soup, the welcome you get walking in — I eat here, so building their online home was personal. If you're ever in the city, go hungry.</p>
                     <div class="case-story">
                         <div class="cs-row"><span class="k">Challenge</span><span class="v">A much-loved chop bar with two branches but no online home for its menu or story.</span></div>
                         <div class="cs-row"><span class="k">Solution</span><span class="v">A warm, mobile-first website — menu, gallery, locations and a catering enquiry form.</span></div>
                         <div class="cs-row outcome"><span class="k">Outcome</span><span class="v">The kitchen's hospitality, now online and easy to find.</span></div>
                     </div>
                     <a href="https://okodienkwan.com" target="_blank" rel="noopener" class="case-visit" data-cursor="cta">Visit okodienkwan.com <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-                </article>
-                <article class="case reveal" data-cursor="project" data-delay="2">
-                    <div class="case-img mask-img"><span class="case-tag">Institutional site</span><div class="case-ph">JILCE</div><div class="case-metric"><div class="cm-num serif">Live</div><div class="cm-lbl">jilce.info</div></div></div>
-                    <h3>JILCE</h3>
-                    <div class="crole">Church, seminary &amp; university · Tema</div>
-                    <div class="case-story">
-                        <div class="cs-row"><span class="k">Challenge</span><span class="v">A multi-arm institution — church, seminary and university — with no unified online presence.</span></div>
-                        <div class="cs-row"><span class="k">Solution</span><span class="v">A structured institutional site — departments, fees, resources and event galleries in one place.</span></div>
-                        <div class="cs-row outcome"><span class="k">Outcome</span><span class="v">One clear home for ministry, learning and enrolment.</span></div>
-                    </div>
-                    <a href="https://jilce.info" target="_blank" rel="noopener" class="case-visit" data-cursor="cta">Visit jilce.info <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-                </article>
-                {# PLACEHOLDER: third case is a demo — replace with a real project and verified metric #}
-                <article class="case reveal" data-cursor="project" data-delay="3">
-                    <div class="case-img mask-img"><span class="case-tag">ERP</span><div class="case-ph">Pharmacy ERP</div><div class="case-metric"><div class="cm-num">−40%</div><div class="cm-lbl">stockouts</div></div></div>
-                    <h3>Pharmacy ERP</h3>
-                    <div class="crole">Inventory &amp; procurement</div>
-                    <div class="case-story">
-                        <div class="cs-row"><span class="k">Challenge</span><span class="v">Stock and procurement scattered across spreadsheets.</span></div>
-                        <div class="cs-row"><span class="k">Solution</span><span class="v">Modular ERP — Inventory &amp; Procurement switched on.</span></div>
-                        <div class="cs-row outcome"><span class="k">Outcome</span><span class="v">Real-time stock, fewer stockouts.</span></div>
-                    </div>
-                </article>
+                </div>
             </div>
         </div>
     </section>
@@ -743,7 +826,7 @@
             <div class="team-photo reveal mask-img"><img src="{% static 'img/founder-image.JPEG' %}" alt="Founder of SEOTO" loading="lazy"></div>
             <div class="reveal" data-delay="1">
                 <span class="eyebrow">The founder</span>
-                <h2 class="serif">A founder who treats your business like my own.</h2>
+                <h2 class="serif">A founder who treats your business like his own.</h2>
                 <p>I started SEOTO to build software the honest way — caring more about the right outcome than the biggest invoice. With my team behind me, I listen first, recommend honestly, and stay with you long after launch.</p>
                 <p class="sig">— Founder, SEOTO</p>
             </div>
@@ -772,7 +855,7 @@
             <div class="reveal">
                 <span class="eyebrow">FAQ</span>
                 <h2 class="section-title serif" style="margin-top:16px;">Questions,<br>answered.</h2>
-                <p style="margin-top:18px; color:var(--ink-soft);">Still unsure? A discovery call is the fastest way to get clear, honest answers for your situation.</p>
+                <p style="margin-top:18px; color:var(--ink-soft);">Still unsure? A consultation is the fastest way to get clear, honest answers for your situation.</p>
                 <a href="{% url 'reach_out' %}" class="btn-x btn-ghost-x" data-cursor="cta" style="margin-top:22px;">Ask us directly
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
             </div>
@@ -798,8 +881,8 @@
                     <div class="faq-a"><div><p>We stay on. Monitoring, support, and training are part of how we work — so your software keeps running smoothly and your team keeps getting value from it long after go-live.</p></div></div>
                 </div>
                 <div class="faq-item">
-                    <button class="faq-q" aria-expanded="false"><span class="qidx">06</span><span class="qtext">What actually happens on a discovery call?</span><span class="qicon"></span></button>
-                    <div class="faq-a"><div><p>A relaxed 30-minute conversation about your goals, challenges, and budget. No slides, no pressure. You'll leave with a clearer sense of your options — whether or not you work with us.</p></div></div>
+                    <button class="faq-q" aria-expanded="false"><span class="qidx">06</span><span class="qtext">What actually happens on a consultation call?</span><span class="qicon"></span></button>
+                    <div class="faq-a"><div><p>A focused 30-minute conversation about your goals, challenges, and budget. No slides, no pressure. You'll leave with a clearer sense of your options — whether or not you work with us. In a hurry? You can also just call or WhatsApp us for a quick 5-minute chat.</p></div></div>
                 </div>
             </div>
         </div>
@@ -814,11 +897,11 @@
             <p class="reveal" data-delay="2">Tell us about your goals, challenges, and budget. We'll help determine whether a website, proven software, or a custom platform is the best fit.</p>
             <div class="hero-cta reveal" data-delay="3">
                 <div class="row">
-                    <a href="{% url 'reach_out' %}" class="btn-x btn-on-dark" data-cursor="cta">Schedule Discovery Call
+                    <a href="{% url 'reach_out' %}" class="btn-x btn-on-dark" data-cursor="cta">Book a Consultation
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-                    <a href="#products" class="btn-x btn-ghost-dark" data-cursor="cta">View Our Solutions</a>
+                    <a href="https://wa.me/233503032976" target="_blank" rel="noopener" class="btn-x btn-ghost-dark" data-cursor="cta">Message us on WhatsApp</a>
                 </div>
-                <p class="hero-reassure">30-min call · no obligation · we reply within 1 business day</p>
+                <p class="hero-reassure">Free 30-min consultation, no obligation — or call <a href="tel:+233503032976">+233 50 303 2976</a> for a quick 5-min chat.</p>
             </div>
         </div>
     </section>
@@ -834,13 +917,14 @@
                 <div class="foot-contact">
                     <a href="mailto:front-desk@seoto.org">front-desk@seoto.org</a>
                     <a href="tel:+233503032976">+233 50 303 2976</a>
+                    <a href="https://wa.me/233503032976" target="_blank" rel="noopener">Message us on WhatsApp</a>
                     <span>Accra, Ghana</span>
                 </div>
             </div>
             <div class="foot-cols">
                 <div class="foot-col"><h5>Solutions</h5><a href="#decision">Launch Fast</a><a href="#decision">Proven Software</a><a href="#decision">Custom Build</a><a href="#process">Our Process</a></div>
                 <div class="foot-col"><h5>Products</h5><a href="#products">Inventory System</a><a href="#products">Modular ERP</a><a href="#products">CMS Solutions</a><a href="#work">Selected Work</a></div>
-                <div class="foot-col"><h5>Company</h5><a href="{% url 'about' %}">About</a><a href="#faq">FAQ</a><a href="{% url 'reach_out' %}">Contact</a><a href="{% url 'reach_out' %}">Discovery Call</a></div>
+                <div class="foot-col"><h5>Company</h5><a href="{% url 'about' %}">About</a><a href="#faq">FAQ</a><a href="{% url 'reach_out' %}">Contact</a><a href="{% url 'reach_out' %}">Book a Consultation</a></div>
             </div>
         </div>
         <div class="foot-bottom">
@@ -951,7 +1035,9 @@
     });
 
     /* ── ERP explorer (hover + tap) ── */
-    var erpDetail = document.getElementById('erpDetail'), defaultErp = erpDetail ? erpDetail.innerHTML : '';
+    var erpDetail = document.getElementById('erpDetail');
+    if (erpDetail && !fine) erpDetail.innerHTML = erpDetail.innerHTML.replace('Hover', 'Tap');
+    var defaultErp = erpDetail ? erpDetail.innerHTML : '';
     function setErp(html) { erpDetail.style.opacity = '0'; setTimeout(function () { erpDetail.innerHTML = html; erpDetail.style.opacity = '1'; }, 130); }
     document.querySelectorAll('#erpModules .mod').forEach(function (m) {
         m.addEventListener('mouseenter', function () { setErp(m.getAttribute('data-desc')); });

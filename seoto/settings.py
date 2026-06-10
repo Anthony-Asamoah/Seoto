@@ -274,13 +274,25 @@ VAPID_PRIVATE_KEY = Env.str('VAPID_PRIVATE_KEY')
 VAPID_ADMIN_EMAIL = Env.str('VAPID_ADMIN_EMAIL')
 
 # reCAPTCHA v3 Configuration
-RECAPTCHA_VERIFY_URL = Env.str('RECAPTCHA_VERIFY_URL')
-RECAPTCHA_SITE_KEY = Env.str('RECAPTCHA_SITE_KEY')
-RECAPTCHA_SECRET_KEY = Env.str('RECAPTCHA_SECRET_KEY')
+# RECAPTCHA_VERIFY_URL = Env.str('RECAPTCHA_VERIFY_URL')
+# RECAPTCHA_SITE_KEY = Env.str('RECAPTCHA_SITE_KEY')
+# RECAPTCHA_SECRET_KEY = Env.str('RECAPTCHA_SECRET_KEY')
+RECAPTCHA_VERIFY_URL = None
+RECAPTCHA_SITE_KEY = None
+RECAPTCHA_SECRET_KEY = None
+# todo: remember to undo
 RECAPTCHA_SCORE_THRESHOLD = Env.float('RECAPTCHA_SCORE_THRESHOLD', default=0.5)
+
+# Only enforce reCAPTCHA when fully configured (keys present). Lets local/dev
+# skip verification by leaving the keys unset/None.
+RECAPTCHA_ENABLED = all([RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY, RECAPTCHA_VERIFY_URL])
 
 # IP Quality Score API Key
 IP_QUALITY_SCORE_API_KEY = Env.str('IP_QUALITY_SCORE_API_KEY', default="None")
+
+# Calendly — consultation booking link shown on the reach-out page after the
+# qualifying form is submitted. Swap the default for your real scheduling URL.
+CALENDLY_URL = Env.str('CALENDLY_URL', default='https://calendly.com/anthony-asamoah/30min')
 
 # Blog media upload limits (MB)
 BLOG_UPLOAD_MAX_SIZE_MB = Env.int('BLOG_UPLOAD_MAX_SIZE_MB', default=10)

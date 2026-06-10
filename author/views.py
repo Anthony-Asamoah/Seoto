@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.views import View
@@ -22,33 +23,54 @@ def get_context(request):
 
 class ReachOut(View):
     def get(self, request):
+        # After a valid submission we land here via PRG with the lead's details
+        # stashed in the session — render the calendar step (prefilled) instead
+        # of the form so they can lock an actual consultation slot.
+        booking = request.session.pop('discovery_booking', None)
+        if booking:
+            return render(request, 'author/reach_out.html', {
+                'booking': booking,
+                'calendly_url': settings.CALENDLY_URL,
+            })
+
         user = request.user
-        form = DiscoveryCallForm(request=request)
+        initial = None
         if user.is_authenticated:
-            form = DiscoveryCallForm(
-                request=request,
-                initial={
-                    'name': f'{user.first_name.title()} {user.last_name.title()}',
-                    'email': user.email
-                },
-            )
+            initial = {
+                'name': f'{user.first_name.title()} {user.last_name.title()}',
+                'email': user.email,
+            }
+        form = DiscoveryCallForm(request=request, initial=initial)
         return render(request, 'author/reach_out.html', {'form': form})
 
     def post(self, request):
         form = DiscoveryCallForm(request.POST, request=request)
+        is_htmx = request.headers.get('HX-Request') == 'true'
         if form.is_valid():
             details = form.save()
-            msg = 'Message Sent.'
             try:
                 details.forward_to_email()
             except Exception as e:
                 logging.warning(e)
-                msg = 'Message Saved.'
-            messages.success(request, msg)
+            booking = {
+                'name': form.cleaned_data.get('name', ''),
+                'email': form.cleaned_data.get('email', ''),
+            }
+            if is_htmx:
+                # Swap just the calendar fragment into #reach-panel — no full reload.
+                return render(request, 'author/partials/_reach_booking.html', {
+                    'booking': booking,
+                    'calendly_url': settings.CALENDLY_URL,
+                })
+            # No-JS fallback: carry name/email across the PRG redirect to prefill Calendly.
+            request.session['discovery_booking'] = booking
             return redirect('reach_out')
-        else:
-            messages.error(request, 'Failed to send. Kindly try again.')
-            return render(request, 'author/reach_out.html', {'form': form})
+
+        if is_htmx:
+            # Re-render the form fragment with errors in place.
+            return render(request, 'author/partials/_reach_form.html', {'form': form})
+        messages.error(request, 'Failed to send. Kindly try again.')
+        return render(request, 'author/reach_out.html', {'form': form})
 
 
 class About(View):
