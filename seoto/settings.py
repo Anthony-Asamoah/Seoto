@@ -136,7 +136,8 @@ RATE_LIMIT_CONFIG = {
     '/accounts/login/': {'max_requests': 5, 'window': 300},
     '/accounts/register': {'max_requests': 5, 'window': 300},
     '/accounts/password_reset/': {'max_requests': 3, 'window': 300},
-    '/author/@sean_or_tony/': {'max_requests': 3, 'window': 300},
+    '/@sean_or_tony': {'max_requests': 3, 'window': 300},
+    '/reach-out': {'max_requests': 5, 'window': 300},
 }
 
 # Password validation
