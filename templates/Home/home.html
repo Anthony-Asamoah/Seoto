@@ -147,11 +147,16 @@
             opacity: 0; filter: blur(8px); white-space: nowrap;
         }
         .intro-words span.active { animation: introWord 0.78s var(--ease) forwards; }
+        .intro-words span.hold { animation: introWordHold 0.6s var(--ease) forwards; }
         @keyframes introWord {
             0%   { opacity: 0; filter: blur(8px); transform: translateX(-50%) translateY(0.4em); }
             28%  { opacity: 1; filter: blur(0);   transform: translateX(-50%) translateY(0); }
             72%  { opacity: 1; filter: blur(0);   transform: translateX(-50%) translateY(0); }
             100% { opacity: 0; filter: blur(8px); transform: translateX(-50%) translateY(-0.4em); }
+        }
+        @keyframes introWordHold {
+            0%   { opacity: 0; filter: blur(8px); transform: translateX(-50%) translateY(0.4em); }
+            100% { opacity: 1; filter: blur(0);   transform: translateX(-50%) translateY(0); }
         }
         .intro-bar { position: absolute; bottom: 0; left: 0; height: 2px; width: 0; background: var(--gold); }
 
@@ -1398,13 +1403,18 @@
         var bar = document.getElementById('introBar');
         if (lenis) lenis.stop();
         document.body.style.overflow = 'hidden';
-        var step = 440, i = 0;
-        bar.style.transition = 'width ' + (step * words.length) + 'ms linear';
+        var step = 440, hold = 1150, i = 0;
+        var last = words.length - 1;
+        bar.style.transition = 'width ' + (step * last + hold) + 'ms linear';
         requestAnimationFrame(function () { bar.style.width = '100%'; });
         function next() {
-            if (i > 0) words[i - 1].classList.remove('active');
-            if (i < words.length) { words[i].classList.add('active'); i++; setTimeout(next, step); }
-            else finish();
+            if (i > 0) words[i - 1].classList.remove('active', 'hold');
+            if (i < words.length) {
+                var isLast = i === last;
+                words[i].classList.add(isLast ? 'hold' : 'active');
+                i++;
+                setTimeout(next, isLast ? hold : step);
+            } else finish();
         }
         function finish() {
             intro.classList.add('done');
