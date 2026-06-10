@@ -283,17 +283,21 @@
         .mask-img.in::after { transform: scaleX(0); }
 
         /* ════════════ TRUSTED-BY BAND ════════════ */
-        .trusted { padding: 34px 0; border-bottom: 1px solid var(--sand); background: var(--warm-white); }
-        .trusted-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-        .trusted-row { display: flex; align-items: center; gap: clamp(14px, 4vw, 40px); flex-wrap: wrap; justify-content: center; }
-        .trusted-label { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); flex-shrink: 0; }
+        .trusted { padding: 26px 0; border-top: 1px solid var(--sand); border-bottom: 1px solid var(--sand); background: var(--warm-white); overflow: hidden; }
+        .trusted-inner { display: flex; flex-direction: column; gap: 14px; }
+        .marquee { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+        .marquee-track { display: flex; width: max-content; animation: marquee 52s linear infinite; }
+        .marquee:hover .marquee-track { animation-play-state: paused; }
+        .marquee-seg { display: flex; align-items: center; gap: clamp(20px, 3.2vw, 44px); padding-right: clamp(20px, 3.2vw, 44px); flex-shrink: 0; }
+        .m-label { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-deep); white-space: nowrap; flex-shrink: 0; }
+        .m-div { width: 1px; height: 16px; background: var(--sand); flex-shrink: 0; }
         .client-name {
-            font-family: 'Fraunces', serif; font-size: 1.1rem; color: var(--ink-faint); opacity: 0.72;
+            font-family: 'Fraunces', serif; font-size: 1.12rem; color: var(--ink-faint); opacity: 0.72; white-space: nowrap;
             filter: grayscale(1); transition: opacity 0.3s var(--ease), color 0.3s var(--ease); letter-spacing: 0.02em;
         }
         .client-name:hover { opacity: 1; color: var(--ink-soft); }
-        .trusted-note { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.05em; color: var(--ink-faint); opacity: 0.62; text-align: center; max-width: 60ch; line-height: 1.6; }
-        @media (max-width: 640px) { .trusted-row { gap: 12px 18px; } .client-name { font-size: 1rem; } }
+        .trusted-note { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.05em; color: var(--ink-faint); opacity: 0.62; text-align: center; line-height: 1.6; padding: 0 16px; }
+        @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
         /* ════════════ DECISION PATH ════════════ */
         .decision-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
@@ -437,16 +441,21 @@
         .partner-ribbon { position: absolute; top: 14px; right: 14px; z-index: 4; font-family: 'JetBrains Mono', monospace; font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: #fff; background: var(--gold); padding: 5px 11px; border-radius: 100px; box-shadow: 0 4px 14px -4px rgba(34,29,23,0.45); }
         .partner-visit { color: var(--gold-deep); }
 
-        /* ════════════ TESTIMONIALS ════════════ */
+        /* ════════════ TRACK RECORD / SELECTED WORK ════════════ */
         .tgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-        @media (max-width: 980px) { .tgrid { grid-template-columns: 1fr; max-width: 560px; margin: 0 auto; } }
-        .tcard { background: var(--paper); border: 1px solid var(--sand); border-radius: 20px; padding: 32px 30px; display: flex; flex-direction: column; }
-        .tcard .quote { font-family: 'Fraunces', serif; font-size: 1.22rem; line-height: 1.42; letter-spacing: -0.01em; flex: 1; }
-        .tcard .quote::before { content: '\201C'; color: var(--gold); font-size: 1.5em; line-height: 0; vertical-align: -0.35em; margin-right: 2px; }
-        .tperson { display: flex; align-items: center; gap: 12px; margin-top: 24px; }
-        .tavatar { width: 44px; height: 44px; border-radius: 50%; background: var(--cream); display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-size: 1.05rem; color: var(--gold-deep); flex-shrink: 0; /* PLACEHOLDER avatar */ }
-        .tperson .tname { font-weight: 600; font-size: 0.92rem; }
-        .tperson .trole { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--ink-faint); margin-top: 1px; }
+        @media (max-width: 980px) { .tgrid { grid-template-columns: 1fr; max-width: 600px; margin: 0 auto; } }
+        .wcard { background: var(--paper); border: 1px solid var(--sand); border-radius: 20px; padding: 30px 28px 28px; display: flex; flex-direction: column; transition: border-color 0.4s var(--ease), transform 0.4s var(--ease); }
+        .wcard:hover { border-color: var(--gold-soft); transform: translateY(-3px); }
+        .wcard-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .wcard-kicker { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); }
+        .wcard-badge { font-family: 'JetBrains Mono', monospace; font-size: 0.56rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-deep); border: 1px solid var(--sand); border-radius: 100px; padding: 4px 10px; white-space: nowrap; }
+        .wcard h3 { font-family: 'Fraunces', serif; font-weight: 400; font-size: 1.5rem; letter-spacing: -0.01em; margin-top: 16px; }
+        .wcard .role { font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; color: var(--gold-deep); margin-top: 6px; letter-spacing: 0.02em; }
+        .wcard p { margin-top: 14px; color: var(--ink-soft); font-size: 0.95rem; line-height: 1.55; flex: 1; }
+        .wcard .wtags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 20px; }
+        .wcard .wtag { font-family: 'JetBrains Mono', monospace; font-size: 0.62rem; color: var(--ink-faint); background: var(--cream); border-radius: 6px; padding: 4px 9px; letter-spacing: 0.02em; }
+        .work-note { text-align: center; margin-top: 28px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; letter-spacing: 0.03em; color: var(--ink-faint); }
+        .work-note b { color: var(--ink-soft); font-weight: 500; }
 
         /* ════════════ TEAM / HUMAN BAND ════════════ */
         .team { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: clamp(28px, 5vw, 64px); align-items: center; }
@@ -589,22 +598,41 @@
         <div class="scroll-hint"><span>Scroll</span><span class="line"></span></div>
     </section>
 
-    {# ════════════ TRUSTED-BY BAND ════════════ #}
+    {# ════════════ TRUSTED-BY BAND (animated marquee) ════════════ #}
     <section class="trusted" data-theme="light">
-        <div class="wrap trusted-inner">
-            <div class="trusted-row">
-                <span class="trusted-label">Running Seoto software</span>
-                <span class="client-name">Williana Pharmacy</span>
-                <span class="client-name">Okodienkwan</span>
-                <span class="client-name">JILCE</span>
-            </div>
-            <div class="trusted-row">
-                <span class="trusted-label">Work delivered for</span>
-                <span class="client-name">UNDP</span>
-                <span class="client-name">GIZ</span>
-                <span class="client-name">Mastercard Foundation</span>
-                <span class="client-name">GEA</span>
-                <span class="client-name">GI-KACE</span>
+        <div class="trusted-inner">
+            <div class="marquee">
+                <div class="marquee-track">
+                    {# segment is duplicated for a seamless -50% loop; the duplicate is aria-hidden #}
+                    <div class="marquee-seg">
+                        <span class="m-label">Run &amp; managed by Seoto</span>
+                        <span class="client-name">Williana Pharmacy</span>
+                        <span class="client-name">Okodienkwan</span>
+                        <span class="client-name">JILCE</span>
+                        <span class="m-div"></span>
+                        <span class="m-label">Work delivered for</span>
+                        <span class="client-name">UNDP</span>
+                        <span class="client-name">GIZ</span>
+                        <span class="client-name">Mastercard Foundation</span>
+                        <span class="client-name">GEA</span>
+                        <span class="client-name">GI-KACE</span>
+                        <span class="m-div"></span>
+                    </div>
+                    <div class="marquee-seg" aria-hidden="true">
+                        <span class="m-label">Run &amp; managed by Seoto</span>
+                        <span class="client-name">Williana Pharmacy</span>
+                        <span class="client-name">Okodienkwan</span>
+                        <span class="client-name">JILCE</span>
+                        <span class="m-div"></span>
+                        <span class="m-label">Work delivered for</span>
+                        <span class="client-name">UNDP</span>
+                        <span class="client-name">GIZ</span>
+                        <span class="client-name">Mastercard Foundation</span>
+                        <span class="client-name">GEA</span>
+                        <span class="client-name">GI-KACE</span>
+                        <span class="m-div"></span>
+                    </div>
+                </div>
             </div>
             <p class="trusted-note">Institutional project work delivered through GI-KACE &amp; partners · plus international contracts under NDA</p>
         </div>
@@ -806,28 +834,38 @@
         </div>
     </section>
 
-    {# ════════════ SECTION 6 — TESTIMONIALS ════════════ #}
+    {# ════════════ SECTION 6 — TRACK RECORD / SELECTED WORK ════════════ #}
     <section class="sec-pad" data-theme="light">
         <div class="wrap">
             <div class="sec-head reveal">
-                <span class="eyebrow">In their words</span>
-                <h2 class="section-title serif">What clients say.</h2>
+                <span class="eyebrow">Track record</span>
+                <h2 class="section-title serif">Proof, not promises.</h2>
+                <p>A solo brand with a seasoned team behind it — and years of work to show for it, across healthcare, government and international development, and businesses we build for and manage every day.</p>
             </div>
-            {# PLACEHOLDER testimonials — replace quotes, names & roles with real ones #}
             <div class="tgrid">
-                <figure class="tcard reveal" data-delay="1">
-                    <blockquote class="quote">They didn't try to sell us the biggest system. They asked what we actually needed — and built exactly that.</blockquote>
-                    <figcaption class="tperson"><span class="tavatar">A</span><span><span class="tname">Ama Boateng</span><span class="trole">Founder, Retail Co.</span></span></figcaption>
-                </figure>
-                <figure class="tcard reveal" data-delay="2">
-                    <blockquote class="quote">The discovery workshop alone saved us from a costly mistake. We ended up with software our team genuinely uses.</blockquote>
-                    <figcaption class="tperson"><span class="tavatar">K</span><span><span class="tname">Kwame Mensah</span><span class="trole">Operations Lead, JILCE</span></span></figcaption>
-                </figure>
-                <figure class="tcard reveal" data-delay="3">
-                    <blockquote class="quote">Support didn't stop at launch. Months later, they're still there making sure everything runs.</blockquote>
-                    <figcaption class="tperson"><span class="tavatar">N</span><span><span class="tname">Naa Adjeley</span><span class="trole">Director, HopeWorks NGO</span></span></figcaption>
-                </figure>
+                <article class="wcard reveal" data-cursor="ring" data-delay="1">
+                    <div class="wcard-top"><span class="wcard-kicker">Healthcare platform</span><span class="wcard-badge">Contractor</span></div>
+                    <h3>MyHealthCop</h3>
+                    <span class="role">Backend Developer → Team Lead</span>
+                    <p>Built and led the backend for a healthcare platform — growing from developer to team lead. Today I stay on as an independent contractor, keeping the system running and evolving.</p>
+                    <div class="wtags"><span class="wtag">Backend</span><span class="wtag">Team leadership</span><span class="wtag">Long-term support</span></div>
+                </article>
+                <article class="wcard reveal" data-cursor="ring" data-delay="2">
+                    <div class="wcard-top"><span class="wcard-kicker">Government ICT agency</span><span class="wcard-badge">Current</span></div>
+                    <h3>GI-KACE</h3>
+                    <span class="role">Researcher · Developer · Lecturer</span>
+                    <p>The national ICT agency under Ghana's Ministry of Communications &amp; Digitalisation. As a researcher, developer and lecturer here, I've delivered project work for UNDP, GIZ, Mastercard Foundation and GEA.</p>
+                    <div class="wtags"><span class="wtag">UNDP</span><span class="wtag">GIZ</span><span class="wtag">Mastercard Foundation</span><span class="wtag">GEA</span></div>
+                </article>
+                <article class="wcard reveal" data-cursor="ring" data-delay="3">
+                    <div class="wcard-top"><span class="wcard-kicker">Products &amp; managed clients</span><span class="wcard-badge">In daily use</span></div>
+                    <h3>Software suite</h3>
+                    <span class="role">Built, run &amp; managed by Seoto</span>
+                    <p>The products I build and own — including the inventory system in daily use at Williana Pharmacy. I also run and maintain the digital operations of Okodienkwan and JILCE.</p>
+                    <div class="wtags"><span class="wtag">Inventory</span><span class="wtag">Managed service</span><span class="wtag">Maintenance</span></div>
+                </article>
             </div>
+            <p class="work-note">Plus <b>international contracts under NDA</b> — details available on request.</p>
         </div>
     </section>
 
