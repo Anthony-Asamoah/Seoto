@@ -58,17 +58,11 @@
             </div>
         </div>
 
-        <div class="frow">
-            <div class="field mode-full">
-                <label for="{{ form.company.id_for_label }}">Organization</label>
-                {{ form.company }}
-            </div>
-            <div class="field">
-                <label for="{{ form.phone.id_for_label }}">Phone <span class="req mode-quick">*</span></label>
-                {{ form.phone }}
-                <small class="field-hint">Outside Ghana? Include your country code (e.g. +1, +44).</small>
-                {{ form.phone.errors }}
-            </div>
+        <div class="field">
+            <label for="{{ form.phone.id_for_label }}">Phone <span class="req mode-quick">*</span></label>
+            {{ form.phone }}
+            <small class="field-hint">Outside Ghana? Include your country code (e.g. +1, +44).</small>
+            {{ form.phone.errors }}
         </div>
 
         <div class="field mode-full">
@@ -84,16 +78,30 @@
             {{ form.interest.errors }}
         </div>
 
-        <div class="frow mode-full">
-            <div class="field">
-                <label for="{{ form.budget.id_for_label }}">Budget range</label>
-                {{ form.budget }}
+        {# Secondary, never-required fields — tucked away so the form opens uncluttered. #}
+        <details class="optional-block mode-full">
+            <summary>
+                <span>Add organization, budget &amp; timeline</span>
+                <span class="opt-muted">(optional)</span>
+                <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </summary>
+            <div class="optional-fields">
+                <div class="field">
+                    <label for="{{ form.company.id_for_label }}">Organization</label>
+                    {{ form.company }}
+                </div>
+                <div class="frow">
+                    <div class="field">
+                        <label for="{{ form.budget.id_for_label }}">Budget range</label>
+                        {{ form.budget }}
+                    </div>
+                    <div class="field">
+                        <label for="{{ form.timeline.id_for_label }}">Project timeline</label>
+                        {{ form.timeline }}
+                    </div>
+                </div>
             </div>
-            <div class="field">
-                <label for="{{ form.timeline.id_for_label }}">Project timeline</label>
-                {{ form.timeline }}
-            </div>
-        </div>
+        </details>
 
         <div class="field">
             <label for="{{ form.message.id_for_label }}">
