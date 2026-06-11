@@ -1683,6 +1683,7 @@
     }
 
     /* slow caret typing — reserved for the hero's "Not the other way around." line */
+    var CARET_TYPE_SPEED = 2;   // single speed weight — higher = faster typing (1 = baseline)
     function typeWithCaret(target, text, onDone) {
         var caret = document.createElement('span');
         caret.className = 'type-caret';
@@ -1692,9 +1693,10 @@
             if (ci < chars.length) {
                 var ch = chars[ci++];
                 target.insertBefore(document.createTextNode(ch), caret);
-                var d = 42 + Math.random() * 32;              // ~42–74ms per character
-                if (/[.,—]/.test(ch)) d += 240;               // linger on punctuation
-                else if (ch === ' ') d += 26;
+                var d = 95 + Math.random() * 55;              // ~95–150ms per character
+                if (/[.,—]/.test(ch)) d += 380;               // linger on punctuation
+                else if (ch === ' ') d += 70;
+                d /= CARET_TYPE_SPEED;                         // scale whole effect by one weight
                 setTimeout(typeChar, d);
             } else {
                 caret.classList.add('done');

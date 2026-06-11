@@ -1,8 +1,18 @@
-{# Qualifying form. Submits via HTMX (hx-post) and swaps #reach-panel; falls back to a normal POST when JS is off. #}
-<section class="form-card reveal" data-delay="1">
+{% comment %}
+   Qualifying form. Submits via HTMX (hx-post) and swaps #reach-panel; falls back to a normal POST when JS is off.
+   Two modes via the `quick-mode` class on .form-card: full discovery funnel (→ Calendly), or a lightweight
+   no-email "quick message" (name + phone + message → we call back). The toggle + hidden quick_message field drive it.
+{% endcomment %}
+<section class="form-card reveal{% if form.quick_message.value %} quick-mode{% endif %}" data-delay="1">
     <div class="fc-head">
-        <h2 class="serif">Tell us about your project</h2>
-        <p>A few details so we come prepared — then you'll pick a time. Fields marked <span class="req">*</span> are required.</p>
+        <h2 class="serif">
+            <span class="mode-full">Tell us about your project</span>
+            <span class="mode-quick">Send us a quick message</span>
+        </h2>
+        <p>
+            <span class="mode-full">A few details so we come prepared — then you'll pick a time. Fields marked <span class="req">*</span> are required.</span>
+            <span class="mode-quick">No email? No problem. Leave your name, number and message — we'll call you back.</span>
+        </p>
     </div>
 
     {% if messages %}
@@ -24,6 +34,7 @@
           hx-post="{% url 'reach_out' %}" hx-target="#reach-panel" hx-swap="innerHTML"
           hx-disabled-elt="find button[type=submit]">
         {% csrf_token %}
+        {{ form.quick_message }}
 
         {# honeypot #}
         <div class="hp-field" aria-hidden="true">
@@ -40,7 +51,7 @@
                 {{ form.name }}
                 {{ form.name.errors }}
             </div>
-            <div class="field">
+            <div class="field mode-full">
                 <label for="{{ form.email.id_for_label }}">Email <span class="req">*</span></label>
                 {{ form.email }}
                 {{ form.email.errors }}
@@ -48,17 +59,19 @@
         </div>
 
         <div class="frow">
-            <div class="field">
+            <div class="field mode-full">
                 <label for="{{ form.company.id_for_label }}">Organization</label>
                 {{ form.company }}
             </div>
             <div class="field">
-                <label for="{{ form.phone.id_for_label }}">Phone</label>
+                <label for="{{ form.phone.id_for_label }}">Phone <span class="req mode-quick">*</span></label>
                 {{ form.phone }}
+                <small class="field-hint">Outside Ghana? Include your country code (e.g. +1, +44).</small>
+                {{ form.phone.errors }}
             </div>
         </div>
 
-        <div class="field">
+        <div class="field mode-full">
             <span class="field-label">What are you looking for? <span class="req">*</span></span>
             <div class="interest-grid">
                 {% for radio in form.interest %}
@@ -71,30 +84,50 @@
             {{ form.interest.errors }}
         </div>
 
-        <div class="frow">
+        <div class="frow mode-full">
             <div class="field">
                 <label for="{{ form.budget.id_for_label }}">Budget range</label>
                 {{ form.budget }}
             </div>
             <div class="field">
-                <label for="{{ form.timeline.id_for_label }}">Timeline</label>
+                <label for="{{ form.timeline.id_for_label }}">Project timeline</label>
                 {{ form.timeline }}
             </div>
         </div>
 
         <div class="field">
-            <label for="{{ form.message.id_for_label }}">Tell us about your project <span class="req">*</span></label>
+            <label for="{{ form.message.id_for_label }}">
+                <span class="mode-full">Tell us about your project</span>
+                <span class="mode-quick">Your message</span>
+                <span class="req">*</span>
+            </label>
             {{ form.message }}
             {{ form.message.errors }}
         </div>
 
         <div class="submit-row">
             <button class="btn-x btn-primary-x" type="submit" data-cursor="cta">
-                <span class="btn-label">Continue to pick a time</span>
+                <span class="btn-label">
+                    <span class="mode-full">Continue to pick a time</span>
+                    <span class="mode-quick">Send message</span>
+                </span>
                 <span class="btn-loading">Sending…</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </button>
-            <p class="reassure">Next: choose a slot that suits you · no obligation</p>
+            <p class="reassure">
+                <span class="mode-full">Next: choose a slot that suits you · no obligation</span>
+                <span class="mode-quick">We'll read it and call you back · no obligation</span>
+            </p>
+        </div>
+
+        {# Mode toggle — flips .form-card.quick-mode and the hidden quick_message field (see reach_out.html). #}
+        <div class="mode-switch">
+            <button type="button" class="mode-toggle mode-full" data-to="quick">
+                No email? Send a quick message instead →
+            </button>
+            <button type="button" class="mode-toggle mode-quick" data-to="full">
+                ← Have email? Book a consultation instead
+            </button>
         </div>
 
         {% include 'partials/_recaptcha.html' with action='contact' form_id='discoveryForm' %}

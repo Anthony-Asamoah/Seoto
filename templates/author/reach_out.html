@@ -30,6 +30,25 @@
         html { -webkit-text-size-adjust: 100%; }
         body { font-family: 'Hanken Grotesk', system-ui, sans-serif; background: var(--warm-white); color: var(--ink);
             line-height: 1.6; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overflow-x: hidden; }
+
+        /* ── ambient aura: soft drifting glows behind everything ── */
+        .aura { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+        .aura::before, .aura::after { content: ''; position: absolute; border-radius: 50%;
+            filter: blur(90px); opacity: 0.5; will-change: transform; }
+        .aura::before { width: 52vw; height: 52vw; top: -14vw; left: -10vw;
+            background: radial-gradient(circle at center, rgba(180,138,77,0.34), rgba(180,138,77,0) 68%);
+            animation: auraDriftA 26s var(--ease) infinite alternate; }
+        .aura::after { width: 46vw; height: 46vw; bottom: -16vw; right: -8vw;
+            background: radial-gradient(circle at center, rgba(47,96,152,0.24), rgba(47,96,152,0) 68%);
+            animation: auraDriftB 32s var(--ease) infinite alternate; }
+        .aura-orb { position: absolute; width: 34vw; height: 34vw; top: 32%; left: 38%;
+            border-radius: 50%; filter: blur(100px); opacity: 0.4; will-change: transform;
+            background: radial-gradient(circle at center, rgba(205,176,131,0.3), rgba(205,176,131,0) 70%);
+            animation: auraDriftC 38s var(--ease) infinite alternate; }
+        @keyframes auraDriftA { to { transform: translate(7vw, 6vh) scale(1.12); } }
+        @keyframes auraDriftB { to { transform: translate(-6vw, -5vh) scale(1.15); } }
+        @keyframes auraDriftC { to { transform: translate(-8vw, 7vh) scale(0.9); } }
+        @media (prefers-reduced-motion: reduce) { .aura::before, .aura::after, .aura-orb { animation: none !important; } }
         html.lenis, html.lenis body { height: auto; }
         .lenis.lenis-smooth { scroll-behavior: auto !important; }
         ::selection { background: var(--gold); color: #fff; }
@@ -117,6 +136,7 @@
         .field > label, .field-label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
             font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
         .req { color: var(--gold-deep); }
+        .field-hint { display: block; margin-top: 6px; font-size: 0.78rem; line-height: 1.4; color: var(--ink-soft); }
 
         .field input[type=text], .field input[type=email], .field input[type=tel], .field select, .field textarea,
         .reach input[type=text], .reach input[type=email], .reach input[type=tel], .reach select, .reach textarea {
@@ -148,6 +168,20 @@
 
         /* honeypot */
         .hp-field { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; overflow: hidden; }
+
+        /* ── quick-message mode toggle ──
+           .mode-full elements show in the default discovery funnel; .mode-quick
+           show only when .form-card has .quick-mode. Hiding is universal; the
+           shown elements are all inline (spans/buttons), so display:inline is safe. */
+        .mode-quick { display: none; }
+        .form-card.quick-mode .mode-full { display: none; }
+        .form-card.quick-mode .mode-quick { display: inline; }
+        /* with email/company hidden, the surviving fields go full width */
+        .form-card.quick-mode .frow { grid-template-columns: 1fr; }
+        .mode-switch { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--sand); text-align: center; }
+        .mode-toggle { background: none; border: 0; padding: 0; cursor: pointer; font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem; letter-spacing: 0.03em; color: var(--gold-deep); transition: color 0.2s var(--ease); }
+        .mode-toggle:hover { color: var(--ink); text-decoration: underline; }
 
         /* errors + flash */
         .errlist { list-style: none; margin-top: 6px; }
@@ -223,11 +257,24 @@
 
         .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.9s var(--ease), transform 0.9s var(--ease); }
         .reveal.in { opacity: 1; transform: none; }
+
+        /* caret typing for the headline — mirrors the homepage hero effect */
+        .type-caret {
+            display: inline-block; width: 3px; height: 0.92em; margin-left: 3px;
+            vertical-align: -0.08em; border-radius: 1px; background: var(--gold-soft);
+            box-shadow: 0 0 12px rgba(205,176,131,0.55);
+            animation: caretBlink 1.05s steps(1) infinite;
+        }
+        .type-caret.done { animation: caretFade 0.8s var(--ease) forwards; }
+        @keyframes caretBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+        @keyframes caretFade { to { opacity: 0; } }
         [data-delay="1"] { transition-delay: 0.08s; } [data-delay="2"] { transition-delay: 0.16s; }
         @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0.001ms !important; } .reveal { opacity: 1 !important; transform: none !important; } }
     </style>
 </head>
 <body data-theme="light">
+
+<div class="aura" aria-hidden="true"><span class="aura-orb"></span></div>
 
 <div class="cursor" id="cursor"></div>
 
@@ -245,7 +292,7 @@
         {# ── Left rail: intro ── #}
         <aside class="rail reveal">
             <span class="eyebrow">Free consultation</span>
-            <h1 class="serif">Let's figure out what you <em>actually</em> need.</h1>
+            <h1 class="serif" id="reach-headline">Let's figure out what you <em>actually</em> need.</h1>
             <p class="lead">No pressure, no jargon. Share your goals, pick a time, and we'll help determine whether a website, proven software, or a custom platform is the right fit.</p>
         </aside>
 
@@ -253,6 +300,8 @@
         <div id="reach-panel">
             {% if booking %}
                 {% include 'author/partials/_reach_booking.html' %}
+            {% elif confirmation %}
+                {% include 'author/partials/_reach_confirmation.html' %}
             {% else %}
                 {% include 'author/partials/_reach_form.html' %}
             {% endif %}
@@ -332,6 +381,81 @@
         (function loop() { cx += (tx - cx) * 0.2; cy += (ty - cy) * 0.2; cursor.style.transform = 'translate(' + cx + 'px,' + cy + 'px) translate(-50%,-50%)'; requestAnimationFrame(loop); })();
     }
     bindCursor(document);
+
+    /* Mode toggle — delegated so it survives HTMX re-renders of the form.
+       Flips .quick-mode on the card and the hidden quick_message field the server reads,
+       cross-fades between states, and scrolls back to the top of the form. */
+    function scrollToCard(card) {
+        var top = card.getBoundingClientRect().top + window.pageYOffset - 90;
+        if (typeof lenis !== 'undefined' && lenis) lenis.scrollTo(top, { duration: 0.6 });
+        else window.scrollTo({ top: top, behavior: reduceMotion ? 'auto' : 'smooth' });
+    }
+    document.body.addEventListener('click', function (e) {
+        var t = e.target.closest('.mode-toggle');
+        if (!t) return;
+        var card = t.closest('.form-card');
+        if (!card) return;
+        var quick = t.getAttribute('data-to') === 'quick';
+
+        function apply() {
+            card.classList.toggle('quick-mode', quick);
+            var hidden = card.querySelector('input[name="quick_message"]');
+            if (hidden) hidden.value = quick ? '1' : '';
+            scrollToCard(card);
+        }
+
+        if (reduceMotion) { apply(); return; }
+
+        /* fade out → swap + scroll → fade back in. Inline styles beat the slower
+           .reveal opacity transition, and are cleared afterwards so reveal is untouched. */
+        card.style.transition = 'opacity 0.22s var(--ease)';
+        card.style.opacity = '0';
+        setTimeout(function () {
+            apply();
+            requestAnimationFrame(function () { card.style.opacity = '1'; });
+            setTimeout(function () { card.style.transition = ''; card.style.opacity = ''; }, 280);
+        }, 220);
+    });
+
+    /* ── headline caret typing (ported from the homepage hero) ──
+       Single speed weight — higher = faster typing (1 = baseline). One knob scales
+       the per-character, punctuation-linger and space-pause delays together. */
+    var CARET_TYPE_SPEED = 2;
+    function typeHeadline(h1) {
+        if (!h1 || reduceMotion) return;
+        // capture each child as a segment so inline elements (e.g. <em>) keep their styling
+        var segs = [];
+        h1.childNodes.forEach(function (n) {
+            if (n.nodeType === 3) segs.push({ tag: null, text: n.textContent });
+            else segs.push({ tag: n.tagName.toLowerCase(), cls: n.className, text: n.textContent });
+        });
+        h1.textContent = '';
+        var caret = document.createElement('span'); caret.className = 'type-caret';
+        h1.appendChild(caret);
+        var si = 0;
+        (function nextSeg() {
+            if (si >= segs.length) {
+                caret.classList.add('done');
+                setTimeout(function () { if (caret.parentNode) caret.parentNode.removeChild(caret); }, 900);
+                return;
+            }
+            var seg = segs[si++], sink = null;
+            if (seg.tag) { sink = document.createElement(seg.tag); if (seg.cls) sink.className = seg.cls; h1.insertBefore(sink, caret); }
+            var chars = seg.text.split(''), ci = 0;
+            (function typeChar() {
+                if (ci < chars.length) {
+                    var ch = chars[ci++], node = document.createTextNode(ch);
+                    if (sink) sink.appendChild(node); else h1.insertBefore(node, caret);
+                    var d = 95 + Math.random() * 55;              // ~95–150ms per character
+                    if (/[.,—]/.test(ch)) d += 380;               // linger on punctuation
+                    else if (ch === ' ') d += 70;
+                    d /= CARET_TYPE_SPEED;                         // scale whole effect by one weight
+                    setTimeout(typeChar, d);
+                } else nextSeg();
+            })();
+        })();
+    }
+    setTimeout(function () { typeHeadline(document.getElementById('reach-headline')); }, 360);
 
     /* HTMX: animate + re-bind the freshly swapped panel, and ease it into view */
     document.body.addEventListener('htmx:afterSwap', function (evt) {

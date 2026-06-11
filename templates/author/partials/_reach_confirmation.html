@@ -1,0 +1,15 @@
+{# No-email "quick message" confirmation. Swapped into #reach-panel via HTMX, or rendered on the PRG fallback. #}
+<section class="book-card reveal" data-delay="1">
+    <div class="book-head">
+        <div class="book-tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <div>
+            <h2 class="serif">Got it{% if confirmation.name %}, {{ confirmation.name }}{% endif %} — we'll call you</h2>
+            <p>Your message is on its way to us. We'll call you back{% if confirmation.phone %} on <strong>{{ confirmation.phone }}</strong>{% endif %} as soon as we can — no email needed.</p>
+        </div>
+    </div>
+    <p class="book-fallback">
+        Can't wait? Reach us now on <a href="tel:+233503032976">+233 50 303 2976</a>
+        or <a href="https://wa.me/233503032976" target="_blank" rel="noopener">message us on WhatsApp</a>.
+        <a href="{% url 'reach_out' %}">Send another message</a>.
+    </p>
+</section>

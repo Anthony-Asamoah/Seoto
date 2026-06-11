@@ -33,6 +33,12 @@ class ReachOut(View):
                 'calendly_url': settings.CALENDLY_URL,
             })
 
+        # No-email "quick message" path lands here via PRG — show the call-back
+        # confirmation instead of the form/calendar.
+        confirmation = request.session.pop('discovery_confirmation', None)
+        if confirmation:
+            return render(request, 'author/reach_out.html', {'confirmation': confirmation})
+
         user = request.user
         initial = None
         if user.is_authenticated:
@@ -52,6 +58,20 @@ class ReachOut(View):
                 details.forward_to_email()
             except Exception as e:
                 logging.warning(e)
+
+            if form.cleaned_data.get('quick_message'):
+                # No email to self-book with — end on a "we'll call you" note.
+                confirmation = {
+                    'name': form.cleaned_data.get('name', ''),
+                    'phone': form.cleaned_data.get('phone', ''),
+                }
+                if is_htmx:
+                    return render(request, 'author/partials/_reach_confirmation.html', {
+                        'confirmation': confirmation,
+                    })
+                request.session['discovery_confirmation'] = confirmation
+                return redirect('reach_out')
+
             booking = {
                 'name': form.cleaned_data.get('name', ''),
                 'email': form.cleaned_data.get('email', ''),
