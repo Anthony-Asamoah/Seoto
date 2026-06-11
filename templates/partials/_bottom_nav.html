@@ -57,9 +57,9 @@
 
     {% endif %}
 
-    <a href="{% url 'index' %}"
-       class="bottom-nav-item{% if request.resolver_match.url_name == 'index' %} active{% endif %}"
-       aria-current="{% if request.resolver_match.url_name == 'index' %}page{% else %}false{% endif %}">
+    <a href="{% url 'apps' %}"
+       class="bottom-nav-item{% if request.resolver_match.url_name == 'apps' %} active{% endif %}"
+       aria-current="{% if request.resolver_match.url_name == 'apps' %}page{% else %}false{% endif %}">
         <i class="fas fa-home" aria-hidden="true"></i>
         <span>Home</span>
     </a>
