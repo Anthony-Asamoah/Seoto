@@ -28,8 +28,25 @@ class RhymeDB:
         for letter in self._rhyme_string:
             if letter not in allowed_chars: raise InvalidInput('Only english letters are allowed')
 
+    @staticmethod
+    def _ideal_suffix_length(word: str) -> int:
+        """How many trailing letters to rhyme on, scaled by word length.
+
+        Longer words need a longer ending to rhyme well — matching only the
+        last 3 letters of "action" pulls in non-rhymes like "lion"/"onion",
+        whereas "tion" keeps it to nation/station. Short words rhyme on 2.
+        """
+        length = len(word)
+        if length < 4:
+            return 2
+        if length < 6:
+            return 3
+        return 4
+
     def _find_rhymes_for_word(self, word: str, temp: str) -> None:
-        for n in [3, 2, 1]:
+        # Try the ideal suffix for this word's length, shortening only if the
+        # longer (more specific) ending matches nothing in the dictionary.
+        for n in range(self._ideal_suffix_length(word), 0, -1):
             if len(word) >= n:
                 suffix = word[-n:]
                 regex = re.compile(f'\\w*{suffix}\\s')

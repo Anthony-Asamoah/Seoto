@@ -4,23 +4,267 @@
 
 {% block style %}
     <style>
-        label {
-            font-size: 20px;
+        /* ============================================================
+           Interest Calculator — simple system typography, light theme
+           System sans throughout · monospace only for numerals
+           ============================================================ */
+        #ic-stage {
+            width: 100vw;
+            margin-left: calc(50% - 50vw);
+            position: relative;
+            isolation: isolate;
+            overflow: hidden;
+            padding: clamp(2.4rem, 6vw, 5.5rem) var(--ic-pad) clamp(3.5rem, 8vw, 6rem);
+            font-family: var(--ic-sans);
+            color: var(--ic-ink);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+
+            --ic-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --ic-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            --ic-pad: clamp(1.1rem, 5vw, 4rem);
+            --ic-paper:   #ffffff;
+            --ic-bg:      #f8f9fa;
+            --ic-ink:     #212529;
+            --ic-ink-soft:#495057;
+            --ic-ink-faint:#6c757d;
+            --ic-line:    #dee2e6;
+            --ic-charcoal:#212529;
+
+            --ic-teal:  #0c5460;
+            --ic-green: #198754;
+            --ic-blue:  #0d6efd;
+
+            --ic-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+            background: linear-gradient(168deg, var(--ic-paper) 0%, var(--ic-bg) 100%);
         }
-        input {
-            height: 40px;
-            width:100%;
-            border: 2px solid #0b2e13;
+        #ic-stage ::selection { background: var(--ic-blue); color: #fff; }
+
+        .ic-wrap { max-width: 1080px; margin: 0 auto; }
+
+        /* ---------- hero ---------- */
+        .ic-hero { text-align: center; margin-bottom: clamp(2rem, 5vw, 3.4rem); }
+        .ic-eyebrow {
+            font-family: var(--ic-mono);
+            font-size: 0.72rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+            color: var(--ic-ink-faint);
+            display: inline-flex; align-items: center; gap: 11px; margin-bottom: 1.2rem;
+        }
+        .ic-eyebrow::before { content: ""; width: 22px; height: 1px; background: currentColor; opacity: 0.65; }
+        .ic-title {
+            font-family: var(--ic-sans);
+            font-weight: 700;
+            font-size: clamp(2.2rem, 7vw, 3.8rem);
+            line-height: 1.04;
+            letter-spacing: -0.02em;
+            margin: 0; color: var(--ic-ink);
+        }
+        .ic-title em { font-style: normal; color: var(--ic-green); }
+        .ic-sub {
+            margin: 1.1rem auto 0; max-width: 52ch;
+            font-size: 1.06rem; line-height: 1.65; color: var(--ic-ink-soft);
+        }
+        .ic-sub em { font-style: italic; color: var(--ic-ink); }
+
+        /* ---------- panel ---------- */
+        .ic-panel {
+            background: rgba(255, 253, 249, 0.7);
+            backdrop-filter: blur(16px) saturate(1.1);
+            -webkit-backdrop-filter: blur(16px) saturate(1.1);
+            border: 1px solid rgba(255, 255, 255, 0.75);
+            border-radius: 26px;
+            padding: clamp(1.4rem, 4vw, 2.6rem);
+            box-shadow:
+                0 1px 0 rgba(255,255,255,0.9) inset,
+                0 30px 60px -28px rgba(0, 0, 0, 0.16);
+        }
+
+        /* inputs */
+        .ic-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; }
+        .ic-field { display: flex; flex-direction: column; }
+        .ic-field label {
+            font-family: var(--ic-mono);
+            font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase;
+            color: var(--ic-ink-faint); font-weight: 500; margin: 0 0 0.55rem 0.15rem;
+        }
+        .ic-input-shell { position: relative; }
+        .ic-field input {
+            width: 100%; height: 64px;
+            border: 1.5px solid var(--ic-line);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 0 2.4rem 0 1.05rem;
+            font-family: var(--ic-mono);
+            font-size: 1.5rem; font-weight: 500; color: var(--ic-ink);
             outline: none;
-            background-color: white;
-            transition: 0.5s ease;
-            border-radius: 5px;
-            font-family: monospace;
-            padding: 0 5px;
+            transition: border-color .25s var(--ic-ease), box-shadow .25s var(--ic-ease), background .25s var(--ic-ease);
         }
-        input:hover {
-            background-color: #0c5460;
-            color: white;
+        .ic-field input::placeholder { color: #adb5bd; font-weight: 400; }
+        .ic-field input:hover { border-color: #adb5bd; }
+        .ic-field input:focus {
+            border-color: #86b7fe; background: #fff;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.18);
+        }
+        .ic-unit {
+            position: absolute; right: 1rem; top: 50%; transform: translateY(-50%);
+            font-family: var(--ic-mono); font-size: 0.95rem; color: var(--ic-ink-faint);
+            pointer-events: none;
+        }
+
+        /* ---------- type selector ---------- */
+        .ic-choose {
+            margin: 1.7rem 0 0.9rem;
+            font-family: var(--ic-mono);
+            font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase;
+            color: var(--ic-ink-faint); font-weight: 500; text-align: center;
+        }
+        .ic-types { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; }
+        .ic-type { position: relative; }
+        .ic-type-btn {
+            width: 100%;
+            display: flex; flex-direction: column; gap: 0.4rem; text-align: left;
+            padding: 1.2rem 1.2rem 1.35rem;
+            border-radius: 16px;
+            border: 1.5px solid var(--ic-line);
+            background: rgba(255, 255, 255, 0.55);
+            cursor: pointer; color: var(--ic-ink);
+            transition: transform .25s var(--ic-ease), box-shadow .3s var(--ic-ease),
+                        border-color .25s var(--ic-ease), background .25s var(--ic-ease);
+        }
+        .ic-type-name {
+            font-family: var(--ic-sans); font-weight: 600; font-size: 1.4rem; line-height: 1;
+            letter-spacing: -0.01em; color: var(--ic-accent);
+        }
+        .ic-type-tag {
+            font-family: var(--ic-mono);
+            font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--ic-ink-faint); font-weight: 500;
+        }
+        .ic-type-tag::before {
+            content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+            background: var(--ic-accent); margin-right: 0.5rem; vertical-align: middle;
+        }
+        .ic-type-btn::after {
+            content: "→"; position: absolute; right: 1.1rem; bottom: 1.15rem;
+            font-family: var(--ic-mono); font-size: 0.95rem; color: var(--ic-accent);
+            opacity: 0; transform: translateX(-4px); transition: opacity .25s var(--ic-ease), transform .25s var(--ic-ease);
+        }
+        .ic-type-btn:hover {
+            transform: translateY(-4px); border-color: var(--ic-accent); background: #fff;
+            box-shadow: 0 18px 34px -20px var(--ic-shadow);
+        }
+        .ic-type-btn:hover::after { opacity: 1; transform: translateX(0); }
+        .ic-type-btn:active { transform: translateY(-1px); }
+        .ic-type-btn:focus-visible { outline: 3px solid var(--ic-accent); outline-offset: 2px; }
+
+        .ic-type--simple     { --ic-accent: var(--ic-teal);  --ic-shadow: rgba(12, 84, 96, 0.45); }
+        .ic-type--compound   { --ic-accent: var(--ic-green); --ic-shadow: rgba(25, 135, 84, 0.45); }
+        .ic-type--cumulative { --ic-accent: var(--ic-blue);  --ic-shadow: rgba(13, 110, 253, 0.45); }
+
+        /* ---------- info tooltip ---------- */
+        .ic-info {
+            position: absolute; top: 0.65rem; right: 0.65rem; z-index: 5;
+            width: 22px; height: 22px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-family: var(--ic-sans); font-style: italic; font-size: 0.82rem; font-weight: 500;
+            color: var(--ic-accent);
+            background: rgba(0, 0, 0, 0.05); border: 1px solid var(--ic-line);
+            cursor: help; user-select: none; transition: background .2s, transform .2s;
+        }
+        .ic-info:hover, .ic-info:focus-visible { background: #fff; transform: scale(1.1); outline: none; }
+        .ic-tip {
+            position: absolute; bottom: calc(100% + 12px); left: 50%;
+            transform: translateX(-50%) translateY(6px);
+            width: min(78vw, 282px);
+            padding: 0.9rem 1rem;
+            background: var(--ic-charcoal); color: #e9ecef;
+            border-radius: 12px;
+            font-family: var(--ic-sans);
+            font-size: 0.82rem; line-height: 1.55; font-weight: 400;
+            box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.45);
+            opacity: 0; visibility: hidden; pointer-events: none;
+            transition: opacity .2s, transform .2s, visibility .2s; z-index: 30;
+        }
+        .ic-tip b { color: #fff; font-weight: 600; }
+        .ic-tip i { color: #fff; font-style: italic; }
+        .ic-tip::after {
+            content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            border: 7px solid transparent; border-top-color: var(--ic-charcoal);
+        }
+        .ic-info:hover .ic-tip, .ic-info:focus .ic-tip, .ic-info:focus-within .ic-tip {
+            opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto;
+        }
+
+        /* ---------- result / readout ---------- */
+        .ic-readout { margin-bottom: 1.7rem; }
+        .ic-ledger { display: grid; gap: 0.6rem; }
+        .ic-row {
+            padding: 1rem 1.25rem; border-radius: 14px;
+            background: rgba(255, 255, 255, 0.65);
+            border: 1px solid var(--ic-line);
+        }
+        .ic-row:first-child {
+            background: rgba(25, 135, 84, 0.08);
+        }
+        .ic-row-val {
+            font-family: var(--ic-mono); font-weight: 600;
+            font-size: clamp(1.1rem, 3.5vw, 1.4rem); color: var(--ic-ink);
+        }
+        .ic-row:first-child .ic-row-val { font-size: clamp(1.5rem, 6vw, 2.3rem); }
+
+        /* alerts */
+        .ic-alert {
+            border-radius: 14px; padding: 1rem 1.2rem; margin-bottom: 1.5rem;
+            font-size: 0.95rem; line-height: 1.6;
+            background: rgba(255, 255, 255, 0.6); border: 1px solid var(--ic-line);
+            color: var(--ic-ink-soft);
+        }
+        .ic-alert--hint  { border-left: 4px solid var(--ic-blue); }
+        .ic-alert--error { color: #8a3b2f; background: rgba(214, 96, 77, 0.10); border-left: 4px solid #c2553f; }
+        .ic-alert b { color: var(--ic-ink); }
+
+        /* chart */
+        .ic-chart {
+            margin: 1.7rem 0; padding: 1.4rem; border-radius: 18px;
+            background: rgba(255, 255, 255, 0.6); border: 1px solid var(--ic-line);
+        }
+        .ic-chart-title {
+            font-family: var(--ic-sans); font-weight: 600; font-size: 1.15rem;
+            margin: 0 0 0.15rem; color: var(--ic-ink);
+        }
+        .ic-chart-note {
+            font-family: var(--ic-mono); font-size: 0.7rem; letter-spacing: 0.04em;
+            color: var(--ic-ink-faint); margin: 0 0 1rem;
+        }
+        .ic-canvas-box { position: relative; height: clamp(240px, 42vw, 340px); }
+
+        .ic-footnote {
+            text-align: center; margin-top: 2.2rem;
+            font-family: var(--ic-mono);
+            font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ic-ink-faint);
+        }
+        .ic-footnote span { color: var(--ic-green); }
+
+        /* staggered entrance */
+        .ic-reveal { opacity: 0; transform: translateY(16px); animation: ic-rise .8s var(--ic-ease) forwards; }
+        .ic-d1 { animation-delay: .05s; } .ic-d2 { animation-delay: .16s; }
+        .ic-d3 { animation-delay: .3s; }  .ic-d4 { animation-delay: .44s; }
+        @keyframes ic-rise { to { opacity: 1; transform: translateY(0); } }
+
+        /* ---------- responsive ---------- */
+        @media (max-width: 760px) {
+            .ic-fields { grid-template-columns: 1fr; }
+            .ic-types  { grid-template-columns: 1fr; }
+            .ic-type-btn { flex-direction: row; align-items: center; justify-content: space-between; padding-right: 3rem; }
+            .ic-type-btn::after { bottom: auto; top: 50%; transform: translateY(-50%) translateX(-4px); }
+            .ic-type-btn:hover::after { transform: translateY(-50%); }
+            .ic-tip { left: auto; right: 0; transform: translateY(6px); }
+            .ic-tip::after { left: auto; right: 8px; transform: none; }
+            .ic-info:hover .ic-tip, .ic-info:focus .ic-tip, .ic-info:focus-within .ic-tip { transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .ic-reveal { animation: none; opacity: 1; transform: none; }
         }
     </style>
 {% endblock %}
@@ -30,71 +274,122 @@
         {{ chart_data|json_script:"chart-data" }}
     {% endif %}
 
-    <div class="container">
-        <div class="header">
-            <h1>Interest Calculator | Powered by Wine & Python</h1>
-        </div>
-        <div class="main mt-5">
-        {% if not result%}
-            <div class="alert alert-primary">
-                fill in the form (with positive numbers only)<wbr> and choose the interest method to calculate.
-            </div>
-        {% endif %}
-            <div class="ans">
+    <section id="ic-stage">
+        <div class="ic-wrap">
+            <header class="ic-hero ic-reveal ic-d1">
+                <span class="ic-eyebrow">Powered by Wine &amp; Python</span>
+                <h1 class="ic-title">Watch it <em>compound</em>.</h1>
+                <p class="ic-sub">
+                    Enter your numbers, pick a method, and see how money grows over time.
+                    Tap the <em>i</em> on any method for a plain-language explanation.
+                </p>
+            </header>
+
+            <div class="ic-panel ic-reveal ic-d2">
                 {% if error %}
-                    <div class="alert alert-secondary mt-2">
-                        <p>Fields must contain <b>positive numbers</b> only!</p>
-                        <p>
-                            Also, <b>Rollovers</b> cannot be a fraction,<wbr> ie: <b>0.5</b> (half a year).<wbr>
-                            Instead, use number of months (ie: <b>6</b> months).
-                        </p>
+                    <div class="ic-alert ic-alert--error">
+                        Fields must contain <b>positive numbers</b> only. <b>Rollovers</b> can't be a
+                        fraction (e.g. <b>0.5</b>) — use whole periods instead (e.g. <b>6</b> months).
+                    </div>
+                {% elif not result %}
+                    <div class="ic-alert ic-alert--hint">
+                        Fill in the form with positive numbers, then choose an interest method below.
                     </div>
                 {% endif %}
+
                 {% if result %}
-                    <div class="alert alert-secondary mt-2">
-                        {% for item in result %}
-                            <h5>{{ item }}</h5>
-                        {% endfor %}
+                    <div class="ic-readout">
+                        <div class="ic-ledger">
+                            {% for item in result %}
+                                <div class="ic-row"><span class="ic-row-val">{{ item }}</span></div>
+                            {% endfor %}
+                        </div>
                     </div>
-                    {% if chart_data %}
-                    <div class="card mt-3 mb-3">
-                        <div class="card-body">
-                            <h5 class="card-title">Growth Over Time</h5>
-                            <div style="position: relative; height: 300px;">
-                                <canvas id="growthChart"></canvas>
+                {% endif %}
+
+                {% if chart_data %}
+                <div class="ic-chart ic-reveal ic-d3">
+                    <h3 class="ic-chart-title">Growth over time</h3>
+                    <p class="ic-chart-note">Principal vs. profit, stacked per rollover</p>
+                    <div class="ic-canvas-box">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                </div>
+                {% endif %}
+
+                <form action="{% url 'interest_calculator' %}" method="post">
+                    {% csrf_token %}
+                    <div class="ic-fields">
+                        <div class="ic-field">
+                            <label for="principal">Principal</label>
+                            <div class="ic-input-shell">
+                                <input type="text" inputmode="decimal" name="principal" id="principal"
+                                       value="{{ principal }}" placeholder="1000" required>
+                            </div>
+                        </div>
+                        <div class="ic-field">
+                            <label for="rate">Rate</label>
+                            <div class="ic-input-shell">
+                                <input type="text" inputmode="decimal" name="rate" id="rate"
+                                       value="{{ rate }}" placeholder="5" required>
+                                <span class="ic-unit">%</span>
+                            </div>
+                        </div>
+                        <div class="ic-field">
+                            <label for="time">Rollovers</label>
+                            <div class="ic-input-shell">
+                                <input type="text" inputmode="numeric" name="time" id="time"
+                                       value="{{ time }}" placeholder="12" required>
+                                <span class="ic-unit">×</span>
                             </div>
                         </div>
                     </div>
-                    {% endif %}
-                {% endif %}
-            </div>
-            <div class="form">
-                <form action="{% url 'interest_calculator' %}" method="post">
-                    {% csrf_token %}
-                    <div class="inputs row">
-                        <div class="form-group col-sm-auto ">
-                            <label for="principal">Principal</label>
-                            <input class="" type="text" name="principal" id="principal" value="{{ principal }}" required>
+
+                    <p class="ic-choose">Choose a method</p>
+                    <div class="ic-types">
+                        <div class="ic-type ic-type--simple">
+                            <button class="ic-type-btn" type="submit" name="type" id="simple" value="1">
+                                <span class="ic-type-name">Simple</span>
+                                <span class="ic-type-tag">flat &amp; steady</span>
+                            </button>
+                            <span class="ic-info" tabindex="0" role="button" aria-label="About simple interest">i
+                                <span class="ic-tip"><b>Simple interest.</b> Interest is paid only on your
+                                    original principal. You earn the same fixed amount every rollover —
+                                    earnings never earn interest themselves.</span>
+                            </span>
                         </div>
-                        <div class="form-group col-sm-auto ">
-                            <label for="rate">Rate</label>
-                            <input class="" type="text" name="rate" id="rate" value="{{ rate }}" required>
+
+                        <div class="ic-type ic-type--compound">
+                            <button class="ic-type-btn" type="submit" name="type" id="compound" value="2">
+                                <span class="ic-type-name">Compound</span>
+                                <span class="ic-type-tag">interest on interest</span>
+                            </button>
+                            <span class="ic-info" tabindex="0" role="button" aria-label="About compound interest">i
+                                <span class="ic-tip"><b>Compound interest.</b> Each rollover your interest is
+                                    added to the balance, so the next rollover earns interest on the principal
+                                    <i>plus</i> all previously earned interest. Growth accelerates over time.</span>
+                            </span>
                         </div>
-                        <div class="form-group col-sm-auto ">
-                            <label for="time">Rollovers</label>
-                            <input class="" type="text" name="time" id="time" value="{{ time }}" required >
+
+                        <div class="ic-type ic-type--cumulative">
+                            <button class="ic-type-btn" type="submit" name="type" id="cumulative" value="3">
+                                <span class="ic-type-name">Cumulative</span>
+                                <span class="ic-type-tag">recurring deposits</span>
+                            </button>
+                            <span class="ic-info" tabindex="0" role="button" aria-label="About cumulative interest">i
+                                <span class="ic-tip"><b>Cumulative interest.</b> Compound interest, but you also
+                                    add a fresh principal deposit at the start of <i>every</i> rollover. Each new
+                                    contribution joins the growing balance and compounds from then on — ideal for
+                                    regular, recurring savings (a “susu”).</span>
+                            </span>
                         </div>
-                    </div>
-                    <div class="buttons mt-3">
-                        <button class="btn btn-info" type="submit" name="type" id="simple" value="1">Simple</button>
-                        <button class="btn btn-success" type="submit" name="type" id="compound" value="2">Compound</button>
-                        <button class="btn btn-primary" type="submit" name="type" id="cumulative" value="3">Cumulative</button>
                     </div>
                 </form>
             </div>
-        </div>
-    </div>
 
+            <p class="ic-footnote ic-reveal ic-d4">Compound &amp; <span>cumulative</span> — the quiet magic of time</p>
+        </div>
+    </section>
 {% endblock %}
 
 {% block script %}
@@ -102,47 +397,63 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     const chartData = JSON.parse(document.getElementById('chart-data').textContent);
-    const labels = chartData.map(d => 'Period ' + d.period);
+    const labels = chartData.map(d => 'P' + d.period);
     const principalData = chartData.map(d => d.principal);
     const profitData = chartData.map(d => d.profit);
 
-    new Chart(document.getElementById('growthChart'), {
+    const css = getComputedStyle(document.getElementById('ic-stage'));
+    const ink   = css.getPropertyValue('--ic-ink').trim()      || '#212529';
+    const muted = css.getPropertyValue('--ic-ink-faint').trim()|| '#6c757d';
+    const grid  = 'rgba(0, 0, 0, 0.07)';
+    const mono = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
+    const sans = "system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    const gradBlue = ctx.createLinearGradient(0, 0, 0, 320);
+    gradBlue.addColorStop(0, 'rgba(13, 110, 253, 0.9)');
+    gradBlue.addColorStop(1, 'rgba(13, 110, 253, 0.7)');
+    const gradGreen = ctx.createLinearGradient(0, 0, 0, 320);
+    gradGreen.addColorStop(0, 'rgba(25, 135, 84, 0.9)');
+    gradGreen.addColorStop(1, 'rgba(25, 135, 84, 0.7)');
+
+    Chart.defaults.font.family = mono;
+    Chart.defaults.color = muted;
+
+    new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [
-                {
-                    label: 'Principal',
-                    data: principalData,
-                    backgroundColor: 'rgba(52, 152, 219, 0.8)',
-                    borderColor: 'rgba(52, 152, 219, 1)',
-                    borderWidth: 1
-                },
-                {
-                    label: 'Profit',
-                    data: profitData,
-                    backgroundColor: 'rgba(39, 174, 96, 0.8)',
-                    borderColor: 'rgba(39, 174, 96, 1)',
-                    borderWidth: 1
-                }
+                { label: 'Principal', data: principalData, backgroundColor: gradBlue, borderRadius: 6, borderSkipped: false, maxBarThickness: 46 },
+                { label: 'Profit',    data: profitData,    backgroundColor: gradGreen, borderRadius: 6, borderSkipped: false, maxBarThickness: 46 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 6 } },
             scales: {
-                x: { stacked: true },
-                y: { stacked: true }
+                x: { stacked: true, grid: { display: false }, border: { display: false },
+                     ticks: { font: { size: 11 }, color: muted, maxRotation: 0, autoSkipPadding: 12 } },
+                y: { stacked: true, grid: { color: grid, drawTicks: false }, border: { display: false },
+                     ticks: { font: { size: 11 }, color: muted, padding: 8 } }
             },
             plugins: {
+                legend: {
+                    align: 'end',
+                    labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, boxHeight: 8, padding: 18,
+                              color: ink, font: { size: 12, weight: '500' } }
+                },
                 tooltip: {
+                    backgroundColor: '#1a1612', titleColor: '#f3efe7', bodyColor: '#d8cfc2',
+                    padding: 12, cornerRadius: 10, usePointStyle: true, boxPadding: 6,
+                    titleFont: { family: sans, size: 13, weight: '600' }, bodyFont: { family: mono, size: 12 },
                     callbacks: {
-                        footer: function(tooltipItems) {
-                            const idx = tooltipItems[0].dataIndex;
-                            const total = principalData[idx] + profitData[idx];
-                            return 'Total: ' + total.toFixed(2);
-                        }
-                    }
+                        title: items => 'Rollover ' + items[0].label.replace('P', ''),
+                        label: c => '  ' + c.dataset.label + ': ' + c.parsed.y.toLocaleString(),
+                        footer: items => { const i = items[0].dataIndex; return 'Total: ' + (principalData[i] + profitData[i]).toLocaleString(); }
+                    },
+                    footerColor: '#9ec5fe', footerFont: { family: mono, size: 12, weight: '600' }, footerMarginTop: 6
                 }
             }
         }

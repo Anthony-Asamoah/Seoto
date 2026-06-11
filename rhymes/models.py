@@ -27,39 +27,24 @@ class Rhyme(models.Model):
         return queryset.first()
 
     def generate_file_content(self):
-        """Generate formatted file content as a string without writing to disk."""
+        """Generate friendly, readable file content as a string without writing to disk."""
         content = []
 
-        # Header with border
-        content.append('=' * 80)
-        content.append('RHYME DATABASE'.center(80))
-        content.append('Powered by Python & Wine'.center(80))
-        content.append('=' * 80)
+        # Friendly title
+        content.append(f'Rhymes for "{self.rhyme.lower()}"')
         content.append('')
-
-        # User and generation info
-        content.append(f'Generated for: {self.user.username} ({self.user.email})')
-        content.append(f'Date: {self.timestamp.strftime("%B %d, %Y at %I:%M %p")}')
-        content.append('-' * 80)
+        content.append(f'Found {self.word_count} word(s) that rhyme.')
+        content.append(f'Saved on {self.timestamp.strftime("%B %d, %Y")}.')
         content.append('')
-
-        # Search query and results
-        content.append(f'SEARCH QUERY: "{self.rhyme.lower()}"')
-        content.append(f'RESULTS: {self.word_count} word(s) found')
-        content.append('')
-        content.append('=' * 80)
+        content.append('-' * 40)
         content.append('')
 
         # Words list
-        content.append('MATCHING WORDS:')
-        content.append('')
         content.append(self.text)
         content.append('')
 
         # Footer
-        content.append('=' * 80)
-        content.append('Thank you for using Rhyme Database!'.center(80))
-        content.append('Visit us at seoto.com for more tools'.center(80))
-        content.append('=' * 80)
+        content.append('-' * 40)
+        content.append('Made with Seoto · seoto.com')
 
         return '\n'.join(content)

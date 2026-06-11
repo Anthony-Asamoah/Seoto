@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -23,28 +23,42 @@ class Rhymes(View):
 
     @method_decorator(never_cache)
     def post(self, request):
-        rhyme = request.POST['rhyme']
+        rhyme = request.POST.get('rhyme', '')
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         context = {
             'input': rhyme,
             'words': None,
             'amount': None
         }
+        error = None
         try:
             helper = RhymeDB(rhyme)
             context['words'] = helper.get_all_words()
             context['amount'] = helper.word_count()
             if request.user.is_authenticated and not helper.is_empty():
                 user: User = request.user
-                obj = Rhyme.create(user=user, rhyme=rhyme, text=helper.get_text(), word_count=helper.word_count())
+                Rhyme.create(user=user, rhyme=rhyme, text=helper.get_text(), word_count=helper.word_count())
         except InvalidInput as e:
-            messages.error(request, str(e))
+            error = str(e)
         except ValidationError as e:
-            messages.error(request, ', '.join(e.messages))
+            error = ', '.join(e.messages)
         except Exception:
             logging.exception("Error while generating rhyme")
-            messages.error(request, "Something went wrong")
-        finally:
-            return render(request, 'rhymes/rhymes.html', context)
+            error = "Something went wrong"
+
+        if is_ajax:
+            if error:
+                return JsonResponse({'error': error}, status=400)
+            return JsonResponse({
+                'input': rhyme,
+                'words': context['words'] or [],
+                'amount': context['amount'] or 0,
+                'can_download': request.user.is_authenticated and bool(context['words']),
+            })
+
+        if error:
+            messages.error(request, error)
+        return render(request, 'rhymes/rhymes.html', context)
 
     @staticmethod
     @login_required

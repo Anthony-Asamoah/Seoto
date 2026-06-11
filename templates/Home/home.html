@@ -807,7 +807,7 @@
         /* badge + hint re-tuned for the light stage */
         .prod-shot--logo .ph-badge { z-index: 3; color: var(--gold); border-color: color-mix(in srgb, var(--gold) 42%, transparent); background: rgba(255,253,249,0.65); backdrop-filter: blur(4px); }
         /* product detail modal */
-        .prod-modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: clamp(14px, 3vw, 44px); visibility: hidden; opacity: 0; transition: opacity 0.45s var(--ease), visibility 0.45s var(--ease); }
+        .prod-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: clamp(14px, 3vw, 44px); visibility: hidden; opacity: 0; transition: opacity 0.45s var(--ease), visibility 0.45s var(--ease); }
         .prod-modal.open { visibility: visible; opacity: 1; }
         .prod-modal-backdrop { position: absolute; inset: 0; background: rgba(18,14,10,0.62); backdrop-filter: blur(9px); }
         .prod-modal-panel { position: relative; z-index: 1; display: flex; flex-direction: column; width: min(1080px, 100%); max-height: 90vh; background: var(--paper); border: 1px solid var(--sand); border-radius: 24px; overflow: hidden; box-shadow: 0 50px 130px rgba(20,16,12,0.45); transform: translateY(22px) scale(0.975); transition: transform 0.55s var(--ease); }
@@ -835,7 +835,7 @@
         .shot-zoom:hover .shot-zoom-ico, .shot-zoom:focus-visible .shot-zoom-ico { opacity: 1; transform: none; }
         .shot-zoom:hover .shot-zoom-ico { background: var(--gold); border-color: var(--gold); }
         /* full-size lightbox */
-        .img-lightbox { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: clamp(16px, 4vw, 56px); background: rgba(12,9,6,0.86); backdrop-filter: blur(10px); cursor: zoom-out; visibility: hidden; opacity: 0; transition: opacity 0.4s var(--ease), visibility 0.4s var(--ease); }
+        .img-lightbox { position: fixed; inset: 0; z-index: 1100; display: flex; align-items: center; justify-content: center; padding: clamp(16px, 4vw, 56px); background: rgba(12,9,6,0.86); backdrop-filter: blur(10px); cursor: zoom-out; visibility: hidden; opacity: 0; transition: opacity 0.4s var(--ease), visibility 0.4s var(--ease); }
         .img-lightbox.open { visibility: visible; opacity: 1; }
         .img-lightbox-stage { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 100%; max-height: 100%; }
         .img-lightbox-stage img { max-width: 100%; max-height: 84vh; width: auto; height: auto; object-fit: contain; border-radius: 12px; border: 1px solid rgba(247,244,238,0.12); box-shadow: 0 40px 120px rgba(0,0,0,0.55); transform: scale(0.95); transition: transform 0.45s var(--ease); }

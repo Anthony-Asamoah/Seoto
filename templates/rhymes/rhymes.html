@@ -4,30 +4,33 @@
 
 {% block style %}
     <style>
-        .list-group {
-            max-height: 55vh;
-            height: auto;
-            overflow-y: auto;
+        /* Consistent top spacing with the other tool pages */
+        .rhymes-page .main {
+            margin-top: 3rem;
         }
 
-        form {
+        .search-bar form {
             display: flex;
             flex-wrap: nowrap;
             justify-content: flex-end;
-            align-content: flex-end;
-            align-items: stretch;
-            height: 50px;
-
+            align-content: flex-start;
+            align-items: flex-start;
         }
 
-        form .input {
+        .search-bar .input {
             margin-top: 2px;
             width: 80%;
             transition: 0.5s ease;
             text-align: right;
         }
 
-        form .input input {
+        .search-bar .input small {
+            display: block;
+            margin-top: 6px;
+            line-height: 1.3;
+        }
+
+        .search-bar .input input {
             width: 100%;
             height: 40px;
             padding: 0 10px;
@@ -40,54 +43,173 @@
             border-bottom: 2px solid #006fc9;
         }
 
-        form .input:hover {
-            height: 45px;
-        }
-
-        form .input:hover input {
-            color: black;
-            background-color: white
-        }
-
-        form .input input:focus {
+        .search-bar .input:hover input,
+        .search-bar .input input:focus {
             color: black;
             background-color: white;
         }
 
-        form .button {
+        .search-bar .button {
             flex-grow: 4;
             margin: 0 10px;
         }
 
-        form .button button {
+        .search-bar .button button {
             height: 40px;
             width: 100px;
             padding: 5px 10px;
             transition: 0.5s ease;
         }
 
-        form .button button:hover {
-            width: 130px;
-        }
-        
-        .download {
+        .save-copy {
             text-align: right;
+        }
+
+        /* ── Empty state (before the first search) ──────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #6c757d;
+        }
+
+        .empty-state .empty-icon {
+            color: #006fc9;
+            opacity: 0.85;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: #343a40;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            max-width: 26rem;
+            margin: 0 auto 1.25rem;
+            line-height: 1.5;
+        }
+
+        .example-chips {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .example-chips .chip {
+            border: 1px solid #006fc9;
+            color: #006fc9;
+            background: transparent;
+            border-radius: 999px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .example-chips .chip:hover,
+        .example-chips .chip:focus-visible {
+            background: #006fc9;
+            color: #fff;
+            outline: none;
+        }
+
+        /* ── Result groups (chat-style history) ─────────────────────────── */
+        .result-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .result-group .result-title {
+            margin-bottom: 0.5rem;
+        }
+
+        .result-group.is-empty .result-title {
+            color: #6c757d;
+        }
+
+        .result-group.is-error .result-title {
+            color: #dc3545;
+        }
+
+        .result-group .list-group {
+            max-height: 45vh;
+            height: auto;
+            overflow-y: auto;
+        }
+
+        /* Desktop: search stays on top, each word drops DOWN from behind it */
+        @keyframes dropIn {
+            from { opacity: 0; transform: translateY(-28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile: search sits at the bottom, each word rises UP from behind it */
+        @keyframes riseIn {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Per-word entrance; JS sets the stagger via animation-delay */
+        .result-title.animate-drop,
+        .list-group-item.animate-drop {
+            animation: dropIn 0.35s ease both;
+        }
+
+        .result-title.animate-rise,
+        .list-group-item.animate-rise {
+            animation: riseIn 0.35s ease both;
+        }
+
+        @media (max-width: 768px) {
+            /* Pin the search bar to the bottom. Anchor at bottom:0 and pad past
+               the bottom nav so the bar's background fills the whole strip (no
+               see-through gap) while its input sits just above the nav. The nav
+               (higher z-index) paints on top of the padded area. */
+            .search-bar {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 1000;
+                padding: 12px 16px;
+                padding-bottom: calc(64px + env(safe-area-inset-bottom) + 8px);
+                background-color: whitesmoke;
+                border-top: 1px solid #e0e0e0;
+                box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+            }
+
+            .search-bar .input small {
+                display: none; /* keep the pinned bar compact */
+            }
+
+            /* Let the words flow down to the bar and the page scroll naturally,
+               instead of trapping them in a short fixed-height scroll box. */
+            .result-group .list-group {
+                max-height: none;
+                overflow: visible;
+            }
+
+            /* Leave room so the last result isn't hidden behind the fixed bar */
+            .results {
+                padding-bottom: 150px;
+            }
         }
     </style>
 {% endblock %}
 
 {% block content %}
 
-    <div class="container">
+    <div class="container rhymes-page">
         <div class="header">
             <h2>Type in a word to find its rhymes</h2>
         </div>
         <div class="main mt-3">
-            <div class="form">
-                <form action="{% url 'rhymes' %}" method="post">
+            <div class="search-bar">
+                <form id="search-form" action="{% url 'rhymes' %}" method="post">
                     {% csrf_token %}
                     <div class="input">
-                        <input type="text" name="rhyme" id="rhmye" required placeholder="example: singing, time, factor">
+                        <input type="text" name="rhyme" id="rhyme" required autocomplete="off"
+                               placeholder="example: singing, time, factor">
                         <small class="text-muted">Search rhymes for two or more words by separating them with a comma</small>
                     </div>
                     <div class="button">
@@ -95,33 +217,222 @@
                     </div>
                 </form>
             </div>
-            <div class="rhymes mt-5">
+
+            {% if user.is_authenticated %}
+                <div class="save-copy mt-3" id="save-copy" {% if not words %}style="display: none;"{% endif %}>
+                    <form id="download-form" method="post" action="{% url 'rhymes_download' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-primary">Save a copy</button>
+                    </form>
+                </div>
+            {% endif %}
+
+            <div class="results mt-4" id="results">
+                {# Server-rendered fallback for the no-JS / full-reload path #}
                 {% if words %}
-                    <div class="response">
-                        <h4>"...{{ input }}" matched {{ amount }} word(s).</h4>
-                        <div class="list">
-                            <ol class="list-group">
-                                {% for word in words %}
-                                    <li class="list-group-item">{{ word }}</li>
-                                {% endfor %}
-                            </ol>
-                        </div>
-                        {% if user.is_authenticated %}
-                            <div class="download mt-3">
-                                <form method="post" action="{% url 'rhymes_download' %}" style="display: inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-outline-primary">Save a copy</button>
-                                </form>
-                            </div>
-                        {% endif %}
+                    <div class="result-group">
+                        <h4 class="result-title">"...{{ input }}" matched {{ amount }} word(s).</h4>
+                        <ol class="list-group">
+                            {% for word in words %}
+                                <li class="list-group-item">{{ word }}</li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                {% elif input %}
+                    <div class="result-group is-empty">
+                        <h4 class="result-title">Nothing goes with '{{ input }}'</h4>
                     </div>
                 {% else %}
-                    {% if input %}
-                        <h3>Nothing goes with '{{ input }}'</h3>
-                    {% endif %}
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 18V5l12-2v13"></path>
+                                <circle cx="6" cy="18" r="3"></circle>
+                                <circle cx="18" cy="16" r="3"></circle>
+                            </svg>
+                        </div>
+                        <h3>Find words that rhyme</h3>
+                        <p>Type a word and tap <strong>Find</strong>. Looking for a few at once?
+                            Separate them with commas.</p>
+                        <div class="example-chips">
+                            <button type="button" class="chip" data-word="moon">moon</button>
+                            <button type="button" class="chip" data-word="fire">fire</button>
+                            <button type="button" class="chip" data-word="heart">heart</button>
+                            <button type="button" class="chip" data-word="dream">dream</button>
+                        </div>
+                    </div>
                 {% endif %}
             </div>
         </div>
     </div>
 
+{% endblock %}
+
+{% block script %}
+    <script>
+        (function () {
+            const searchForm = document.getElementById('search-form');
+            const results = document.getElementById('results');
+            const input = document.getElementById('rhyme');
+            const saveCopy = document.getElementById('save-copy');
+            if (!searchForm || !results) return;
+
+            const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+
+            // Mobile: words rise up from behind the bottom bar.
+            // Desktop: words drop down from behind the top bar. (mirror)
+            function buildGroup(data) {
+                const anim = isMobile() ? 'animate-rise' : 'animate-drop';
+                const group = document.createElement('div');
+                group.className = 'result-group';
+
+                const title = document.createElement('h4');
+                title.className = 'result-title ' + anim;
+
+                if (data.error) {
+                    group.classList.add('is-error');
+                    title.textContent = data.error;
+                    group.appendChild(title);
+                    return group;
+                }
+
+                if (!data.words || data.words.length === 0) {
+                    group.classList.add('is-empty');
+                    title.textContent = "Nothing goes with '" + data.input + "'";
+                    group.appendChild(title);
+                    return group;
+                }
+
+                title.textContent = '"...' + data.input + '" matched ' + data.amount + ' word(s).';
+                group.appendChild(title);
+
+                const list = document.createElement('ol');
+                list.className = 'list-group';
+                data.words.forEach(function (word, index) {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item ' + anim;
+                    // Stagger each word so they emerge one after another.
+                    li.style.animationDelay = (0.06 + index * 0.035) + 's';
+                    li.textContent = word;
+                    list.appendChild(li);
+                });
+                group.appendChild(list);
+                return group;
+            }
+
+            function place(group) {
+                // Clear the previous search (and the empty state) before showing the new one.
+                results.innerHTML = '';
+                results.appendChild(group);
+            }
+
+            // Example chips: drop the word into the box and run the search.
+            results.querySelectorAll('.example-chips .chip').forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    if (!input) return;
+                    input.value = chip.dataset.word;
+                    if (searchForm.requestSubmit) {
+                        searchForm.requestSubmit();
+                    } else {
+                        searchForm.dispatchEvent(new Event('submit', {cancelable: true}));
+                    }
+                });
+            });
+
+            searchForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                const button = searchForm.querySelector('button[type="submit"]');
+                const originalText = button ? button.textContent : '';
+                if (button) {
+                    button.disabled = true;
+                    button.textContent = '...';
+                }
+
+                try {
+                    const token = searchForm.querySelector('[name="csrfmiddlewaretoken"]').value;
+                    const response = await fetch(searchForm.action, {
+                        method: 'POST',
+                        headers: {'X-CSRFToken': token, 'X-Requested-With': 'XMLHttpRequest'},
+                        body: new FormData(searchForm),
+                    });
+                    const data = await response.json();
+
+                    place(buildGroup(data));
+
+                    if (!data.error) {
+                        if (input) {
+                            input.value = '';
+                            input.focus();
+                        }
+                        if (saveCopy && data.can_download) {
+                            saveCopy.style.display = '';
+                        }
+                    }
+                } catch (err) {
+                    // No JS-friendly response: fall back to a normal submit (full reload).
+                    searchForm.submit();
+                } finally {
+                    if (button) {
+                        button.disabled = false;
+                        button.textContent = originalText;
+                    }
+                }
+            });
+        })();
+
+        (function () {
+            // Download via fetch + blob so the page never navigates away.
+            // A plain form POST returns a file response that strands the PWA
+            // webview on mobile (no way back without restarting the app).
+            const form = document.getElementById('download-form');
+            if (!form) return;
+
+            form.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                const button = form.querySelector('button[type="submit"]');
+                const originalText = button ? button.textContent : '';
+                if (button) {
+                    button.disabled = true;
+                    button.textContent = 'Saving...';
+                }
+
+                try {
+                    const token = form.querySelector('[name="csrfmiddlewaretoken"]').value;
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {'X-CSRFToken': token},
+                        body: new FormData(form),
+                    });
+                    if (!response.ok) throw new Error('Request failed');
+
+                    const blob = await response.blob();
+                    let filename = 'rhymes.txt';
+                    const disposition = response.headers.get('Content-Disposition');
+                    if (disposition) {
+                        const match = disposition.match(/filename="?([^"]+)"?/);
+                        if (match) filename = match[1];
+                    }
+
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                } catch (err) {
+                    // Fall back to a normal navigation download if fetch fails.
+                    form.submit();
+                } finally {
+                    if (button) {
+                        button.disabled = false;
+                        button.textContent = originalText;
+                    }
+                }
+            });
+        })();
+    </script>
 {% endblock %}
