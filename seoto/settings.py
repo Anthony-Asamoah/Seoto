@@ -6,14 +6,14 @@ import logging
 from os import path
 from pathlib import Path as pathlib
 
-from decouple import Config, Csv, RepositoryEnv
+import dj_database_url
+from decouple import AutoConfig, Csv
 from django.contrib.messages import constants as messages
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = pathlib(__file__).resolve().parent.parent
 
-# Read settings from .env; OS environment variables take precedence.
-config = Config(RepositoryEnv(BASE_DIR / '.env'))
+config = AutoConfig(search_path=BASE_DIR)
 
 logging.basicConfig(
     level=config('LOG_LEVEL', cast=int),
@@ -27,6 +27,8 @@ DEBUG = config('DEBUG', cast=bool)
 
 # Enforce HTTPS instead of HTTP
 SECURE_SSL_REDIRECT = not DEBUG
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', cast=Csv(post_process=tuple))
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv(post_process=tuple))
@@ -111,15 +113,22 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     },
-    "postgres": {
+}
+
+# Prefer a single connection string (e.g. provided by Vercel/managed Postgres);
+# fall back to the discrete PG_DB_* settings when it isn't set.
+PG_DB_URL = config('PG_DB_URL', default='')
+if PG_DB_URL:
+    DATABASES['postgres'] = dj_database_url.parse(PG_DB_URL, conn_max_age=600)
+else:
+    DATABASES['postgres'] = {
         "ENGINE": "django.db.backends.postgresql",
         "HOST": config('PG_DB_HOST'),
         "PORT": config('PG_DB_PORT', cast=int),
         "NAME": config('PG_DB_NAME'),
         "USER": config('PG_DB_USER'),
         "PASSWORD": config('PG_DB_PASSWORD'),
-    },
-}
+    }
 
 DATABASES['default'] = DATABASES[config('DEFAULT_DB')]
 
