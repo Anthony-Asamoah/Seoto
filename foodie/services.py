@@ -277,6 +277,64 @@ def suggest(user=None, slot=None, request=None):
     return _build_context(mealtime, option_1_obj, option_2_obj, fancy_obj)
 
 
+def send_due_meal_notifications(current_hour=None):
+    """Send a meal suggestion push notification to every user whose schedule is due this hour.
+
+    Finds all UserMealSchedule rows whose time falls in ``current_hour`` (defaults to the
+    current local hour), and for each distinct user with an active push subscription, sends a
+    suggestion built via :func:`suggest`. Returns ``{'sent': int, 'skipped': int}``.
+    """
+    # Lazy import to avoid an import-time foodie -> pwa coupling at module load.
+    from pwa.models import PushSubscription
+    from pwa.services import send_push_notification
+
+    if current_hour is None:
+        current_hour = datetime.now().hour
+
+    due_schedules = UserMealSchedule.objects.select_related('user', 'slot').filter(
+        time__hour=current_hour,
+    )
+
+    sent_count = 0
+    skipped_count = 0
+    seen_users = set()
+
+    for schedule in due_schedules:
+        user = schedule.user
+
+        if user.id in seen_users:
+            continue
+        seen_users.add(user.id)
+
+        if not PushSubscription.objects.filter(user=user, is_active=True).exists():
+            skipped_count += 1
+            continue
+
+        context = suggest(user, slot=schedule.slot)
+        if not context.get('option_1'):
+            skipped_count += 1
+            continue
+
+        option_1 = context['option_1']
+        option_2 = context.get('option_2')
+        mealtime = context.get('mealtime', schedule.slot.label)
+
+        title = f"{mealtime.capitalize()} Time!"
+        if option_2 and option_2['name'] != option_1['name']:
+            body = f"How about {option_1['name']} or {option_2['name']}?"
+        else:
+            body = f"How about {option_1['name']}?"
+
+        result = send_push_notification(user=user, title=title, body=body, url='/foodie/')
+
+        if result:
+            sent_count += 1
+        else:
+            skipped_count += 1
+
+    return {'sent': sent_count, 'skipped': skipped_count}
+
+
 def get_all(user=None):
     if user and user.is_authenticated:
         prefs = userPreference.objects.select_related('meal').filter(user=user, isAvailable=True)

@@ -6,7 +6,6 @@ import logging
 from os import path
 from pathlib import Path as pathlib
 
-import dj_database_url
 from decouple import AutoConfig, Csv
 from django.contrib.messages import constants as messages
 
@@ -116,10 +115,9 @@ DATABASES = {
     },
 }
 
-# Prefer a single connection string (e.g. provided by Vercel/managed Postgres);
-# fall back to the discrete PG_DB_* settings when it isn't set.
 PG_DB_URL = config('PG_DB_URL', default='')
 if PG_DB_URL:
+    import dj_database_url
     DATABASES['postgres'] = dj_database_url.parse(PG_DB_URL, conn_max_age=600)
 else:
     DATABASES['postgres'] = {
