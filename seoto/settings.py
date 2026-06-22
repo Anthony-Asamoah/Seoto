@@ -238,8 +238,8 @@ DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')
 IS_THEME_ENABLED = config('IS_THEME_ENABLED', default=False, cast=bool)
 
 # Accounts config
-LOGIN_REDIRECT_URL = 'index'
-LOGOUT_REDIRECT_URL = 'index'
+LOGIN_REDIRECT_URL = 'apps'
+LOGOUT_REDIRECT_URL = 'apps'
 
 # CKEditor 5
 CKEDITOR_5_CONFIGS = {
