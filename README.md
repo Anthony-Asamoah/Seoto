@@ -1,10 +1,105 @@
 # Seoto
 
-A Django web application.
+A single Django project hosting a personal site and a collection of small, self-contained
+feature apps — a blog, a meal picker, a spending tracker, an author profile, and several
+standalone tools. Views are server-rendered with Django templates; there is no separate REST
+API layer. The project is ASGI-ready (Daphne + Channels) and ships as a PWA with web push.
 
----
+## Stack
 
-## Management Commands
+- **Python / Django** (ASGI via Daphne + Channels)
+- **Database:** SQLite by default, PostgreSQL optional (`dj-database-url`, `psycopg2`)
+- **Storage:** local filesystem by default, S3 optional (`django-storages`)
+- **Static files:** WhiteNoise
+- **Rich text:** CKEditor 5
+- **Web push:** VAPID (`pywebpush`)
+- **Deploy:** Vercel (`vercel.json` → `api/index`, build via `build.sh`)
+
+## Apps
+
+| App | What it owns |
+| --- | --- |
+| `accounts` | Custom user model, auth flows, profile images |
+| `author` | Public author profile (`/@sean_or_tony`), about/contact, hobbies/stack/education |
+| `home` | Landing page, error handlers, DB-backed logging sink |
+| `blog` | CKEditor 5 posts, image/video uploads, tags + read groups |
+| `foodie` | Meals with categories, search autocomplete, schedule-aware meal-slot resolution |
+| `spending_tracker` | Accounts, transactions, categories, tags (currency-aware) |
+| `jotter` | Quick notes |
+| `interest_calc`, `throw_a_die`, `flip_a_coin`, `rhymes` | Standalone tools |
+| `generate_invoice` | Invoice generation |
+| `theme` | Theme presets, gated behind `IS_THEME_ENABLED`; injects CSS via context processor |
+| `pwa` | Service worker, manifest, web push (VAPID) |
+
+Routing is centralized in `seoto/urls.py`; each app mounts its own `urls.py` from there.
+See `CLAUDE.md` for deeper architecture notes.
+
+## Getting started
+
+Requires Python 3 and `pip`. Create a virtualenv and install dependencies:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Create your environment file and fill in values:
+
+```bash
+cp .env.example .env
+```
+
+At minimum set `SECRET_KEY`. Settings are read via `python-decouple` (OS env vars override
+`.env`). See `.env.example` for all options — database, email, media storage, VAPID, reCAPTCHA,
+and feature flags.
+
+Set up the database and run the server:
+
+```bash
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+`runserver` is fine for HTTP. For WebSocket / Channels testing, run under Daphne:
+
+```bash
+daphne seoto.asgi:application
+```
+
+## Configuration
+
+All settings come from `.env` (see `.env.example`). Common toggles:
+
+- **Database:** `DEFAULT_DB=sqlite` or `postgres` (Postgres vars only needed when selected).
+- **Media storage:** `MEDIA_STORAGE=LOCAL` or `AWS` (S3 vars only needed when `AWS`).
+- **Theme feature:** `IS_THEME_ENABLED=True/False`.
+- **Web push:** generate keys with `python manage.py generate_vapid_keys` and paste into `.env`.
+- **reCAPTCHA v3:** leave keys blank to skip verification locally.
+
+## Testing
+
+There is no top-level test config; tests run per app.
+
+```bash
+python manage.py test                    # all apps
+python manage.py test spending_tracker   # single app
+python manage.py test spending_tracker.tests.TestClassName.test_method
+```
+
+## Deployment
+
+`build.sh` collects static files and runs migrations:
+
+```bash
+bash build.sh
+```
+
+Deployment targets Vercel via `vercel.json` (routes all requests to `api/index`). HTTPS is
+forced when `DEBUG=False` (`SECURE_SSL_REDIRECT`).
+
+## Management commands
 
 ### Blog
 
@@ -32,8 +127,6 @@ python manage.py cleanup_orphan_blog_images --dry-run   # preview
 python manage.py cleanup_orphan_blog_images
 ```
 
----
-
 ### Accounts
 
 #### `migrate_accounts_images_to_s3`
@@ -49,8 +142,6 @@ Generates or regenerates 80×80 JPEG thumbnails for all user profile pictures th
 ```bash
 python manage.py generate_profile_thumbnails
 ```
-
----
 
 ### Author
 
@@ -68,8 +159,6 @@ Seeds the database with a default set of hobby options for author profiles.
 python manage.py seed_hobbies
 ```
 
----
-
 ### Foodie
 
 #### `migrate_foodie_images_to_s3`
@@ -86,8 +175,6 @@ Generates or regenerates thumbnails for all meal images that are missing one.
 python manage.py generate_foodie_thumbnails
 ```
 
----
-
 ### Theme
 
 #### `seed_themes`
@@ -96,8 +183,6 @@ Seeds the database with the 5 official theme presets (Light, Dark, High Contrast
 ```bash
 python manage.py seed_themes
 ```
-
----
 
 ### PWA
 

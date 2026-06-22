@@ -1,13 +1,17 @@
 // Notification Manager
-// Owns the "push" control in the notification dropdown header (shared by the
-// mobile bottom nav and desktop top nav) and the initial state of the profile
-// settings button. The bell icons themselves are pure open/close toggles for
-// the in-app notification tray — they are NOT managed here.
+// Owns the "Enable push" control in the notification dropdown header (shared by
+// the mobile bottom nav and desktop top nav) and the first-visit opt-in prompt.
+//
+// Nav control policy: enable-only. It is shown only while push can still be
+// turned on; once enabled (or blocked) it hides itself. Turning push OFF lives
+// on the profile settings page, which owns its own button entirely.
+// The bell icons are pure open/close toggles for the tray — not managed here.
 
 (function() {
   'use strict';
 
   var supported = ('Notification' in window) && ('PushManager' in window);
+  var PROMPTED_KEY = 'seoto_push_prompted';
 
   function hasPWA(method) {
     return window.SeotoPWA && typeof window.SeotoPWA[method] === 'function';
@@ -24,110 +28,93 @@
     }
   }
 
-  // ── Profile settings button ────────────────────────────────────────────
-  // The click behaviour lives in profile.html; here we only reflect the
-  // current permission in the icon on page load.
-  function updateProfileButton() {
-    var btn = document.getElementById('notification-toggle-profile');
-    if (!btn) return;
-    if (!supported) { btn.style.display = 'none'; return; }
-
-    var icon = btn.querySelector('i');
-    var permission = Notification.permission;
-
-    if (permission === 'granted') {
-      if (icon) icon.className = 'fas fa-bell';
-      btn.title = 'Notifications enabled';
-    } else if (permission === 'denied') {
-      if (icon) icon.className = 'fas fa-bell-slash';
-      btn.title = 'Notifications blocked (check browser settings)';
-    } else {
-      if (icon) icon.className = 'far fa-bell';
-      btn.title = 'Enable push notifications';
-    }
+  function storageGet(key) {
+    try { return window.localStorage.getItem(key); } catch (e) { return null; }
+  }
+  function storageSet(key, value) {
+    try { window.localStorage.setItem(key, value); } catch (e) { /* private mode */ }
   }
 
-  // ── Dropdown header push control (mobile + desktop share one panel) ─────
+  // ── Dropdown header "Enable push" control (mobile + desktop share one panel) ──
+  // Shown only when push is still enable-able; hidden once on, blocked, or
+  // unsupported.
   async function updatePushToggle() {
     var btn = document.getElementById('notif-push-toggle');
     if (!btn) return;
-    if (!supported) { btn.hidden = true; return; }
 
-    var icon = btn.querySelector('i');
-    var label = btn.querySelector('.notif-push-label');
-    var permission = Notification.permission;
-
-    btn.hidden = false;
-    btn.disabled = false;
-    btn.classList.remove('is-on', 'is-blocked');
-
-    if (permission === 'denied') {
-      if (icon) icon.className = 'fas fa-bell-slash';
-      if (label) label.textContent = 'Blocked';
-      btn.classList.add('is-blocked');
-      btn.disabled = true;
-      btn.title = 'Push is blocked — enable it in your browser settings';
+    if (!supported || Notification.permission === 'denied') {
+      btn.hidden = true;
       return;
     }
 
     var subscribed = await isSubscribed();
-
-    if (permission === 'granted' && subscribed) {
-      if (icon) icon.className = 'fas fa-bell';
-      if (label) label.textContent = 'Push on';
-      btn.classList.add('is-on');
-      btn.title = 'Push notifications are on — tap to turn off';
-    } else {
-      // 'default', or 'granted' but not yet subscribed
-      if (icon) icon.className = 'far fa-bell';
-      if (label) label.textContent = 'Enable push';
-      btn.title = 'Enable push notifications';
+    if (Notification.permission === 'granted' && subscribed) {
+      btn.hidden = true; // already on — turn off lives in Settings
+      return;
     }
+
+    // 'default', or 'granted' but not yet subscribed → offer to enable
+    var label = btn.querySelector('.notif-push-label');
+    if (label) label.textContent = 'Enable push';
+    btn.disabled = false;
+    btn.title = 'Enable push notifications';
+    btn.hidden = false;
   }
 
   async function onPushToggleClick() {
     var btn = document.getElementById('notif-push-toggle');
     if (!btn || !supported) return;
-    if (Notification.permission === 'denied') return; // disabled anyway
+    if (Notification.permission === 'denied') return;
 
     var label = btn.querySelector('.notif-push-label');
     btn.disabled = true;
+    if (label) label.textContent = 'Enabling…';
 
     try {
-      var subscribed = await isSubscribed();
-
-      if (Notification.permission === 'granted' && subscribed) {
-        if (label) label.textContent = 'Turning off…';
-        if (hasPWA('unsubscribeFromPushNotifications')) {
-          await window.SeotoPWA.unsubscribeFromPushNotifications();
-        }
-      } else if (Notification.permission === 'granted') {
+      if (Notification.permission === 'granted') {
         // Already granted — just (re)create the subscription, no prompt.
-        if (label) label.textContent = 'Enabling…';
         if (hasPWA('subscribeToPushNotifications')) {
           await window.SeotoPWA.subscribeToPushNotifications();
         }
       } else {
-        // 'default' — this is the deliberate opt-in: prompt, then subscribe.
-        if (label) label.textContent = 'Enabling…';
+        // 'default' — deliberate opt-in: prompt, then subscribe.
         if (hasPWA('requestNotificationPermission')) {
           await window.SeotoPWA.requestNotificationPermission();
         }
       }
     } catch (error) {
-      console.error('Push toggle failed:', error);
+      console.error('Push enable failed:', error);
     } finally {
       btn.disabled = false;
-      updatePushToggle();
+      updatePushToggle(); // hides itself if it succeeded
     }
   }
 
-  function refreshAll() {
-    updateProfileButton();
-    updatePushToggle();
+  // ── First-visit opt-in ──────────────────────────────────────────────────
+  // Browsers (Safari, Firefox) require a user gesture for requestPermission, so
+  // we ask on the visitor's first interaction rather than on raw page load. Runs
+  // once per browser for authenticated users who haven't decided yet.
+  function maybeAutoPrompt() {
+    if (!supported) return;
+    if (!document.getElementById('notif-push-toggle')) return; // authed only
+    if (Notification.permission !== 'default') return;
+    if (storageGet(PROMPTED_KEY)) return;
+
+    function trigger() {
+      document.removeEventListener('pointerdown', trigger, true);
+      document.removeEventListener('keydown', trigger, true);
+      if (Notification.permission !== 'default') return;
+      storageSet(PROMPTED_KEY, '1'); // ask at most once, regardless of choice
+      if (hasPWA('requestNotificationPermission')) {
+        window.SeotoPWA.requestNotificationPermission();
+      }
+    }
+
+    document.addEventListener('pointerdown', trigger, true);
+    document.addEventListener('keydown', trigger, true);
   }
 
-  // Check subscription status and re-sync backend if permission outlived it
+  // Re-sync backend if a granted permission outlived its subscription
   async function checkSubscriptionStatus() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
@@ -138,7 +125,6 @@
       if (subscription && Notification.permission === 'granted') {
         console.log('Push subscription active:', subscription.endpoint);
       } else if (Notification.permission === 'granted' && !subscription) {
-        // Permission granted but no subscription — re-subscribe
         console.log('Re-subscribing to push notifications...');
         if (hasPWA('subscribeToPushNotifications')) {
           await window.SeotoPWA.subscribeToPushNotifications();
@@ -146,22 +132,24 @@
       }
     } catch (error) {
       console.error('Failed to check subscription status:', error);
+    } finally {
+      updatePushToggle();
     }
   }
 
-  // Initialize on page load
   document.addEventListener('DOMContentLoaded', function () {
-    refreshAll();
+    updatePushToggle();
     checkSubscriptionStatus();
+    maybeAutoPrompt();
 
     var pushToggle = document.getElementById('notif-push-toggle');
     if (pushToggle) pushToggle.addEventListener('click', onPushToggleClick);
 
-    // React to permission changes made elsewhere (e.g. browser UI)
+    // React to permission changes made elsewhere (browser UI, profile page)
     if (navigator.permissions && navigator.permissions.query) {
       navigator.permissions.query({ name: 'notifications' }).then(function (status) {
         status.onchange = function () {
-          refreshAll();
+          updatePushToggle();
           checkSubscriptionStatus();
         };
       }).catch(function (error) {
@@ -170,13 +158,13 @@
     }
   });
 
-  // Keep the controls in sync after the profile page triggers a permission request
+  // Keep the nav control in sync after a permission request elsewhere
   if (hasPWA('requestNotificationPermission')) {
     var originalRequestPermission = window.SeotoPWA.requestNotificationPermission;
     window.SeotoPWA.requestNotificationPermission = async function () {
       await originalRequestPermission.apply(this, arguments);
       setTimeout(function () {
-        refreshAll();
+        updatePushToggle();
         checkSubscriptionStatus();
       }, 500);
     };
