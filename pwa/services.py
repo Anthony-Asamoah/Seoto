@@ -1,6 +1,4 @@
 import json
-import os
-import tempfile
 
 from django.conf import settings
 from pywebpush import webpush, WebPushException
@@ -44,41 +42,31 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
         }
     })
 
-    # Normalize escaped newlines that PythonAnywhere may store literally in env vars
-    pem_key = settings.VAPID_PRIVATE_KEY.replace('\\n', '\n')
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.pem') as f:
-        f.write(pem_key)
-        vapid_key_path = f.name
-
-    try:
-        success_count = 0
-        for subscription in subscriptions:
-            try:
-                webpush(
-                    subscription_info=subscription.get_subscription_info(),
-                    data=payload,
-                    vapid_private_key=vapid_key_path,
-                    vapid_claims={"sub": f"mailto:{settings.VAPID_ADMIN_EMAIL}"}
-                )
-                success_count += 1
-            except WebPushException as e:
-                response_status = e.response.status_code if e.response else 'no response'
-                logger.error(f"Push failed for subscription {subscription.id} — status: {response_status}, error: {e}")
-                if e.response and e.response.status_code in [404, 410]:
-                    subscription.is_active = False
-                    subscription.save()
-            except Exception:
-                logger.exception(f"Unexpected push error for subscription {subscription.id}")
-
-        if success_count > 0:
-            from django.utils import timezone
-            notification.sent = True
-            notification.sent_at = timezone.now()
-            notification.save()
-
-        return success_count
-    finally:
+    # VAPID_PRIVATE_KEY is a single-line raw base64url EC scalar. pywebpush sees it is not a
+    # file path and routes it through Vapid.from_string -> from_raw. (See generate_vapid_keys.)
+    success_count = 0
+    for subscription in subscriptions:
         try:
-            os.unlink(vapid_key_path)
+            webpush(
+                subscription_info=subscription.get_subscription_info(),
+                data=payload,
+                vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                vapid_claims={"sub": f"mailto:{settings.VAPID_ADMIN_EMAIL}"}
+            )
+            success_count += 1
+        except WebPushException as e:
+            response_status = e.response.status_code if e.response else 'no response'
+            logger.error(f"Push failed for subscription {subscription.id} — status: {response_status}, error: {e}")
+            if e.response and e.response.status_code in [404, 410]:
+                subscription.is_active = False
+                subscription.save()
         except Exception:
-            pass
+            logger.exception(f"Unexpected push error for subscription {subscription.id}")
+
+    if success_count > 0:
+        from django.utils import timezone
+        notification.sent = True
+        notification.sent_at = timezone.now()
+        notification.save()
+
+    return success_count

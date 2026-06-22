@@ -1,52 +1,81 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 import base64
 
 
+def _b64url(raw_bytes):
+    """base64url without padding (required for VAPID)."""
+    return base64.urlsafe_b64encode(raw_bytes).decode('utf-8').rstrip('=')
+
+
+def _private_key_raw(private_key):
+    """Raw base64url of the 32-byte EC private scalar (env-safe, single line)."""
+    private_value = private_key.private_numbers().private_value
+    return _b64url(private_value.to_bytes(32, 'big'))
+
+
+def _public_key_raw(public_key):
+    """Uncompressed EC point (0x04 + X + Y) as base64url, required for Web Push."""
+    numbers = public_key.public_numbers()
+    uncompressed = b'\x04' + numbers.x.to_bytes(32, 'big') + numbers.y.to_bytes(32, 'big')
+    return _b64url(uncompressed)
+
+
 class Command(BaseCommand):
-    help = 'Generate VAPID keys for web push notifications'
+    help = 'Generate VAPID keys for web push notifications (raw base64url, env-safe)'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--from-pem',
+            dest='from_pem',
+            metavar='PATH',
+            help='Convert an existing PKCS8 PEM private key to raw base64url instead of '
+                 'generating a new keypair. Preserves the keypair so existing browser '
+                 'subscriptions keep working.',
+        )
 
     def handle(self, *args, **options):
-        # Generate EC private key using SECP256R1 curve (P-256)
-        private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())
+        from_pem = options.get('from_pem')
 
-        # Get public key
-        public_key = private_key.public_key()
+        if from_pem:
+            try:
+                with open(from_pem, 'rb') as f:
+                    private_key = serialization.load_pem_private_key(
+                        f.read(), password=None, backend=default_backend()
+                    )
+            except (OSError, ValueError) as e:
+                raise CommandError(f'Could not load PEM private key from {from_pem!r}: {e}')
+            converting = True
+        else:
+            private_key = ec.generate_private_key(ec.SECP256R1(), default_backend())
+            converting = False
 
-        # Serialize private key to PEM format (for storage)
-        private_pem = private_key.private_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PrivateFormat.PKCS8,
-            encryption_algorithm=serialization.NoEncryption()
-        ).decode('utf-8')
+        private_key_base64 = _private_key_raw(private_key)
+        public_key_base64 = _public_key_raw(private_key.public_key())
 
-        # Get public key in uncompressed point format (required for Web Push)
-        # This is 65 bytes: 0x04 + X (32 bytes) + Y (32 bytes)
-        public_numbers = public_key.public_numbers()
-        x = public_numbers.x.to_bytes(32, 'big')
-        y = public_numbers.y.to_bytes(32, 'big')
-        uncompressed_public_key = b'\x04' + x + y
-
-        # Convert to base64url without padding (required for VAPID)
-        public_key_base64 = base64.urlsafe_b64encode(uncompressed_public_key).decode('utf-8').rstrip('=')
-
-        self.stdout.write(self.style.SUCCESS('\n' + '='*60))
-        self.stdout.write(self.style.SUCCESS('VAPID Keys Generated Successfully!'))
-        self.stdout.write(self.style.SUCCESS('='*60 + '\n'))
+        self.stdout.write(self.style.SUCCESS('\n' + '=' * 60))
+        self.stdout.write(self.style.SUCCESS(
+            'VAPID Key Converted!' if converting else 'VAPID Keys Generated Successfully!'
+        ))
+        self.stdout.write(self.style.SUCCESS('=' * 60 + '\n'))
 
         self.stdout.write(self.style.WARNING('Add these to your .env file:\n'))
-        self.stdout.write(f'\nVAPID_PRIVATE_KEY="{private_pem.strip()}"')
+        self.stdout.write(f'\nVAPID_PRIVATE_KEY={private_key_base64}')
         self.stdout.write(f'\nVAPID_PUBLIC_KEY={public_key_base64}')
         self.stdout.write(f'\nVAPID_ADMIN_EMAIL=admin@seoto.org\n')
 
-        self.stdout.write(self.style.SUCCESS('\n' + '='*60))
+        self.stdout.write(self.style.SUCCESS('\n' + '=' * 60))
         self.stdout.write(self.style.SUCCESS('IMPORTANT NOTES:'))
-        self.stdout.write(self.style.SUCCESS('='*60))
-        self.stdout.write('1. The public key is in base64url format (65 bytes uncompressed EC point)')
-        self.stdout.write('2. Copy the ENTIRE private key including BEGIN/END lines')
-        self.stdout.write('3. Keep the private key in quotes in .env file')
-        self.stdout.write('4. Update both local .env and PythonAnywhere environment variables')
-        self.stdout.write('5. Restart your web app after updating environment variables')
-        self.stdout.write(self.style.SUCCESS('='*60 + '\n'))
+        self.stdout.write(self.style.SUCCESS('=' * 60))
+        self.stdout.write('1. Both keys are single-line base64url — safe for .env / PythonAnywhere / Vercel.')
+        self.stdout.write('2. No quotes or BEGIN/END lines needed.')
+        if converting:
+            self.stdout.write('3. Converted from your existing PEM — VAPID_PUBLIC_KEY is unchanged, '
+                              'so existing subscriptions keep working.')
+        else:
+            self.stdout.write('3. This is a NEW keypair — existing subscriptions must re-subscribe.')
+        self.stdout.write('4. Update local .env, PythonAnywhere, and Vercel environment variables.')
+        self.stdout.write('5. Restart your web app after updating environment variables.')
+        self.stdout.write(self.style.SUCCESS('=' * 60 + '\n'))
