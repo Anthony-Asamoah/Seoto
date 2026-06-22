@@ -1,75 +1,146 @@
 // Notification Manager
-// Manages notification button state and subscription status
+// Owns the "push" control in the notification dropdown header (shared by the
+// mobile bottom nav and desktop top nav) and the initial state of the profile
+// settings button. The bell icons themselves are pure open/close toggles for
+// the in-app notification tray — they are NOT managed here.
 
 (function() {
   'use strict';
 
-  // Update a single notification button based on permission status
-  function updateSingleButton(btn) {
+  var supported = ('Notification' in window) && ('PushManager' in window);
+
+  function hasPWA(method) {
+    return window.SeotoPWA && typeof window.SeotoPWA[method] === 'function';
+  }
+
+  // Is there an active push subscription? (Resolves false if SW unavailable.)
+  async function isSubscribed() {
+    if (!('serviceWorker' in navigator)) return false;
+    try {
+      var registration = await navigator.serviceWorker.ready;
+      return !!(await registration.pushManager.getSubscription());
+    } catch (error) {
+      return false;
+    }
+  }
+
+  // ── Profile settings button ────────────────────────────────────────────
+  // The click behaviour lives in profile.html; here we only reflect the
+  // current permission in the icon on page load.
+  function updateProfileButton() {
+    var btn = document.getElementById('notification-toggle-profile');
     if (!btn) return;
+    if (!supported) { btn.style.display = 'none'; return; }
 
-    // Check if notifications are supported
-    if (!('Notification' in window) || !('PushManager' in window)) {
-      btn.style.display = 'none';
-      return;
-    }
-
-    // Reuse or create the icon element (preserve the badge span)
-    let icon = btn.querySelector('i');
-    if (!icon) {
-      icon = document.createElement('i');
-      btn.insertBefore(icon, btn.firstChild);
-    }
-
-    // Update button based on permission status
-    const permission = Notification.permission;
+    var icon = btn.querySelector('i');
+    var permission = Notification.permission;
 
     if (permission === 'granted') {
-      icon.className = 'fas fa-bell';
+      if (icon) icon.className = 'fas fa-bell';
       btn.title = 'Notifications enabled';
-      btn.classList.add('notif-enabled');
-      btn.classList.remove('notif-disabled');
-      btn.disabled = false;
     } else if (permission === 'denied') {
-      icon.className = 'fas fa-bell-slash';
+      if (icon) icon.className = 'fas fa-bell-slash';
       btn.title = 'Notifications blocked (check browser settings)';
-      btn.classList.add('notif-disabled');
-      btn.classList.remove('notif-enabled');
-      btn.disabled = true;
     } else {
-      icon.className = 'far fa-bell';
+      if (icon) icon.className = 'far fa-bell';
       btn.title = 'Enable push notifications';
-      btn.classList.remove('notif-enabled', 'notif-disabled');
-      btn.disabled = false;
     }
   }
 
-  // Update all notification buttons (top nav, bottom nav, profile settings)
-  function updateNotificationButton() {
-    updateSingleButton(document.getElementById('notification-toggle'));
-    updateSingleButton(document.getElementById('notification-toggle-bottom'));
-    updateSingleButton(document.getElementById('notification-toggle-profile'));
-  }
+  // ── Dropdown header push control (mobile + desktop share one panel) ─────
+  async function updatePushToggle() {
+    var btn = document.getElementById('notif-push-toggle');
+    if (!btn) return;
+    if (!supported) { btn.hidden = true; return; }
 
-  // Check subscription status and ensure backend is synced
-  async function checkSubscriptionStatus() {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    var icon = btn.querySelector('i');
+    var label = btn.querySelector('.notif-push-label');
+    var permission = Notification.permission;
+
+    btn.hidden = false;
+    btn.disabled = false;
+    btn.classList.remove('is-on', 'is-blocked');
+
+    if (permission === 'denied') {
+      if (icon) icon.className = 'fas fa-bell-slash';
+      if (label) label.textContent = 'Blocked';
+      btn.classList.add('is-blocked');
+      btn.disabled = true;
+      btn.title = 'Push is blocked — enable it in your browser settings';
       return;
     }
 
+    var subscribed = await isSubscribed();
+
+    if (permission === 'granted' && subscribed) {
+      if (icon) icon.className = 'fas fa-bell';
+      if (label) label.textContent = 'Push on';
+      btn.classList.add('is-on');
+      btn.title = 'Push notifications are on — tap to turn off';
+    } else {
+      // 'default', or 'granted' but not yet subscribed
+      if (icon) icon.className = 'far fa-bell';
+      if (label) label.textContent = 'Enable push';
+      btn.title = 'Enable push notifications';
+    }
+  }
+
+  async function onPushToggleClick() {
+    var btn = document.getElementById('notif-push-toggle');
+    if (!btn || !supported) return;
+    if (Notification.permission === 'denied') return; // disabled anyway
+
+    var label = btn.querySelector('.notif-push-label');
+    btn.disabled = true;
+
     try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
+      var subscribed = await isSubscribed();
+
+      if (Notification.permission === 'granted' && subscribed) {
+        if (label) label.textContent = 'Turning off…';
+        if (hasPWA('unsubscribeFromPushNotifications')) {
+          await window.SeotoPWA.unsubscribeFromPushNotifications();
+        }
+      } else if (Notification.permission === 'granted') {
+        // Already granted — just (re)create the subscription, no prompt.
+        if (label) label.textContent = 'Enabling…';
+        if (hasPWA('subscribeToPushNotifications')) {
+          await window.SeotoPWA.subscribeToPushNotifications();
+        }
+      } else {
+        // 'default' — this is the deliberate opt-in: prompt, then subscribe.
+        if (label) label.textContent = 'Enabling…';
+        if (hasPWA('requestNotificationPermission')) {
+          await window.SeotoPWA.requestNotificationPermission();
+        }
+      }
+    } catch (error) {
+      console.error('Push toggle failed:', error);
+    } finally {
+      btn.disabled = false;
+      updatePushToggle();
+    }
+  }
+
+  function refreshAll() {
+    updateProfileButton();
+    updatePushToggle();
+  }
+
+  // Check subscription status and re-sync backend if permission outlived it
+  async function checkSubscriptionStatus() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    try {
+      var registration = await navigator.serviceWorker.ready;
+      var subscription = await registration.pushManager.getSubscription();
 
       if (subscription && Notification.permission === 'granted') {
         console.log('Push subscription active:', subscription.endpoint);
-
-        // Optionally verify subscription with backend
-        // You could add a GET endpoint to check if subscription exists
       } else if (Notification.permission === 'granted' && !subscription) {
-        // Permission granted but no subscription - re-subscribe
+        // Permission granted but no subscription — re-subscribe
         console.log('Re-subscribing to push notifications...');
-        if (window.SeotoPWA && typeof window.SeotoPWA.subscribeToPushNotifications === 'function') {
+        if (hasPWA('subscribeToPushNotifications')) {
           await window.SeotoPWA.subscribeToPushNotifications();
         }
       }
@@ -79,31 +150,33 @@
   }
 
   // Initialize on page load
-  document.addEventListener('DOMContentLoaded', () => {
-    updateNotificationButton();
+  document.addEventListener('DOMContentLoaded', function () {
+    refreshAll();
     checkSubscriptionStatus();
 
-    // Listen for permission changes (if browser supports it)
+    var pushToggle = document.getElementById('notif-push-toggle');
+    if (pushToggle) pushToggle.addEventListener('click', onPushToggleClick);
+
+    // React to permission changes made elsewhere (e.g. browser UI)
     if (navigator.permissions && navigator.permissions.query) {
-      navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
-        permissionStatus.onchange = () => {
-          updateNotificationButton();
+      navigator.permissions.query({ name: 'notifications' }).then(function (status) {
+        status.onchange = function () {
+          refreshAll();
           checkSubscriptionStatus();
         };
-      }).catch((error) => {
+      }).catch(function (error) {
         console.log('Permission query not supported:', error);
       });
     }
   });
 
-  // Override the requestNotificationPermission to update button after permission
-  if (window.SeotoPWA && typeof window.SeotoPWA.requestNotificationPermission === 'function') {
-    const originalRequestPermission = window.SeotoPWA.requestNotificationPermission;
-
-    window.SeotoPWA.requestNotificationPermission = async function() {
-      await originalRequestPermission();
-      setTimeout(() => {
-        updateNotificationButton();
+  // Keep the controls in sync after the profile page triggers a permission request
+  if (hasPWA('requestNotificationPermission')) {
+    var originalRequestPermission = window.SeotoPWA.requestNotificationPermission;
+    window.SeotoPWA.requestNotificationPermission = async function () {
+      await originalRequestPermission.apply(this, arguments);
+      setTimeout(function () {
+        refreshAll();
         checkSubscriptionStatus();
       }, 500);
     };

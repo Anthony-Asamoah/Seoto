@@ -7,9 +7,15 @@
 <div id="notif-panel" class="notif-panel" role="dialog" aria-label="Notifications" aria-hidden="true">
     <div class="notif-panel-header">
         <span class="notif-panel-title">Notifications</span>
-        <button class="notif-panel-close" id="notif-close" aria-label="Close notifications">
-            <i class="fas fa-times" aria-hidden="true"></i>
-        </button>
+        <div class="notif-panel-actions">
+            <button type="button" class="notif-push-toggle" id="notif-push-toggle" hidden>
+                <i class="far fa-bell" aria-hidden="true"></i>
+                <span class="notif-push-label">Enable push</span>
+            </button>
+            <button class="notif-panel-close" id="notif-close" aria-label="Close notifications">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
     </div>
     <div class="notif-list" id="notif-list">
         <div class="notif-loading">

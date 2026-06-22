@@ -437,6 +437,50 @@
             color: #111827;
         }
 
+        .notif-panel-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .notif-push-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: 1px solid #175a9c;
+            color: #175a9c;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 10px;
+            line-height: 1;
+            border-radius: 999px;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .notif-push-toggle[hidden] { display: none; }
+
+        .notif-push-toggle:focus-visible {
+            outline: 2px solid #175a9c;
+            outline-offset: 1px;
+        }
+
+        .notif-push-toggle.is-on {
+            background: #175a9c;
+            border-color: #175a9c;
+            color: #fff;
+        }
+
+        .notif-push-toggle.is-blocked {
+            border-color: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .notif-push-toggle:disabled { opacity: 0.7; }
+
         .notif-panel-close {
             background: none;
             border: none;
