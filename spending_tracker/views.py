@@ -911,7 +911,6 @@ def reports(request):
         trend_data = []
         current = start_date
         end = min(end_date, now)
-        week_num = 1
 
         # Get week start (Monday) for start_date
         current_week_start = current - timedelta(days=current.weekday())
@@ -930,13 +929,12 @@ def reports(request):
                 week_end = current_week_start + timedelta(days=6)
                 if current_week_start <= end:
                     trend_data.append({
-                        'date': f"Week {week_num}",
+                        'date': week_date.strftime('%b %-d'),
                         'income': income_val,
                         'expenses': expense_val
                     })
                     logger.debug(
-                        f"  - Week {week_num}: Income={income_val}, Expenses={expense_val}, Found in results={week_date in results_dict}")
-                    week_num += 1
+                        f"  - Week of {week_date}: Income={income_val}, Expenses={expense_val}, Found in results={week_date in results_dict}")
 
             current_week_start += timedelta(days=7)
 
@@ -1045,7 +1043,6 @@ def reports(request):
             trend_data = []
             current = start_date - timedelta(days=start_date.weekday())
             end = min(end_date, now)
-            week_num = 1
 
             while current <= end:
                 if current >= start_date or (current + timedelta(days=6)) >= start_date:
@@ -1054,11 +1051,10 @@ def reports(request):
 
                     if current <= end:
                         trend_data.append({
-                            'date': f"Week {week_num}",
+                            'date': week_date.strftime('%b %-d'),
                             'income': float(result.get('income') or 0),
                             'expenses': float(result.get('expenses') or 0)
                         })
-                        week_num += 1
 
                 current += timedelta(days=7)
 

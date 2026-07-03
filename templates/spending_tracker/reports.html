@@ -140,7 +140,7 @@
             padding: 20px;
             text-align: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border-left: 4px solid #007bff;
+            border-top: 4px solid #007bff;
         }
 
         .metric-value {
@@ -319,23 +319,23 @@
 
     <!-- Top Cards -->
     <div class="metric-grid">
-        <div class="metric-card" style="border-left-color: #27ae60;">
+        <div class="metric-card" style="border-top-color: #27ae60;">
             <div class="metric-value" style="color: #27ae60;">+{{ currency_symbol }}{{ total_income }}</div>
             <div class="metric-label">Total Income</div>
         </div>
-        <div class="metric-card" style="border-left-color: #e74c3c;">
+        <div class="metric-card" style="border-top-color: #e74c3c;">
             <div class="metric-value" style="color: #e74c3c;">-{{ currency_symbol }}{{ total_expenses }}</div>
             <div class="metric-label">Total Expenses</div>
         </div>
         <div class="metric-card"
-             style="{% if net_income >= 0 %}border-left-color: #27ae60;{% else %}border-left-color: #e74c3c;{% endif %}">
+             style="{% if net_income >= 0 %}border-top-color: #27ae60;{% else %}border-top-color: #e74c3c;{% endif %}">
             <div class="metric-value"
                  style="{% if net_income >= 0 %}color: #27ae60;{% else %}color: #e74c3c;{% endif %}">
                 {% if net_income >= 0 %}+{% endif %}{{ currency_symbol }}{{ net_income }}
             </div>
             <div class="metric-label">Net Income</div>
         </div>
-        <div class="metric-card" style="border-left-color: #f39c12;">
+        <div class="metric-card" style="border-top-color: #f39c12;">
             <div class="metric-value" style="color: #f39c12;">{{ savings_rate }}%</div>
             <div class="metric-label">Savings Rate</div>
         </div>
@@ -419,12 +419,12 @@
         <h5 class="mb-1">📋 Summary Insights</h5>
         <p class="text-muted small mb-3">Key metrics for the selected period</p>
         <div class="metric-grid">
-            <div class="metric-card" style="border-left-color: #e74c3c;">
+            <div class="metric-card" style="border-top-color: #e74c3c;">
                 <div class="metric-value" style="color: #e74c3c; font-size: 1.4rem;">
                     {{ currency_symbol }}{{ avg_daily_spending }}</div>
                 <div class="metric-label">Avg. Daily Spending</div>
             </div>
-            <div class="metric-card" style="border-left-color: #9b59b6;">
+            <div class="metric-card" style="border-top-color: #9b59b6;">
                 <div class="metric-value" style="color: #9b59b6; font-size: 1.4rem;">
                     {% if top_expense_category %}
                         {{ top_expense_category }}
@@ -437,14 +437,14 @@
                         <small class="text-muted">{{ currency_symbol }}{{ top_expense_amount }}</small>{% endif %}
                 </div>
             </div>
-            <div class="metric-card" style="border-left-color: #3498db;">
+            <div class="metric-card" style="border-top-color: #3498db;">
                 <div class="metric-value" style="color: #3498db; font-size: 1.4rem;">
                     {% if income_expense_ratio %}{{ income_expense_ratio }}x{% else %}N/A{% endif %}
                 </div>
                 <div class="metric-label">Income to Expense Ratio</div>
             </div>
             <div class="metric-card"
-                 style="{% if net_income >= 0 %}border-left-color: #27ae60;{% else %}border-left-color: #e74c3c;{% endif %}">
+                 style="{% if net_income >= 0 %}border-top-color: #27ae60;{% else %}border-top-color: #e74c3c;{% endif %}">
                 <div class="metric-value"
                      style="{% if net_income >= 0 %}color: #27ae60;{% else %}color: #e74c3c;{% endif %} font-size: 1.4rem;">
                     {% if net_income >= 0 %}+{% endif %}{{ currency_symbol }}{{ net_income }}
