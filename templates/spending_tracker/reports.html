@@ -461,8 +461,8 @@
         <h5 class="mb-3">🏦 Account Performance</h5>
 
         {% if account_performance %}
-            <div class="mb-4">
-                <canvas id="accountPerformanceChart" style="max-height: 300px;"></canvas>
+            <div class="mb-4" id="accountPerformanceChartWrapper">
+                <canvas id="accountPerformanceChart"></canvas>
             </div>
         {% endif %}
 
@@ -840,11 +840,61 @@
                         netChange: {{ row.net_change }}
                     }{% if not forloop.last %},{% endif %}
                 {% endfor %}
-            ];
+            ].sort((a, b) => b.current - a.current);
 
             const accountNames = accountPerformanceData.map(acc => acc.name);
+            // Floating bar per account: spans from the period's starting balance to today's
+            // current balance, so the bar itself moves when the period changes - not just a label.
+            const balanceRanges = accountPerformanceData.map(acc => [acc.starting, acc.current]);
             const currentBalances = accountPerformanceData.map(acc => acc.current);
             const netChanges = accountPerformanceData.map(acc => acc.netChange);
+
+            // Give the chart enough vertical room to breathe as accounts are added
+            const wrapper = document.getElementById('accountPerformanceChartWrapper');
+            if (wrapper) {
+                wrapper.style.height = Math.max(220, accountNames.length * 55 + 50) + 'px';
+            }
+
+            // Pad the scale beyond the widest range so end-of-bar labels/markers never clip
+            const allValues = accountPerformanceData.flatMap(acc => [acc.starting, acc.current]);
+            const maxAbsBalance = Math.max(...allValues.map(v => Math.abs(v)), 1);
+            const scalePadding = maxAbsBalance * 0.3;
+
+            // Draws a "now" marker at the current-balance end plus the ▲/▼ net change label
+            const netChangeLabelsPlugin = {
+                id: 'netChangeLabels',
+                afterDatasetsDraw(chart) {
+                    const meta = chart.getDatasetMeta(0);
+                    const { ctx } = chart;
+                    ctx.save();
+                    ctx.font = '600 12px sans-serif';
+                    ctx.textBaseline = 'middle';
+                    meta.data.forEach((bar, index) => {
+                        const netChange = netChanges[index];
+                        const isPositive = netChange >= 0;
+                        const color = isPositive ? 'rgba(39, 174, 96, 1)' : 'rgba(231, 76, 60, 1)';
+
+                        // bar.x is the pixel for the "current" end of the range, bar.base for "starting"
+                        ctx.fillStyle = '#2c3e50';
+                        ctx.beginPath();
+                        ctx.arc(bar.x, bar.y, 4, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        const arrow = isPositive ? '▲' : '▼';
+                        const sign = isPositive ? '+' : '-';
+                        const label = `${arrow} ${sign}${currencySymbol}${Math.abs(netChange).toFixed(0)}`;
+                        ctx.fillStyle = color;
+                        if (bar.x >= bar.base) {
+                            ctx.textAlign = 'left';
+                            ctx.fillText(label, bar.x + 10, bar.y);
+                        } else {
+                            ctx.textAlign = 'right';
+                            ctx.fillText(label, bar.x - 10, bar.y);
+                        }
+                    });
+                    ctx.restore();
+                }
+            };
 
             const ctxAcctPerf = accountPerfCanvas.getContext('2d');
             new Chart(ctxAcctPerf, {
@@ -853,37 +903,31 @@
                     labels: accountNames,
                     datasets: [
                         {
-                            label: 'Current Balance',
-                            data: currentBalances,
-                            backgroundColor: 'rgba(52, 152, 219, 0.7)',
-                            borderColor: 'rgba(52, 152, 219, 1)',
-                            borderWidth: 2,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: 'Net Change (Period)',
-                            data: netChanges,
+                            label: 'Balance range (start → now)',
+                            data: balanceRanges,
                             backgroundColor: netChanges.map(val =>
-                                val >= 0 ? 'rgba(39, 174, 96, 0.7)' : 'rgba(231, 76, 60, 0.7)'
+                                val >= 0 ? 'rgba(39, 174, 96, 0.35)' : 'rgba(231, 76, 60, 0.35)'
                             ),
                             borderColor: netChanges.map(val =>
                                 val >= 0 ? 'rgba(39, 174, 96, 1)' : 'rgba(231, 76, 60, 1)'
                             ),
                             borderWidth: 2,
-                            yAxisID: 'y1'
+                            borderRadius: 4,
+                            minBarLength: 4
                         }
                     ]
                 },
+                plugins: [netChangeLabelsPlugin],
                 options: {
+                    indexAxis: 'y',
                     responsive: true,
-                    maintainAspectRatio: true,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: { right: 70, left: 10 }
                     },
                     plugins: {
                         legend: {
-                            position: 'top'
+                            display: false
                         },
                         title: {
                             display: true,
@@ -893,42 +937,42 @@
                                 weight: 'bold'
                             }
                         },
+                        subtitle: {
+                            display: true,
+                            text: 'Bar spans starting → current balance for this period · dot = today',
+                            font: { size: 11, style: 'italic' },
+                            color: '#6c757d',
+                            padding: { bottom: 8 }
+                        },
                         tooltip: {
                             callbacks: {
                                 label: (context) => {
-                                    const label = context.dataset.label || '';
-                                    const value = context.parsed.y;
-                                    return label + ': ' + currencySymbol + value.toFixed(2);
+                                    const acc = accountPerformanceData[context.dataIndex];
+                                    const sign = acc.netChange >= 0 ? '+' : '-';
+                                    return [
+                                        'Starting Balance: ' + currencySymbol + acc.starting.toFixed(2),
+                                        'Current Balance: ' + currencySymbol + acc.current.toFixed(2),
+                                        'Net Change (Period): ' + sign + currencySymbol + Math.abs(acc.netChange).toFixed(2)
+                                    ];
                                 }
                             }
                         }
                     },
                     scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
+                        x: {
+                            min: Math.min(0, ...allValues) - scalePadding,
+                            max: Math.max(0, ...allValues) + scalePadding,
                             title: {
                                 display: true,
-                                text: 'Current Balance (' + currencySymbol + ')'
+                                text: 'Balance (' + currencySymbol + ')'
                             },
                             ticks: {
                                 callback: (value) => currencySymbol + value.toFixed(0)
                             }
                         },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: 'Net Change (' + currencySymbol + ')'
-                            },
-                            ticks: {
-                                callback: (value) => currencySymbol + value.toFixed(0)
-                            },
+                        y: {
                             grid: {
-                                drawOnChartArea: false
+                                display: false
                             }
                         }
                     }
