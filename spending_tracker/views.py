@@ -429,7 +429,8 @@ def delete_transaction(request, pk):
 def edit_transaction(request, pk):
     """Edit a transaction within 24-hour window"""
     transaction = get_object_or_404(
-        Transaction.objects.select_related('account', 'category').prefetch_related('tags'),
+        Transaction.objects.select_related('account', 'category', 'recurring_occurrence__recurring_transaction')
+        .prefetch_related('tags'),
         id=pk, account__user=request.user
     )
 
@@ -471,10 +472,12 @@ def edit_transaction(request, pk):
     remaining_minutes = int((remaining.total_seconds() % 3600) // 60)
 
     existing_tags = ', '.join(tag.label for tag in transaction.tags.all())
+    recurring_occurrence = getattr(transaction, 'recurring_occurrence', None)
 
     context = {
         'form': form,
         'transaction': transaction,
+        'recurring_occurrence': recurring_occurrence,
         'mode': transaction.mode,
         'remaining_hours': remaining_hours,
         'remaining_minutes': remaining_minutes,
@@ -1673,6 +1676,7 @@ def confirm_recurring_occurrence(request, pk):
             with atomic():
                 created_transaction = create_transaction_from_recurring(
                     occurrence.recurring_transaction,
+                    occurrence.scheduled_date,
                     attachment=attachment,
                     details_override=details_override,
                     extra_tags=extra_tags,

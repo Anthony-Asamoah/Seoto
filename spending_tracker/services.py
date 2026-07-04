@@ -14,14 +14,22 @@ logger = logging.getLogger(__name__)
 MAX_OCCURRENCES_PER_RUN = 366
 
 
-def create_transaction_from_recurring(recurring_transaction, attachment=None, details_override=None, extra_tags=None):
+def create_transaction_from_recurring(recurring_transaction, scheduled_date, attachment=None, details_override=None, extra_tags=None):
     """Create a Transaction from a RecurringTransaction's template fields.
+
+    `scheduled_date` is the occurrence's due date, not the moment this function actually runs —
+    those two differ for a backdated catch-up run (several occurrences processed together, long
+    after they were due) or a late manual approval, and the transaction should record the date it
+    was due, not the processing time. The schedule has no time-of-day of its own (only a date), so
+    the current time-of-day is kept and just re-dated onto `scheduled_date`.
 
     `attachment`, `details_override` and `extra_tags` let a manual approval (the only path
     that can supply them — auto-create has no user present to ask) fill in a receipt or a
     description/tags the schedule itself doesn't have. They never override values the
     schedule already defines.
     """
+    now = timezone.now()
+    transaction_time = now.replace(year=scheduled_date.year, month=scheduled_date.month, day=scheduled_date.day)
     transaction = Transaction.objects.create(
         mode=recurring_transaction.mode,
         amount=recurring_transaction.amount,
@@ -31,7 +39,7 @@ def create_transaction_from_recurring(recurring_transaction, attachment=None, de
         account=recurring_transaction.account,
         destination_account=recurring_transaction.destination_account,
         category=recurring_transaction.category,
-        transaction_time=timezone.now(),
+        transaction_time=transaction_time,
         attachment=attachment,
     )
     tags = list(recurring_transaction.tags.all()) or (extra_tags or [])
@@ -78,7 +86,7 @@ def process_due_occurrences(recurring_transaction, today=None):
 
             if recurring_transaction.is_auto_renew:
                 with db_transaction.atomic():
-                    created_transaction = create_transaction_from_recurring(recurring_transaction)
+                    created_transaction = create_transaction_from_recurring(recurring_transaction, occurrence.scheduled_date)
                     occurrence.status = RecurringOccurrenceStatusChoices.AUTO_CREATED
                     occurrence.transaction = created_transaction
                     occurrence.resolved_at = timezone.now()

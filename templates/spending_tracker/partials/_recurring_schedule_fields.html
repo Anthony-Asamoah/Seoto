@@ -4,6 +4,53 @@ unbound RecurringTransactionForm) and `weekday_choices` in context. The schedule
 isn't collected here — it's derived server-side from the main form's `transaction_time` field,
 since asking for the same date twice on one form is redundant.
 {% endcomment %}
+<style>
+    /* Bootstrap-neutral widgets shared by every page that includes this partial — kept
+       self-contained (own class prefix) so it works regardless of the host page's skin. */
+    .recur-weekday-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .recur-weekday-pill {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 46px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1.5px solid #ced4da;
+        background: #f8f9fa;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6c757d;
+        cursor: pointer;
+        transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+    .recur-weekday-pill input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .recur-weekday-pill.active { border-color: #0d6efd; background: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+
+    .recur-behavior-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; position: relative; }
+    .recur-behavior-card {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        border: 1.5px solid #ced4da;
+        border-radius: 12px;
+        padding: 14px 16px;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+    .recur-behavior-card i { font-size: 1rem; color: #6c757d; margin-top: 2px; transition: color .15s ease; }
+    .recur-behavior-card h4 { font-size: 0.88rem; font-weight: 600; margin: 0 0 2px; color: #212529; }
+    .recur-behavior-card p { font-size: 0.78rem; color: #6c757d; margin: 0; line-height: 1.4; }
+    .recur-behavior-card.active { border-color: #0d6efd; background: rgba(13, 110, 253, 0.07); box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.12); }
+    .recur-behavior-card.active i { color: #0d6efd; }
+    .recur-behavior-grid input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+
+    @media (max-width: 576px) {
+        .recur-behavior-grid { grid-template-columns: 1fr; }
+    }
+</style>
+
 <div class="row">
     <div class="col-md-6">
         <div class="mb-3">
@@ -46,14 +93,14 @@ since asking for the same date twice on one form is redundant.
     </div>
     <div class="mb-3" id="recurring_custom_weekdays_group">
         <label class="form-label">Days of the week</label>
-        <div>
+        <div class="recur-weekday-pills">
             {% for value, label in weekday_choices %}
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="checkbox" name="custom_weekdays" value="{{ value }}"
+                <label class="recur-weekday-pill {% if recurring_form.custom_weekdays.value and value|stringformat:"s" in recurring_form.custom_weekdays.value %}active{% endif %}">
+                    <input type="checkbox" name="custom_weekdays" value="{{ value }}"
                            id="id_recurring_weekday_{{ value }}"
                            {% if recurring_form.custom_weekdays.value and value|stringformat:"s" in recurring_form.custom_weekdays.value %}checked{% endif %}>
-                    <label class="form-check-label" for="id_recurring_weekday_{{ value }}">{{ label }}</label>
-                </div>
+                    <span>{{ label|slice:":3" }}</span>
+                </label>
             {% endfor %}
         </div>
         {% if recurring_form.custom_weekdays.errors %}
@@ -70,11 +117,25 @@ since asking for the same date twice on one form is redundant.
     </div>
 </div>
 
-<div class="form-check form-switch mt-2">
-    {{ recurring_form.is_auto_renew }}
-    <label class="form-check-label" for="{{ recurring_form.is_auto_renew.id_for_label }}">
-        Auto-create automatically (otherwise you'll get a notification to approve each time)
-    </label>
+<div class="mb-3 mt-2">
+    <label class="form-label d-block mb-2">Behavior</label>
+    <div class="recur-behavior-grid">
+        <label class="recur-behavior-card" id="recurring_auto_card">
+            <i class="fas fa-bolt"></i>
+            <div>
+                <h4>Auto-create</h4>
+                <p>Created the moment it's due — you'll get a notification once it's made.</p>
+            </div>
+        </label>
+        <label class="recur-behavior-card" id="recurring_approve_card">
+            <i class="fas fa-bell"></i>
+            <div>
+                <h4>Ask me first</h4>
+                <p>You get a notification to approve it, then it's created.</p>
+            </div>
+        </label>
+        {{ recurring_form.is_auto_renew }}
+    </div>
 </div>
 
 <div class="mb-3 mt-2">
@@ -95,6 +156,35 @@ since asking for the same date twice on one form is redundant.
         const customGroup = document.getElementById('recurring_custom_group');
         const weekdaysGroup = document.getElementById('recurring_custom_weekdays_group');
         const monthDaysGroup = document.getElementById('recurring_custom_month_days_group');
+
+        document.querySelectorAll('.recur-weekday-pill input[type="checkbox"]').forEach(function (checkbox) {
+            checkbox.addEventListener('change', function () {
+                checkbox.closest('.recur-weekday-pill').classList.toggle('active', checkbox.checked);
+            });
+        });
+
+        const isAutoRenewInput = document.getElementById('{{ recurring_form.is_auto_renew.id_for_label }}');
+        const autoCard = document.getElementById('recurring_auto_card');
+        const approveCard = document.getElementById('recurring_approve_card');
+        if (isAutoRenewInput && autoCard && approveCard) {
+            const syncBehaviorCards = function () {
+                const isAuto = isAutoRenewInput.checked;
+                autoCard.classList.toggle('active', isAuto);
+                approveCard.classList.toggle('active', !isAuto);
+            };
+            autoCard.addEventListener('click', function (event) {
+                event.preventDefault();
+                isAutoRenewInput.checked = true;
+                syncBehaviorCards();
+            });
+            approveCard.addEventListener('click', function (event) {
+                event.preventDefault();
+                isAutoRenewInput.checked = false;
+                syncBehaviorCards();
+            });
+            syncBehaviorCards();
+        }
+
         if (!frequencySelect || !customTypeSelect) return;
 
         function updateCustomTypeVisibility() {
