@@ -1649,11 +1649,16 @@ def confirm_recurring_occurrence(request, pk):
     if occurrence.recurring_transaction.user_id != request.user.id:
         raise Http404
 
-    if request.method == 'POST':
-        if occurrence.status != RecurringOccurrenceStatusChoices.PENDING:
-            messages.info(request, 'This occurrence has already been resolved.')
-            return redirect('spending_tracker:recurring_list')
+    # Stale notification link (already acted on, e.g. from a re-delivered push or a second tab).
+    # Send the user to where the outcome actually lives instead of re-showing a dead approval form.
+    if occurrence.status != RecurringOccurrenceStatusChoices.PENDING:
+        if occurrence.transaction_id:
+            messages.info(request, 'This recurring transaction was already confirmed.')
+            return redirect(f"{reverse('spending_tracker:transaction_list')}?highlight={occurrence.transaction_id}")
+        messages.info(request, 'This recurring transaction occurrence was already dismissed.')
+        return redirect('spending_tracker:recurring_list')
 
+    if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'approve':
             attachment = request.FILES.get('attachment')
@@ -1682,7 +1687,7 @@ def confirm_recurring_occurrence(request, pk):
                     user=request.user,
                     title='Transaction Created',
                     body=f'{created_transaction.get_mode_display()}: {created_transaction.currency} {created_transaction.amount}',
-                    url='/spending_tracker/transactions/',
+                    url=f'/spending_tracker/transactions/?highlight={created_transaction.pk}',
                 )
             except Exception as e:
                 logger.warning(f'Failed to send push notification: {e}')

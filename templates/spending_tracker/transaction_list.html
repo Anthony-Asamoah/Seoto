@@ -84,6 +84,13 @@
         color: #adb5bd;
         font-size: 0.85rem;
     }
+    @keyframes highlight-pulse {
+        0%, 100% { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        50% { box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.5); }
+    }
+    .transaction-card.highlight-pulse {
+        animation: highlight-pulse 1s ease-in-out 2;
+    }
 </style>
 {% endblock %}
 
@@ -286,6 +293,37 @@
         const list = document.getElementById('transactions-list');
         if (list) {
             new MutationObserver(() => wireChevrons(list)).observe(list, { childList: true });
+        }
+    });
+
+    // Auto-open and scroll to a transaction linked from a notification, e.g. ?highlight=123
+    document.addEventListener('DOMContentLoaded', () => {
+        const highlightId = new URLSearchParams(window.location.search).get('highlight');
+        if (!highlightId) return;
+
+        const openHighlighted = () => {
+            const collapseEl = document.getElementById(`transaction-${highlightId}`)
+                || document.getElementById(`transaction-g-${highlightId}`);
+            if (!collapseEl) return false;
+
+            bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false }).show();
+            const card = collapseEl.closest('.transaction-card');
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.add('highlight-pulse');
+                card.addEventListener('animationend', () => card.classList.remove('highlight-pulse'), { once: false });
+            }
+            return true;
+        };
+
+        if (!openHighlighted()) {
+            const list = document.getElementById('transactions-list');
+            if (list) {
+                const observer = new MutationObserver(() => {
+                    if (openHighlighted()) observer.disconnect();
+                });
+                observer.observe(list, { childList: true });
+            }
         }
     });
 

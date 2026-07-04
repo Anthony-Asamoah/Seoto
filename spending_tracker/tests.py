@@ -197,6 +197,16 @@ class ProcessDueOccurrencesTests(TestCase):
         self.assertFalse(schedule.is_active)
         self.assertEqual(RecurringTransactionOccurrence.objects.filter(recurring_transaction=schedule).count(), 1)
 
+    def test_auto_renew_notification_links_to_created_transaction(self):
+        from pwa.models import Notification
+
+        schedule = self._schedule(is_auto_renew=True)
+        process_due_occurrences(schedule, today=self.today)
+
+        occurrence = RecurringTransactionOccurrence.objects.get(recurring_transaction=schedule, scheduled_date=self.today)
+        notification = Notification.objects.get(user=self.user, title='Recurring Transaction Created')
+        self.assertEqual(notification.url, f'/spending_tracker/transactions/?highlight={occurrence.transaction_id}')
+
 
 class AddRecurringTransactionViewTests(TestCase):
     """Tests for scheduling a recurring transaction via the main Add Transaction form
@@ -411,6 +421,16 @@ class ConfirmRecurringOccurrenceTests(TestCase):
         self.account.refresh_from_db()
         self.assertEqual(self.account.balance, Decimal('260.00'))
 
+    def test_approve_notification_links_to_created_transaction(self):
+        from pwa.models import Notification
+
+        url = reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk])
+        self.client.post(url, {'action': 'approve'})
+
+        self.occurrence.refresh_from_db()
+        notification = Notification.objects.get(user=self.user, title='Transaction Created')
+        self.assertEqual(notification.url, f'/spending_tracker/transactions/?highlight={self.occurrence.transaction_id}')
+
     def test_dismiss_creates_no_transaction(self):
         url = reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk])
         self.client.post(url, {'action': 'dismiss'})
@@ -431,6 +451,24 @@ class ConfirmRecurringOccurrenceTests(TestCase):
         self.client.post(url, {'action': 'approve'})
         self.account.refresh_from_db()
         self.assertEqual(self.account.balance, balance_after_first)
+
+    def test_stale_confirmed_link_redirects_to_highlighted_transaction(self):
+        url = reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk])
+        self.client.post(url, {'action': 'approve'})
+        self.occurrence.refresh_from_db()
+
+        response = self.client.get(url)
+        self.assertRedirects(
+            response,
+            f"{reverse('spending_tracker:transaction_list')}?highlight={self.occurrence.transaction_id}",
+        )
+
+    def test_stale_dismissed_link_redirects_to_recurring_list(self):
+        url = reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk])
+        self.client.post(url, {'action': 'dismiss'})
+
+        response = self.client.get(url)
+        self.assertRedirects(response, reverse('spending_tracker:recurring_list'))
 
     def test_other_users_occurrence_404s(self):
         self.client.force_login(self.other_user)

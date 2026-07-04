@@ -68,11 +68,13 @@ def process_due_occurrences(recurring_transaction, today=None):
 
         if created:
             # `details` holds Quill-authored rich text (HTML); notifications are plain text.
+            # Only shown when it says something the mode label doesn't already say.
             plain_details = ' '.join(strip_tags(recurring_transaction.details or '').split())
-            description = plain_details or recurring_transaction.get_mode_display()
+            mode_label = recurring_transaction.get_mode_display()
+            description_suffix = f' — {plain_details}' if plain_details else ''
             amount_label = f'{recurring_transaction.currency} {recurring_transaction.amount}'
             note = recurring_transaction.notification_note
-            note_suffix = f' — {note}' if note else ''
+            note_suffix = f' ({note})' if note else ''
 
             if recurring_transaction.is_auto_renew:
                 with db_transaction.atomic():
@@ -84,14 +86,14 @@ def process_due_occurrences(recurring_transaction, today=None):
                 send_push_notification(
                     user=recurring_transaction.user,
                     title='Recurring Transaction Created',
-                    body=f'{created_transaction.get_mode_display()}: {amount_label} — {description}{note_suffix}',
-                    url='/spending_tracker/transactions/',
+                    body=f'{mode_label}: {amount_label}{description_suffix}{note_suffix}',
+                    url=f'/spending_tracker/transactions/?highlight={created_transaction.pk}',
                 )
             else:
                 send_push_notification(
                     user=recurring_transaction.user,
                     title='Recurring Transaction Due',
-                    body=f'Approve creating {amount_label} {recurring_transaction.get_mode_display()} — {description}?{note_suffix}',
+                    body=f'Approve creating {amount_label} {mode_label}{description_suffix}?{note_suffix}',
                     url=reverse('spending_tracker:confirm_recurring_occurrence', args=[occurrence.pk]),
                 )
 
