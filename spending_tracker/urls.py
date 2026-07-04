@@ -27,4 +27,11 @@ urlpatterns = [
 
     # Background Sync API
     path('api/transaction/create/', views.create_transaction_api, name='create-transaction-api'),
+
+    # Recurring Transactions (scheduling itself happens via add_transaction/transactions/add/)
+    path('recurring/', views.recurring_list, name='recurring_list'),
+    path('recurring/<int:pk>/edit/', views.edit_recurring_transaction, name='edit_recurring_transaction'),
+    path('recurring/<int:pk>/toggle/', views.toggle_recurring_transaction, name='toggle_recurring_transaction'),
+    path('recurring/<int:pk>/delete/', views.delete_recurring_transaction, name='delete_recurring_transaction'),
+    path('recurring/occurrences/<int:pk>/confirm/', views.confirm_recurring_occurrence, name='confirm_recurring_occurrence'),
 ]

@@ -175,6 +175,15 @@ Generates or regenerates thumbnails for all meal images that are missing one.
 python manage.py generate_foodie_thumbnails
 ```
 
+### Spending Tracker
+
+#### `process_recurring_transactions`
+Processes due recurring transactions: auto-creates the transaction (`is_auto_renew=True`) or sends a push/in-app notification asking the user to approve it (`is_auto_renew=False`). Idempotent — safe to re-run for the same day. Intended to run once a day; since this app has no task queue, add it as a daily **PythonAnywhere Scheduled Task** at the time configured by the `RECURRING_TRANSACTIONS_CRON` env var (default `0 19 * * *`, i.e. 7pm) — the command logs a warning if it's invoked more than an hour off that time.
+
+```bash
+python manage.py process_recurring_transactions
+```
+
 ### Theme
 
 #### `seed_themes`

@@ -1,0 +1,139 @@
+{% comment %}
+Extra schedule fields for a recurring transaction. Include with `recurring_form` (a bound or
+unbound RecurringTransactionForm) and `weekday_choices` in context. The schedule's renewal date
+isn't collected here — it's derived server-side from the main form's `transaction_time` field,
+since asking for the same date twice on one form is redundant.
+{% endcomment %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label for="{{ recurring_form.frequency.id_for_label }}" class="form-label">Frequency</label>
+            {{ recurring_form.frequency }}
+            <small class="form-text text-muted">Starts from the transaction date above.</small>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label for="{{ recurring_form.end_date.id_for_label }}" class="form-label">
+                End Date <small class="text-muted">(optional)</small>
+            </label>
+            {{ recurring_form.end_date }}
+            {% if recurring_form.end_date.errors %}
+                <div class="text-danger small">{{ recurring_form.end_date.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% if recurring_form.renewal_date.errors %}
+    <div class="text-danger small mb-3">{{ recurring_form.renewal_date.errors.0 }}</div>
+{% endif %}
+
+<div class="form-check mb-3" id="recurring_backdate_group" style="display:none;">
+    <input class="form-check-input" type="checkbox" name="create_backdated" value="true" id="id_create_backdated">
+    <label class="form-check-label" for="id_create_backdated">
+        Create and backdate — process every occurrence from the renewal date up to today right now
+        (otherwise it's picked up by tonight's automatic run, per <code>is_auto_renew</code>).
+    </label>
+</div>
+
+<div id="recurring_custom_group">
+    <div class="mb-3">
+        <label for="{{ recurring_form.custom_type.id_for_label }}" class="form-label">Custom repeats by</label>
+        {{ recurring_form.custom_type }}
+        {% if recurring_form.custom_type.errors %}
+            <div class="text-danger small">{{ recurring_form.custom_type.errors.0 }}</div>
+        {% endif %}
+    </div>
+    <div class="mb-3" id="recurring_custom_weekdays_group">
+        <label class="form-label">Days of the week</label>
+        <div>
+            {% for value, label in weekday_choices %}
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" name="custom_weekdays" value="{{ value }}"
+                           id="id_recurring_weekday_{{ value }}"
+                           {% if recurring_form.custom_weekdays.value and value|stringformat:"s" in recurring_form.custom_weekdays.value %}checked{% endif %}>
+                    <label class="form-check-label" for="id_recurring_weekday_{{ value }}">{{ label }}</label>
+                </div>
+            {% endfor %}
+        </div>
+        {% if recurring_form.custom_weekdays.errors %}
+            <div class="text-danger small">{{ recurring_form.custom_weekdays.errors.0 }}</div>
+        {% endif %}
+    </div>
+    <div class="mb-3" id="recurring_custom_month_days_group">
+        <label for="{{ recurring_form.custom_month_days_input.id_for_label }}" class="form-label">Days of the month</label>
+        {{ recurring_form.custom_month_days_input }}
+        <small class="form-text text-muted">Comma-separated day numbers, 1-31</small>
+        {% if recurring_form.custom_month_days_input.errors %}
+            <div class="text-danger small">{{ recurring_form.custom_month_days_input.errors.0 }}</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="form-check form-switch mt-2">
+    {{ recurring_form.is_auto_renew }}
+    <label class="form-check-label" for="{{ recurring_form.is_auto_renew.id_for_label }}">
+        Auto-create automatically (otherwise you'll get a notification to approve each time)
+    </label>
+</div>
+
+<div class="mb-3 mt-2">
+    <label for="{{ recurring_form.notification_note.id_for_label }}" class="form-label">
+        Notification Note <small class="text-muted">(optional, max 160 characters)</small>
+    </label>
+    {{ recurring_form.notification_note }}
+    <small class="form-text text-muted">Added to both the approval-request and auto-created notifications for this schedule.</small>
+    {% if recurring_form.notification_note.errors %}
+        <div class="text-danger small">{{ recurring_form.notification_note.errors.0 }}</div>
+    {% endif %}
+</div>
+
+<script>
+    (function () {
+        const frequencySelect = document.getElementById('{{ recurring_form.frequency.id_for_label }}');
+        const customTypeSelect = document.getElementById('{{ recurring_form.custom_type.id_for_label }}');
+        const customGroup = document.getElementById('recurring_custom_group');
+        const weekdaysGroup = document.getElementById('recurring_custom_weekdays_group');
+        const monthDaysGroup = document.getElementById('recurring_custom_month_days_group');
+        if (!frequencySelect || !customTypeSelect) return;
+
+        function updateCustomTypeVisibility() {
+            const isDaysOfWeek = customTypeSelect.value === 'DAYS_OF_WEEK';
+            weekdaysGroup.style.display = isDaysOfWeek ? '' : 'none';
+            monthDaysGroup.style.display = isDaysOfWeek ? 'none' : '';
+        }
+
+        function updateFrequencyVisibility() {
+            customGroup.style.display = frequencySelect.value === 'CUSTOM' ? '' : 'none';
+            if (frequencySelect.value === 'CUSTOM') updateCustomTypeVisibility();
+        }
+
+        frequencySelect.addEventListener('change', updateFrequencyVisibility);
+        customTypeSelect.addEventListener('change', updateCustomTypeVisibility);
+
+        updateFrequencyVisibility();
+
+        // The schedule's renewal date is derived from the main form's transaction date/time
+        // field (see the view), so the backdate checkbox reacts to that field instead.
+        const transactionTimeInput = document.getElementById('id_transaction_time');
+        const backdateGroup = document.getElementById('recurring_backdate_group');
+        const backdateCheckbox = document.getElementById('id_create_backdated');
+
+        function updateBackdateVisibility() {
+            if (!transactionTimeInput || !transactionTimeInput.value) {
+                backdateGroup.style.display = 'none';
+                return;
+            }
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const transactionDateStr = transactionTimeInput.value.slice(0, 10);
+            const isPast = transactionDateStr < todayStr;
+            backdateGroup.style.display = isPast ? '' : 'none';
+            if (!isPast) backdateCheckbox.checked = false;
+        }
+
+        if (transactionTimeInput) {
+            transactionTimeInput.addEventListener('change', updateBackdateVisibility);
+            updateBackdateVisibility();
+        }
+    })();
+</script>

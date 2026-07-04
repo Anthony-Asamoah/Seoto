@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %} - Approve Recurring Transaction {% endblock %}
+
+{% block style %}
+    <style>
+        .confirm-card {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .confirm-amount {
+            font-size: 2.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .detail-label {
+            color: #7f8c8d;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <h1>
+            <a href="{% url 'spending_tracker:recurring_list' %}" class="crumb">Recurring Transactions</a> - Approve
+        </h1>
+    </div>
+
+    <div class="main">
+        <div class="confirm-card">
+            {% if occurrence.status != 'PENDING' %}
+                <div class="alert alert-info text-center">
+                    This occurrence has already been {{ occurrence.get_status_display|lower }}.
+                </div>
+                <div class="text-center">
+                    <a href="{% url 'spending_tracker:recurring_list' %}" class="btn btn-secondary">Back to Recurring Transactions</a>
+                </div>
+            {% else %}
+                <div class="confirm-amount">
+                    {{ recurring_transaction.currency }} {{ recurring_transaction.amount }}
+                </div>
+                <p class="text-center text-muted">{{ recurring_transaction.get_mode_display }} due {{ occurrence.scheduled_date }}</p>
+
+                <div class="detail-row">
+                    <span class="detail-label">Account</span>
+                    <span>{{ recurring_transaction.account.name }}</span>
+                </div>
+                {% if recurring_transaction.destination_account %}
+                    <div class="detail-row">
+                        <span class="detail-label">Destination Account</span>
+                        <span>{{ recurring_transaction.destination_account.name }}</span>
+                    </div>
+                {% endif %}
+                {% if recurring_transaction.category %}
+                    <div class="detail-row">
+                        <span class="detail-label">Category</span>
+                        <span>{{ recurring_transaction.category.label }}</span>
+                    </div>
+                {% endif %}
+                {% if recurring_transaction.details %}
+                    <div class="detail-row">
+                        <span class="detail-label">Details</span>
+                        <span>{{ recurring_transaction.details|striptags }}</span>
+                    </div>
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data" class="mt-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="approve">
+
+                    <div class="mb-3 text-start">
+                        <label for="id_attachment" class="form-label">
+                            Attachment <small class="text-muted">(optional — receipt or invoice)</small>
+                        </label>
+                        <input type="file" name="attachment" id="id_attachment" class="form-control"
+                               accept="image/*,application/pdf">
+                    </div>
+
+                    {% if not recurring_transaction.details %}
+                        <div class="mb-3 text-start">
+                            <label for="id_details_override" class="form-label">
+                                Description <small class="text-muted">(optional)</small>
+                            </label>
+                            <textarea name="details_override" id="id_details_override" class="form-control"
+                                      rows="2" placeholder="What's this for?"></textarea>
+                        </div>
+                    {% endif %}
+
+                    {% if not recurring_transaction.tags.all %}
+                        <div class="mb-3 text-start">
+                            <label for="id_tags_input" class="form-label">
+                                Tags <small class="text-muted">(optional, comma-separated)</small>
+                            </label>
+                            <input type="text" name="tags_input" id="id_tags_input" class="form-control"
+                                   placeholder="e.g. rent, bills">
+                        </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-check"></i> Approve & Create
+                    </button>
+                </form>
+
+                <form method="post" class="mt-2">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="dismiss">
+                    <button type="submit" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-times"></i> Dismiss
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,695 @@
+{% extends 'base.html' %}
+
+{% block title %} - Edit Recurring Transaction {% endblock %}
+
+{% block style %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+    <style>
+        .aura-page {
+            --income: #0f9d76;
+            --income-soft: rgba(15, 157, 118, 0.14);
+            --expense: #e8623f;
+            --expense-soft: rgba(232, 98, 63, 0.14);
+            --transfer: #5b5fc7;
+            --transfer-soft: rgba(91, 95, 199, 0.14);
+            --mode: var(--transfer);
+            --mode-soft: var(--transfer-soft);
+            --ink: #1b1e2b;
+            --ink-soft: #6c7086;
+            --paper-tint: #fbfbfe;
+            --line: #e7e8f1;
+            --accent: #362f78;
+
+            position: relative;
+            max-width: 760px;
+            margin: 0 auto;
+            font-family: 'Inter', sans-serif;
+            color: var(--ink);
+            isolation: isolate;
+        }
+
+        .aura-page[data-mode="EXPENSE"] { --mode: var(--expense); --mode-soft: var(--expense-soft); }
+        .aura-page[data-mode="INCOME"] { --mode: var(--income); --mode-soft: var(--income-soft); }
+        .aura-page[data-mode="TRANSFER"] { --mode: var(--transfer); --mode-soft: var(--transfer-soft); }
+
+        /* Ambient aura glow, tinted by transaction direction */
+        .aura-page::before,
+        .aura-page::after {
+            content: '';
+            position: absolute;
+            width: 60vw;
+            max-width: 480px;
+            height: 60vw;
+            max-height: 480px;
+            border-radius: 50%;
+            filter: blur(90px);
+            z-index: -1;
+            opacity: 0.5;
+            background: var(--mode);
+            pointer-events: none;
+            transition: background 0.4s ease;
+        }
+        .aura-page::before { top: -180px; left: -180px; }
+        .aura-page::after { bottom: -200px; right: -180px; opacity: 0.28; }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .aura-page::before { animation: aura-drift 16s ease-in-out infinite alternate; }
+            .aura-page::after { animation: aura-drift 20s ease-in-out infinite alternate-reverse; }
+        }
+        @keyframes aura-drift {
+            to { transform: translate(26px, 20px) scale(1.06); }
+        }
+
+        .aura-card {
+            position: relative;
+            background: rgba(255, 255, 255, 0.86);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            border-radius: 26px;
+            box-shadow: 0 40px 70px -40px rgba(27, 30, 43, 0.35);
+            padding: 38px 40px 30px;
+        }
+
+        /* Hero */
+        .aura-hero {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+        .aura-hero-badge {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--mode-soft);
+            color: var(--mode);
+            font-size: 1.2rem;
+            box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.65);
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+        .aura-hero-amount {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: clamp(1.4rem, 4vw, 1.9rem);
+            letter-spacing: -0.01em;
+            line-height: 1.1;
+        }
+        .aura-hero-meta {
+            font-size: 0.82rem;
+            color: var(--ink-soft);
+            margin-top: 3px;
+        }
+        .aura-hero-meta strong { color: var(--mode); font-weight: 600; transition: color 0.3s ease; }
+        .aura-hero-status { color: #e11d48; font-weight: 600; }
+
+        /* Cycle ring — the page's signature element: a slowly turning dial naming the
+           recurrence rhythm, with tick marks lighting up for custom weekday schedules. */
+        .cycle-ring-wrap {
+            margin-left: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        .cycle-ring {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            border: 3px dashed var(--mode);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.3s ease;
+        }
+        @media (prefers-reduced-motion: no-preference) {
+            .cycle-ring { animation: spin 50s linear infinite; }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .cycle-ring-inner {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        @media (prefers-reduced-motion: no-preference) {
+            .cycle-ring-inner { animation: spin-reverse 50s linear infinite; }
+        }
+        @keyframes spin-reverse { to { transform: rotate(-360deg); } }
+        .cycle-ring-label {
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--mode);
+            transition: color 0.3s ease;
+        }
+        .cycle-ring-caption {
+            font-size: 0.68rem;
+            color: var(--ink-soft);
+        }
+
+        /* Info banner */
+        .aura-note {
+            display: flex;
+            gap: 12px;
+            background: linear-gradient(135deg, rgba(91, 95, 199, 0.09), rgba(91, 95, 199, 0.02));
+            border: 1px solid rgba(91, 95, 199, 0.18);
+            border-radius: 16px;
+            padding: 14px 18px;
+            margin-bottom: 30px;
+            font-size: 0.83rem;
+            color: var(--ink-soft);
+            line-height: 1.5;
+        }
+        .aura-note i { color: var(--accent); margin-top: 3px; }
+        .aura-note strong {
+            display: block;
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--ink);
+            margin-bottom: 2px;
+        }
+
+        /* Section eyebrows — these mark real category boundaries (what / when / how) */
+        .aura-section { margin-bottom: 28px; }
+        .aura-eyebrow {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Fraunces', serif;
+            font-style: italic;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--mode);
+            margin: 0 0 16px;
+            transition: color 0.3s ease;
+        }
+        .aura-eyebrow::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, currentColor, transparent);
+            opacity: 0.4;
+        }
+
+        /* Field skin — overrides Bootstrap defaults, scoped to this page only */
+        .aura-page .form-label,
+        .aura-field-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 6px;
+            display: block;
+        }
+        .aura-field-label .req { color: var(--expense); }
+        .aura-field-label small { font-weight: 400; color: var(--ink-soft); }
+
+        .aura-page .form-control,
+        .aura-page select.form-control {
+            width: 100%;
+            border: 1.5px solid var(--line);
+            border-radius: 12px;
+            padding: 9px 14px;
+            background: var(--paper-tint);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: var(--ink);
+            transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+            box-shadow: none;
+        }
+        .aura-page select.form-control {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236c7086'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            padding-right: 34px;
+        }
+        .aura-page .form-control:focus {
+            outline: none;
+            border-color: var(--mode);
+            background: #fff;
+            box-shadow: 0 0 0 4px var(--mode-soft);
+        }
+        .aura-page input[readonly].form-control {
+            background: #f1f1f6;
+            color: var(--ink-soft);
+        }
+        .aura-page textarea.form-control { resize: vertical; min-height: 64px; }
+
+        .aura-help { font-size: 0.74rem; color: var(--ink-soft); margin: 6px 0 0; }
+        .aura-error { font-size: 0.74rem; color: #e11d48; margin-top: 6px; font-weight: 500; }
+
+        /* Weekday pills */
+        .weekday-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+        .weekday-pill {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 46px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1.5px solid var(--line);
+            background: var(--paper-tint);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--ink-soft);
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+        }
+        .weekday-pill input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .weekday-pill.active {
+            border-color: var(--mode);
+            background: var(--mode-soft);
+            color: var(--mode);
+        }
+
+        /* Behavior cards replace a plain toggle with an explicit either/or choice */
+        .behavior-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            position: relative;
+        }
+        .behavior-card {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            border: 1.5px solid var(--line);
+            border-radius: 16px;
+            padding: 16px 18px;
+            background: var(--paper-tint);
+            cursor: pointer;
+            transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+        }
+        .behavior-card i { font-size: 1.05rem; color: var(--ink-soft); margin-top: 2px; transition: color 0.15s ease; }
+        .behavior-card h4 {
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+            font-size: 0.92rem;
+            margin: 0 0 2px;
+            color: var(--ink);
+        }
+        .behavior-card p { font-size: 0.78rem; color: var(--ink-soft); margin: 0; line-height: 1.4; }
+        .behavior-card.active {
+            border-color: var(--mode);
+            background: var(--mode-soft);
+            box-shadow: 0 0 0 4px var(--mode-soft);
+        }
+        .behavior-card.active i { color: var(--mode); }
+        .behavior-grid input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+
+        /* Footer actions */
+        .aura-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 22px;
+            margin-top: 4px;
+            border-top: 1px dashed var(--line);
+        }
+        .aura-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            border-radius: 13px;
+            padding: 11px 22px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+        .aura-btn:active { transform: scale(0.97); }
+        .aura-btn-ghost { background: transparent; color: var(--ink-soft); }
+        .aura-btn-ghost:hover { color: var(--ink); }
+        .aura-btn-primary { background: var(--accent); color: #fff; box-shadow: 0 14px 26px -12px var(--accent); }
+        .aura-btn-primary:hover { box-shadow: 0 16px 32px -10px var(--accent); }
+        .aura-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+        @media (max-width: 640px) {
+            .aura-card { padding: 26px 22px 24px; border-radius: 20px; }
+            .aura-hero { flex-wrap: wrap; }
+            .cycle-ring-wrap { margin-left: 72px; }
+            .behavior-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <h1>
+            <a href="{% url 'spending_tracker:recurring_list' %}" class="crumb">Recurring Transactions</a> ·
+            Edit
+        </h1>
+    </div>
+
+    <div class="main">
+        <div class="aura-page" data-mode="{{ recurring_transaction.mode }}">
+            <div class="aura-card">
+
+                <div class="aura-hero">
+                    <div class="aura-hero-badge">
+                        <i class="fas {% if recurring_transaction.mode == 'INCOME' %}fa-arrow-up{% elif recurring_transaction.mode == 'EXPENSE' %}fa-arrow-down{% else %}fa-retweet{% endif %}"
+                           id="auraModeIcon"></i>
+                    </div>
+                    <div>
+                        <div class="aura-hero-amount">{{ recurring_transaction.currency }} {{ recurring_transaction.amount }}</div>
+                        <div class="aura-hero-meta">
+                            <strong id="auraModeLabel">{{ recurring_transaction.get_mode_display }}</strong>
+                            · {{ recurring_transaction.account.name }}
+                            {% if recurring_transaction.category %} · {{ recurring_transaction.category.label }}{% endif %}
+                        </div>
+                        <div class="aura-hero-meta">
+                            {% if recurring_transaction.is_active %}
+                                Next run {{ recurring_transaction.next_run_date|date:"j M Y" }}
+                            {% else %}
+                                <span class="aura-hero-status">Paused</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="cycle-ring-wrap">
+                        <div class="cycle-ring">
+                            <div class="cycle-ring-inner">
+                                <span class="cycle-ring-label" id="cycleRingLabel">{{ recurring_transaction.get_frequency_display }}</span>
+                            </div>
+                        </div>
+                        <span class="cycle-ring-caption">repeats</span>
+                    </div>
+                </div>
+
+                <div class="aura-note">
+                    <i class="fas fa-circle-info"></i>
+                    <div>
+                        <strong>Changes apply to future runs only</strong>
+                        Occurrences already created (or pending approval) stay as they are. Editing the frequency
+                        or custom repeat rule recalculates the next run from today.
+                    </div>
+                </div>
+
+                <form method="post" id="editRecurringForm">
+                    {% csrf_token %}
+
+                    <div class="aura-section">
+                        <p class="aura-eyebrow">Transaction</p>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="aura-field-label" for="{{ recurring_form.mode.id_for_label }}">Type</label>
+                                {{ recurring_form.mode }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="aura-field-label" for="{{ recurring_form.currency.id_for_label }}">Currency</label>
+                                {{ recurring_form.currency }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="aura-field-label" for="{{ recurring_form.amount.id_for_label }}">
+                                    Amount <span class="req">*</span>
+                                </label>
+                                {{ recurring_form.amount }}
+                                {% if recurring_form.amount.errors %}
+                                    <div class="aura-error">{{ recurring_form.amount.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6">
+                                <label class="aura-field-label" for="{{ recurring_form.account.id_for_label }}">
+                                    Account <span class="req">*</span>
+                                </label>
+                                {{ recurring_form.account }}
+                                {% if recurring_form.account.errors %}
+                                    <div class="aura-error">{{ recurring_form.account.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="aura-field-label" for="{{ recurring_form.category.id_for_label }}">Category</label>
+                                {{ recurring_form.category }}
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-6" id="destinationGroup"
+                                 {% if recurring_transaction.mode != 'TRANSFER' %}style="display:none;"{% endif %}>
+                                <label class="aura-field-label" for="{{ recurring_form.destination_account.id_for_label }}">
+                                    Destination Account
+                                </label>
+                                {{ recurring_form.destination_account }}
+                                {% if recurring_form.destination_account.errors %}
+                                    <div class="aura-error">{{ recurring_form.destination_account.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-12">
+                                <label class="aura-field-label" for="{{ recurring_form.details.id_for_label }}">
+                                    Details / Description
+                                </label>
+                                {{ recurring_form.details }}
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-12">
+                                <label class="aura-field-label" for="{{ recurring_form.reference.id_for_label }}">Reference</label>
+                                {{ recurring_form.reference }}
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-12">
+                                <label class="aura-field-label" for="tags_input">Tags</label>
+                                <input type="text" class="form-control" name="tags_input" id="tags_input"
+                                       value="{{ existing_tags }}" placeholder="e.g. rent, bills">
+                                <p class="aura-help">
+                                    Existing: {% for tag in tags %}{{ tag }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aura-section">
+                        <p class="aura-eyebrow">Schedule</p>
+
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="aura-field-label" for="{{ recurring_form.renewal_date.id_for_label }}">
+                                    Renewal Date <span class="req">*</span>
+                                </label>
+                                {{ recurring_form.renewal_date }}
+                                <p class="aura-help">Original start date — can't be changed.</p>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="aura-field-label" for="{{ recurring_form.frequency.id_for_label }}">Frequency</label>
+                                {{ recurring_form.frequency }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="aura-field-label" for="{{ recurring_form.end_date.id_for_label }}">
+                                    End Date <small>(optional)</small>
+                                </label>
+                                {{ recurring_form.end_date }}
+                                {% if recurring_form.end_date.errors %}
+                                    <div class="aura-error">{{ recurring_form.end_date.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {% if recurring_transaction.next_run_date < today %}
+                            <label class="aura-note mt-3" for="id_create_backdated" style="cursor:pointer;">
+                                <input type="checkbox" name="create_backdated" id="id_create_backdated" value="true"
+                                       style="width:18px;height:18px;flex-shrink:0;margin-top:2px;">
+                                <div>
+                                    <strong>Create and backdate</strong>
+                                    This schedule's next run ({{ recurring_transaction.next_run_date|date:"j M Y" }}) is
+                                    in the past. Check this to process it now — creating (or requesting approval for)
+                                    every occurrence up to today, same as tonight's automatic run.
+                                </div>
+                            </label>
+                        {% endif %}
+
+                        <div id="customGroup" class="mt-3"
+                             {% if recurring_transaction.frequency != 'CUSTOM' %}style="display:none;"{% endif %}>
+                            <div>
+                                <label class="aura-field-label" for="{{ recurring_form.custom_type.id_for_label }}">
+                                    Custom repeats by
+                                </label>
+                                {{ recurring_form.custom_type }}
+                                {% if recurring_form.custom_type.errors %}
+                                    <div class="aura-error">{{ recurring_form.custom_type.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="mt-3" id="weekdaysGroup"
+                                 {% if recurring_transaction.custom_type != 'DAYS_OF_WEEK' %}style="display:none;"{% endif %}>
+                                <label class="aura-field-label">Days of the week</label>
+                                <div class="weekday-pills">
+                                    {% for checkbox in recurring_form.custom_weekdays %}
+                                        <label class="weekday-pill {% if checkbox.data.selected %}active{% endif %}">
+                                            {{ checkbox.tag }}
+                                            <span>{{ checkbox.choice_label|slice:":3" }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                                {% if recurring_form.custom_weekdays.errors %}
+                                    <div class="aura-error">{{ recurring_form.custom_weekdays.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="mt-3" id="monthDaysGroup"
+                                 {% if recurring_transaction.custom_type != 'DAYS_OF_MONTH' %}style="display:none;"{% endif %}>
+                                <label class="aura-field-label" for="{{ recurring_form.custom_month_days_input.id_for_label }}">
+                                    Days of the month
+                                </label>
+                                {{ recurring_form.custom_month_days_input }}
+                                <p class="aura-help">Comma-separated day numbers, 1-31</p>
+                                {% if recurring_form.custom_month_days_input.errors %}
+                                    <div class="aura-error">{{ recurring_form.custom_month_days_input.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aura-section">
+                        <p class="aura-eyebrow">Behavior</p>
+                        <div class="behavior-grid">
+                            <label class="behavior-card" id="autoCard">
+                                <i class="fas fa-bolt"></i>
+                                <div>
+                                    <h4>Auto-create</h4>
+                                    <p>Created the moment it's due — you'll get a notification once it's made.</p>
+                                </div>
+                            </label>
+                            <label class="behavior-card" id="approveCard">
+                                <i class="fas fa-bell"></i>
+                                <div>
+                                    <h4>Ask me first</h4>
+                                    <p>You get a notification to approve it, then it's created.</p>
+                                </div>
+                            </label>
+                            {{ recurring_form.is_auto_renew }}
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-12">
+                                <label class="aura-field-label" for="{{ recurring_form.notification_note.id_for_label }}">
+                                    Notification Note <small>(optional, max 160 characters)</small>
+                                </label>
+                                {{ recurring_form.notification_note }}
+                                <p class="aura-help">Added to both the approval-request and auto-created notifications for this schedule.</p>
+                                {% if recurring_form.notification_note.errors %}
+                                    <div class="aura-error">{{ recurring_form.notification_note.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aura-actions">
+                        <a href="{% url 'spending_tracker:recurring_list' %}" class="aura-btn aura-btn-ghost">
+                            <i class="fas fa-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="aura-btn aura-btn-primary">
+                            <i class="fas fa-check"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const modeSelect = document.getElementById('{{ recurring_form.mode.id_for_label }}');
+            const destinationGroup = document.getElementById('destinationGroup');
+            const auraPage = document.querySelector('.aura-page');
+            const modeIcon = document.getElementById('auraModeIcon');
+            const modeLabel = document.getElementById('auraModeLabel');
+
+            const MODE_META = {
+                INCOME: { icon: 'fa-arrow-up', label: 'Income' },
+                EXPENSE: { icon: 'fa-arrow-down', label: 'Expense' },
+                TRANSFER: { icon: 'fa-retweet', label: 'Transfer' },
+            };
+
+            function updateModeVisuals() {
+                const meta = MODE_META[modeSelect.value] || MODE_META.EXPENSE;
+                destinationGroup.style.display = modeSelect.value === 'TRANSFER' ? '' : 'none';
+                auraPage.dataset.mode = modeSelect.value;
+                modeIcon.className = 'fas ' + meta.icon;
+                modeLabel.textContent = meta.label;
+            }
+            modeSelect.addEventListener('change', updateModeVisuals);
+            updateModeVisuals();
+
+            const frequencySelect = document.getElementById('{{ recurring_form.frequency.id_for_label }}');
+            const customTypeSelect = document.getElementById('{{ recurring_form.custom_type.id_for_label }}');
+            const customGroup = document.getElementById('customGroup');
+            const weekdaysGroup = document.getElementById('weekdaysGroup');
+            const monthDaysGroup = document.getElementById('monthDaysGroup');
+            const cycleRingLabel = document.getElementById('cycleRingLabel');
+
+            const FREQUENCY_LABELS = {
+                DAILY: 'Daily', WEEKLY: 'Weekly', MONTHLY: 'Monthly',
+                QUARTERLY: 'Quarterly', YEARLY: 'Yearly', CUSTOM: 'Custom',
+            };
+
+            function updateCustomTypeVisibility() {
+                const isDaysOfWeek = customTypeSelect.value === 'DAYS_OF_WEEK';
+                weekdaysGroup.style.display = isDaysOfWeek ? '' : 'none';
+                monthDaysGroup.style.display = isDaysOfWeek ? 'none' : '';
+            }
+
+            function updateFrequencyVisibility() {
+                const isCustom = frequencySelect.value === 'CUSTOM';
+                customGroup.style.display = isCustom ? '' : 'none';
+                cycleRingLabel.textContent = FREQUENCY_LABELS[frequencySelect.value] || frequencySelect.value;
+                if (isCustom) updateCustomTypeVisibility();
+            }
+            frequencySelect.addEventListener('change', updateFrequencyVisibility);
+            customTypeSelect.addEventListener('change', updateCustomTypeVisibility);
+            updateFrequencyVisibility();
+
+            document.querySelectorAll('.weekday-pill input[type="checkbox"]').forEach(function (checkbox) {
+                checkbox.addEventListener('change', function () {
+                    checkbox.closest('.weekday-pill').classList.toggle('active', checkbox.checked);
+                });
+            });
+
+            const isAutoRenewInput = document.getElementById('{{ recurring_form.is_auto_renew.id_for_label }}');
+            const autoCard = document.getElementById('autoCard');
+            const approveCard = document.getElementById('approveCard');
+
+            function syncBehaviorCards() {
+                const isAuto = isAutoRenewInput.checked;
+                autoCard.classList.toggle('active', isAuto);
+                approveCard.classList.toggle('active', !isAuto);
+            }
+            autoCard.addEventListener('click', function () {
+                isAutoRenewInput.checked = true;
+                syncBehaviorCards();
+            });
+            approveCard.addEventListener('click', function () {
+                isAutoRenewInput.checked = false;
+                syncBehaviorCards();
+            });
+            syncBehaviorCards();
+        })();
+    </script>
+{% endblock %}

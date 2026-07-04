@@ -292,6 +292,11 @@ VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY')
 VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY')
 VAPID_ADMIN_EMAIL = config('VAPID_ADMIN_EMAIL')
 
+# Recurring transactions: expected daily run time for `process_recurring_transactions`,
+# configured as a PythonAnywhere Scheduled Task (which takes an hour:minute, not a real
+# cron expression) — used only to log a warning if the task drifts from this time.
+RECURRING_TRANSACTIONS_CRON = config('RECURRING_TRANSACTIONS_CRON', default='0 19 * * *')
+
 # reCAPTCHA v3 Configuration
 RECAPTCHA_VERIFY_URL = config('RECAPTCHA_VERIFY_URL', default='')
 RECAPTCHA_SITE_KEY = config('RECAPTCHA_SITE_KEY', default='')

@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count, Q, Value, Prefetch
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, Coalesce
 from django.db.transaction import atomic
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -18,8 +18,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from utils.paginator import apply_pagination
-from .forms import TransactionForm, AccountForm, CategoryForm
-from .models import Account, Transaction, Category, Tag, UserPreferences, CURRENCY_SYMBOLS, TransactionModeChoices
+from .forms import TransactionForm, AccountForm, CategoryForm, RecurringTransactionForm
+from .models import (
+    Account, Transaction, Category, Tag, UserPreferences, CURRENCY_SYMBOLS, TransactionModeChoices,
+    RecurringTransaction, RecurringTransactionOccurrence, RecurringOccurrenceStatusChoices,
+)
+from .services import create_transaction_from_recurring, process_due_occurrences
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -253,7 +257,13 @@ def transaction_list(request):
 
 @login_required
 def add_transaction(request):
-    """Add new transaction - Multi-step: mode selection then form"""
+    """Add new transaction - Multi-step: mode selection then form.
+
+    The same form doubles as the "schedule a recurring transaction" form: checking
+    "Make this a recurring transaction" reveals extra schedule fields, and submitting
+    creates a RecurringTransaction (processed immediately if due) instead of a one-off
+    Transaction.
+    """
     # Get mode from query parameter
     mode = request.GET.get('mode', '').upper()
 
@@ -271,6 +281,9 @@ def add_transaction(request):
         return render(request, 'spending_tracker/add_transaction.html', {
             'show_mode_selection': True
         })
+
+    is_recurring = request.method == 'POST' and request.POST.get('is_recurring') == 'true'
+    recurring_form = None
 
     # Step 2: Show form for selected mode
     if request.method == 'POST':
@@ -291,7 +304,41 @@ def add_transaction(request):
 
         form = TransactionForm(post_data, request.FILES, user=request.user)
 
-        if form.is_valid():
+        if is_recurring:
+            # The recurring schedule's renewal date is just the date part of the transaction's
+            # own date/time — no need to make the user enter the same date twice.
+            if post_data.get('transaction_time'):
+                post_data['renewal_date'] = post_data['transaction_time'][:10]
+            recurring_form = RecurringTransactionForm(post_data, user=request.user)
+            # Validate the shared fields via `form` too, purely so the existing
+            # form.<field>.errors blocks in the template still light up correctly.
+            if form.is_valid() and recurring_form.is_valid():
+                recurring_transaction = recurring_form.save(commit=False)
+                recurring_transaction.user = request.user
+                recurring_transaction.save()
+
+                if tags_input:
+                    tag_labels = [tag.strip().lower() for tag in tags_input.split(',') if tag.strip()]
+                    for tag_label in tag_labels:
+                        tag, _ = Tag.objects.get_or_create(label=tag_label, defaults={'user': request.user})
+                        recurring_transaction.tags.add(tag)
+
+                # A schedule due today (or later) always processes immediately. One whose next
+                # run is already in the past (a backdated renewal date) only catches up if the
+                # user explicitly opted in via the "create and backdate" checkbox.
+                today = timezone.localdate()
+                if recurring_transaction.next_run_date >= today or request.POST.get('create_backdated') == 'true':
+                    process_due_occurrences(recurring_transaction, today=today)
+
+                messages.success(request, 'Recurring transaction scheduled successfully!')
+                request.session.pop('transaction_form_data', None)
+                request.session.pop('transaction_tags_input', None)
+                request.session.pop('transaction_mode', None)
+                return redirect('spending_tracker:recurring_list')
+            else:
+                messages.error(request, 'Please correct the errors below.')
+                logger.warning(f"Recurring transaction validation failed: {form.errors} {recurring_form.errors}")
+        elif form.is_valid():
             transaction = form.save()
 
             # Handle comma-separated tags
@@ -323,6 +370,11 @@ def add_transaction(request):
             logger.debug("No preserved data, creating empty form")
             form = TransactionForm(user=request.user)
 
+    if recurring_form is None:
+        recurring_form = RecurringTransactionForm(user=request.user)
+
+    is_recurring_checked = is_recurring if request.method == 'POST' else (preserved_data or {}).get('is_recurring') == 'true'
+
     default_account = Account.objects.filter(user=request.user).first()
     if not default_account:
         messages.warning(request, 'No accounts found. Please add an account first.')
@@ -345,6 +397,8 @@ def add_transaction(request):
 
     context = {
         'form': form,
+        'recurring_form': recurring_form,
+        'is_recurring_checked': is_recurring_checked,
         'mode': mode,
         'show_mode_selection': False,
         'default_account': default_account,
@@ -352,6 +406,7 @@ def add_transaction(request):
         'all_accounts': all_accounts,
         'all_category': user_category,
         'tags': user_tags,
+        'weekday_choices': RecurringTransactionForm.WEEKDAY_CHOICES,
         'preserved_tags_input': preserved_tags or '',
         'preserved_data': preserved_data or {},
         'currency_symbol': _get_currency_symbol(request.user),
@@ -1473,3 +1528,176 @@ def create_transaction_api(request):
         return JsonResponse({
             'error': str(e)
         }, status=500)
+
+
+# Recurring Transactions
+@login_required
+def edit_recurring_transaction(request, pk):
+    """Edit a recurring transaction schedule, reusing the same field set as Add Transaction's
+    recurring fields. Changes only affect future runs — already-created occurrences/transactions
+    are untouched, and if scheduling rules change, next_run_date is recomputed from today rather
+    than left at whatever the old rule had queued up."""
+    recurring_transaction = get_object_or_404(RecurringTransaction, pk=pk, user=request.user)
+    scheduling_fields = ['frequency', 'custom_type', 'custom_weekdays', 'custom_month_days']
+
+    if request.method == 'POST':
+        tags_input = request.POST.get('tags_input', '').strip()
+        post_data = request.POST.copy()
+        post_data.pop('tags', None)
+
+        normalize = lambda value: value if value else None  # treat '', None, [] as equivalent
+        before = {field: normalize(getattr(recurring_transaction, field)) for field in scheduling_fields}
+
+        recurring_form = RecurringTransactionForm(post_data, instance=recurring_transaction, user=request.user)
+        if recurring_form.is_valid():
+            updated = recurring_form.save(commit=False)
+            after = {field: normalize(getattr(updated, field)) for field in scheduling_fields}
+            if after != before:
+                updated.reschedule()
+            updated.save()
+
+            updated.tags.clear()
+            if tags_input:
+                tag_labels = [tag.strip().lower() for tag in tags_input.split(',') if tag.strip()]
+                for tag_label in tag_labels:
+                    tag, _ = Tag.objects.get_or_create(label=tag_label, defaults={'user': request.user})
+                    updated.tags.add(tag)
+
+            # If editing (e.g. changing the frequency) pushed next_run_date into the past,
+            # only catch it up now if the user explicitly opted in via the checkbox.
+            today = timezone.localdate()
+            if updated.next_run_date < today and request.POST.get('create_backdated') == 'true':
+                process_due_occurrences(updated, today=today)
+
+            messages.success(request, 'Recurring transaction updated. Changes apply to future runs.')
+            return redirect('spending_tracker:recurring_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+            logger.warning(f"RecurringTransactionForm validation failed on edit: {recurring_form.errors}")
+    else:
+        recurring_form = RecurringTransactionForm(instance=recurring_transaction, user=request.user)
+
+    context = {
+        'recurring_form': recurring_form,
+        'recurring_transaction': recurring_transaction,
+        'tags': list(Tag.objects.filter(user=request.user)),
+        'existing_tags': ', '.join(tag.label for tag in recurring_transaction.tags.all()),
+        'currency_symbol': _get_currency_symbol(request.user),
+        'today': timezone.localdate(),
+    }
+    return render(request, 'spending_tracker/edit_recurring_transaction.html', context)
+
+
+@login_required
+def recurring_list(request):
+    """List the user's recurring transaction schedules and any pending approvals."""
+    recurring_transactions = RecurringTransaction.objects.filter(user=request.user).select_related(
+        'account', 'destination_account', 'category'
+    )
+    pending_occurrences = RecurringTransactionOccurrence.objects.filter(
+        recurring_transaction__user=request.user,
+        status=RecurringOccurrenceStatusChoices.PENDING,
+    ).select_related('recurring_transaction')
+
+    context = {
+        'recurring_transactions': recurring_transactions,
+        'pending_occurrences': pending_occurrences,
+        'currency_symbol': _get_currency_symbol(request.user),
+    }
+    return render(request, 'spending_tracker/recurring_list.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def toggle_recurring_transaction(request, pk):
+    """Pause or resume a recurring transaction schedule."""
+    recurring_transaction = get_object_or_404(RecurringTransaction, pk=pk, user=request.user)
+    recurring_transaction.is_active = not recurring_transaction.is_active
+    recurring_transaction.save()
+    state = 'resumed' if recurring_transaction.is_active else 'paused'
+    messages.success(request, f'Recurring transaction {state}.')
+    return redirect('spending_tracker:recurring_list')
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_recurring_transaction(request, pk):
+    """Delete a recurring transaction schedule. Transactions already created from it are unaffected."""
+    recurring_transaction = get_object_or_404(RecurringTransaction, pk=pk, user=request.user)
+    recurring_transaction.delete()
+    messages.success(request, 'Recurring transaction deleted.')
+    return redirect('spending_tracker:recurring_list')
+
+
+@login_required
+def confirm_recurring_occurrence(request, pk):
+    """Approve or dismiss a pending recurring transaction occurrence (the notification's CTA target).
+
+    A push notification's link can outlive what it points to — e.g. the user deletes the
+    recurring schedule (which cascades to its occurrences) before acting on an older
+    notification. Rather than 404 on a stale link, send them back to the recurring list.
+    """
+    occurrence = RecurringTransactionOccurrence.objects.select_related(
+        'recurring_transaction', 'recurring_transaction__account'
+    ).filter(pk=pk).first()
+
+    if occurrence is None:
+        messages.info(request, 'This recurring transaction no longer exists.')
+        return redirect('spending_tracker:recurring_list')
+
+    # Belongs to someone else: a real 404, not a "gone" redirect — don't leak that the pk exists.
+    if occurrence.recurring_transaction.user_id != request.user.id:
+        raise Http404
+
+    if request.method == 'POST':
+        if occurrence.status != RecurringOccurrenceStatusChoices.PENDING:
+            messages.info(request, 'This occurrence has already been resolved.')
+            return redirect('spending_tracker:recurring_list')
+
+        action = request.POST.get('action')
+        if action == 'approve':
+            attachment = request.FILES.get('attachment')
+            details_override = request.POST.get('details_override', '').strip()
+            tags_input = request.POST.get('tags_input', '').strip()
+            extra_tags = []
+            if tags_input:
+                for tag_label in [t.strip().lower() for t in tags_input.split(',') if t.strip()]:
+                    tag, _ = Tag.objects.get_or_create(label=tag_label, defaults={'user': request.user})
+                    extra_tags.append(tag)
+
+            with atomic():
+                created_transaction = create_transaction_from_recurring(
+                    occurrence.recurring_transaction,
+                    attachment=attachment,
+                    details_override=details_override,
+                    extra_tags=extra_tags,
+                )
+                occurrence.status = RecurringOccurrenceStatusChoices.CONFIRMED
+                occurrence.transaction = created_transaction
+                occurrence.resolved_at = timezone.now()
+                occurrence.save()
+            try:
+                from pwa.services import send_push_notification
+                send_push_notification(
+                    user=request.user,
+                    title='Transaction Created',
+                    body=f'{created_transaction.get_mode_display()}: {created_transaction.currency} {created_transaction.amount}',
+                    url='/spending_tracker/transactions/',
+                )
+            except Exception as e:
+                logger.warning(f'Failed to send push notification: {e}')
+            messages.success(request, 'Transaction created.')
+        elif action == 'dismiss':
+            occurrence.status = RecurringOccurrenceStatusChoices.DISMISSED
+            occurrence.resolved_at = timezone.now()
+            occurrence.save()
+            messages.success(request, 'Recurring transaction occurrence dismissed.')
+
+        return redirect('spending_tracker:recurring_list')
+
+    context = {
+        'occurrence': occurrence,
+        'recurring_transaction': occurrence.recurring_transaction,
+        'currency_symbol': _get_currency_symbol(request.user),
+    }
+    return render(request, 'spending_tracker/confirm_recurring_occurrence.html', context)

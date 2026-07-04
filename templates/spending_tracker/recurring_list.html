@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %} - Recurring Transactions {% endblock %}
+
+{% block style %}
+    <style>
+        .recurring-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .recurring-card.paused {
+            border-left-color: #adb5bd;
+            opacity: 0.75;
+        }
+
+        .recurring-amount {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .recurring-amount.income {
+            color: #27ae60;
+        }
+
+        .recurring-amount.expense {
+            color: #e74c3c;
+        }
+
+        .recurring-amount.transfer {
+            color: #3498db;
+        }
+
+        .frequency-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            background: #ecf0f1;
+            color: #7f8c8d;
+        }
+
+        .mode-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-left: 6px;
+        }
+
+        .mode-badge.auto {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+
+        .mode-badge.approval {
+            background: #fef5e7;
+            color: #d68910;
+        }
+
+        .pending-card {
+            background: #fef9e7;
+            border-left: 4px solid #f39c12;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="header">
+        <h1><a href="{% url 'spending_tracker:dashboard' %}" class="crumb">Expense & Income</a> - Recurring Transactions</h1>
+    </div>
+
+    <div class="main container">
+        {% if pending_occurrences %}
+            <h4 class="mb-3">⏳ Pending Approval ({{ pending_occurrences|length }})</h4>
+            {% for occurrence in pending_occurrences %}
+                <div class="pending-card d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ occurrence.recurring_transaction.currency }} {{ occurrence.recurring_transaction.amount }}</strong>
+                        {{ occurrence.recurring_transaction.get_mode_display }}
+                        — {{ occurrence.recurring_transaction.details|default:"No description"|striptags }}
+                        <br>
+                        <small class="text-muted">Due {{ occurrence.scheduled_date }}</small>
+                    </div>
+                    <a href="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}" class="btn btn-warning btn-sm">
+                        Review
+                    </a>
+                </div>
+            {% endfor %}
+            <hr class="my-4">
+        {% endif %}
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0">Your Schedules</h4>
+            <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-plus"></i> New Recurring Transaction
+            </a>
+        </div>
+
+        {% if recurring_transactions %}
+            {% for recurring in recurring_transactions %}
+                <div class="recurring-card {% if not recurring.is_active %}paused{% endif %}">
+                    <div class="row align-items-center">
+                        <div class="col-md-5">
+                            <div class="recurring-amount {{ recurring.mode|lower }}">
+                                {{ currency_symbol }}{{ recurring.amount }}
+                            </div>
+                            <div>
+                                {{ recurring.details|default:recurring.get_mode_display|striptags }}
+                                <span class="frequency-badge">{{ recurring.get_frequency_display }}</span>
+                                <span class="mode-badge {% if recurring.is_auto_renew %}auto{% else %}approval{% endif %}">
+                                    {% if recurring.is_auto_renew %}Auto{% else %}Needs Approval{% endif %}
+                                </span>
+                            </div>
+                            <small class="text-muted">{{ recurring.account.name }}</small>
+                        </div>
+                        <div class="col-md-3">
+                            {% if recurring.is_active %}
+                                <small class="text-muted">Next run</small><br>
+                                {{ recurring.next_run_date }}
+                            {% else %}
+                                <span class="badge bg-secondary">Paused</span>
+                            {% endif %}
+                            {% if recurring.end_date %}
+                                <br><small class="text-muted">Ends {{ recurring.end_date }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{% url 'spending_tracker:edit_recurring_transaction' recurring.pk %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <form method="post" action="{% url 'spending_tracker:toggle_recurring_transaction' recurring.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                    {% if recurring.is_active %}<i class="fas fa-pause"></i> Pause{% else %}<i class="fas fa-play"></i> Resume{% endif %}
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'spending_tracker:delete_recurring_transaction' recurring.pk %}"
+                                  class="d-inline" onsubmit="return confirm('Delete this recurring transaction? Transactions already created from it will not be affected.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                <h5>No Recurring Transactions Yet</h5>
+                <p>Set one up from the "Make Recurring" option when adding a transaction.</p>
+                <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-primary">Add a Transaction</a>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
