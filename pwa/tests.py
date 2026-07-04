@@ -8,6 +8,29 @@ from pwa.models import Notification, PushSubscription
 from pwa.services import send_push_notification
 
 
+class ServiceWorkerViewTest(TestCase):
+    def setUp(self):
+        self.url = reverse('pwa:service_worker')
+
+    def test_serves_javascript(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/javascript')
+        self.assertEqual(response['Service-Worker-Allowed'], '/')
+
+    @override_settings(CLIENT_CACHE_TTL_SECONDS=600)
+    def test_stamps_configured_cache_ttl_into_script(self):
+        response = self.client.get(self.url)
+        content = response.content.decode()
+        self.assertIn('const CACHE_TTL_MS = 600000;', content)
+        self.assertNotIn('const CACHE_TTL_MS = 300000;', content)
+
+    def test_defaults_to_five_minute_ttl(self):
+        response = self.client.get(self.url)
+        content = response.content.decode()
+        self.assertIn('const CACHE_TTL_MS = 300000;', content)
+
+
 class NotificationsListViewTest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='tester', password='pass')

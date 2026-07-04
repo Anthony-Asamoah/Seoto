@@ -69,7 +69,6 @@ def profile(request, username):
     }
     try:
         extra_info = user_profile.objects.get(user=user)
-        logging.info(f'extra info present')
         context.update({'extra': extra_info})
 
     except Exception as e:

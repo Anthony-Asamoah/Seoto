@@ -21,6 +21,11 @@ def service_worker(request):
     try:
         with open(sw_path, 'r') as f:
             sw_content = f.read()
+        # Override the file's fallback TTL with the configured env value.
+        sw_content = sw_content.replace(
+            'const CACHE_TTL_MS = 300000;',
+            f'const CACHE_TTL_MS = {settings.CLIENT_CACHE_TTL_SECONDS * 1000};',
+        )
         response = HttpResponse(sw_content, content_type='application/javascript')
         response['Service-Worker-Allowed'] = '/'
         return response

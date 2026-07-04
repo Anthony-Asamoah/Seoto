@@ -1,14 +1,37 @@
 // Service Worker for Seoto PWA
-// Version: 1.0.1
+// Version: 1.2.0
 
-const CACHE_VERSION = 'seoto-v1.0.1';
+const CACHE_VERSION = 'seoto-v1.2.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 
+// Fallback TTL if not served through pwa.views.service_worker (which stamps in
+// the real value from settings.CLIENT_CACHE_TTL_SECONDS, env-configurable, default 5 min).
+const CACHE_TTL_MS = 300000;
+
+// Exact page paths served straight from cache (no network round-trip) until
+// CACHE_TTL_MS has elapsed since they were last fetched.
+const CACHEABLE_ROUTES = [
+  '/', // Apps screen
+];
+
+// accounts.urls registers `<str:username>` last, after these literal paths —
+// anything else single-segment under /accounts/ is someone's profile page.
+const ACCOUNTS_RESERVED_PATHS = new Set(['register']);
+
+function isCacheableRoute(pathname) {
+  if (CACHEABLE_ROUTES.includes(pathname)) {
+    return true;
+  }
+  const accountsMatch = pathname.match(/^\/accounts\/([^/]+)$/);
+  return !!accountsMatch && !ACCOUNTS_RESERVED_PATHS.has(accountsMatch[1]);
+}
+
 // Static assets to cache on install
 const STATIC_ASSETS = [
   '/',
+  '/offline/',
   '/manifest.json',
   '/static/img/logo.png',
   '/static/img/pwa/icon-192x192.png',
@@ -85,13 +108,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategy 3: Network-first for HTML pages (with cache fallback)
-  if (request.headers.get('accept') && request.headers.get('accept').includes('text/html')) {
+  const isHtmlRequest = request.headers.get('accept') && request.headers.get('accept').includes('text/html');
+
+  // Strategy 3: TTL cache for configured routes — serve from cache with no
+  // network call until the cached copy is older than CACHE_TTL_MS.
+  if (isHtmlRequest && isCacheableRoute(url.pathname)) {
+    event.respondWith(cacheWithTTL(request, DYNAMIC_CACHE));
+    return;
+  }
+
+  // Strategy 4: Network-first for HTML pages (with cache fallback)
+  if (isHtmlRequest) {
     event.respondWith(networkFirst(request, DYNAMIC_CACHE));
     return;
   }
 
-  // Strategy 4: Network-first for API calls and dynamic content
+  // Strategy 5: Network-first for API calls and dynamic content
   event.respondWith(networkFirst(request, DYNAMIC_CACHE));
 });
 
@@ -121,8 +153,53 @@ async function cacheFirst(request, cacheName) {
   } catch (error) {
     console.error('[SW] Fetch failed:', request.url, error);
     // Return offline page if available
-    return caches.match('/offline');
+    return caches.match('/offline/');
   }
+}
+
+// TTL strategy: Serve from cache with no network call while the cached copy
+// is younger than CACHE_TTL_MS; otherwise refetch and re-stamp the cache.
+async function cacheWithTTL(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cachedResponse = await cache.match(request);
+
+  if (cachedResponse) {
+    const cachedAt = parseInt(cachedResponse.headers.get('sw-cached-at') || '0', 10);
+    if (Date.now() - cachedAt < CACHE_TTL_MS) {
+      console.log('[SW] TTL cache hit (fresh):', request.url);
+      return cachedResponse;
+    }
+  }
+
+  console.log('[SW] TTL cache stale/miss, fetching:', request.url);
+  try {
+    const networkResponse = await fetch(request);
+    // Skip redirected responses (e.g. a login-required page bounced to the
+    // login form) — caching that under this URL's key would poison it.
+    if (networkResponse.ok && !networkResponse.redirected) {
+      cache.put(request, await stampWithCacheTime(networkResponse.clone()));
+    }
+    return networkResponse;
+  } catch (error) {
+    console.log('[SW] Network failed, falling back to stale TTL cache:', request.url);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    return caches.match('/offline/');
+  }
+}
+
+// Clone a response with an added header recording when it was cached, since
+// the Cache API itself doesn't track insertion time.
+async function stampWithCacheTime(response) {
+  const body = await response.blob();
+  const headers = new Headers(response.headers);
+  headers.set('sw-cached-at', Date.now().toString());
+  return new Response(body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 // Network-first strategy: Try network first, fallback to cache
@@ -142,7 +219,7 @@ async function networkFirst(request, cacheName) {
     }
     // Return offline page for HTML requests
     if (request.headers.get('accept') && request.headers.get('accept').includes('text/html')) {
-      return caches.match('/offline');
+      return caches.match('/offline/');
     }
     throw error;
   }

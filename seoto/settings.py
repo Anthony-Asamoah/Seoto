@@ -292,6 +292,10 @@ VAPID_PUBLIC_KEY = config('VAPID_PUBLIC_KEY')
 VAPID_PRIVATE_KEY = config('VAPID_PRIVATE_KEY')
 VAPID_ADMIN_EMAIL = config('VAPID_ADMIN_EMAIL')
 
+# How long the service worker serves configured pages (see sw.js CACHEABLE_ROUTES)
+# straight from cache before re-fetching from the network.
+CLIENT_CACHE_TTL_SECONDS = config('CLIENT_CACHE_TTL_SECONDS', default=300, cast=int)
+
 # Recurring transactions: expected daily run time for `process_recurring_transactions`,
 # configured as a PythonAnywhere Scheduled Task (which takes an hour:minute, not a real
 # cron expression) — used only to log a warning if the task drifts from this time.
