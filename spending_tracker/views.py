@@ -18,12 +18,14 @@ from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
 from utils.paginator import apply_pagination
-from .forms import TransactionForm, AccountForm, CategoryForm, RecurringTransactionForm
+from .forms import (
+    TransactionForm, AccountForm, CategoryForm, RecurringTransactionForm, ConfirmOccurrenceForm,
+)
 from .models import (
     Account, Transaction, Category, Tag, UserPreferences, CURRENCY_SYMBOLS, TransactionModeChoices,
     RecurringTransaction, RecurringTransactionOccurrence, RecurringOccurrenceStatusChoices,
 )
-from .services import create_transaction_from_recurring, process_due_occurrences
+from .services import process_due_occurrences
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -317,11 +319,7 @@ def add_transaction(request):
                 recurring_transaction.user = request.user
                 recurring_transaction.save()
 
-                if tags_input:
-                    tag_labels = [tag.strip().lower() for tag in tags_input.split(',') if tag.strip()]
-                    for tag_label in tag_labels:
-                        tag, _ = Tag.objects.get_or_create(label=tag_label, defaults={'user': request.user})
-                        recurring_transaction.tags.add(tag)
+                recurring_transaction.tags.add(*Tag.get_or_create_from_input(request.user, tags_input))
 
                 # A schedule due today (or later) always processes immediately. One whose next
                 # run is already in the past (a backdated renewal date) only catches up if the
@@ -340,16 +338,7 @@ def add_transaction(request):
                 logger.warning(f"Recurring transaction validation failed: {form.errors} {recurring_form.errors}")
         elif form.is_valid():
             transaction = form.save()
-
-            # Handle comma-separated tags
-            if tags_input:
-                tag_labels = [tag.strip().lower() for tag in tags_input.split(',') if tag.strip()]
-                for tag_label in tag_labels:
-                    tag, created = Tag.objects.get_or_create(
-                        label=tag_label,
-                        defaults={'user': request.user}
-                    )
-                    transaction.tags.add(tag)
+            transaction.tags.add(*Tag.get_or_create_from_input(request.user, tags_input))
 
             messages.success(request, 'Transaction added successfully!')
             # Clear any preserved data
@@ -448,15 +437,7 @@ def edit_transaction(request, pk):
             with atomic():
                 updated_transaction = form.save()
 
-                # Clear and re-add tags
-                updated_transaction.tags.clear()
-                if tags_input:
-                    tag_labels = [t.strip().lower() for t in tags_input.split(',') if t.strip()]
-                    for tag_label in tag_labels:
-                        tag, _ = Tag.objects.get_or_create(
-                            label=tag_label, defaults={'user': request.user}
-                        )
-                        updated_transaction.tags.add(tag)
+                updated_transaction.tags.set(Tag.get_or_create_from_input(request.user, tags_input))
 
             messages.success(request, 'Transaction updated successfully!')
             return redirect('spending_tracker:transaction_list')
@@ -1661,26 +1642,36 @@ def confirm_recurring_occurrence(request, pk):
         messages.info(request, 'This recurring transaction occurrence was already dismissed.')
         return redirect('spending_tracker:recurring_list')
 
+    recurring_transaction = occurrence.recurring_transaction
+    form = None
+
     if request.method == 'POST':
         action = request.POST.get('action')
-        if action == 'approve':
-            attachment = request.FILES.get('attachment')
-            details_override = request.POST.get('details_override', '').strip()
-            tags_input = request.POST.get('tags_input', '').strip()
-            extra_tags = []
-            if tags_input:
-                for tag_label in [t.strip().lower() for t in tags_input.split(',') if t.strip()]:
-                    tag, _ = Tag.objects.get_or_create(label=tag_label, defaults={'user': request.user})
-                    extra_tags.append(tag)
 
+        # Skipping resolves the occurrence outright; there is nothing to validate.
+        if action == 'dismiss':
+            occurrence.status = RecurringOccurrenceStatusChoices.DISMISSED
+            occurrence.resolved_at = timezone.now()
+            occurrence.save()
+            messages.success(request, 'Skipped this one.')
+            return redirect('spending_tracker:recurring_list')
+
+        form = ConfirmOccurrenceForm(
+            request.POST,
+            request.FILES,
+            user=request.user,
+            recurring_transaction=recurring_transaction,
+            scheduled_date=occurrence.scheduled_date,
+        )
+        if form.is_valid():
+            tags = Tag.get_or_create_from_input(request.user, form.cleaned_data['tags_input'])
             with atomic():
-                created_transaction = create_transaction_from_recurring(
-                    occurrence.recurring_transaction,
-                    occurrence.scheduled_date,
-                    attachment=attachment,
-                    details_override=details_override,
-                    extra_tags=extra_tags,
-                )
+                # A fresh instance, so Transaction.save() takes its create branch and applies
+                # the balance impact exactly once. mode/currency/reference are already on it.
+                created_transaction = form.save(commit=False)
+                created_transaction.save()
+                created_transaction.tags.set(tags)
+
                 occurrence.status = RecurringOccurrenceStatusChoices.CONFIRMED
                 occurrence.transaction = created_transaction
                 occurrence.resolved_at = timezone.now()
@@ -1695,18 +1686,21 @@ def confirm_recurring_occurrence(request, pk):
                 )
             except Exception as e:
                 logger.warning(f'Failed to send push notification: {e}')
-            messages.success(request, 'Transaction created.')
-        elif action == 'dismiss':
-            occurrence.status = RecurringOccurrenceStatusChoices.DISMISSED
-            occurrence.resolved_at = timezone.now()
-            occurrence.save()
-            messages.success(request, 'Recurring transaction occurrence dismissed.')
+            messages.success(request, 'Confirmed.')
+            return redirect('spending_tracker:recurring_list')
+        # Invalid: fall through and re-render the bound form. The occurrence stays PENDING.
 
-        return redirect('spending_tracker:recurring_list')
+    if form is None:
+        form = ConfirmOccurrenceForm(
+            user=request.user,
+            recurring_transaction=recurring_transaction,
+            scheduled_date=occurrence.scheduled_date,
+        )
 
     context = {
         'occurrence': occurrence,
-        'recurring_transaction': occurrence.recurring_transaction,
-        'currency_symbol': _get_currency_symbol(request.user),
+        'recurring_transaction': recurring_transaction,
+        'form': form,
+        'currency_symbol': recurring_transaction.currency_symbol,
     }
     return render(request, 'spending_tracker/confirm_recurring_occurrence.html', context)

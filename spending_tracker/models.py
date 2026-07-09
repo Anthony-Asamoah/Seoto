@@ -59,6 +59,19 @@ class Tag(models.Model):
         self.label = self.label.lower().strip()
         super().save(*args, **kwargs)
 
+    @classmethod
+    def get_or_create_from_input(cls, user, raw):
+        """Resolve a comma-separated tag string to Tag rows, creating any that are new.
+
+        `label` is unique app-wide, not per-user, so an existing tag is reused whoever
+        first created it; `user` only decides who owns a brand-new one.
+        """
+        tags = []
+        for label in [part.strip().lower() for part in (raw or '').split(',') if part.strip()]:
+            tag, _ = cls.objects.get_or_create(label=label, defaults={'user': user})
+            tags.append(tag)
+        return tags
+
     class Meta:
         ordering = ['label']
         indexes = [
@@ -329,6 +342,10 @@ class RecurringTransaction(models.Model):
 
     def __str__(self):
         return f"{self.get_mode_display()}: {self.currency} {self.amount} ({self.get_frequency_display()})"
+
+    @property
+    def currency_symbol(self):
+        return CURRENCY_SYMBOLS.get(self.currency, self.currency)
 
     def _next_weekday_occurrence(self, after_date):
         weekdays = self.custom_weekdays or []

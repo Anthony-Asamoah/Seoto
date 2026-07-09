@@ -14,19 +14,18 @@ logger = logging.getLogger(__name__)
 MAX_OCCURRENCES_PER_RUN = 366
 
 
-def create_transaction_from_recurring(recurring_transaction, scheduled_date, attachment=None, details_override=None, extra_tags=None):
-    """Create a Transaction from a RecurringTransaction's template fields.
+def create_transaction_from_recurring(recurring_transaction, scheduled_date):
+    """Create a Transaction verbatim from a RecurringTransaction's template fields.
+
+    This is the auto-renew path, where no user is present to ask. A manual approval goes
+    through `ConfirmOccurrenceForm` instead, which lets the user edit the amount and the
+    rest before the transaction exists.
 
     `scheduled_date` is the occurrence's due date, not the moment this function actually runs —
     those two differ for a backdated catch-up run (several occurrences processed together, long
-    after they were due) or a late manual approval, and the transaction should record the date it
-    was due, not the processing time. The schedule has no time-of-day of its own (only a date), so
-    the current time-of-day is kept and just re-dated onto `scheduled_date`.
-
-    `attachment`, `details_override` and `extra_tags` let a manual approval (the only path
-    that can supply them — auto-create has no user present to ask) fill in a receipt or a
-    description/tags the schedule itself doesn't have. They never override values the
-    schedule already defines.
+    after they were due), and the transaction should record the date it was due, not the
+    processing time. The schedule has no time-of-day of its own (only a date), so the current
+    time-of-day is kept and just re-dated onto `scheduled_date`.
     """
     now = timezone.now()
     transaction_time = now.replace(year=scheduled_date.year, month=scheduled_date.month, day=scheduled_date.day)
@@ -34,16 +33,15 @@ def create_transaction_from_recurring(recurring_transaction, scheduled_date, att
         mode=recurring_transaction.mode,
         amount=recurring_transaction.amount,
         currency=recurring_transaction.currency,
-        details=recurring_transaction.details or details_override,
+        details=recurring_transaction.details,
         reference=recurring_transaction.reference,
         account=recurring_transaction.account,
         destination_account=recurring_transaction.destination_account,
         category=recurring_transaction.category,
         transaction_time=transaction_time,
-        attachment=attachment,
+        attachment=None,
     )
-    tags = list(recurring_transaction.tags.all()) or (extra_tags or [])
-    transaction.tags.set(tags)
+    transaction.tags.set(recurring_transaction.tags.all())
     return transaction
 
 

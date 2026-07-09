@@ -1,0 +1,10 @@
+{% load static %}
+{% comment %}
+    Head assets for aura screens. The typefaces can't live in the stylesheet without a
+    render-blocking @import, so they stay here. They are not service-worker cached, so an
+    offline load falls back to the generic families named in each font stack.
+{% endcomment %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/spending_tracker.css' %}">

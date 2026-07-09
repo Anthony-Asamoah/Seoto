@@ -1,0 +1,395 @@
+/*
+ * aura — the spending_tracker design language.
+ *
+ * Loaded via templates/spending_tracker/partials/_aura_head.html, which also pulls the
+ * three typefaces. Rules here are shared across aura screens; anything used by exactly
+ * one page (the cycle ring, the behavior cards) stays inline in that page's template.
+ *
+ * Everything is scoped under .aura-page, so the Bootstrap skin the rest of the app
+ * relies on is untouched. Colour flows from one place: `data-mode` on .aura-page sets
+ * --mode, and the badge, eyebrow, glow, focus rings and hero amount all read it.
+ */
+
+.aura-page {
+    --income: #0f9d76;
+    --income-soft: rgba(15, 157, 118, 0.14);
+    --expense: #e8623f;
+    --expense-soft: rgba(232, 98, 63, 0.14);
+    --transfer: #5b5fc7;
+    --transfer-soft: rgba(91, 95, 199, 0.14);
+    --mode: var(--transfer);
+    --mode-soft: var(--transfer-soft);
+    --ink: #1b1e2b;
+    --ink-soft: #6c7086;
+    --paper-tint: #fbfbfe;
+    --line: #e7e8f1;
+    --accent: #362f78;
+
+    position: relative;
+    max-width: 760px;
+    margin: 0 auto;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    isolation: isolate;
+}
+
+.aura-page--narrow { max-width: 560px; }
+
+.aura-page[data-mode="EXPENSE"] { --mode: var(--expense); --mode-soft: var(--expense-soft); }
+.aura-page[data-mode="INCOME"] { --mode: var(--income); --mode-soft: var(--income-soft); }
+.aura-page[data-mode="TRANSFER"] { --mode: var(--transfer); --mode-soft: var(--transfer-soft); }
+
+/* Ambient aura glow, tinted by transaction direction */
+.aura-page::before,
+.aura-page::after {
+    content: '';
+    position: absolute;
+    width: 60vw;
+    max-width: 480px;
+    height: 60vw;
+    max-height: 480px;
+    border-radius: 50%;
+    filter: blur(90px);
+    z-index: -1;
+    opacity: 0.5;
+    background: var(--mode);
+    pointer-events: none;
+    transition: background 0.4s ease;
+}
+.aura-page::before { top: -180px; left: -180px; }
+.aura-page::after { bottom: -200px; right: -180px; opacity: 0.28; }
+
+@media (prefers-reduced-motion: no-preference) {
+    .aura-page::before { animation: aura-drift 16s ease-in-out infinite alternate; }
+    .aura-page::after { animation: aura-drift 20s ease-in-out infinite alternate-reverse; }
+}
+@keyframes aura-drift {
+    to { transform: translate(26px, 20px) scale(1.06); }
+}
+
+.aura-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 26px;
+    box-shadow: 0 40px 70px -40px rgba(27, 30, 43, 0.35);
+    padding: 38px 40px 30px;
+}
+
+/* Hero */
+.aura-hero {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 22px;
+}
+.aura-hero-badge {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--mode-soft);
+    color: var(--mode);
+    font-size: 1.2rem;
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.65);
+    transition: background 0.3s ease, color 0.3s ease;
+}
+.aura-hero-badge--sm { width: 44px; height: 44px; font-size: 1rem; }
+.aura-hero--tight { margin-bottom: 26px; }
+.aura-hero .aura-eyebrow { margin: 0; }
+
+.aura-hero-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+}
+.aura-hero-meta {
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin-top: 3px;
+}
+.aura-hero-meta strong { color: var(--mode); font-weight: 600; transition: color 0.3s ease; }
+.aura-hero-status { color: #e11d48; font-weight: 600; }
+
+/* Info banner */
+.aura-note {
+    display: flex;
+    gap: 12px;
+    background: linear-gradient(135deg, rgba(91, 95, 199, 0.09), rgba(91, 95, 199, 0.02));
+    border: 1px solid rgba(91, 95, 199, 0.18);
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin-bottom: 30px;
+    font-size: 0.83rem;
+    color: var(--ink-soft);
+    line-height: 1.5;
+}
+.aura-note i { color: var(--accent); margin-top: 3px; }
+.aura-note strong {
+    display: block;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink);
+    margin-bottom: 2px;
+}
+.aura-note code {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 0.95em;
+    color: var(--ink);
+}
+
+/* Section eyebrows — these mark real category boundaries (what / when / how) */
+.aura-section { margin-bottom: 28px; }
+.aura-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--mode);
+    margin: 0 0 16px;
+    transition: color 0.3s ease;
+}
+.aura-eyebrow::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, currentColor, transparent);
+    opacity: 0.4;
+}
+
+/* Field skin — overrides Bootstrap defaults, scoped to aura pages */
+.aura-page .form-label,
+.aura-field-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+    display: block;
+}
+.aura-field-label .req { color: var(--expense); }
+.aura-field-label small { font-weight: 400; color: var(--ink-soft); }
+
+.aura-page .form-control,
+.aura-page select.form-control {
+    width: 100%;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 9px 14px;
+    background: var(--paper-tint);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    box-shadow: none;
+}
+.aura-page select.form-control {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236c7086'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 34px;
+}
+.aura-page .form-control:focus {
+    outline: none;
+    border-color: var(--mode);
+    background: #fff;
+    box-shadow: 0 0 0 4px var(--mode-soft);
+}
+.aura-page input[readonly].form-control {
+    background: #f1f1f6;
+    color: var(--ink-soft);
+}
+.aura-page textarea.form-control { resize: vertical; min-height: 64px; }
+
+.aura-help { font-size: 0.74rem; color: var(--ink-soft); margin: 6px 0 0; }
+.aura-error { font-size: 0.74rem; color: #e11d48; margin-top: 6px; font-weight: 500; }
+
+/* Footer actions. The dashed rule is the tear line: below it, the page commits. */
+.aura-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 22px;
+    margin-top: 4px;
+    border-top: 1px dashed var(--line);
+}
+.aura-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: none;
+    border-radius: 13px;
+    padding: 11px 22px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+/* The confirm button comes first in the DOM so Enter in a field submits it rather than the
+   skip button beside it; row-reverse puts it back on the right. */
+.aura-actions--confirm-first { flex-direction: row-reverse; }
+
+.aura-btn:active { transform: scale(0.97); }
+.aura-btn-ghost { background: transparent; color: var(--ink-soft); }
+.aura-btn-ghost:hover { color: var(--ink); }
+.aura-btn-primary { background: var(--accent); color: #fff; box-shadow: 0 14px 26px -12px var(--accent); }
+.aura-btn-primary:hover { box-shadow: 0 16px 32px -10px var(--accent); }
+.aura-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .aura-btn { transition: none; }
+    .aura-btn:active { transform: none; }
+}
+
+/*
+ * Confirm screen — the amount is the page, and it is the input. It reads as display
+ * type until focused, then reveals itself as a field.
+ */
+.aura-amount-line {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 6px;
+}
+.aura-amount-symbol {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: clamp(1.3rem, 4.5vw, 1.7rem);
+    font-weight: 500;
+    color: var(--ink-soft);
+}
+.aura-page input.aura-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(2.4rem, 10vw, 3.1rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--mode);
+    width: 6ch;
+    min-height: 0;
+    padding: 0 2px 4px;
+    text-align: center;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px dashed var(--line);
+    border-radius: 0;
+    box-shadow: none;
+    transition: border-color 0.15s ease, color 0.3s ease;
+    -moz-appearance: textfield;
+}
+.aura-page input.aura-amount::-webkit-outer-spin-button,
+.aura-page input.aura-amount::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.aura-page input.aura-amount:hover { border-bottom-color: var(--ink-soft); }
+.aura-page input.aura-amount:focus {
+    outline: none;
+    background: transparent;
+    box-shadow: none;
+    border-bottom-style: solid;
+    border-bottom-color: var(--mode);
+}
+
+.aura-amount-hint {
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    margin: 10px 0 0;
+    transition: opacity 0.2s ease;
+}
+
+/* A schedule is an expectation; this screen is where reality disagrees. */
+.aura-variance {
+    display: block;
+    text-align: center;
+    margin: 12px 0 0;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--mode);
+    min-height: 1.4em;
+    transition: color 0.3s ease;
+}
+.aura-variance b {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+/* Disclosure — native <details>, so it works with no JS and on the keyboard. */
+.aura-details { border-top: 1px solid var(--line); }
+.aura-details > summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 2px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    transition: color 0.15s ease;
+}
+.aura-details > summary::-webkit-details-marker { display: none; }
+.aura-details > summary:hover { color: var(--ink); }
+.aura-details > summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 6px;
+}
+.aura-details > summary i { font-size: 0.72rem; transition: transform 0.2s ease; }
+.aura-details[open] > summary i { transform: rotate(180deg); }
+
+@media (prefers-reduced-motion: reduce) {
+    .aura-details > summary i { transition: none; }
+}
+
+.aura-field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 18px;
+    padding: 4px 2px 24px;
+}
+.aura-field-grid .span-2 { grid-column: 1 / -1; }
+
+.aura-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 640px) {
+    .aura-card { padding: 26px 22px 24px; border-radius: 20px; }
+    .aura-hero { flex-wrap: wrap; }
+    .aura-field-grid { grid-template-columns: 1fr; }
+
+    /* Keep the commit action reachable once the disclosure is open. */
+    .aura-actions {
+        position: sticky;
+        bottom: 0;
+        background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.94) 30%);
+        padding-bottom: 4px;
+    }
+}

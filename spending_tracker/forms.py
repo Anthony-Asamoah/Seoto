@@ -1,5 +1,6 @@
 from django import forms
 from django.utils import timezone
+from django.utils.html import strip_tags
 
 from .models import (
     Transaction, Account, Category, RecurringTransaction,
@@ -48,7 +49,9 @@ class TransactionForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        mode = cleaned_data.get('mode')
+        # Subclasses that drop `mode` from the visible fields (ConfirmOccurrenceForm) still
+        # need this check to run, so fall back to whatever they stamped on the instance.
+        mode = cleaned_data.get('mode') or self.instance.mode
         account = cleaned_data.get('account')
         destination_account = cleaned_data.get('destination_account')
         if mode == 'TRANSFER':
@@ -57,6 +60,78 @@ class TransactionForm(forms.ModelForm):
             elif destination_account == account:
                 self.add_error('destination_account', 'Destination account must differ from source account.')
         return cleaned_data
+
+
+class ConfirmOccurrenceForm(TransactionForm):
+    """The transaction a due recurring occurrence is about to become, open for editing.
+
+    The schedule is a template, not a contract: what the user confirms here can differ from
+    it, and nothing written here touches the RecurringTransaction. `mode`, `currency` and
+    `reference` are inherited rather than editable — changing them would make this a
+    different transaction than the one the schedule asked for.
+    """
+
+    tags_input = forms.CharField(
+        required=False,
+        label='Tags',
+        help_text='Comma-separated',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. food, daily'}),
+    )
+
+    class Meta(TransactionForm.Meta):
+        # Inherit, don't redeclare: a fresh Meta would silently drop the datetime-local
+        # widget, the labels and the help texts.
+        fields = ['amount', 'transaction_time', 'account', 'destination_account', 'category',
+                  'details', 'attachment']
+
+    def __init__(self, *args, recurring_transaction=None, scheduled_date=None, **kwargs):
+        self.recurring_transaction = recurring_transaction
+        self.scheduled_date = scheduled_date
+        super().__init__(*args, **kwargs)
+
+        recurring = recurring_transaction
+        if recurring is None:
+            return
+
+        # Carried on the instance so save(commit=False) already has them, and so clean()
+        # can see the mode it needs to validate transfers.
+        self.instance.mode = recurring.mode
+        self.instance.currency = recurring.currency
+        self.instance.reference = recurring.reference
+
+        if recurring.mode != 'TRANSFER':
+            del self.fields['destination_account']
+
+        self.fields['amount'].widget.attrs.update({
+            'class': 'aura-amount',
+            'inputmode': 'decimal',
+            'step': '0.01',
+            'min': '0.01',
+        })
+        for name in ('account', 'destination_account', 'category', 'details', 'attachment'):
+            if name in self.fields:
+                self.fields[name].widget.attrs['class'] = 'form-control'
+
+        if self.is_bound:
+            return
+
+        # Seed from the schedule only on first render — a re-rendered invalid form must
+        # show what the user typed, not silently revert to the template's values.
+        self.fields['amount'].initial = recurring.amount
+        self.fields['account'].initial = recurring.account_id
+        self.fields['category'].initial = recurring.category_id
+        if 'destination_account' in self.fields:
+            self.fields['destination_account'].initial = recurring.destination_account_id
+        # `details` is Quill HTML on the schedule; this is a plain textarea, so flatten it.
+        self.fields['details'].initial = strip_tags(recurring.details or '')
+        self.fields['tags_input'].initial = ', '.join(tag.label for tag in recurring.tags.all())
+
+        if scheduled_date:
+            # The occurrence records the date it was due, keeping the current time of day.
+            due = timezone.localtime().replace(
+                year=scheduled_date.year, month=scheduled_date.month, day=scheduled_date.day
+            )
+            self.fields['transaction_time'].initial = due.strftime('%Y-%m-%dT%H:%M')
 
 
 class AccountForm(forms.ModelForm):

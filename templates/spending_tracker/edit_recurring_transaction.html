@@ -3,112 +3,11 @@
 {% block title %} - Edit Recurring Transaction {% endblock %}
 
 {% block style %}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    {% include 'spending_tracker/partials/_aura_head.html' %}
 
     <style>
-        .aura-page {
-            --income: #0f9d76;
-            --income-soft: rgba(15, 157, 118, 0.14);
-            --expense: #e8623f;
-            --expense-soft: rgba(232, 98, 63, 0.14);
-            --transfer: #5b5fc7;
-            --transfer-soft: rgba(91, 95, 199, 0.14);
-            --mode: var(--transfer);
-            --mode-soft: var(--transfer-soft);
-            --ink: #1b1e2b;
-            --ink-soft: #6c7086;
-            --paper-tint: #fbfbfe;
-            --line: #e7e8f1;
-            --accent: #362f78;
-
-            position: relative;
-            max-width: 760px;
-            margin: 0 auto;
-            font-family: 'Inter', sans-serif;
-            color: var(--ink);
-            isolation: isolate;
-        }
-
-        .aura-page[data-mode="EXPENSE"] { --mode: var(--expense); --mode-soft: var(--expense-soft); }
-        .aura-page[data-mode="INCOME"] { --mode: var(--income); --mode-soft: var(--income-soft); }
-        .aura-page[data-mode="TRANSFER"] { --mode: var(--transfer); --mode-soft: var(--transfer-soft); }
-
-        /* Ambient aura glow, tinted by transaction direction */
-        .aura-page::before,
-        .aura-page::after {
-            content: '';
-            position: absolute;
-            width: 60vw;
-            max-width: 480px;
-            height: 60vw;
-            max-height: 480px;
-            border-radius: 50%;
-            filter: blur(90px);
-            z-index: -1;
-            opacity: 0.5;
-            background: var(--mode);
-            pointer-events: none;
-            transition: background 0.4s ease;
-        }
-        .aura-page::before { top: -180px; left: -180px; }
-        .aura-page::after { bottom: -200px; right: -180px; opacity: 0.28; }
-
-        @media (prefers-reduced-motion: no-preference) {
-            .aura-page::before { animation: aura-drift 16s ease-in-out infinite alternate; }
-            .aura-page::after { animation: aura-drift 20s ease-in-out infinite alternate-reverse; }
-        }
-        @keyframes aura-drift {
-            to { transform: translate(26px, 20px) scale(1.06); }
-        }
-
-        .aura-card {
-            position: relative;
-            background: rgba(255, 255, 255, 0.86);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            border-radius: 26px;
-            box-shadow: 0 40px 70px -40px rgba(27, 30, 43, 0.35);
-            padding: 38px 40px 30px;
-        }
-
-        /* Hero */
-        .aura-hero {
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            margin-bottom: 22px;
-        }
-        .aura-hero-badge {
-            width: 54px;
-            height: 54px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--mode-soft);
-            color: var(--mode);
-            font-size: 1.2rem;
-            box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.65);
-            transition: background 0.3s ease, color 0.3s ease;
-        }
-        .aura-hero-amount {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 600;
-            font-size: clamp(1.4rem, 4vw, 1.9rem);
-            letter-spacing: -0.01em;
-            line-height: 1.1;
-        }
-        .aura-hero-meta {
-            font-size: 0.82rem;
-            color: var(--ink-soft);
-            margin-top: 3px;
-        }
-        .aura-hero-meta strong { color: var(--mode); font-weight: 600; transition: color 0.3s ease; }
-        .aura-hero-status { color: #e11d48; font-weight: 600; }
+        /* Rules unique to this screen. The shared aura language lives in
+           seoto/static/css/spending_tracker.css, pulled in by the include above. */
 
         /* Cycle ring — the page's signature element: a slowly turning dial naming the
            recurrence rhythm, with tick marks lighting up for custom weekday schedules. */
@@ -160,101 +59,6 @@
             font-size: 0.68rem;
             color: var(--ink-soft);
         }
-
-        /* Info banner */
-        .aura-note {
-            display: flex;
-            gap: 12px;
-            background: linear-gradient(135deg, rgba(91, 95, 199, 0.09), rgba(91, 95, 199, 0.02));
-            border: 1px solid rgba(91, 95, 199, 0.18);
-            border-radius: 16px;
-            padding: 14px 18px;
-            margin-bottom: 30px;
-            font-size: 0.83rem;
-            color: var(--ink-soft);
-            line-height: 1.5;
-        }
-        .aura-note i { color: var(--accent); margin-top: 3px; }
-        .aura-note strong {
-            display: block;
-            font-family: 'Fraunces', serif;
-            font-weight: 600;
-            font-size: 0.95rem;
-            color: var(--ink);
-            margin-bottom: 2px;
-        }
-
-        /* Section eyebrows — these mark real category boundaries (what / when / how) */
-        .aura-section { margin-bottom: 28px; }
-        .aura-eyebrow {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-family: 'Fraunces', serif;
-            font-style: italic;
-            font-weight: 600;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: var(--mode);
-            margin: 0 0 16px;
-            transition: color 0.3s ease;
-        }
-        .aura-eyebrow::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, currentColor, transparent);
-            opacity: 0.4;
-        }
-
-        /* Field skin — overrides Bootstrap defaults, scoped to this page only */
-        .aura-page .form-label,
-        .aura-field-label {
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--ink);
-            margin-bottom: 6px;
-            display: block;
-        }
-        .aura-field-label .req { color: var(--expense); }
-        .aura-field-label small { font-weight: 400; color: var(--ink-soft); }
-
-        .aura-page .form-control,
-        .aura-page select.form-control {
-            width: 100%;
-            border: 1.5px solid var(--line);
-            border-radius: 12px;
-            padding: 9px 14px;
-            background: var(--paper-tint);
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            color: var(--ink);
-            transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-            box-shadow: none;
-        }
-        .aura-page select.form-control {
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236c7086'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            padding-right: 34px;
-        }
-        .aura-page .form-control:focus {
-            outline: none;
-            border-color: var(--mode);
-            background: #fff;
-            box-shadow: 0 0 0 4px var(--mode-soft);
-        }
-        .aura-page input[readonly].form-control {
-            background: #f1f1f6;
-            color: var(--ink-soft);
-        }
-        .aura-page textarea.form-control { resize: vertical; min-height: 64px; }
-
-        .aura-help { font-size: 0.74rem; color: var(--ink-soft); margin: 6px 0 0; }
-        .aura-error { font-size: 0.74rem; color: #e11d48; margin-top: 6px; font-weight: 500; }
 
         /* Weekday pills */
         .weekday-pills { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -316,38 +120,7 @@
         .behavior-card.active i { color: var(--mode); }
         .behavior-grid input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
 
-        /* Footer actions */
-        .aura-actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 22px;
-            margin-top: 4px;
-            border-top: 1px dashed var(--line);
-        }
-        .aura-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            border: none;
-            border-radius: 13px;
-            padding: 11px 22px;
-            font-weight: 600;
-            font-size: 0.88rem;
-            cursor: pointer;
-            text-decoration: none;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-        }
-        .aura-btn:active { transform: scale(0.97); }
-        .aura-btn-ghost { background: transparent; color: var(--ink-soft); }
-        .aura-btn-ghost:hover { color: var(--ink); }
-        .aura-btn-primary { background: var(--accent); color: #fff; box-shadow: 0 14px 26px -12px var(--accent); }
-        .aura-btn-primary:hover { box-shadow: 0 16px 32px -10px var(--accent); }
-        .aura-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
         @media (max-width: 640px) {
-            .aura-card { padding: 26px 22px 24px; border-radius: 20px; }
-            .aura-hero { flex-wrap: wrap; }
             .cycle-ring-wrap { margin-left: 72px; }
             .behavior-grid { grid-template-columns: 1fr; }
         }

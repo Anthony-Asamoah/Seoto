@@ -1,128 +1,208 @@
 {% extends 'base.html' %}
+{% load spending_extras %}
 
 {% block title %} - Approve Recurring Transaction {% endblock %}
 
 {% block style %}
-    <style>
-        .confirm-card {
-            background: white;
-            border-radius: 8px;
-            padding: 30px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .confirm-amount {
-            font-size: 2.2rem;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #ecf0f1;
-        }
-
-        .detail-label {
-            color: #7f8c8d;
-        }
-    </style>
+    {% include 'spending_tracker/partials/_aura_head.html' %}
 {% endblock %}
 
 {% block content %}
     <div class="header">
         <h1>
-            <a href="{% url 'spending_tracker:recurring_list' %}" class="crumb">Recurring Transactions</a> - Approve
+            <a href="{% url 'spending_tracker:recurring_list' %}" class="crumb">Recurring Transactions</a> ·
+            Approve
         </h1>
     </div>
 
     <div class="main">
-        <div class="confirm-card">
-            {% if occurrence.status != 'PENDING' %}
-                <div class="alert alert-info text-center">
-                    This occurrence has already been {{ occurrence.get_status_display|lower }}.
-                </div>
-                <div class="text-center">
-                    <a href="{% url 'spending_tracker:recurring_list' %}" class="btn btn-secondary">Back to Recurring Transactions</a>
-                </div>
-            {% else %}
-                <div class="confirm-amount">
-                    {{ recurring_transaction.currency }} {{ recurring_transaction.amount }}
-                </div>
-                <p class="text-center text-muted">{{ recurring_transaction.get_mode_display }} due {{ occurrence.scheduled_date }}</p>
+        <div class="aura-page aura-page--narrow" data-mode="{{ recurring_transaction.mode }}">
+            <form method="post" enctype="multipart/form-data" class="aura-card">
+                {% csrf_token %}
 
-                <div class="detail-row">
-                    <span class="detail-label">Account</span>
-                    <span>{{ recurring_transaction.account.name }}</span>
+                <div class="aura-hero aura-hero--tight">
+                    <div class="aura-hero-badge aura-hero-badge--sm">
+                        <i class="fas {% if recurring_transaction.mode == 'INCOME' %}fa-arrow-up{% elif recurring_transaction.mode == 'EXPENSE' %}fa-arrow-down{% else %}fa-retweet{% endif %}"></i>
+                    </div>
+                    <div class="aura-eyebrow">
+                        {{ recurring_transaction.get_mode_display }} · due {{ occurrence.scheduled_date|relative_date|lower }}
+                    </div>
                 </div>
-                {% if recurring_transaction.destination_account %}
-                    <div class="detail-row">
-                        <span class="detail-label">Destination Account</span>
-                        <span>{{ recurring_transaction.destination_account.name }}</span>
-                    </div>
-                {% endif %}
-                {% if recurring_transaction.category %}
-                    <div class="detail-row">
-                        <span class="detail-label">Category</span>
-                        <span>{{ recurring_transaction.category.label }}</span>
-                    </div>
-                {% endif %}
-                {% if recurring_transaction.details %}
-                    <div class="detail-row">
-                        <span class="detail-label">Details</span>
-                        <span>{{ recurring_transaction.details|striptags }}</span>
-                    </div>
+
+                {# The amount is the page, and it is the input. #}
+                <label for="{{ form.amount.id_for_label }}" class="aura-sr-only">Amount</label>
+                <div class="aura-amount-line">
+                    <span class="aura-amount-symbol">{{ currency_symbol }}</span>
+                    {{ form.amount }}
+                </div>
+                {% if form.amount.errors %}
+                    <p class="aura-error" style="text-align: center;">{{ form.amount.errors.0 }}</p>
+                {% else %}
+                    <p class="aura-amount-hint" id="amountHint">Tap the amount to change it</p>
                 {% endif %}
 
-                <form method="post" enctype="multipart/form-data" class="mt-4">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="approve">
+                <p class="aura-variance" id="variance" aria-live="polite"
+                   data-scheduled="{{ recurring_transaction.amount|stringformat:'f' }}"
+                   data-symbol="{{ currency_symbol }}"></p>
 
-                    <div class="mb-3 text-start">
-                        <label for="id_attachment" class="form-label">
-                            Attachment <small class="text-muted">(optional — receipt or invoice)</small>
-                        </label>
-                        <input type="file" name="attachment" id="id_attachment" class="form-control"
-                               accept="image/*,application/pdf">
+                <div class="aura-note">
+                    <i class="fas fa-circle-info"></i>
+                    <div>
+                        {% if recurring_transaction.notification_note %}
+                            <strong>{{ recurring_transaction.notification_note }}</strong>
+                        {% else %}
+                            <strong>{{ recurring_transaction.get_frequency_display }} schedule</strong>
+                        {% endif %}
+                        This changes today's transaction only. Your schedule stays at
+                        <code>{{ currency_symbol }}{{ recurring_transaction.amount }}</code>.
                     </div>
+                </div>
 
-                    {% if not recurring_transaction.details %}
-                        <div class="mb-3 text-start">
-                            <label for="id_details_override" class="form-label">
-                                Description <small class="text-muted">(optional)</small>
+                {% if form.non_field_errors %}
+                    <p class="aura-error">{{ form.non_field_errors.0 }}</p>
+                {% endif %}
+
+                <details class="aura-details" {% if form.errors %}open{% endif %}>
+                    <summary>
+                        <i class="fas fa-chevron-down"></i>
+                        Adjust details
+                    </summary>
+
+                    <div class="aura-field-grid">
+                        <div class="span-2">
+                            <label class="aura-field-label" for="{{ form.transaction_time.id_for_label }}">
+                                {{ form.transaction_time.label }}
                             </label>
-                            <textarea name="details_override" id="id_details_override" class="form-control"
-                                      rows="2" placeholder="What's this for?"></textarea>
+                            {{ form.transaction_time }}
+                            <p class="aura-help">Defaults to the date this occurrence was due.</p>
+                            {% if form.transaction_time.errors %}
+                                <p class="aura-error">{{ form.transaction_time.errors.0 }}</p>
+                            {% endif %}
                         </div>
-                    {% endif %}
 
-                    {% if not recurring_transaction.tags.all %}
-                        <div class="mb-3 text-start">
-                            <label for="id_tags_input" class="form-label">
-                                Tags <small class="text-muted">(optional, comma-separated)</small>
+                        <div>
+                            <label class="aura-field-label" for="{{ form.account.id_for_label }}">Account</label>
+                            {{ form.account }}
+                            {% if form.account.errors %}
+                                <p class="aura-error">{{ form.account.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        {% if recurring_transaction.mode == 'TRANSFER' %}
+                            <div>
+                                <label class="aura-field-label" for="{{ form.destination_account.id_for_label }}">
+                                    Destination account
+                                </label>
+                                {{ form.destination_account }}
+                                {% if form.destination_account.errors %}
+                                    <p class="aura-error">{{ form.destination_account.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <div{% if recurring_transaction.mode == 'TRANSFER' %} class="span-2"{% endif %}>
+                            <label class="aura-field-label" for="{{ form.category.id_for_label }}">Category</label>
+                            {{ form.category }}
+                            {% if form.category.errors %}
+                                <p class="aura-error">{{ form.category.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="span-2">
+                            <label class="aura-field-label" for="{{ form.details.id_for_label }}">
+                                Note <small>optional</small>
                             </label>
-                            <input type="text" name="tags_input" id="id_tags_input" class="form-control"
-                                   placeholder="e.g. rent, bills">
+                            {{ form.details }}
+                            {% if form.details.errors %}
+                                <p class="aura-error">{{ form.details.errors.0 }}</p>
+                            {% endif %}
                         </div>
-                    {% endif %}
 
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-check"></i> Approve & Create
-                    </button>
-                </form>
+                        <div>
+                            <label class="aura-field-label" for="{{ form.tags_input.id_for_label }}">
+                                Tags <small>comma-separated</small>
+                            </label>
+                            {{ form.tags_input }}
+                            {% if form.tags_input.errors %}
+                                <p class="aura-error">{{ form.tags_input.errors.0 }}</p>
+                            {% endif %}
+                        </div>
 
-                <form method="post" class="mt-2">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="dismiss">
-                    <button type="submit" class="btn btn-outline-secondary w-100">
-                        <i class="fas fa-times"></i> Dismiss
+                        <div>
+                            <label class="aura-field-label" for="{{ form.attachment.id_for_label }}">
+                                Receipt <small>optional</small>
+                            </label>
+                            {{ form.attachment }}
+                            {% if form.attachment.errors %}
+                                <p class="aura-error">{{ form.attachment.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </details>
+
+                {# Confirm is first so Enter in a field submits it, not Skip; CSS reverses the row. #}
+                <div class="aura-actions aura-actions--confirm-first">
+                    <button type="submit" name="action" value="approve" class="aura-btn aura-btn-primary">
+                        Confirm <span id="confirmAmount">{{ currency_symbol }}{{ recurring_transaction.amount }}</span>
                     </button>
-                </form>
-            {% endif %}
+                    <button type="submit" name="action" value="dismiss" class="aura-btn aura-btn-ghost"
+                            formnovalidate>
+                        Skip this one
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        (function () {
+            const amount = document.getElementById('{{ form.amount.id_for_label }}');
+            const variance = document.getElementById('variance');
+            const confirmAmount = document.getElementById('confirmAmount');
+            const hint = document.getElementById('amountHint');
+            if (!amount || !variance) return;
+
+            const scheduled = parseFloat(variance.dataset.scheduled);
+            const symbol = variance.dataset.symbol;
+            const money = (n) => symbol + n.toFixed(2);
+
+            function sizeToContent() {
+                amount.style.width = Math.max(4, amount.value.length + 0.5) + 'ch';
+            }
+
+            function render() {
+                sizeToContent();
+                const value = parseFloat(amount.value);
+                if (isNaN(value)) {
+                    variance.textContent = '';
+                    confirmAmount.textContent = '';
+                    return;
+                }
+                confirmAmount.textContent = money(value);
+
+                const difference = value - scheduled;
+                if (Math.abs(difference) < 0.005) {
+                    variance.textContent = '';
+                    if (hint) hint.style.opacity = '1';
+                    return;
+                }
+                if (hint) hint.style.opacity = '0';
+                variance.replaceChildren();
+                const delta = document.createElement('b');
+                delta.textContent = money(Math.abs(difference));
+                variance.append(
+                    delta,
+                    document.createTextNode(
+                        (difference > 0 ? ' more' : ' less') + ' than the ' + money(scheduled) + ' you scheduled'
+                    )
+                );
+            }
+
+            amount.addEventListener('input', render);
+            amount.addEventListener('focus', () => amount.select());
+            render();
+        })();
+    </script>
 {% endblock %}
