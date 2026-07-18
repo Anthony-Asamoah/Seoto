@@ -571,6 +571,30 @@
             flex: 1;
         }
 
+        /* Staggered fade + rise on first paint, so content doesn't just pop in */
+        @keyframes weatherFadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .weather-content .weather-current,
+        .weather-content .weather-place,
+        .weather-content .weather-condition,
+        .weather-content .weather-details,
+        .weather-content .weather-hilo,
+        .weather-content .weather-daily,
+        .weather-content .weather-source {
+            opacity: 0;
+            animation: weatherFadeIn 0.4s ease forwards;
+        }
+
+        .weather-content .weather-place    { animation-delay: 0.05s; }
+        .weather-content .weather-condition { animation-delay: 0.10s; }
+        .weather-content .weather-details  { animation-delay: 0.15s; }
+        .weather-content .weather-hilo     { animation-delay: 0.20s; }
+        .weather-content .weather-daily    { animation-delay: 0.25s; }
+        .weather-content .weather-source   { animation-delay: 0.32s; }
+
         .weather-current {
             display: flex;
             align-items: center;
@@ -655,7 +679,7 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        .weather-day:hover {
+        .weather-day:hover:not(.active) {
             background: rgba(23, 90, 156, 0.07);
         }
 
@@ -697,14 +721,57 @@
             display: flex;
             gap: 14px;
             overflow-x: auto;
-            padding: 10px 2px 12px;
-            margin-bottom: 6px;
-            border-bottom: 1px solid #f3f4f6;
+            overflow-y: hidden;
+            max-height: 0;
+            opacity: 0;
+            padding: 0 2px;
+            margin-bottom: 0;
+            border-bottom: 1px solid transparent;
             -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                        opacity 0.25s ease,
+                        padding 0.3s ease,
+                        margin-bottom 0.3s ease,
+                        border-color 0.3s ease;
         }
 
-        .weather-hourly[hidden] {
-            display: none;
+        .weather-hourly.open {
+            max-height: 100px;
+            opacity: 1;
+            padding: 10px 2px 12px;
+            margin-bottom: 6px;
+            border-bottom-color: #f3f4f6;
+        }
+
+        /* One continuous strip: each day's hours form a group so scrolling
+           carries you straight from one day's last hour into the next day's
+           first, with a slim vertical marker signalling the handoff. */
+        .weather-hour-group {
+            display: flex;
+            align-items: stretch;
+            gap: 14px;
+            flex: 0 0 auto;
+        }
+
+        .weather-hour-day-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 8px;
+            border-left: 1px solid #e5e7eb;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            color: #175a9c;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+        }
+
+        .weather-hour-group:first-child .weather-hour-day-marker {
+            border-left: none;
+            padding-left: 0;
         }
 
         .weather-hour {

@@ -277,6 +277,7 @@
 <script>
 (function () {
     var FORECAST_URL = '{{ weather_url }}';
+    var GEO_GRANTED_KEY = 'seoto_weather_geo_granted';
     var lastPayload = null; // avoid refetching every time the panel is reopened
     var currentDaily = [];  // latest daily/hourly data, for the click-to-expand row
     var expandedDayIndex = null;
@@ -309,46 +310,83 @@
                 '<div class="weather-day-temps"><span>' + formatTemp(d.high) + '</span><span class="weather-day-low">' + formatTemp(d.low) + '</span></div>' +
             '</div>';
         }).join('') + '</div>' +
-        '<div class="weather-hourly" id="weather-hourly-row" hidden></div>';
+        '<div class="weather-hourly" id="weather-hourly-row">' + renderHourlyTimeline(days) + '</div>';
     }
 
-    function toggleHourly(dayIndex) {
-        var hourlyRow = document.getElementById('weather-hourly-row');
-        var dayEls = document.querySelectorAll('.weather-day');
-        if (!hourlyRow || !dayEls.length) return;
+    // One continuous horizontally-scrolling strip: every day's hours back to
+    // back, each group led by a slim day marker, so scrolling past the last
+    // hour of one day flows straight into the next day's hours.
+    function renderHourlyTimeline(days) {
+        return days.map(function (d, dayIndex) {
+            var hours = d.hourly || [];
+            if (!hours.length) return '';
+            return '<div class="weather-hour-group" data-day-index="' + dayIndex + '">' +
+                '<div class="weather-hour-day-marker"><span>' + d.day_label + '</span></div>' +
+                hours.map(function (h) {
+                    return '<div class="weather-hour" data-day-index="' + dayIndex + '">' +
+                        '<div class="weather-hour-label">' + formatHourLabel(h.time) + '</div>' +
+                        '<i class="fas ' + h.icon + '" aria-hidden="true"></i>' +
+                        '<div class="weather-hour-temp">' + formatTemp(h.temperature) + '</div>' +
+                    '</div>';
+                }).join('') +
+            '</div>';
+        }).join('') || '<div class="weather-hourly-empty">No hourly data available</div>';
+    }
 
-        if (expandedDayIndex === dayIndex) {
-            expandedDayIndex = null;
-            hourlyRow.hidden = true;
-            hourlyRow.innerHTML = '';
-            dayEls.forEach(function (el) {
-                el.classList.remove('active');
-                el.setAttribute('aria-expanded', 'false');
-            });
-            return;
-        }
-
-        var day = currentDaily[dayIndex];
-        if (!day) return;
-
-        expandedDayIndex = dayIndex;
-        dayEls.forEach(function (el) {
+    function setActiveDay(dayIndex) {
+        document.querySelectorAll('.weather-day').forEach(function (el) {
             var isActive = parseInt(el.getAttribute('data-day-index'), 10) === dayIndex;
             el.classList.toggle('active', isActive);
             el.setAttribute('aria-expanded', isActive ? 'true' : 'false');
         });
+    }
 
-        var hours = day.hourly || [];
-        hourlyRow.innerHTML = hours.length
-            ? hours.map(function (h) {
-                return '<div class="weather-hour">' +
-                    '<div class="weather-hour-label">' + formatHourLabel(h.time) + '</div>' +
-                    '<i class="fas ' + h.icon + '" aria-hidden="true"></i>' +
-                    '<div class="weather-hour-temp">' + formatTemp(h.temperature) + '</div>' +
-                '</div>';
-            }).join('')
-            : '<div class="weather-hourly-empty">No hourly data available</div>';
-        hourlyRow.hidden = false;
+    function scrollHourlyToDay(dayIndex) {
+        var hourlyRow = document.getElementById('weather-hourly-row');
+        var group = hourlyRow && hourlyRow.querySelector('.weather-hour-group[data-day-index="' + dayIndex + '"]');
+        if (group) group.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+    }
+
+    // Keeps the highlighted day in sync with whichever day's hours are
+    // actually in view as the visitor scrolls the strip by hand.
+    var hourlyScrollRaf = null;
+    function onHourlyScroll() {
+        if (hourlyScrollRaf) return;
+        hourlyScrollRaf = requestAnimationFrame(function () {
+            hourlyScrollRaf = null;
+            var hourlyRow = document.getElementById('weather-hourly-row');
+            if (!hourlyRow) return;
+            var groups = hourlyRow.querySelectorAll('.weather-hour-group');
+            var activeIdx = expandedDayIndex;
+            groups.forEach(function (g) {
+                if (g.offsetLeft - hourlyRow.offsetLeft <= hourlyRow.scrollLeft + 24) {
+                    activeIdx = parseInt(g.getAttribute('data-day-index'), 10);
+                }
+            });
+            if (activeIdx !== expandedDayIndex) {
+                expandedDayIndex = activeIdx;
+                setActiveDay(activeIdx);
+            }
+        });
+    }
+
+    function toggleHourly(dayIndex) {
+        var hourlyRow = document.getElementById('weather-hourly-row');
+        if (!hourlyRow) return;
+        var isOpen = hourlyRow.classList.contains('open');
+
+        if (isOpen && expandedDayIndex === dayIndex) {
+            // Clicking the day that's already open/active closes the strip
+            hourlyRow.classList.remove('open');
+            expandedDayIndex = null;
+            setActiveDay(-1);
+            return;
+        }
+
+        if (!isOpen) hourlyRow.classList.add('open');
+        expandedDayIndex = dayIndex;
+        setActiveDay(dayIndex);
+        scrollHourlyToDay(dayIndex);
     }
 
     function renderWeather(payload) {
@@ -358,7 +396,7 @@
         currentDaily = w.daily || [];
         expandedDayIndex = null;
 
-        body.innerHTML =
+        body.innerHTML = '<div class="weather-content">' +
             '<div class="weather-current">' +
                 '<i class="fas ' + w.icon + '" aria-hidden="true"></i>' +
                 '<div class="weather-temp">' + formatTemp(w.temperature) + '</div>' +
@@ -372,7 +410,11 @@
             '</div>' +
             '<div class="weather-hilo"><span>H: ' + formatTemp(w.high) + '</span><span>L: ' + formatTemp(w.low) + '</span></div>' +
             renderDaily(w.daily) +
-            '<div class="weather-source">' + (payload.source === 'gps' ? 'Based on your device location' : 'Based on your approximate (IP) location') + '</div>';
+            '<div class="weather-source">' + (payload.source === 'gps' ? 'Based on your device location' : 'Based on your approximate (IP) location') + '</div>' +
+        '</div>';
+
+        var hourlyRow = document.getElementById('weather-hourly-row');
+        if (hourlyRow) hourlyRow.addEventListener('scroll', onHourlyScroll, { passive: true });
 
         updateLocateButton(payload);
     }
@@ -428,14 +470,60 @@
 
         navigator.geolocation.getCurrentPosition(
             function (position) {
+                try { localStorage.setItem(GEO_GRANTED_KEY, '1'); } catch (e) {}
                 fetchWeather('lat=' + position.coords.latitude + '&lon=' + position.coords.longitude);
             },
             function () {
+                try { localStorage.removeItem(GEO_GRANTED_KEY); } catch (e) {}
                 renderError('Location permission denied — showing your approximate location instead.');
                 if (lastPayload) renderWeather(lastPayload);
             },
             { timeout: 10000, maximumAge: 300000 }
         );
+    }
+
+    // Prefer GPS silently whenever we already have permission, so returning
+    // visitors don't get stuck on the coarser IP fix once they've granted it.
+    function fetchGpsQuietly(onUnavailable) {
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                try { localStorage.setItem(GEO_GRANTED_KEY, '1'); } catch (e) {}
+                fetchWeather('lat=' + position.coords.latitude + '&lon=' + position.coords.longitude);
+            },
+            function () {
+                try { localStorage.removeItem(GEO_GRANTED_KEY); } catch (e) {}
+                onUnavailable();
+            },
+            { timeout: 8000, maximumAge: 300000 }
+        );
+    }
+
+    function initialFetch() {
+        if (!navigator.geolocation) {
+            fetchWeather();
+            return;
+        }
+
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'geolocation' }).then(function (status) {
+                if (status.state === 'granted') {
+                    fetchGpsQuietly(fetchWeather);
+                } else {
+                    fetchWeather();
+                }
+            }).catch(function () { fetchWeather(); });
+            return;
+        }
+
+        // Browsers without the Permissions API (e.g. Safari): fall back to a
+        // remembered flag from a previous successful GPS fix.
+        var remembered = false;
+        try { remembered = localStorage.getItem(GEO_GRANTED_KEY) === '1'; } catch (e) {}
+        if (remembered) {
+            fetchGpsQuietly(fetchWeather);
+        } else {
+            fetchWeather();
+        }
     }
 
     function openWeatherPanel() {
@@ -453,7 +541,7 @@
             if (el) el.setAttribute('aria-expanded', 'true');
         });
 
-        if (!lastPayload) fetchWeather();
+        if (!lastPayload) initialFetch();
     }
 
     function closeWeatherPanel() {
