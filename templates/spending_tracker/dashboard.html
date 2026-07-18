@@ -22,6 +22,7 @@
             font-size: 1.8rem;
             font-weight: bold;
             color: #2c3e50;
+            white-space: nowrap;
         }
 
         .stat-label {
@@ -38,7 +39,7 @@
             }
 
             .stat-value {
-                font-size: 1rem;
+                font-size: 0.85rem;
             }
 
             .stat-label {
@@ -225,7 +226,7 @@
 
     <div class="main container">
         <!-- Financial Overview -->
-        <div class="row mb-4">
+        <div class="row mb-4 g-1">
             <div class="col-3">
                 <div class="stats-card text-center">
                     <div class="stat-value balance">{{ currency_symbol }}{{ total_balance|humanize_amount }}</div>
