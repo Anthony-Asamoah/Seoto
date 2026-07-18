@@ -37,3 +37,11 @@ class GeolocationProvider(ABC):
         Return a normalized dict: {city, region, country} for a coordinate
         pair (used to name a GPS fix), or None if it could not be resolved.
         """
+
+    @abstractmethod
+    def search(self, query: str) -> list:
+        """
+        Return a list of matching places for a free-text city query, each a
+        normalized dict {city, region, country, lat, lon}. Empty list when
+        there are no matches or the lookup failed.
+        """

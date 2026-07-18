@@ -157,11 +157,14 @@ class IpApiGeolocationProvider(GeolocationProvider):
 
     ip-api.com only geolocates by IP, so reverse (coordinate -> place name)
     lookups — used to name a GPS fix — go to https://www.bigdatacloud.com's
-    free client reverse-geocode endpoint instead, which needs no API key.
+    free client reverse-geocode endpoint, and forward (city name -> places)
+    searches go to Open-Meteo's free geocoding endpoint. Neither needs an
+    API key.
     """
 
     BASE_URL = 'http://ip-api.com/json/{ip}'
     REVERSE_URL = 'https://api.bigdatacloud.net/data/reverse-geocode-client'
+    SEARCH_URL = 'https://geocoding-api.open-meteo.com/v1/search'
 
     def locate(self, ip):
         try:
@@ -205,3 +208,28 @@ class IpApiGeolocationProvider(GeolocationProvider):
         except Exception:
             logger.exception('IpApiGeolocationProvider.reverse failed for (%s, %s)', lat, lon)
             return None
+
+    def search(self, query):
+        try:
+            response = httpx.get(
+                self.SEARCH_URL,
+                params={'name': query, 'count': 6, 'language': 'en', 'format': 'json'},
+                timeout=8,
+            )
+            response.raise_for_status()
+            results = response.json().get('results') or []
+
+            return [
+                {
+                    'city': r.get('name', ''),
+                    'region': r.get('admin1', ''),
+                    'country': r.get('country', ''),
+                    'lat': r.get('latitude'),
+                    'lon': r.get('longitude'),
+                }
+                for r in results
+                if r.get('latitude') is not None and r.get('longitude') is not None
+            ]
+        except Exception:
+            logger.exception('IpApiGeolocationProvider.search failed for %r', query)
+            return []

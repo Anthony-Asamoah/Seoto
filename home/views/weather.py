@@ -25,7 +25,17 @@ def weather_forecast(request):
     lon = request.GET.get('lon')
 
     try:
-        if lat and lon:
+        if lat and lon and request.GET.get('source') == 'search':
+            # A place picked from search already carries its own name, so
+            # trust the supplied label instead of spending a reverse lookup.
+            lat, lon = float(lat), float(lon)
+            location = {
+                'city': request.GET.get('city', ''),
+                'region': request.GET.get('region', ''),
+                'country': request.GET.get('country', ''),
+            }
+            source = 'search'
+        elif lat and lon:
             lat, lon = float(lat), float(lon)
             reverse_cache_key = f'weather:reverse:{round(lat, 3)}:{round(lon, 3)}'
             location = cache.get(reverse_cache_key)
@@ -73,3 +83,25 @@ def weather_forecast(request):
     except Exception:
         logger.exception('weather_forecast failed')
         return JsonResponse({'error': 'Could not load weather.'}, status=500)
+
+
+SEARCH_CACHE_TTL_SECONDS = 3600
+
+
+@require_http_methods(["GET"])
+def weather_search(request):
+    """Return matching places for a free-text city query (for the location search)."""
+    query = (request.GET.get('q') or '').strip()
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
+    try:
+        cache_key = f'weather:search:{query.lower()}'
+        results = cache.get(cache_key)
+        if results is None:
+            results = get_geolocation_provider().search(query)
+            cache.set(cache_key, results, SEARCH_CACHE_TTL_SECONDS)
+        return JsonResponse({'results': results})
+    except Exception:
+        logger.exception('weather_search failed for %r', query)
+        return JsonResponse({'error': 'Could not search locations.', 'results': []}, status=500)

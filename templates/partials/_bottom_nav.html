@@ -1,6 +1,7 @@
 {% url 'pwa:notifications_list' as notif_url %}
 {% url 'pwa:mark_notifications_read' as notif_read_url %}
 {% url 'weather_forecast' as weather_url %}
+{% url 'weather_search' as weather_search_url %}
 
 <!-- Weather dropdown panel (available to all visitors, authenticated or not) -->
 <div id="weather-overlay" class="notif-overlay" aria-hidden="true"></div>
@@ -16,6 +17,16 @@
                 <i class="fas fa-times" aria-hidden="true"></i>
             </button>
         </div>
+    </div>
+    <div class="weather-search">
+        <i class="fas fa-magnifying-glass weather-search-icon" aria-hidden="true"></i>
+        <input type="text" id="weather-search-input" class="weather-search-input"
+               placeholder="Search for a city…" autocomplete="off" spellcheck="false"
+               aria-label="Search for a city" aria-controls="weather-search-results" aria-expanded="false">
+        <button type="button" id="weather-search-clear" class="weather-search-clear" aria-label="Clear search" hidden>
+            <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
+        <div id="weather-search-results" class="weather-search-results" role="listbox" hidden></div>
     </div>
     <div class="weather-body" id="weather-body">
         <div class="notif-loading">
@@ -277,10 +288,19 @@
 <script>
 (function () {
     var FORECAST_URL = '{{ weather_url }}';
+    var SEARCH_URL = '{{ weather_search_url }}';
     var GEO_GRANTED_KEY = 'seoto_weather_geo_granted';
-    var lastPayload = null; // avoid refetching every time the panel is reopened
-    var currentDaily = [];  // latest daily/hourly data, for the click-to-expand row
+    var RECENTS_KEY = 'seoto_weather_recents';
+    var homePayload = null;      // the visitor's own location (IP or GPS)
+    var viewingSearch = false;   // true while showing a searched-for city
+    var currentDaily = [];       // latest daily/hourly data, for the click-to-expand row
     var expandedDayIndex = null;
+
+    function escapeHtml(str) {
+        return String(str == null ? '' : str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
 
     function formatTemp(value) {
         if (value === null || value === undefined) return '--';
@@ -296,8 +316,9 @@
 
     function placeName(payload) {
         var loc = payload.location || {};
-        return [loc.city, loc.region, loc.country].filter(Boolean).join(', ')
-            || (payload.source === 'gps' ? 'Your current location' : 'Your area');
+        var name = [loc.city, loc.region, loc.country].filter(Boolean).join(', ');
+        if (name) return escapeHtml(name);
+        return payload.source === 'gps' ? 'Your current location' : 'Your area';
     }
 
     function renderDaily(days) {
@@ -410,7 +431,7 @@
             '</div>' +
             '<div class="weather-hilo"><span>H: ' + formatTemp(w.high) + '</span><span>L: ' + formatTemp(w.low) + '</span></div>' +
             renderDaily(w.daily) +
-            '<div class="weather-source">' + (payload.source === 'gps' ? 'Based on your device location' : 'Based on your approximate (IP) location') + '</div>' +
+            '<div class="weather-source">' + sourceLabel(payload.source) + '</div>' +
         '</div>';
 
         var hourlyRow = document.getElementById('weather-hourly-row');
@@ -419,13 +440,26 @@
         updateLocateButton(payload);
     }
 
+    function sourceLabel(source) {
+        if (source === 'search') return 'Showing a searched location';
+        if (source === 'gps')    return 'Based on your device location';
+        return 'Based on your approximate (IP) location';
+    }
+
     function updateLocateButton(payload) {
         var btn = document.getElementById('weather-locate-btn');
         if (!btn) return;
-        if (payload.source === 'gps') {
+        if (payload.source === 'search') {
+            // Viewing another city — the button becomes the way back home.
+            var home = (homePayload && homePayload.location) || {};
+            var homeLabel = [home.city, home.region].filter(Boolean).join(', ') || 'My location';
+            btn.innerHTML = '<i class="fas fa-arrow-left" aria-hidden="true"></i><span>' + escapeHtml(homeLabel) + '</span>';
+            btn.classList.add('located');
+            btn.title = 'Back to my location';
+        } else if (payload.source === 'gps') {
             var loc = payload.location || {};
             var label = [loc.city, loc.region].filter(Boolean).join(', ') || 'Current location';
-            btn.innerHTML = '<i class="fas fa-location-dot" aria-hidden="true"></i><span>' + label + '</span>';
+            btn.innerHTML = '<i class="fas fa-location-dot" aria-hidden="true"></i><span>' + escapeHtml(label) + '</span>';
             btn.classList.add('located');
             btn.title = 'Refresh precise location';
         } else {
@@ -435,13 +469,27 @@
         }
     }
 
+    function onLocateClick() {
+        if (viewingSearch && homePayload) {
+            // "Back to my location" — restore the home view without a refetch.
+            viewingSearch = false;
+            renderWeather(homePayload);
+        } else {
+            useMyLocation();
+        }
+    }
+
     function renderError(message) {
         var body = document.getElementById('weather-body');
         if (!body) return;
         body.innerHTML = '<div class="notif-empty"><i class="fas fa-exclamation-circle"></i><span>' + message + '</span></div>';
     }
 
-    function fetchWeather(query) {
+    // isHome (default true) marks a fetch of the visitor's own location, whose
+    // result is remembered as `homePayload` for the "back to my location"
+    // button; search fetches pass false so they don't overwrite home.
+    function fetchWeather(query, isHome) {
+        if (isHome === undefined) isHome = true;
         var body = document.getElementById('weather-body');
         if (body) body.innerHTML = '<div class="notif-loading"><i class="fas fa-spinner fa-spin"></i></div>';
 
@@ -451,7 +499,8 @@
                 return r.json();
             })
             .then(function (data) {
-                lastPayload = data;
+                if (isHome) homePayload = data;
+                viewingSearch = !isHome;
                 renderWeather(data);
             })
             .catch(function (err) {
@@ -476,7 +525,7 @@
             function () {
                 try { localStorage.removeItem(GEO_GRANTED_KEY); } catch (e) {}
                 renderError('Location permission denied — showing your approximate location instead.');
-                if (lastPayload) renderWeather(lastPayload);
+                if (homePayload) { viewingSearch = false; renderWeather(homePayload); }
             },
             { timeout: 10000, maximumAge: 300000 }
         );
@@ -526,6 +575,108 @@
         }
     }
 
+    /* ── Location search ── */
+
+    function getRecents() {
+        try { return JSON.parse(localStorage.getItem(RECENTS_KEY)) || []; }
+        catch (e) { return []; }
+    }
+
+    function addRecent(place) {
+        try {
+            var recents = getRecents().filter(function (p) {
+                return !(p.lat === place.lat && p.lon === place.lon);
+            });
+            recents.unshift(place);
+            localStorage.setItem(RECENTS_KEY, JSON.stringify(recents.slice(0, 5)));
+        } catch (e) {}
+    }
+
+    function placeLabel(place) {
+        return [place.city, place.region, place.country].filter(Boolean).join(', ');
+    }
+
+    function hideSearchResults() {
+        var results = document.getElementById('weather-search-results');
+        var input = document.getElementById('weather-search-input');
+        if (results) { results.hidden = true; results.innerHTML = ''; }
+        if (input) input.setAttribute('aria-expanded', 'false');
+    }
+
+    function renderSearchResults(places, heading) {
+        var results = document.getElementById('weather-search-results');
+        var input = document.getElementById('weather-search-input');
+        if (!results) return;
+        if (!places.length) { hideSearchResults(); return; }
+
+        results.innerHTML = (heading ? '<div class="weather-search-heading">' + heading + '</div>' : '') +
+            places.map(function (p, i) {
+                return '<button type="button" class="weather-search-item" role="option" data-idx="' + i + '">' +
+                    '<i class="fas fa-location-dot" aria-hidden="true"></i>' +
+                    '<span>' + escapeHtml(placeLabel(p)) + '</span>' +
+                '</button>';
+            }).join('');
+
+        results.querySelectorAll('.weather-search-item').forEach(function (el) {
+            el.addEventListener('click', function () {
+                pickPlace(places[parseInt(el.getAttribute('data-idx'), 10)]);
+            });
+        });
+
+        results.hidden = false;
+        if (input) input.setAttribute('aria-expanded', 'true');
+    }
+
+    function showRecents() {
+        var recents = getRecents();
+        if (recents.length) renderSearchResults(recents, 'Recent');
+        else hideSearchResults();
+    }
+
+    function pickPlace(place) {
+        if (!place) return;
+        addRecent(place);
+        var input = document.getElementById('weather-search-input');
+        var clearBtn = document.getElementById('weather-search-clear');
+        if (input) { input.value = ''; input.blur(); }
+        if (clearBtn) clearBtn.hidden = true;
+        hideSearchResults();
+
+        fetchWeather(
+            'lat=' + encodeURIComponent(place.lat) +
+            '&lon=' + encodeURIComponent(place.lon) +
+            '&source=search' +
+            '&city=' + encodeURIComponent(place.city || '') +
+            '&region=' + encodeURIComponent(place.region || '') +
+            '&country=' + encodeURIComponent(place.country || ''),
+            false
+        );
+    }
+
+    var searchDebounce = null;
+    var searchSeq = 0;
+    function onSearchInput() {
+        var input = document.getElementById('weather-search-input');
+        var clearBtn = document.getElementById('weather-search-clear');
+        if (!input) return;
+        var q = input.value.trim();
+        if (clearBtn) clearBtn.hidden = !q;
+
+        clearTimeout(searchDebounce);
+        if (q.length < 2) { showRecents(); return; }
+
+        searchDebounce = setTimeout(function () {
+            var seq = ++searchSeq;
+            fetch(SEARCH_URL + '?q=' + encodeURIComponent(q), { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (seq !== searchSeq) return; // a newer keystroke already superseded this
+                    renderSearchResults(data.results || []);
+                })
+                .catch(function () { if (seq === searchSeq) hideSearchResults(); });
+        }, 280);
+    }
+
     function openWeatherPanel() {
         var panel   = document.getElementById('weather-panel');
         var overlay = document.getElementById('weather-overlay');
@@ -541,7 +692,7 @@
             if (el) el.setAttribute('aria-expanded', 'true');
         });
 
-        if (!lastPayload) initialFetch();
+        if (!homePayload) initialFetch();
     }
 
     function closeWeatherPanel() {
@@ -555,6 +706,13 @@
             var el = document.getElementById(id);
             if (el) el.setAttribute('aria-expanded', 'false');
         });
+
+        // Reset the search field so it opens clean next time
+        var searchInput = document.getElementById('weather-search-input');
+        var searchClear = document.getElementById('weather-search-clear');
+        if (searchInput) searchInput.value = '';
+        if (searchClear) searchClear.hidden = true;
+        hideSearchResults();
     }
 
     window.SeotoCloseWeatherPanel = closeWeatherPanel;
@@ -580,7 +738,29 @@
         if (overlay)  overlay.addEventListener('click', closeWeatherPanel);
 
         var locateBtn = document.getElementById('weather-locate-btn');
-        if (locateBtn) locateBtn.addEventListener('click', useMyLocation);
+        if (locateBtn) locateBtn.addEventListener('click', onLocateClick);
+
+        var searchInput = document.getElementById('weather-search-input');
+        var searchClear = document.getElementById('weather-search-clear');
+        if (searchInput) {
+            searchInput.addEventListener('input', onSearchInput);
+            searchInput.addEventListener('focus', function () {
+                if (!searchInput.value.trim()) showRecents();
+            });
+        }
+        if (searchClear) {
+            searchClear.addEventListener('click', function () {
+                searchInput.value = '';
+                searchClear.hidden = true;
+                searchInput.focus();
+                showRecents();
+            });
+        }
+        // Dismiss the results when tapping outside the search area
+        document.addEventListener('click', function (e) {
+            var searchWrap = e.target.closest && e.target.closest('.weather-search');
+            if (!searchWrap) hideSearchResults();
+        });
 
         var weatherBody = document.getElementById('weather-body');
         if (weatherBody) {

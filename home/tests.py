@@ -111,3 +111,70 @@ class WeatherForecastViewTests(TestCase):
         response = self.client.post(self.url)
 
         self.assertEqual(response.status_code, 405)
+
+    @patch('home.views.weather.get_weather_provider')
+    @patch('home.views.weather.get_geolocation_provider')
+    def test_searched_location_uses_supplied_label_without_reverse_geocode(self, mock_get_geo_provider, mock_get_weather_provider):
+        mock_get_weather_provider.return_value.get_forecast.return_value = {
+            'temperature': 12.0, 'feels_like': 10.0, 'humidity': 80, 'wind_speed': 15.0,
+            'condition_code': 3, 'condition_text': 'Overcast', 'icon': 'fa-cloud',
+            'high': 14.0, 'low': 8.0, 'timezone': 'Europe/London', 'daily': [],
+        }
+
+        response = self.client.get(self.url, {
+            'lat': '51.5', 'lon': '-0.12', 'source': 'search',
+            'city': 'London', 'region': 'England', 'country': 'United Kingdom',
+        })
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['source'], 'search')
+        self.assertEqual(data['location']['city'], 'London')
+        self.assertEqual(data['location']['country'], 'United Kingdom')
+        mock_get_weather_provider.return_value.get_forecast.assert_called_once_with(51.5, -0.12)
+        mock_get_geo_provider.return_value.reverse.assert_not_called()
+
+
+class WeatherSearchViewTests(TestCase):
+    def setUp(self):
+        self.url = reverse('weather_search')
+        cache.clear()
+
+    @patch('home.views.weather.get_geolocation_provider')
+    def test_returns_matching_places(self, mock_get_geo_provider):
+        mock_get_geo_provider.return_value.search.return_value = [
+            {'city': 'London', 'region': 'England', 'country': 'United Kingdom', 'lat': 51.5, 'lon': -0.12},
+            {'city': 'London', 'region': 'Ontario', 'country': 'Canada', 'lat': 42.98, 'lon': -81.25},
+        ]
+
+        response = self.client.get(self.url, {'q': 'London'})
+
+        self.assertEqual(response.status_code, 200)
+        results = response.json()['results']
+        self.assertEqual(len(results), 2)
+        self.assertEqual(results[0]['country'], 'United Kingdom')
+        mock_get_geo_provider.return_value.search.assert_called_once_with('London')
+
+    @patch('home.views.weather.get_geolocation_provider')
+    def test_short_query_skips_provider(self, mock_get_geo_provider):
+        response = self.client.get(self.url, {'q': 'L'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['results'], [])
+        mock_get_geo_provider.return_value.search.assert_not_called()
+
+    @patch('home.views.weather.get_geolocation_provider')
+    def test_second_identical_query_is_served_from_cache(self, mock_get_geo_provider):
+        mock_get_geo_provider.return_value.search.return_value = [
+            {'city': 'Paris', 'region': 'Île-de-France', 'country': 'France', 'lat': 48.85, 'lon': 2.35},
+        ]
+
+        self.client.get(self.url, {'q': 'Paris'})
+        self.client.get(self.url, {'q': 'paris'})  # case-insensitive cache key
+
+        self.assertEqual(mock_get_geo_provider.return_value.search.call_count, 1)
+
+    def test_rejects_non_get_methods(self):
+        response = self.client.post(self.url)
+
+        self.assertEqual(response.status_code, 405)

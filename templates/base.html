@@ -571,6 +571,110 @@
             flex: 1;
         }
 
+        /* Location search */
+        .weather-search {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 16px 0;
+            padding: 8px 12px;
+            background: #f3f4f6;
+            border-radius: 10px;
+        }
+
+        .weather-search-icon {
+            font-size: 0.85rem;
+            color: #9ca3af;
+            flex-shrink: 0;
+        }
+
+        .weather-search-input {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 0.88rem;
+            color: #111827;
+        }
+
+        .weather-search-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .weather-search-clear {
+            border: none;
+            background: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 2px 4px;
+            font-size: 0.85rem;
+            line-height: 1;
+            flex-shrink: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .weather-search-clear[hidden] { display: none; }
+
+        .weather-search-results {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 5;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .14), 0 0 0 1px rgba(0, 0, 0, .06);
+            overflow: hidden;
+            max-height: 240px;
+            overflow-y: auto;
+        }
+
+        .weather-search-results[hidden] { display: none; }
+
+        .weather-search-heading {
+            padding: 8px 14px 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #9ca3af;
+        }
+
+        .weather-search-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 11px 14px;
+            border: none;
+            background: none;
+            text-align: left;
+            font-size: 0.85rem;
+            color: #111827;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .weather-search-item:hover,
+        .weather-search-item:focus-visible {
+            background: #f0f5ff;
+            outline: none;
+        }
+
+        .weather-search-item i {
+            font-size: 0.8rem;
+            color: #175a9c;
+            flex-shrink: 0;
+        }
+
+        .weather-search-item span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         /* Staggered fade + rise on first paint, so content doesn't just pop in */
         @keyframes weatherFadeIn {
             from { opacity: 0; transform: translateY(6px); }
