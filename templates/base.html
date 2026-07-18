@@ -658,21 +658,44 @@
         }
 
         .weather-search-item:hover,
-        .weather-search-item:focus-visible {
+        .weather-search-item:focus-visible,
+        .weather-search-item.active {
             background: #f0f5ff;
             outline: none;
         }
 
-        .weather-search-item i {
+        .weather-search-item > i {
             font-size: 0.8rem;
             color: #175a9c;
             flex-shrink: 0;
         }
 
-        .weather-search-item span {
+        .weather-search-item > span {
+            flex: 1;
+            min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .weather-search-remove {
+            flex-shrink: 0;
+            border: none;
+            background: none;
+            color: #c0c4cc;
+            cursor: pointer;
+            padding: 4px 6px;
+            font-size: 0.8rem;
+            line-height: 1;
+            border-radius: 6px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .weather-search-remove:hover,
+        .weather-search-remove:focus-visible {
+            color: #c0392b;
+            background: rgba(192, 57, 43, 0.08);
+            outline: none;
         }
 
         /* Staggered fade + rise on first paint, so content doesn't just pop in */
