@@ -278,10 +278,19 @@
 (function () {
     var FORECAST_URL = '{{ weather_url }}';
     var lastPayload = null; // avoid refetching every time the panel is reopened
+    var currentDaily = [];  // latest daily/hourly data, for the click-to-expand row
+    var expandedDayIndex = null;
 
     function formatTemp(value) {
         if (value === null || value === undefined) return '--';
         return Math.round(value) + '°C';
+    }
+
+    function formatHourLabel(isoTime) {
+        var hour = parseInt(isoTime.split('T')[1].split(':')[0], 10);
+        var period = hour >= 12 ? 'PM' : 'AM';
+        var displayHour = hour % 12 || 12;
+        return displayHour + period;
     }
 
     function placeName(payload) {
@@ -292,19 +301,62 @@
 
     function renderDaily(days) {
         if (!days || !days.length) return '';
-        return '<div class="weather-daily">' + days.map(function (d) {
-            return '<div class="weather-day">' +
+        return '<div class="weather-daily" id="weather-daily-row">' + days.map(function (d, i) {
+            return '<div class="weather-day" data-day-index="' + i + '" role="button" tabindex="0" ' +
+                    'aria-expanded="false" aria-label="Hourly breakdown for ' + d.day_label + '">' +
                 '<div class="weather-day-label">' + d.day_label + '</div>' +
                 '<i class="fas ' + d.icon + '" aria-hidden="true"></i>' +
                 '<div class="weather-day-temps"><span>' + formatTemp(d.high) + '</span><span class="weather-day-low">' + formatTemp(d.low) + '</span></div>' +
             '</div>';
-        }).join('') + '</div>';
+        }).join('') + '</div>' +
+        '<div class="weather-hourly" id="weather-hourly-row" hidden></div>';
+    }
+
+    function toggleHourly(dayIndex) {
+        var hourlyRow = document.getElementById('weather-hourly-row');
+        var dayEls = document.querySelectorAll('.weather-day');
+        if (!hourlyRow || !dayEls.length) return;
+
+        if (expandedDayIndex === dayIndex) {
+            expandedDayIndex = null;
+            hourlyRow.hidden = true;
+            hourlyRow.innerHTML = '';
+            dayEls.forEach(function (el) {
+                el.classList.remove('active');
+                el.setAttribute('aria-expanded', 'false');
+            });
+            return;
+        }
+
+        var day = currentDaily[dayIndex];
+        if (!day) return;
+
+        expandedDayIndex = dayIndex;
+        dayEls.forEach(function (el) {
+            var isActive = parseInt(el.getAttribute('data-day-index'), 10) === dayIndex;
+            el.classList.toggle('active', isActive);
+            el.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+        });
+
+        var hours = day.hourly || [];
+        hourlyRow.innerHTML = hours.length
+            ? hours.map(function (h) {
+                return '<div class="weather-hour">' +
+                    '<div class="weather-hour-label">' + formatHourLabel(h.time) + '</div>' +
+                    '<i class="fas ' + h.icon + '" aria-hidden="true"></i>' +
+                    '<div class="weather-hour-temp">' + formatTemp(h.temperature) + '</div>' +
+                '</div>';
+            }).join('')
+            : '<div class="weather-hourly-empty">No hourly data available</div>';
+        hourlyRow.hidden = false;
     }
 
     function renderWeather(payload) {
         var body = document.getElementById('weather-body');
         if (!body) return;
         var w = payload.weather;
+        currentDaily = w.daily || [];
+        expandedDayIndex = null;
 
         body.innerHTML =
             '<div class="weather-current">' +
@@ -441,6 +493,21 @@
 
         var locateBtn = document.getElementById('weather-locate-btn');
         if (locateBtn) locateBtn.addEventListener('click', useMyLocation);
+
+        var weatherBody = document.getElementById('weather-body');
+        if (weatherBody) {
+            weatherBody.addEventListener('click', function (e) {
+                var dayEl = e.target.closest('.weather-day');
+                if (dayEl) toggleHourly(parseInt(dayEl.getAttribute('data-day-index'), 10));
+            });
+            weatherBody.addEventListener('keydown', function (e) {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                var dayEl = e.target.closest('.weather-day');
+                if (!dayEl) return;
+                e.preventDefault();
+                toggleHourly(parseInt(dayEl.getAttribute('data-day-index'), 10));
+            });
+        }
     });
 })();
 </script>

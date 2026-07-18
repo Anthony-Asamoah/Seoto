@@ -648,6 +648,24 @@
             gap: 5px;
             flex: 1;
             min-width: 0;
+            cursor: pointer;
+            padding: 4px 2px;
+            border-radius: 8px;
+            transition: background 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .weather-day:hover {
+            background: rgba(23, 90, 156, 0.07);
+        }
+
+        .weather-day.active {
+            background: rgba(23, 90, 156, 0.13);
+        }
+
+        .weather-day:focus-visible {
+            outline: 2px solid #175a9c;
+            outline-offset: 1px;
         }
 
         .weather-day-label {
@@ -673,6 +691,55 @@
         .weather-day-low {
             font-weight: 500;
             color: #9ca3af;
+        }
+
+        .weather-hourly {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            padding: 10px 2px 12px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #f3f4f6;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .weather-hourly[hidden] {
+            display: none;
+        }
+
+        .weather-hour {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex: 0 0 auto;
+            min-width: 40px;
+        }
+
+        .weather-hour-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: #6b7280;
+            white-space: nowrap;
+        }
+
+        .weather-hour i {
+            font-size: 0.95rem;
+            color: #175a9c;
+        }
+
+        .weather-hour-temp {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .weather-hourly-empty {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            padding: 4px 0;
+            text-align: center;
+            width: 100%;
         }
 
         .weather-source {

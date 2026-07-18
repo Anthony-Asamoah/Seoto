@@ -16,7 +16,9 @@ class WeatherProvider(ABC):
         Return a normalized forecast dict:
             {temperature, feels_like, humidity, wind_speed,
              condition_code, condition_text, icon, high, low, timezone,
-             daily: [{date, day_label, high, low, condition_text, icon}, ...]}
+             daily: [{date, day_label, high, low, condition_text, icon,
+                      hourly: [{time, hour_label, temperature,
+                                condition_text, icon}, ...]}, ...]}
         or None if the forecast could not be retrieved.
         """
 
