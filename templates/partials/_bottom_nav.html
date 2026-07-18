@@ -1,5 +1,28 @@
 {% url 'pwa:notifications_list' as notif_url %}
 {% url 'pwa:mark_notifications_read' as notif_read_url %}
+{% url 'weather_forecast' as weather_url %}
+
+<!-- Weather dropdown panel (available to all visitors, authenticated or not) -->
+<div id="weather-overlay" class="notif-overlay" aria-hidden="true"></div>
+<div id="weather-panel" class="notif-panel" role="dialog" aria-label="Weather" aria-hidden="true">
+    <div class="notif-panel-header">
+        <span class="notif-panel-title">Weather</span>
+        <div class="notif-panel-actions">
+            <button type="button" class="notif-push-toggle" id="weather-locate-btn">
+                <i class="fas fa-location-crosshairs" aria-hidden="true"></i>
+                <span>Use my location</span>
+            </button>
+            <button class="notif-panel-close" id="weather-close" aria-label="Close weather">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+    </div>
+    <div class="weather-body" id="weather-body">
+        <div class="notif-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+    </div>
+</div>
 
 <!-- Notification dropdown panel (slides up from above the nav) -->
 {% if user.is_authenticated %}
@@ -69,6 +92,12 @@
         <i class="fas fa-home" aria-hidden="true"></i>
         <span>Home</span>
     </a>
+
+    <button class="bottom-nav-item" id="weather-toggle-mobile"
+            aria-label="Weather" aria-expanded="false" aria-controls="weather-panel">
+        <i class="fas fa-cloud-sun" aria-hidden="true"></i>
+        <span>Weather</span>
+    </button>
 
     <div class="nav-divider" aria-hidden="true"></div>
 
@@ -141,6 +170,8 @@
         var overlay = document.getElementById('notif-overlay');
         if (!panel) return;
 
+        if (window.SeotoCloseWeatherPanel) window.SeotoCloseWeatherPanel();
+
         panel.classList.add('open');
         panel.setAttribute('aria-hidden', 'false');
         overlay.classList.add('active');
@@ -190,6 +221,8 @@
         });
     }
 
+    window.SeotoCloseNotifPanel = closePanel;
+
     document.addEventListener('DOMContentLoaded', function () {
         // Hide back button when there is nowhere to go back to
         var backBtn = document.getElementById('bottom-nav-back');
@@ -237,6 +270,145 @@
                 });
             });
         });
+    });
+})();
+</script>
+
+<script>
+(function () {
+    var FORECAST_URL = '{{ weather_url }}';
+    var lastPayload = null; // avoid refetching every time the panel is reopened
+
+    function formatTemp(value) {
+        if (value === null || value === undefined) return '--';
+        return Math.round(value) + '°C';
+    }
+
+    function renderWeather(payload) {
+        var body = document.getElementById('weather-body');
+        if (!body) return;
+        var w = payload.weather;
+        var loc = payload.location || {};
+        var placeName = payload.source === 'gps'
+            ? 'Your current location'
+            : ([loc.city, loc.region, loc.country].filter(Boolean).join(', ') || 'Your area');
+
+        body.innerHTML =
+            '<div class="weather-current">' +
+                '<i class="fas ' + w.icon + '" aria-hidden="true"></i>' +
+                '<div class="weather-temp">' + formatTemp(w.temperature) + '</div>' +
+            '</div>' +
+            '<div class="weather-place">' + placeName + '</div>' +
+            '<div class="weather-condition">' + w.condition_text + '</div>' +
+            '<div class="weather-details">' +
+                '<span><i class="fas fa-temperature-low" aria-hidden="true"></i> Feels ' + formatTemp(w.feels_like) + '</span>' +
+                '<span><i class="fas fa-tint" aria-hidden="true"></i> ' + (w.humidity != null ? w.humidity + '%' : '--') + '</span>' +
+                '<span><i class="fas fa-wind" aria-hidden="true"></i> ' + (w.wind_speed != null ? Math.round(w.wind_speed) + 'km/h' : '--') + '</span>' +
+            '</div>' +
+            '<div class="weather-hilo"><span>H: ' + formatTemp(w.high) + '</span><span>L: ' + formatTemp(w.low) + '</span></div>' +
+            '<div class="weather-source">' + (payload.source === 'gps' ? 'Based on your device location' : 'Based on your approximate (IP) location') + '</div>';
+    }
+
+    function renderError(message) {
+        var body = document.getElementById('weather-body');
+        if (!body) return;
+        body.innerHTML = '<div class="notif-empty"><i class="fas fa-exclamation-circle"></i><span>' + message + '</span></div>';
+    }
+
+    function fetchWeather(query) {
+        var body = document.getElementById('weather-body');
+        if (body) body.innerHTML = '<div class="notif-loading"><i class="fas fa-spinner fa-spin"></i></div>';
+
+        fetch(FORECAST_URL + (query ? '?' + query : ''), { credentials: 'same-origin' })
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.json();
+            })
+            .then(function (data) {
+                lastPayload = data;
+                renderWeather(data);
+            })
+            .catch(function (err) {
+                console.error('[Seoto] Weather fetch failed:', err && err.message);
+                renderError('Could not load weather right now.');
+            });
+    }
+
+    function useMyLocation() {
+        if (!navigator.geolocation) {
+            renderError('Precise location is not supported on this browser.');
+            return;
+        }
+        var body = document.getElementById('weather-body');
+        if (body) body.innerHTML = '<div class="notif-loading"><i class="fas fa-spinner fa-spin"></i></div>';
+
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                fetchWeather('lat=' + position.coords.latitude + '&lon=' + position.coords.longitude);
+            },
+            function () {
+                renderError('Location permission denied — showing your approximate location instead.');
+                if (lastPayload) renderWeather(lastPayload);
+            },
+            { timeout: 10000, maximumAge: 300000 }
+        );
+    }
+
+    function openWeatherPanel() {
+        var panel   = document.getElementById('weather-panel');
+        var overlay = document.getElementById('weather-overlay');
+        if (!panel) return;
+
+        if (window.SeotoCloseNotifPanel) window.SeotoCloseNotifPanel();
+
+        panel.classList.add('open');
+        panel.setAttribute('aria-hidden', 'false');
+        overlay.classList.add('active');
+        ['weather-toggle', 'weather-toggle-mobile'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.setAttribute('aria-expanded', 'true');
+        });
+
+        if (!lastPayload) fetchWeather();
+    }
+
+    function closeWeatherPanel() {
+        var panel   = document.getElementById('weather-panel');
+        var overlay = document.getElementById('weather-overlay');
+        if (!panel) return;
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden', 'true');
+        overlay.classList.remove('active');
+        ['weather-toggle', 'weather-toggle-mobile'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    window.SeotoCloseWeatherPanel = closeWeatherPanel;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        ['weather-toggle', 'weather-toggle-mobile'].forEach(function (id) {
+            var toggle = document.getElementById(id);
+            if (toggle) {
+                toggle.addEventListener('click', function () {
+                    var panel = document.getElementById('weather-panel');
+                    if (panel && panel.classList.contains('open')) {
+                        closeWeatherPanel();
+                    } else {
+                        openWeatherPanel();
+                    }
+                });
+            }
+        });
+
+        var closeBtn = document.getElementById('weather-close');
+        var overlay  = document.getElementById('weather-overlay');
+        if (closeBtn) closeBtn.addEventListener('click', closeWeatherPanel);
+        if (overlay)  overlay.addEventListener('click', closeWeatherPanel);
+
+        var locateBtn = document.getElementById('weather-locate-btn');
+        if (locateBtn) locateBtn.addEventListener('click', useMyLocation);
     });
 })();
 </script>

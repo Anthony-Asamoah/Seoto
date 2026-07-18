@@ -1,0 +1,67 @@
+import logging
+
+from django.core.cache import cache
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+
+from home.utils import get_client_ip
+from seoto.external_services.weather import get_geolocation_provider, get_weather_provider
+
+logger = logging.getLogger(__name__)
+
+CACHE_TTL_SECONDS = 600
+
+
+@require_http_methods(["GET"])
+def weather_forecast(request):
+    """
+    Return current weather for the requester.
+
+    Defaults to IP-based geolocation; pass ?lat=&lon= (from the browser's
+    Geolocation API) to use a precise GPS fix instead.
+    """
+    lat = request.GET.get('lat')
+    lon = request.GET.get('lon')
+
+    try:
+        if lat and lon:
+            lat, lon = float(lat), float(lon)
+            location = {'city': '', 'region': '', 'country': ''}
+            source = 'gps'
+        else:
+            ip = get_client_ip(request)
+            cache_key = f'weather:geo:{ip}'
+            location = cache.get(cache_key)
+            if location is None:
+                location = get_geolocation_provider().locate(ip)
+                if location is not None:
+                    cache.set(cache_key, location, CACHE_TTL_SECONDS)
+
+            if location is None:
+                return JsonResponse(
+                    {'error': 'Could not determine your location from your IP address.'},
+                    status=503,
+                )
+            lat, lon = location['lat'], location['lon']
+            source = 'ip'
+
+        weather_cache_key = f'weather:forecast:{round(lat, 2)}:{round(lon, 2)}'
+        weather = cache.get(weather_cache_key)
+        if weather is None:
+            weather = get_weather_provider().get_forecast(lat, lon)
+            if weather is not None:
+                cache.set(weather_cache_key, weather, CACHE_TTL_SECONDS)
+
+        if weather is None:
+            return JsonResponse({'error': 'Weather service is currently unavailable.'}, status=503)
+
+        return JsonResponse({
+            'source': source,
+            'location': location,
+            'weather': weather,
+        })
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Invalid coordinates.'}, status=400)
+    except Exception:
+        logger.exception('weather_forecast failed')
+        return JsonResponse({'error': 'Could not load weather.'}, status=500)

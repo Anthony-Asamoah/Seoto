@@ -9,6 +9,7 @@ from home.views import (
     message_detail,
     messages_list,
     user_analytics,
+    weather_forecast,
 )
 
 urlpatterns = [
@@ -19,4 +20,5 @@ urlpatterns = [
     path('dashboard/messages/', messages_list, name='dashboard_messages'),
     path('dashboard/messages/<int:pk>/', message_detail, name='message_detail'),
     path('incoming', incoming, name='incoming'),
+    path('weather/forecast/', weather_forecast, name='weather_forecast'),
 ]
