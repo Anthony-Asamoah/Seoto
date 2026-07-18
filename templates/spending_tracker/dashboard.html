@@ -31,6 +31,22 @@
             letter-spacing: 0.5px;
         }
 
+        @media (max-width: 576px) {
+            .stats-card {
+                padding: 10px 4px;
+                margin-bottom: 10px;
+            }
+
+            .stat-value {
+                font-size: 1rem;
+            }
+
+            .stat-label {
+                font-size: 0.55rem;
+                letter-spacing: 0;
+            }
+        }
+
         .income {
             color: #27ae60 !important;
         }
@@ -210,28 +226,28 @@
     <div class="main container">
         <!-- Financial Overview -->
         <div class="row mb-4">
-            <div class="col-md-3 col-sm-6">
+            <div class="col-3">
                 <div class="stats-card text-center">
-                    <div class="stat-value balance">{{ currency_symbol }}{{ total_balance|floatformat:2 }}</div>
+                    <div class="stat-value balance">{{ currency_symbol }}{{ total_balance|humanize_amount }}</div>
                     <div class="stat-label">Total Balance</div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-3">
                 <div class="stats-card text-center">
-                    <div class="stat-value income">+{{ currency_symbol }}{{ monthly_income|floatformat:2 }}</div>
+                    <div class="stat-value income">+{{ currency_symbol }}{{ monthly_income|humanize_amount }}</div>
                     <div class="stat-label">Monthly Income</div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-3">
                 <div class="stats-card text-center">
-                    <div class="stat-value expense">-{{ currency_symbol }}{{ monthly_expense|floatformat:2 }}</div>
+                    <div class="stat-value expense">-{{ currency_symbol }}{{ monthly_expense|humanize_amount }}</div>
                     <div class="stat-label">Monthly Expenses</div>
                 </div>
             </div>
-            <div class="col-md-3 col-sm-6">
+            <div class="col-3">
                 <div class="stats-card text-center">
                     <div class="stat-value {% if net_monthly >= 0 %}income{% else %}expense{% endif %}">
-                        {% if net_monthly >= 0 %}+{% endif %}{{ currency_symbol }}{{ net_monthly|floatformat:2 }}
+                        {% if net_monthly >= 0 %}+{% endif %}{{ currency_symbol }}{{ net_monthly|humanize_amount }}
                     </div>
                     <div class="stat-label">Net Monthly</div>
                 </div>
