@@ -61,6 +61,13 @@
 
 <nav class="bottom-nav" aria-label="Mobile navigation">
 
+    <a href="{% url 'apps' %}"
+       class="bottom-nav-item{% if request.resolver_match.url_name == 'apps' %} active{% endif %}"
+       aria-current="{% if request.resolver_match.url_name == 'apps' %}page{% else %}false{% endif %}">
+        <i class="fas fa-home" aria-hidden="true"></i>
+        <span>Home</span>
+    </a>
+
     {% if user.is_authenticated %}
 
         <a href="{% url 'profile' user.username %}"
@@ -69,6 +76,12 @@
             <i class="fas fa-user" aria-hidden="true"></i>
             <span>Profile</span>
         </a>
+
+        <button class="bottom-nav-item" id="weather-toggle-mobile"
+                aria-label="Weather" aria-expanded="false" aria-controls="weather-panel">
+            <i class="fas fa-cloud-sun" aria-hidden="true"></i>
+            <span>Weather</span>
+        </button>
 
         <button class="bottom-nav-item" id="notif-toggle"
                 aria-label="Notifications" aria-expanded="false" aria-controls="notif-panel">
@@ -95,20 +108,13 @@
             <span>Sign up</span>
         </a>
 
+        <button class="bottom-nav-item" id="weather-toggle-mobile"
+                aria-label="Weather" aria-expanded="false" aria-controls="weather-panel">
+            <i class="fas fa-cloud-sun" aria-hidden="true"></i>
+            <span>Weather</span>
+        </button>
+
     {% endif %}
-
-    <a href="{% url 'apps' %}"
-       class="bottom-nav-item{% if request.resolver_match.url_name == 'apps' %} active{% endif %}"
-       aria-current="{% if request.resolver_match.url_name == 'apps' %}page{% else %}false{% endif %}">
-        <i class="fas fa-home" aria-hidden="true"></i>
-        <span>Home</span>
-    </a>
-
-    <button class="bottom-nav-item" id="weather-toggle-mobile"
-            aria-label="Weather" aria-expanded="false" aria-controls="weather-panel">
-        <i class="fas fa-cloud-sun" aria-hidden="true"></i>
-        <span>Weather</span>
-    </button>
 
     <div class="nav-divider" aria-hidden="true"></div>
 
@@ -190,6 +196,7 @@
             var el = document.getElementById(id);
             if (el) el.setAttribute('aria-expanded', 'true');
         });
+        if (window.SeotoSetBottomNavActive) window.SeotoSetBottomNavActive(document.getElementById('notif-toggle'));
 
         // Fetch notifications
         fetch(NOTIF_URL, { credentials: 'same-origin' })
@@ -230,6 +237,7 @@
             var el = document.getElementById(id);
             if (el) el.setAttribute('aria-expanded', 'false');
         });
+        if (window.SeotoRestoreBottomNavActive) window.SeotoRestoreBottomNavActive();
     }
 
     window.SeotoCloseNotifPanel = closePanel;
@@ -765,6 +773,7 @@
             var el = document.getElementById(id);
             if (el) el.setAttribute('aria-expanded', 'true');
         });
+        if (window.SeotoSetBottomNavActive) window.SeotoSetBottomNavActive(document.getElementById('weather-toggle-mobile'));
 
         if (!homePayload) initialFetch();
     }
@@ -787,11 +796,34 @@
         if (searchInput) searchInput.value = '';
         if (searchClear) searchClear.hidden = true;
         hideSearchResults();
+
+        if (window.SeotoRestoreBottomNavActive) window.SeotoRestoreBottomNavActive();
     }
 
     window.SeotoCloseWeatherPanel = closeWeatherPanel;
 
+    // ── Bottom-nav active indicator: while a panel (Weather/Alerts) is open,
+    // move the highlight to that panel's button; restore the page's own item
+    // when it closes. Shared by both the weather and notification scripts.
+    window.__seotoDefaultNavItem = null;
+    window.SeotoSetBottomNavActive = function (el) {
+        document.querySelectorAll('.bottom-nav .bottom-nav-item.active').forEach(function (x) {
+            x.classList.remove('active');
+        });
+        if (el) el.classList.add('active');
+    };
+    window.SeotoRestoreBottomNavActive = function () {
+        document.querySelectorAll('.bottom-nav .bottom-nav-item.active').forEach(function (x) {
+            x.classList.remove('active');
+        });
+        if (window.__seotoDefaultNavItem) window.__seotoDefaultNavItem.classList.add('active');
+    };
+
     document.addEventListener('DOMContentLoaded', function () {
+        // Remember the nav item for the current page so it can be restored
+        // once an open panel is dismissed.
+        window.__seotoDefaultNavItem = document.querySelector('.bottom-nav .bottom-nav-item.active');
+
         ['weather-toggle', 'weather-toggle-mobile'].forEach(function (id) {
             var toggle = document.getElementById(id);
             if (toggle) {
