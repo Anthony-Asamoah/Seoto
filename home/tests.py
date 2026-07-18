@@ -11,7 +11,11 @@ class WeatherForecastViewTests(TestCase):
         cache.clear()
 
     @patch('home.views.weather.get_weather_provider')
-    def test_gps_coordinates_skip_geolocation(self, mock_get_weather_provider):
+    @patch('home.views.weather.get_geolocation_provider')
+    def test_gps_coordinates_skip_ip_lookup_but_reverse_geocode(self, mock_get_geo_provider, mock_get_weather_provider):
+        mock_get_geo_provider.return_value.reverse.return_value = {
+            'city': 'Accra', 'region': 'Greater Accra', 'country': 'Ghana',
+        }
         mock_get_weather_provider.return_value.get_forecast.return_value = {
             'temperature': 21.0,
             'feels_like': 20.0,
@@ -23,6 +27,10 @@ class WeatherForecastViewTests(TestCase):
             'high': 24.0,
             'low': 15.0,
             'timezone': 'UTC',
+            'daily': [
+                {'date': '2026-07-18', 'day_label': 'Today', 'high': 24.0, 'low': 15.0,
+                 'condition_text': 'Mainly clear', 'icon': 'fa-sun'},
+            ],
         }
 
         response = self.client.get(self.url, {'lat': '5.6', 'lon': '-0.2'})
@@ -31,7 +39,27 @@ class WeatherForecastViewTests(TestCase):
         data = response.json()
         self.assertEqual(data['source'], 'gps')
         self.assertEqual(data['weather']['temperature'], 21.0)
+        self.assertEqual(data['location']['city'], 'Accra')
+        self.assertEqual(len(data['weather']['daily']), 1)
         mock_get_weather_provider.return_value.get_forecast.assert_called_once_with(5.6, -0.2)
+        mock_get_geo_provider.return_value.reverse.assert_called_once_with(5.6, -0.2)
+        mock_get_geo_provider.return_value.locate.assert_not_called()
+
+    @patch('home.views.weather.get_weather_provider')
+    @patch('home.views.weather.get_geolocation_provider')
+    def test_gps_reverse_geocode_failure_still_returns_weather(self, mock_get_geo_provider, mock_get_weather_provider):
+        mock_get_geo_provider.return_value.reverse.return_value = None
+        mock_get_weather_provider.return_value.get_forecast.return_value = {
+            'temperature': 21.0, 'feels_like': 20.0, 'humidity': 60, 'wind_speed': 10.0,
+            'condition_code': 1, 'condition_text': 'Mainly clear', 'icon': 'fa-sun',
+            'high': 24.0, 'low': 15.0, 'timezone': 'UTC', 'daily': [],
+        }
+
+        response = self.client.get(self.url, {'lat': '5.6', 'lon': '-0.2'})
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['location']['city'], '')
 
     @patch('home.views.weather.get_weather_provider')
     @patch('home.views.weather.get_geolocation_provider')

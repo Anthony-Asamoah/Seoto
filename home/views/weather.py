@@ -10,6 +10,7 @@ from seoto.external_services.weather import get_geolocation_provider, get_weathe
 logger = logging.getLogger(__name__)
 
 CACHE_TTL_SECONDS = 600
+REVERSE_GEOCODE_CACHE_TTL_SECONDS = 3600
 
 
 @require_http_methods(["GET"])
@@ -26,7 +27,14 @@ def weather_forecast(request):
     try:
         if lat and lon:
             lat, lon = float(lat), float(lon)
-            location = {'city': '', 'region': '', 'country': ''}
+            reverse_cache_key = f'weather:reverse:{round(lat, 3)}:{round(lon, 3)}'
+            location = cache.get(reverse_cache_key)
+            if location is None:
+                location = get_geolocation_provider().reverse(lat, lon)
+                if location is not None:
+                    cache.set(reverse_cache_key, location, REVERSE_GEOCODE_CACHE_TTL_SECONDS)
+            if location is None:
+                location = {'city': '', 'region': '', 'country': ''}
             source = 'gps'
         else:
             ip = get_client_ip(request)
