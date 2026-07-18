@@ -284,21 +284,34 @@
         return Math.round(value) + '°C';
     }
 
+    function placeName(payload) {
+        var loc = payload.location || {};
+        return [loc.city, loc.region, loc.country].filter(Boolean).join(', ')
+            || (payload.source === 'gps' ? 'Your current location' : 'Your area');
+    }
+
+    function renderDaily(days) {
+        if (!days || !days.length) return '';
+        return '<div class="weather-daily">' + days.map(function (d) {
+            return '<div class="weather-day">' +
+                '<div class="weather-day-label">' + d.day_label + '</div>' +
+                '<i class="fas ' + d.icon + '" aria-hidden="true"></i>' +
+                '<div class="weather-day-temps"><span>' + formatTemp(d.high) + '</span><span class="weather-day-low">' + formatTemp(d.low) + '</span></div>' +
+            '</div>';
+        }).join('') + '</div>';
+    }
+
     function renderWeather(payload) {
         var body = document.getElementById('weather-body');
         if (!body) return;
         var w = payload.weather;
-        var loc = payload.location || {};
-        var placeName = payload.source === 'gps'
-            ? 'Your current location'
-            : ([loc.city, loc.region, loc.country].filter(Boolean).join(', ') || 'Your area');
 
         body.innerHTML =
             '<div class="weather-current">' +
                 '<i class="fas ' + w.icon + '" aria-hidden="true"></i>' +
                 '<div class="weather-temp">' + formatTemp(w.temperature) + '</div>' +
             '</div>' +
-            '<div class="weather-place">' + placeName + '</div>' +
+            '<div class="weather-place">' + placeName(payload) + '</div>' +
             '<div class="weather-condition">' + w.condition_text + '</div>' +
             '<div class="weather-details">' +
                 '<span><i class="fas fa-temperature-low" aria-hidden="true"></i> Feels ' + formatTemp(w.feels_like) + '</span>' +
@@ -306,7 +319,26 @@
                 '<span><i class="fas fa-wind" aria-hidden="true"></i> ' + (w.wind_speed != null ? Math.round(w.wind_speed) + 'km/h' : '--') + '</span>' +
             '</div>' +
             '<div class="weather-hilo"><span>H: ' + formatTemp(w.high) + '</span><span>L: ' + formatTemp(w.low) + '</span></div>' +
+            renderDaily(w.daily) +
             '<div class="weather-source">' + (payload.source === 'gps' ? 'Based on your device location' : 'Based on your approximate (IP) location') + '</div>';
+
+        updateLocateButton(payload);
+    }
+
+    function updateLocateButton(payload) {
+        var btn = document.getElementById('weather-locate-btn');
+        if (!btn) return;
+        if (payload.source === 'gps') {
+            var loc = payload.location || {};
+            var label = [loc.city, loc.region].filter(Boolean).join(', ') || 'Current location';
+            btn.innerHTML = '<i class="fas fa-location-dot" aria-hidden="true"></i><span>' + label + '</span>';
+            btn.classList.add('located');
+            btn.title = 'Refresh precise location';
+        } else {
+            btn.innerHTML = '<i class="fas fa-location-crosshairs" aria-hidden="true"></i><span>Use my location</span>';
+            btn.classList.remove('located');
+            btn.title = '';
+        }
     }
 
     function renderError(message) {

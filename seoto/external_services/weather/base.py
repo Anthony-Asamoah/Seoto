@@ -15,7 +15,8 @@ class WeatherProvider(ABC):
         """
         Return a normalized forecast dict:
             {temperature, feels_like, humidity, wind_speed,
-             condition_code, condition_text, icon, high, low, timezone}
+             condition_code, condition_text, icon, high, low, timezone,
+             daily: [{date, day_label, high, low, condition_text, icon}, ...]}
         or None if the forecast could not be retrieved.
         """
 
@@ -26,4 +27,11 @@ class GeolocationProvider(ABC):
         """
         Return a normalized dict: {lat, lon, city, region, country}
         or None if the IP could not be located.
+        """
+
+    @abstractmethod
+    def reverse(self, lat: float, lon: float) -> Optional[dict]:
+        """
+        Return a normalized dict: {city, region, country} for a coordinate
+        pair (used to name a GPS fix), or None if it could not be resolved.
         """

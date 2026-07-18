@@ -469,6 +469,16 @@
 
         .notif-push-toggle:disabled { opacity: 0.7; }
 
+        .notif-push-toggle.located {
+            max-width: 170px;
+        }
+
+        .notif-push-toggle.located span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
         .notif-panel-close {
             background: none;
             border: none;
@@ -619,6 +629,50 @@
             font-weight: 600;
             color: #111827;
             margin-bottom: 8px;
+        }
+
+        .weather-daily {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+            padding: 10px 0;
+            border-top: 1px solid #f3f4f6;
+            border-bottom: 1px solid #f3f4f6;
+            margin-bottom: 10px;
+        }
+
+        .weather-day {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .weather-day-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .weather-day i {
+            font-size: 1rem;
+            color: #175a9c;
+        }
+
+        .weather-day-temps {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .weather-day-low {
+            font-weight: 500;
+            color: #9ca3af;
         }
 
         .weather-source {
