@@ -11,6 +11,7 @@ from .models import (
     RecurringFrequencyChoices, CustomRecurrenceTypeChoices, RecurringOccurrenceStatusChoices,
 )
 from .services import process_due_occurrences
+from .templatetags.spending_extras import humanize_amount
 
 
 class InfiniteScrollPartialTests(TestCase):
@@ -611,4 +612,31 @@ class EditTransactionRecurringBannerTests(TestCase):
         self.assertContains(
             response, reverse('spending_tracker:edit_recurring_transaction', args=[schedule.pk])
         )
+
+
+class HumanizeAmountFilterTests(TestCase):
+    """`humanize_amount` abbreviates large figures with K/M/B for compact display."""
+
+    def test_below_thousand_keeps_two_decimals(self):
+        self.assertEqual(humanize_amount(588), '588.00')
+        self.assertEqual(humanize_amount(0), '0.00')
+
+    def test_thousands_use_k_suffix(self):
+        self.assertEqual(humanize_amount(7800), '7.8K')
+        self.assertEqual(humanize_amount(6285.06), '6.29K')
+        self.assertEqual(humanize_amount(1000), '1K')
+
+    def test_millions_use_m_suffix(self):
+        self.assertEqual(humanize_amount(2_300_000), '2.3M')
+
+    def test_billions_use_b_suffix(self):
+        self.assertEqual(humanize_amount(4_500_000_000), '4.5B')
+
+    def test_negative_values_keep_sign(self):
+        self.assertEqual(humanize_amount(-7800), '-7.8K')
+        self.assertEqual(humanize_amount(-500), '-500.00')
+
+    def test_non_numeric_input_returned_unchanged(self):
+        self.assertEqual(humanize_amount('N/A'), 'N/A')
+        self.assertEqual(humanize_amount(None), None)
 

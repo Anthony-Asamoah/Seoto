@@ -1,4 +1,4 @@
-{% load static %}
+{% load static spending_extras %}
 {{ trend_data|json_script:"trend-data" }}
 {{ json_expense_categories|json_script:"expense-categories-data" }}
 
@@ -154,6 +154,26 @@
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 576px) {
+            .metric-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 6px;
+            }
+
+            .metric-card {
+                padding: 8px 4px;
+            }
+
+            .metric-value {
+                font-size: 0.95rem;
+            }
+
+            .metric-label {
+                font-size: 0.55rem;
+                letter-spacing: 0;
+            }
         }
 
         .chart-empty-state {
@@ -320,18 +340,18 @@
     <!-- Top Cards -->
     <div class="metric-grid">
         <div class="metric-card" style="border-top-color: #27ae60;">
-            <div class="metric-value" style="color: #27ae60;">+{{ currency_symbol }}{{ total_income }}</div>
+            <div class="metric-value" style="color: #27ae60;">+{{ currency_symbol }}{{ total_income|humanize_amount }}</div>
             <div class="metric-label">Total Income</div>
         </div>
         <div class="metric-card" style="border-top-color: #e74c3c;">
-            <div class="metric-value" style="color: #e74c3c;">-{{ currency_symbol }}{{ total_expenses }}</div>
+            <div class="metric-value" style="color: #e74c3c;">-{{ currency_symbol }}{{ total_expenses|humanize_amount }}</div>
             <div class="metric-label">Total Expenses</div>
         </div>
         <div class="metric-card"
              style="{% if net_income >= 0 %}border-top-color: #27ae60;{% else %}border-top-color: #e74c3c;{% endif %}">
             <div class="metric-value"
                  style="{% if net_income >= 0 %}color: #27ae60;{% else %}color: #e74c3c;{% endif %}">
-                {% if net_income >= 0 %}+{% endif %}{{ currency_symbol }}{{ net_income }}
+                {% if net_income >= 0 %}+{% endif %}{{ currency_symbol }}{{ net_income|humanize_amount }}
             </div>
             <div class="metric-label">Net Income</div>
         </div>
@@ -421,7 +441,7 @@
         <div class="metric-grid">
             <div class="metric-card" style="border-top-color: #e74c3c;">
                 <div class="metric-value" style="color: #e74c3c; font-size: 1.4rem;">
-                    {{ currency_symbol }}{{ avg_daily_spending }}</div>
+                    {{ currency_symbol }}{{ avg_daily_spending|humanize_amount }}</div>
                 <div class="metric-label">Avg. Daily Spending</div>
             </div>
             <div class="metric-card" style="border-top-color: #9b59b6;">
@@ -434,7 +454,7 @@
                 </div>
                 <div class="metric-label">Top Expense Category
                     {% if top_expense_amount %}<br>
-                        <small class="text-muted">{{ currency_symbol }}{{ top_expense_amount }}</small>{% endif %}
+                        <small class="text-muted">{{ currency_symbol }}{{ top_expense_amount|humanize_amount }}</small>{% endif %}
                 </div>
             </div>
             <div class="metric-card" style="border-top-color: #3498db;">
@@ -447,7 +467,7 @@
                  style="{% if net_income >= 0 %}border-top-color: #27ae60;{% else %}border-top-color: #e74c3c;{% endif %}">
                 <div class="metric-value"
                      style="{% if net_income >= 0 %}color: #27ae60;{% else %}color: #e74c3c;{% endif %} font-size: 1.4rem;">
-                    {% if net_income >= 0 %}+{% endif %}{{ currency_symbol }}{{ net_income }}
+                    {% if net_income >= 0 %}+{% endif %}{{ currency_symbol }}{{ net_income|humanize_amount }}
                 </div>
                 <div class="metric-label">Net for Period
                     <br><small class="text-muted">{{ savings_rate }}% savings rate</small>
