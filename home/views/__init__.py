@@ -10,6 +10,7 @@ __all__ = [
     "app_usage",
     "messages_list",
     "message_detail",
+    "weather_forecast",
 ]
 
 from home.views.dash import dashboard
@@ -23,3 +24,4 @@ from home.views.monitoring import (
     messages_list,
     user_analytics,
 )
+from home.views.weather import weather_forecast

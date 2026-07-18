@@ -41,6 +41,10 @@
             <button id="install-button" class="nav-icon-btn" style="display: none;" title="Install Seoto as an app">
                 <i class="fas fa-download"></i>
             </button>
+            <!-- Weather Toggle Button -->
+            <button id="weather-toggle" class="nav-icon-btn" title="Weather" aria-expanded="false" aria-controls="weather-panel">
+                <i class="fas fa-cloud-sun"></i>
+            </button>
             <!-- Notification Toggle Button (for authenticated users) -->
             {% if user.is_authenticated %}
             <button id="notification-toggle" class="nav-icon-btn position-relative" title="Notifications" aria-expanded="false" aria-controls="notif-panel">

@@ -314,6 +314,12 @@ RECAPTCHA_ENABLED = all([RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY, RECAPTCHA_VER
 # IP Quality Score API Key
 IP_QUALITY_SCORE_API_KEY = config('IP_QUALITY_SCORE_API_KEY', default="None")
 
+# Weather widget — provider name selects an implementation via the factory in
+# seoto/external_services/weather/factory.py, so providers can be swapped
+# without touching call sites. Both defaults are free and require no API key.
+WEATHER_PROVIDER = config('WEATHER_PROVIDER', default='open_meteo')
+GEOLOCATION_PROVIDER = config('GEOLOCATION_PROVIDER', default='ip_api')
+
 # Calendly — consultation booking link shown on the reach-out page after the
 # qualifying form is submitted. Swap the default for your real scheduling URL.
 CALENDLY_URL = config('CALENDLY_URL', default='https://calendly.com/anthony-asamoah/30min')
