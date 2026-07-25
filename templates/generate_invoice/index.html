@@ -342,13 +342,16 @@
             box-shadow: inset 0 -3px 0 var(--navy)
         }
 
-        .logo-plate {
+        /* Editor-only plate: toggles via .plated so the preview can animate. The generated
+           invoice has its own, always-on `.logo-plate` in the iframe's stylesheet — a separate
+           document, so the two never meet. Named apart to keep that obvious. */
+        .editor-logo-plate {
             display: inline-flex;
             border-radius: 8px;
             transition: background .15s, box-shadow .15s, padding .15s
         }
 
-        .logo-plate.plated {
+        .editor-logo-plate.plated {
             background: #fff;
             padding: 9px 11px;
             box-shadow: 0 1px 4px rgba(0, 0, 0, .18)
@@ -1220,7 +1223,8 @@
                     <div class="field"><label>Business / your name</label>
                         <input type="text" id="from-name" placeholder="Your Agency"></div>
                     <div class="field"><label>Email</label>
-                        <input type="email" id="from-email" placeholder="you@example.com"></div>
+                        <input type="email" id="from-email" placeholder="you@example.com"
+                               onchange="normalizeEmailField(this)"></div>
                     <div class="field"><label>Phone</label>
                         <input type="text" id="from-phone" placeholder="+233 XXX XXX XXX"></div>
                     <div class="field"><label>Location</label>
@@ -1251,7 +1255,8 @@
                     <div class="field"><label>Client name</label>
                         <input type="text" id="to-name" required></div>
                     <div class="field"><label>Client email</label>
-                        <input type="email" id="to-email" placeholder="client@example.com"></div>
+                        <input type="email" id="to-email" placeholder="client@example.com"
+                               onchange="normalizeEmailField(this)"></div>
                     <div class="field"><label>Location</label>
                         <input type="text" id="to-location" placeholder="Accra, Ghana"></div>
                     <div class="field"><label>Invoice #</label>
@@ -1372,7 +1377,7 @@
                     </div>
                     <div id="logo-preview-wrap" style="display:none">
                         <div class="logo-stage" id="logo-stage">
-                            <span class="logo-plate" id="logo-plate">
+                            <span class="editor-logo-plate" id="editor-logo-plate">
                                 <img id="logo-img" class="logo-preview" src="" alt="Logo preview">
                             </span>
                         </div>
@@ -1717,36 +1722,64 @@
         const LOGO_MAX_BYTES = 2097152;
         const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp', 'image/gif'];
 
+        /* Placement schematics, declared as rects rather than markup strings so the cards can
+           be built once and then merely re-tinted. `role` names a live palette colour; a
+           literal `fill` is fixed regardless of palette. */
         const LOGO_PLACEMENTS = [
             {
                 id: 'header-left', label: 'Header · left',
-                thumb: C => `<rect width="66" height="20" fill="${C.headerBg}"/>
-                    <rect x="5" y="5.5" width="17" height="9" rx="2" fill="#fff" opacity=".92"/>
-                    <rect x="47" y="7" width="14" height="2.5" rx="1.2" fill="${C.headerText}" opacity=".75"/>
-                    <rect x="51" y="12" width="10" height="2" rx="1" fill="${C.headerText}" opacity=".45"/>`
+                shapes: [
+                    {x: 0, y: 0, w: 66, h: 20, role: 'headerBg'},
+                    {x: 5, y: 5.5, w: 17, h: 9, rx: 2, fill: '#fff', opacity: .92},
+                    {x: 47, y: 7, w: 14, h: 2.5, rx: 1.2, role: 'headerText', opacity: .75},
+                    {x: 51, y: 12, w: 10, h: 2, rx: 1, role: 'headerText', opacity: .45},
+                ]
             },
             {
                 id: 'header-right', label: 'Header · right',
-                thumb: C => `<rect width="66" height="20" fill="${C.headerBg}"/>
-                    <rect x="44" y="5.5" width="17" height="9" rx="2" fill="#fff" opacity=".92"/>
-                    <rect x="5" y="7" width="20" height="3" rx="1.4" fill="${C.headerText}" opacity=".8"/>
-                    <rect x="5" y="12.5" width="13" height="2" rx="1" fill="${C.headerText}" opacity=".45"/>`
+                shapes: [
+                    {x: 0, y: 0, w: 66, h: 20, role: 'headerBg'},
+                    {x: 44, y: 5.5, w: 17, h: 9, rx: 2, fill: '#fff', opacity: .92},
+                    {x: 5, y: 7, w: 20, h: 3, rx: 1.4, role: 'headerText', opacity: .8},
+                    {x: 5, y: 12.5, w: 13, h: 2, rx: 1, role: 'headerText', opacity: .45},
+                ]
             },
             {
                 id: 'letterhead', label: 'Letterhead band',
-                thumb: C => `<rect width="66" height="14" fill="#fff"/>
-                    <rect x="5" y="3.5" width="15" height="7" rx="1.8" fill="${C.accent}" opacity=".85"/>
-                    <rect x="46" y="4.5" width="15" height="2.2" rx="1.1" fill="#9aa3ad"/>
-                    <rect x="50" y="8.5" width="11" height="1.8" rx=".9" fill="#c3c9d0"/>
-                    <rect y="14" width="66" height="12" fill="${C.headerBg}"/>
-                    <rect x="5" y="18" width="17" height="3" rx="1.4" fill="${C.headerText}" opacity=".8"/>`
+                shapes: [
+                    {x: 0, y: 0, w: 66, h: 14, fill: '#fff'},
+                    {x: 5, y: 3.5, w: 15, h: 7, rx: 1.8, role: 'accent', opacity: .85},
+                    {x: 46, y: 4.5, w: 15, h: 2.2, rx: 1.1, fill: '#9aa3ad'},
+                    {x: 50, y: 8.5, w: 11, h: 1.8, rx: .9, fill: '#c3c9d0'},
+                    {x: 0, y: 14, w: 66, h: 12, role: 'headerBg'},
+                    {x: 5, y: 18, w: 17, h: 3, rx: 1.4, role: 'headerText', opacity: .8},
+                ]
             },
         ];
+        /* Body lines drawn under every schematic. */
+        const THUMB_BODY_SHAPES = [
+            {x: 5, y: 30, w: 40, h: 2.4, rx: 1.2, fill: '#dfe3e8'},
+            {x: 5, y: 35, w: 56, h: 2.4, rx: 1.2, fill: '#eceff3'},
+        ];
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+
         const LOGO_SIZES = {
             sm: {label: 'Small', h: 34, w: 160},
             md: {label: 'Medium', h: 48, w: 210},
             lg: {label: 'Large', h: 66, w: 270},
         };
+
+        /* Contrast/sampling thresholds for the auto white-plate decision. */
+        /* WCAG contrast ratio below which logo and header read as the same tone. Ratios run
+           1 (identical) to 21 (black on white); 2.2 sits just under "clearly distinct". */
+        const PLATE_MIN_CONTRAST = 2.2;
+        /* Alpha below this counts as fully transparent when sampling pixels. */
+        const LOGO_ALPHA_FLOOR = 16;
+        /* Share of the logo's own area that must be clear before we treat it as having a
+           transparent background rather than a solid block needing a plate. */
+        const LOGO_MIN_CLEAR_RATIO = .1;
+        /* Edge length of the square the logo is drawn into for analysis. */
+        const LOGO_SAMPLE_EDGE = 64;
 
         let logoPlacement = 'header-left';
         let logoSize = 'md';
@@ -1786,7 +1819,7 @@
             img.onload = () => {
                 const out = {w: img.naturalWidth || 0, h: img.naturalHeight || 0, lum: null, transparent: false};
                 try {
-                    const S = 64, cv = document.createElement('canvas');
+                    const S = LOGO_SAMPLE_EDGE, cv = document.createElement('canvas');
                     cv.width = S;
                     cv.height = S;
                     const ctx = cv.getContext('2d', {willReadFrequently: true});
@@ -1797,7 +1830,7 @@
                     const d = ctx.getImageData(0, 0, S, S).data;
                     let sum = 0, ink = 0, clear = 0, total = w * h;
                     for (let i = 0; i < d.length; i += 4) {
-                        if (d[i + 3] < 16) {
+                        if (d[i + 3] < LOGO_ALPHA_FLOOR) {
                             clear++;
                             continue;
                         }
@@ -1806,7 +1839,7 @@
                     }
                     if (ink) out.lum = sum / ink;
                     /* Anything beyond the letterboxed area is expected to be clear. */
-                    out.transparent = (clear - (S * S - total)) > total * .1;
+                    out.transparent = (clear - (S * S - total)) > total * LOGO_MIN_CLEAR_RATIO;
                 } catch (err) { /* tainted or undrawable (e.g. sizeless SVG) — fall back to defaults */
                 }
                 cb(out);
@@ -1873,40 +1906,76 @@
             updateLogoUI();
         }
 
-        function buildPlacements() {
-            const C = getColors(), c = document.getElementById('place-grid');
-            c.innerHTML = '';
-            LOGO_PLACEMENTS.forEach(p => {
-                const el = document.createElement('label');
-                el.className = 'place-opt' + (p.id === logoPlacement ? ' selected' : '');
-                el.innerHTML = `<input type="radio" name="logoplace" value="${p.id}" ${p.id === logoPlacement ? 'checked' : ''}>
-                    <svg viewBox="0 0 66 44" preserveAspectRatio="none" aria-hidden="true">${p.thumb(C)}
-                    <rect x="5" y="30" width="40" height="2.4" rx="1.2" fill="#dfe3e8"/>
-                    <rect x="5" y="35" width="56" height="2.4" rx="1.2" fill="#eceff3"/></svg>
-                    <span>${p.label}</span>`;
-                el.querySelector('input').addEventListener('change', () => {
-                    logoPlacement = p.id;
-                    updateLogoUI();
-                    const next = document.querySelector('#place-grid input[value="' + p.id + '"]');
-                    if (next) next.focus();
-                });
-                c.appendChild(el);
-            });
+        function thumbRect(s) {
+            const r = document.createElementNS(SVG_NS, 'rect');
+            r.setAttribute('x', s.x);
+            r.setAttribute('y', s.y);
+            r.setAttribute('width', s.w);
+            r.setAttribute('height', s.h);
+            if (s.rx !== undefined) r.setAttribute('rx', s.rx);
+            if (s.opacity !== undefined) r.setAttribute('opacity', s.opacity);
+            /* Roled rects get their fill from the palette on every refresh. */
+            if (s.role) r.dataset.role = s.role; else r.setAttribute('fill', s.fill);
+            return r;
         }
 
-        function buildLogoSizes() {
-            const c = document.getElementById('logo-size-seg');
-            c.innerHTML = '';
+        /* Built once at init. State and palette changes go through refreshLogoControls(),
+           so the cards keep their identity — and their focus — across updates. */
+        function buildLogoControls() {
+            const grid = document.getElementById('place-grid');
+            grid.innerHTML = '';
+            LOGO_PLACEMENTS.forEach(p => {
+                const el = document.createElement('label');
+                el.className = 'place-opt';
+                el.dataset.place = p.id;
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'logoplace';
+                radio.value = p.id;
+                radio.addEventListener('change', () => {
+                    logoPlacement = p.id;
+                    updateLogoUI();
+                });
+
+                const svg = document.createElementNS(SVG_NS, 'svg');
+                svg.setAttribute('viewBox', '0 0 66 44');
+                svg.setAttribute('preserveAspectRatio', 'none');
+                svg.setAttribute('aria-hidden', 'true');
+                p.shapes.concat(THUMB_BODY_SHAPES).forEach(s => svg.appendChild(thumbRect(s)));
+
+                const label = document.createElement('span');
+                label.textContent = p.label;
+
+                el.append(radio, svg, label);
+                grid.appendChild(el);
+            });
+
+            const seg = document.getElementById('logo-size-seg');
+            seg.innerHTML = '';
             Object.keys(LOGO_SIZES).forEach(k => {
                 const b = document.createElement('button');
                 b.type = 'button';
                 b.textContent = LOGO_SIZES[k].label;
-                b.className = k === logoSize ? 'active' : '';
-                b.onclick = () => {
+                b.dataset.size = k;
+                b.addEventListener('click', () => {
                     logoSize = k;
                     updateLogoUI();
-                };
-                c.appendChild(b);
+                });
+                seg.appendChild(b);
+            });
+        }
+
+        function refreshLogoControls() {
+            const C = getColors();
+            document.querySelectorAll('#place-grid .place-opt').forEach(el => {
+                const on = el.dataset.place === logoPlacement;
+                el.classList.toggle('selected', on);
+                el.querySelector('input').checked = on;
+                el.querySelectorAll('rect[data-role]').forEach(r => r.setAttribute('fill', C[r.dataset.role]));
+            });
+            document.querySelectorAll('#logo-size-seg button').forEach(b => {
+                b.classList.toggle('active', b.dataset.size === logoSize);
             });
         }
 
@@ -1927,7 +1996,7 @@
             if (!logoPlateTouched && logoInfo) {
                 if (onPaper) {
                     logoPlate = false;
-                } else if (logoInfo.lum !== null && contrastRatio(logoInfo.lum, hexLum(C.headerBg)) < 2.2) {
+                } else if (logoInfo.lum !== null && contrastRatio(logoInfo.lum, hexLum(C.headerBg)) < PLATE_MIN_CONTRAST) {
                     logoPlate = true;
                     logoNote('Your logo sits close in tone to the header colour, so we placed it on a white plate to keep it legible. Toggle it off any time.');
                 } else if (!logoInfo.transparent) {
@@ -1954,7 +2023,7 @@
             document.getElementById('logo-stage-caption').textContent =
                 onPaper ? 'Preview — letterhead band above the header' : 'Preview on your header colour';
 
-            document.getElementById('logo-plate').classList.toggle('plated', logoPlate);
+            document.getElementById('editor-logo-plate').classList.toggle('plated', logoPlate);
             document.getElementById('logo-plate-toggle').checked = logoPlate;
             document.getElementById('plate-row').classList.toggle('disabled', onPaper);
             document.getElementById('plate-sub').textContent = onPaper
@@ -1967,8 +2036,7 @@
             meta.push('prints at ~' + sz.h + 'px tall');
             document.getElementById('logo-meta').textContent = meta.join('  ·  ');
 
-            buildPlacements();
-            buildLogoSizes();
+            refreshLogoControls();
         }
 
         function initLogoDropzone() {
@@ -1991,9 +2059,12 @@
                 const f = e.dataTransfer && e.dataTransfer.files[0];
                 if (f) readLogoFile(f);
             });
-            /* Paste a logo straight from the clipboard while the Design tab is open. */
+            /* Paste a logo straight from the clipboard while the Design tab is open. This is a
+               document-level handler, so it must not throw if the panel is ever renamed —
+               that would break pasting everywhere else on the page. */
             document.addEventListener('paste', e => {
-                if (!document.getElementById('tab-design').classList.contains('active')) return;
+                const designTab = document.getElementById('tab-design');
+                if (!designTab || !designTab.classList.contains('active')) return;
                 const items = (e.clipboardData || {}).items || [];
                 for (const it of items) {
                     if (it.kind === 'file' && it.type.startsWith('image/')) {
@@ -2069,6 +2140,24 @@
 
         function g(id) {
             return document.getElementById(id).value;
+        }
+
+        /* Pasting a mail link rather than the address itself is easy to do — copying an
+           <a href="mailto:…"> from a web page yields the whole href. Print the address alone. */
+        function cleanEmail(raw) {
+            let s = (raw || '').trim()
+                .replace(/^mailto:/i, '')
+                .split('?')[0]
+                .replace(/^<|>$/g, '');
+            try {
+                s = decodeURIComponent(s);
+            } catch (e) { /* not percent-encoded — keep it as typed */
+            }
+            return s.trim();
+        }
+
+        function normalizeEmailField(el) {
+            el.value = cleanEmail(el.value);
         }
 
         /* ---- DATE PREVIEW ---- */
@@ -2382,12 +2471,12 @@
             const v = {
                 wordmark: g('wordmark').trim(),
                 fromName: g('from-name').trim(),
-                fromEmail: g('from-email').trim(),
+                fromEmail: cleanEmail(g('from-email')),
                 fromPhone: g('from-phone').trim(),
                 fromLoc: g('from-location').trim(),
                 invDesc: g('inv-desc').trim(),
                 toName: g('to-name').trim(),
-                toEmail: g('to-email').trim(),
+                toEmail: cleanEmail(g('to-email')),
                 toLoc: g('to-location').trim(),
                 invNum: g('inv-num').trim(),
                 invDate: fmtDate(g('inv-date')),
@@ -2547,6 +2636,7 @@ thead th:last-child{text-align:right}
         buildFormatOptions();
         buildPresets();
         initLogoDropzone();
+        buildLogoControls();
         updateLogoUI();
         renderItems();
         updateDatePreview();

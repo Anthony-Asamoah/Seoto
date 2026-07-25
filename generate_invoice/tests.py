@@ -1,3 +1,5 @@
+import re
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -30,8 +32,13 @@ class LogoUploadMarkupTests(TestCase):
                 self.assertIn(marker, self.html)
 
     def test_dropzone_is_keyboard_reachable(self):
-        self.assertIn('role="button"', self.html)
-        self.assertIn('tabindex="0"', self.html)
+        """Assert against the dropzone's own tag — a match elsewhere in the page
+        would otherwise hide a regression here."""
+        tag = re.search(r'<div[^>]*id="logo-drop"[^>]*>', self.html)
+        self.assertIsNotNone(tag, 'logo dropzone element not found')
+        self.assertIn('role="button"', tag.group(0))
+        self.assertIn('tabindex="0"', tag.group(0))
+        self.assertIn('aria-label=', tag.group(0))
 
     def test_upload_is_constrained_to_images_under_2mb(self):
         self.assertIn('accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif"', self.html)
@@ -80,6 +87,24 @@ class InvoiceCopyTests(TestCase):
         ):
             with self.subTest(invented=invented):
                 self.assertNotIn(invented, self.html)
+
+
+class EmailNormalisationTests(TestCase):
+    """A pasted mail link must print as the bare address, not 'mailto:someone@example.com'."""
+
+    def setUp(self):
+        self.html = self.client.get(reverse('generate_invoice')).content.decode()
+
+    def test_cleaner_exists(self):
+        self.assertIn('function cleanEmail(', self.html)
+        self.assertIn("replace(/^mailto:/i, '')", self.html)
+
+    def test_both_email_fields_normalise_on_change(self):
+        self.assertEqual(self.html.count('onchange="normalizeEmailField(this)"'), 2)
+
+    def test_generated_invoice_cleans_both_addresses(self):
+        self.assertIn("fromEmail: cleanEmail(g('from-email'))", self.html)
+        self.assertIn("toEmail: cleanEmail(g('to-email'))", self.html)
 
 
 class InvoiceTemplateStoreTests(TestCase):
