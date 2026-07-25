@@ -291,11 +291,11 @@
         /* Logo upload */
         .logo-upload {
             border: 1.5px dashed var(--border2);
-            border-radius: var(--radius);
-            padding: 20px;
+            border-radius: var(--radius-lg);
+            padding: 24px 20px;
             text-align: center;
             cursor: pointer;
-            transition: all .15s;
+            transition: border-color .15s, background .15s;
             background: var(--surface2)
         }
 
@@ -304,17 +304,82 @@
             background: var(--navy-light)
         }
 
+        .logo-upload.dragging {
+            border-style: solid;
+            border-color: var(--navy);
+            background: var(--navy-light)
+        }
+
+        .logo-upload.has-logo {
+            padding: 0;
+            border-style: solid;
+            border-color: var(--border);
+            background: transparent;
+            overflow: hidden
+        }
+
+        .logo-upload.has-logo:hover {
+            border-color: var(--border2);
+            background: transparent
+        }
+
         .logo-upload input {
             display: none
         }
 
+        /* Live stage — paints the logo on the real header colour */
+        .logo-stage {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 128px;
+            padding: 26px 22px;
+            transition: background .15s
+        }
+
+        .logo-stage.on-paper {
+            background: #fff;
+            box-shadow: inset 0 -3px 0 var(--navy)
+        }
+
+        .logo-plate {
+            display: inline-flex;
+            border-radius: 8px;
+            transition: background .15s, box-shadow .15s, padding .15s
+        }
+
+        .logo-plate.plated {
+            background: #fff;
+            padding: 9px 11px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, .18)
+        }
+
         .logo-preview {
-            max-height: 80px;
-            max-width: 220px;
+            display: block;
             object-fit: contain;
-            border-radius: 4px;
-            margin: 0 auto;
-            display: block
+            max-width: 100%
+        }
+
+        .logo-stage-caption {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            color: var(--text-hint);
+            padding: 8px 12px;
+            border-top: 1px solid var(--border);
+            background: var(--surface2)
+        }
+
+        .logo-meta {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 4px 12px;
+            margin-top: 11px;
+            font-size: 11px;
+            color: var(--text-hint);
+            font-family: 'DM Mono', monospace
         }
 
         .logo-actions {
@@ -322,6 +387,239 @@
             gap: 8px;
             justify-content: center;
             margin-top: 10px
+        }
+
+        .logo-note {
+            display: none;
+            align-items: flex-start;
+            gap: 9px;
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: var(--radius);
+            font-size: 12px;
+            line-height: 1.5;
+            background: #FFF8ED;
+            border: 1px solid #FBD9A5;
+            color: #8A4B0B
+        }
+
+        .logo-note.show {
+            display: flex
+        }
+
+        .logo-note.error {
+            background: #FEF2F2;
+            border-color: #FCA5A5;
+            color: #B91C1C
+        }
+
+        .logo-note svg {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+            margin-top: 1px
+        }
+
+        .logo-controls {
+            display: none;
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px solid var(--border);
+            gap: 18px;
+            flex-direction: column
+        }
+
+        .logo-controls.show {
+            display: flex
+        }
+
+        .sub-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--text-hint);
+            margin-bottom: 9px
+        }
+
+        /* Placement picker */
+        .place-grid {
+            display: grid;
+            grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px
+        }
+
+        .place-opt {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 8px;
+            border: 1px solid var(--border2);
+            border-radius: var(--radius);
+            background: var(--surface2);
+            cursor: pointer;
+            transition: all .15s
+        }
+
+        .place-opt:hover {
+            border-color: var(--navy)
+        }
+
+        .place-opt:focus-within {
+            border-color: var(--navy);
+            box-shadow: 0 0 0 3px rgba(26, 60, 94, .2)
+        }
+
+        .place-opt.selected {
+            border-color: var(--navy);
+            background: var(--navy-light);
+            box-shadow: 0 0 0 1px var(--navy) inset
+        }
+
+        .place-opt svg {
+            width: 66px;
+            height: 44px;
+            border-radius: 3px;
+            border: 1px solid var(--border2);
+            background: #fff;
+            display: block
+        }
+
+        .place-opt span {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text)
+        }
+
+        /* Kept focusable for keyboard users — hidden visually, not from the a11y tree. */
+        .place-opt input {
+            position: absolute;
+            opacity: 0;
+            width: 1px;
+            height: 1px;
+            pointer-events: none
+        }
+
+        .logo-upload:focus-visible {
+            outline: none;
+            border-color: var(--navy);
+            box-shadow: 0 0 0 3px rgba(26, 60, 94, .2)
+        }
+
+        /* Segmented control */
+        .seg {
+            display: flex;
+            gap: 4px;
+            background: var(--surface2);
+            border: 1px solid var(--border2);
+            border-radius: var(--radius);
+            padding: 4px
+        }
+
+        .seg button {
+            flex: 1;
+            padding: 8px 10px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all .15s
+        }
+
+        .seg button.active {
+            background: var(--navy);
+            color: #fff
+        }
+
+        .seg button:not(.active):hover {
+            background: #fff;
+            color: var(--text)
+        }
+
+        /* Switch row */
+        .switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 12px 14px;
+            border: 1px solid var(--border2);
+            border-radius: var(--radius);
+            background: var(--surface2);
+            transition: opacity .15s
+        }
+
+        .switch-row.disabled {
+            opacity: .45;
+            pointer-events: none
+        }
+
+        .switch-row .sw-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text)
+        }
+
+        .switch-row .sw-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            line-height: 1.45
+        }
+
+        .switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            flex-shrink: 0
+        }
+
+        .switch input {
+            position: absolute;
+            opacity: 0;
+            width: 1px;
+            height: 1px;
+            pointer-events: none
+        }
+
+        .switch .track {
+            position: absolute;
+            inset: 0;
+            background: var(--border2);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background .15s
+        }
+
+        .switch .track:before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            left: 3px;
+            top: 3px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .28);
+            transition: transform .15s
+        }
+
+        .switch input:checked + .track {
+            background: var(--navy)
+        }
+
+        .switch input:checked + .track:before {
+            transform: translateX(18px)
+        }
+
+        .switch input:focus-visible + .track {
+            box-shadow: 0 0 0 3px rgba(26, 60, 94, .25)
         }
 
         .btn-sm {
@@ -550,6 +848,127 @@
             margin-left: 8px
         }
 
+        .field-hint {
+            font-size: 11px;
+            color: var(--text-hint);
+            line-height: 1.45
+        }
+
+        /* Saved templates */
+        .tpl-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px 18px;
+            margin-bottom: 14px
+        }
+
+        .tpl-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 13px
+        }
+
+        .tpl-head .card-title {
+            margin-bottom: 0
+        }
+
+        .tpl-scope {
+            font-size: 10px;
+            color: var(--text-hint);
+            text-align: right;
+            line-height: 1.4;
+            flex-shrink: 0
+        }
+
+        .tpl-row {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .tpl-row select {
+            flex: 1;
+            min-width: 0
+        }
+
+        .btn-apply {
+            padding: 9px 18px;
+            border: none;
+            border-radius: var(--radius);
+            background: var(--navy);
+            color: #fff;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: opacity .15s
+        }
+
+        .btn-apply:disabled {
+            opacity: .4;
+            cursor: not-allowed
+        }
+
+        .tpl-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 10px
+        }
+
+        .tpl-inline {
+            display: none;
+            gap: 8px;
+            align-items: center;
+            margin-top: 11px;
+            padding: 11px 12px;
+            border: 1px solid var(--border2);
+            border-radius: var(--radius);
+            background: var(--surface2);
+            flex-wrap: wrap
+        }
+
+        .tpl-inline.show {
+            display: flex
+        }
+
+        .tpl-inline input {
+            flex: 1;
+            min-width: 150px
+        }
+
+        .tpl-inline .prompt {
+            font-size: 13px;
+            color: var(--text);
+            flex: 1;
+            min-width: 150px
+        }
+
+        .tpl-status {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 10px;
+            line-height: 1.45
+        }
+
+        .tpl-status:empty {
+            display: none
+        }
+
+        .tpl-status.error {
+            color: #B91C1C
+        }
+
+        .tpl-empty {
+            font-size: 12px;
+            color: var(--text-hint);
+            line-height: 1.5
+        }
+
         /* Invoice preview overlay */
         #preview-overlay {
             display: none;
@@ -722,6 +1141,31 @@
             </div>
         </div>
 
+        <!-- SAVED TEMPLATES -->
+        <div class="tpl-card" id="tpl-card">
+            <div class="tpl-head">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/>
+                    </svg>
+                    Saved Templates
+                </div>
+                <div class="tpl-scope">Saved in this browser<br>Client, invoice&nbsp;# and dates stay untouched</div>
+            </div>
+            <div class="tpl-row">
+                <select id="tpl-select" onchange="onTemplateSelect()" aria-label="Saved templates"></select>
+                <button class="btn-apply" id="tpl-apply" onclick="applySelectedTemplate()">Apply</button>
+            </div>
+            <div class="tpl-actions">
+                <button class="btn-sm" id="tpl-save-new" onclick="promptSaveTemplate()">Save current as new…</button>
+                <button class="btn-sm" id="tpl-update" onclick="updateSelectedTemplate()">Update selected</button>
+                <button class="btn-sm" id="tpl-default" onclick="toggleDefaultTemplate()">Set as default</button>
+                <button class="btn-sm danger" id="tpl-delete" onclick="promptDeleteTemplate()">Delete</button>
+            </div>
+            <div class="tpl-inline" id="tpl-inline"></div>
+            <div class="tpl-status" id="tpl-status" role="status" aria-live="polite"></div>
+        </div>
+
         <div class="tabs">
             <button class="tab active" onclick="switchTab('details',this)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -782,9 +1226,17 @@
                     <div class="field"><label>Location</label>
                         <input type="text" id="from-location" placeholder="Accra, Ghana"></div>
                 </div>
-                <div class="field" style="margin-top:14px">
-                    <label>Invoice description / service type</label>
-                    <input type="text" id="inv-desc" placeholder="e.g. Web Development Services">
+                <div class="grid2" style="margin-top:14px">
+                    <div class="field">
+                        <label>Document title</label>
+                        <input type="text" id="wordmark" placeholder="INVOICE" value="INVOICE" maxlength="28">
+                        <span class="field-hint">The large heading — try QUOTE, RECEIPT or PROFORMA.</span>
+                    </div>
+                    <div class="field">
+                        <label>Invoice description / service type</label>
+                        <input type="text" id="inv-desc" placeholder="e.g. Web Development Services">
+                        <span class="field-hint">Sits under the title. Leave blank to omit it.</span>
+                    </div>
                 </div>
             </div>
             <div class="card">
@@ -901,8 +1353,11 @@
                     </svg>
                     Logo
                 </div>
-                <div id="logo-drop" class="logo-upload" onclick="document.getElementById('logo-input').click()">
-                    <input type="file" id="logo-input" accept="image/*" onchange="handleLogo(event)">
+                <div id="logo-drop" class="logo-upload" role="button" tabindex="0"
+                     aria-label="Upload your logo — drag and drop, paste, or activate to browse"
+                     onclick="pickLogo()">
+                    <input type="file" id="logo-input" accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif"
+                           onchange="handleLogo(event)">
                     <div id="logo-placeholder">
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="1.5"
                              style="margin:0 auto 8px;display:block">
@@ -911,21 +1366,57 @@
                             <polyline points="21 15 16 10 5 21"/>
                         </svg>
                         <p style="font-size:13px;color:var(--text-muted);margin-bottom:3px">
-                            Click to upload your logo
+                            Drag &amp; drop, paste, or click to upload your logo
                         </p>
-                        <p style="font-size:11px;color:var(--text-hint)">PNG, JPG, SVG — max 2MB</p>
+                        <p style="font-size:11px;color:var(--text-hint)">PNG, JPG, SVG, WEBP — max 2MB</p>
                     </div>
                     <div id="logo-preview-wrap" style="display:none">
-                        <img id="logo-img" class="logo-preview" src="" alt="Logo preview">
+                        <div class="logo-stage" id="logo-stage">
+                            <span class="logo-plate" id="logo-plate">
+                                <img id="logo-img" class="logo-preview" src="" alt="Logo preview">
+                            </span>
+                        </div>
+                        <div class="logo-stage-caption" id="logo-stage-caption">Preview on your header colour</div>
                     </div>
                 </div>
+
+                <div class="logo-meta" id="logo-meta" style="display:none"></div>
+
                 <div class="logo-actions" id="logo-actions" style="display:none">
-                    <button class="btn-sm" onclick="document.getElementById('logo-input').click()">
-                        Replace
-                    </button>
-                    <button class="btn-sm danger" onclick="removeLogo()">
-                        Remove
-                    </button>
+                    <button class="btn-sm" onclick="pickLogo()">Replace</button>
+                    <button class="btn-sm danger" onclick="removeLogo()">Remove</button>
+                </div>
+
+                <div class="logo-note" id="logo-note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <span id="logo-note-text"></span>
+                </div>
+
+                <div class="logo-controls" id="logo-controls">
+                    <div>
+                        <span class="sub-label">Placement</span>
+                        <div class="place-grid" id="place-grid"></div>
+                    </div>
+                    <div>
+                        <span class="sub-label">Size</span>
+                        <div class="seg" id="logo-size-seg"></div>
+                    </div>
+                    <div class="switch-row" id="plate-row">
+                        <div>
+                            <div class="sw-text">White plate behind logo</div>
+                            <div class="sw-sub" id="plate-sub">Keeps dark or solid-background logos readable on a
+                                coloured header.
+                            </div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="logo-plate-toggle" onchange="onPlateToggle()">
+                            <span class="track"></span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -1177,6 +1668,7 @@
                         document.getElementById(COLOR_IDS[i]).value = col;
                         document.getElementById(HEX_IDS[i]).value = col;
                     });
+                    updateLogoUI();
                 };
                 c.appendChild(el);
             });
@@ -1184,11 +1676,25 @@
 
         function syncHex(cid, hid) {
             document.getElementById(hid).value = document.getElementById(cid).value;
+            syncPresetSelection();
+            updateLogoUI();
         }
 
         function syncColor(hid, cid) {
             const v = document.getElementById(hid).value;
-            if (/^#[0-9A-Fa-f]{6}$/.test(v)) document.getElementById(cid).value = v;
+            if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+                document.getElementById(cid).value = v;
+                syncPresetSelection();
+                updateLogoUI();
+            }
+        }
+
+        /* Highlight the preset that matches the current colours — or none, once they're custom. */
+        function syncPresetSelection() {
+            const cur = COLOR_IDS.map(id => document.getElementById(id).value.toUpperCase());
+            document.querySelectorAll('.preset').forEach((el, i) => {
+                el.classList.toggle('active', PRESETS[i].colors.every((c, j) => c.toUpperCase() === cur[j]));
+            });
         }
 
         function getColors() {
@@ -1208,30 +1714,295 @@
         }
 
         /* ---- LOGO ---- */
-        function handleLogo(e) {
-            const f = e.target.files[0];
+        const LOGO_MAX_BYTES = 2097152;
+        const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp', 'image/gif'];
+
+        const LOGO_PLACEMENTS = [
+            {
+                id: 'header-left', label: 'Header · left',
+                thumb: C => `<rect width="66" height="20" fill="${C.headerBg}"/>
+                    <rect x="5" y="5.5" width="17" height="9" rx="2" fill="#fff" opacity=".92"/>
+                    <rect x="47" y="7" width="14" height="2.5" rx="1.2" fill="${C.headerText}" opacity=".75"/>
+                    <rect x="51" y="12" width="10" height="2" rx="1" fill="${C.headerText}" opacity=".45"/>`
+            },
+            {
+                id: 'header-right', label: 'Header · right',
+                thumb: C => `<rect width="66" height="20" fill="${C.headerBg}"/>
+                    <rect x="44" y="5.5" width="17" height="9" rx="2" fill="#fff" opacity=".92"/>
+                    <rect x="5" y="7" width="20" height="3" rx="1.4" fill="${C.headerText}" opacity=".8"/>
+                    <rect x="5" y="12.5" width="13" height="2" rx="1" fill="${C.headerText}" opacity=".45"/>`
+            },
+            {
+                id: 'letterhead', label: 'Letterhead band',
+                thumb: C => `<rect width="66" height="14" fill="#fff"/>
+                    <rect x="5" y="3.5" width="15" height="7" rx="1.8" fill="${C.accent}" opacity=".85"/>
+                    <rect x="46" y="4.5" width="15" height="2.2" rx="1.1" fill="#9aa3ad"/>
+                    <rect x="50" y="8.5" width="11" height="1.8" rx=".9" fill="#c3c9d0"/>
+                    <rect y="14" width="66" height="12" fill="${C.headerBg}"/>
+                    <rect x="5" y="18" width="17" height="3" rx="1.4" fill="${C.headerText}" opacity=".8"/>`
+            },
+        ];
+        const LOGO_SIZES = {
+            sm: {label: 'Small', h: 34, w: 160},
+            md: {label: 'Medium', h: 48, w: 210},
+            lg: {label: 'Large', h: 66, w: 270},
+        };
+
+        let logoPlacement = 'header-left';
+        let logoSize = 'md';
+        let logoPlate = false;
+        let logoPlateTouched = false;
+        let logoInfo = null;
+        let logoName = '';
+
+        function pickLogo() {
+            document.getElementById('logo-input').click();
+        }
+
+        /* sRGB relative luminance (WCAG) */
+        function relLum(r, g, b) {
+            const f = c => {
+                c /= 255;
+                return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4);
+            };
+            return .2126 * f(r) + .7152 * f(g) + .0722 * f(b);
+        }
+
+        function hexLum(hex) {
+            const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+            if (!m) return 0;
+            const n = parseInt(m[1], 16);
+            return relLum((n >> 16) & 255, (n >> 8) & 255, n & 255);
+        }
+
+        function contrastRatio(l1, l2) {
+            const hi = Math.max(l1, l2), lo = Math.min(l1, l2);
+            return (hi + .05) / (lo + .05);
+        }
+
+        /* Measure the logo: intrinsic size, mean ink luminance, transparency. */
+        function analyzeLogo(src, cb) {
+            const img = new Image();
+            img.onload = () => {
+                const out = {w: img.naturalWidth || 0, h: img.naturalHeight || 0, lum: null, transparent: false};
+                try {
+                    const S = 64, cv = document.createElement('canvas');
+                    cv.width = S;
+                    cv.height = S;
+                    const ctx = cv.getContext('2d', {willReadFrequently: true});
+                    const scale = Math.min(S / (out.w || S), S / (out.h || S)) || 1;
+                    const w = Math.max(1, Math.round((out.w || S) * scale));
+                    const h = Math.max(1, Math.round((out.h || S) * scale));
+                    ctx.drawImage(img, (S - w) / 2, (S - h) / 2, w, h);
+                    const d = ctx.getImageData(0, 0, S, S).data;
+                    let sum = 0, ink = 0, clear = 0, total = w * h;
+                    for (let i = 0; i < d.length; i += 4) {
+                        if (d[i + 3] < 16) {
+                            clear++;
+                            continue;
+                        }
+                        sum += relLum(d[i], d[i + 1], d[i + 2]);
+                        ink++;
+                    }
+                    if (ink) out.lum = sum / ink;
+                    /* Anything beyond the letterboxed area is expected to be clear. */
+                    out.transparent = (clear - (S * S - total)) > total * .1;
+                } catch (err) { /* tainted or undrawable (e.g. sizeless SVG) — fall back to defaults */
+                }
+                cb(out);
+            };
+            img.onerror = () => cb(null);
+            img.src = src;
+        }
+
+        function readLogoFile(f) {
             if (!f) return;
-            if (f.size > 2097152) {
-                alert('Logo must be under 2MB.');
+            const okType = LOGO_TYPES.includes(f.type) || /\.(png|jpe?g|svg|webp|gif)$/i.test(f.name || '');
+            if (!okType) {
+                logoNote('That file type isn’t supported. Use a PNG, JPG, SVG or WEBP image.', true);
+                return;
+            }
+            if (f.size > LOGO_MAX_BYTES) {
+                logoNote(`That file is ${(f.size / 1048576).toFixed(1)}MB. Please use a logo under 2MB.`, true);
                 return;
             }
             const r = new FileReader();
+            r.onerror = () => logoNote('We couldn’t read that file. Try another image.', true);
             r.onload = ev => {
                 logoData = ev.target.result;
-                document.getElementById('logo-placeholder').style.display = 'none';
-                document.getElementById('logo-preview-wrap').style.display = 'block';
-                document.getElementById('logo-img').src = logoData;
-                document.getElementById('logo-actions').style.display = 'flex';
+                logoName = f.name || 'logo';
+                logoPlateTouched = false;
+                logoNote('');
+                analyzeLogo(logoData, info => {
+                    logoInfo = info;
+                    updateLogoUI();
+                });
+                updateLogoUI();
             };
             r.readAsDataURL(f);
         }
 
+        function handleLogo(e) {
+            readLogoFile(e.target.files[0]);
+            e.target.value = '';
+        }
+
         function removeLogo() {
             logoData = null;
-            document.getElementById('logo-placeholder').style.display = 'block';
-            document.getElementById('logo-preview-wrap').style.display = 'none';
-            document.getElementById('logo-actions').style.display = 'none';
+            logoInfo = null;
+            logoName = '';
+            logoPlate = false;
+            logoPlateTouched = false;
+            logoPlacement = 'header-left';
+            logoSize = 'md';
             document.getElementById('logo-input').value = '';
+            logoNote('');
+            updateLogoUI();
+        }
+
+        function logoNote(msg, isError) {
+            const n = document.getElementById('logo-note');
+            document.getElementById('logo-note-text').textContent = msg || '';
+            n.classList.toggle('show', !!msg);
+            n.classList.toggle('error', !!isError);
+        }
+
+        function onPlateToggle() {
+            logoPlate = document.getElementById('logo-plate-toggle').checked;
+            logoPlateTouched = true;
+            updateLogoUI();
+        }
+
+        function buildPlacements() {
+            const C = getColors(), c = document.getElementById('place-grid');
+            c.innerHTML = '';
+            LOGO_PLACEMENTS.forEach(p => {
+                const el = document.createElement('label');
+                el.className = 'place-opt' + (p.id === logoPlacement ? ' selected' : '');
+                el.innerHTML = `<input type="radio" name="logoplace" value="${p.id}" ${p.id === logoPlacement ? 'checked' : ''}>
+                    <svg viewBox="0 0 66 44" preserveAspectRatio="none" aria-hidden="true">${p.thumb(C)}
+                    <rect x="5" y="30" width="40" height="2.4" rx="1.2" fill="#dfe3e8"/>
+                    <rect x="5" y="35" width="56" height="2.4" rx="1.2" fill="#eceff3"/></svg>
+                    <span>${p.label}</span>`;
+                el.querySelector('input').addEventListener('change', () => {
+                    logoPlacement = p.id;
+                    updateLogoUI();
+                    const next = document.querySelector('#place-grid input[value="' + p.id + '"]');
+                    if (next) next.focus();
+                });
+                c.appendChild(el);
+            });
+        }
+
+        function buildLogoSizes() {
+            const c = document.getElementById('logo-size-seg');
+            c.innerHTML = '';
+            Object.keys(LOGO_SIZES).forEach(k => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.textContent = LOGO_SIZES[k].label;
+                b.className = k === logoSize ? 'active' : '';
+                b.onclick = () => {
+                    logoSize = k;
+                    updateLogoUI();
+                };
+                c.appendChild(b);
+            });
+        }
+
+        /* Single source of truth for everything logo-related in the editor. */
+        function updateLogoUI() {
+            const has = !!logoData, C = getColors();
+            const onPaper = logoPlacement === 'letterhead';
+
+            document.getElementById('logo-drop').classList.toggle('has-logo', has);
+            document.getElementById('logo-placeholder').style.display = has ? 'none' : 'block';
+            document.getElementById('logo-preview-wrap').style.display = has ? 'block' : 'none';
+            document.getElementById('logo-actions').style.display = has ? 'flex' : 'none';
+            document.getElementById('logo-meta').style.display = has ? 'flex' : 'none';
+            document.getElementById('logo-controls').classList.toggle('show', has);
+            if (!has) return;
+
+            /* Recommend a plate when the logo would otherwise disappear into the header. */
+            if (!logoPlateTouched && logoInfo) {
+                if (onPaper) {
+                    logoPlate = false;
+                } else if (logoInfo.lum !== null && contrastRatio(logoInfo.lum, hexLum(C.headerBg)) < 2.2) {
+                    logoPlate = true;
+                    logoNote('Your logo sits close in tone to the header colour, so we placed it on a white plate to keep it legible. Toggle it off any time.');
+                } else if (!logoInfo.transparent) {
+                    logoPlate = true;
+                    logoNote('This image has a solid background, so we framed it on a white plate for clean edges on the coloured header.');
+                } else {
+                    logoPlate = false;
+                    logoNote('');
+                }
+            }
+            if (onPaper) logoPlate = false;
+
+            const sz = LOGO_SIZES[logoSize];
+            const img = document.getElementById('logo-img');
+            img.src = logoData;
+            img.style.maxHeight = sz.h + 'px';
+            img.style.maxWidth = sz.w + 'px';
+
+            const stage = document.getElementById('logo-stage');
+            stage.classList.toggle('on-paper', onPaper);
+            stage.style.background = onPaper ? '#fff' : C.headerBg;
+            stage.style.boxShadow = onPaper ? 'inset 0 -3px 0 ' + C.accent : 'none';
+            stage.style.justifyContent = logoPlacement === 'header-right' ? 'flex-end' : 'flex-start';
+            document.getElementById('logo-stage-caption').textContent =
+                onPaper ? 'Preview — letterhead band above the header' : 'Preview on your header colour';
+
+            document.getElementById('logo-plate').classList.toggle('plated', logoPlate);
+            document.getElementById('logo-plate-toggle').checked = logoPlate;
+            document.getElementById('plate-row').classList.toggle('disabled', onPaper);
+            document.getElementById('plate-sub').textContent = onPaper
+                ? 'Not needed — the letterhead band is already white.'
+                : 'Keeps dark or solid-background logos readable on a coloured header.';
+
+            const meta = [];
+            if (logoName) meta.push(logoName.length > 28 ? logoName.slice(0, 25) + '…' : logoName);
+            if (logoInfo && logoInfo.w && logoInfo.h) meta.push(logoInfo.w + ' × ' + logoInfo.h + ' px');
+            meta.push('prints at ~' + sz.h + 'px tall');
+            document.getElementById('logo-meta').textContent = meta.join('  ·  ');
+
+            buildPlacements();
+            buildLogoSizes();
+        }
+
+        function initLogoDropzone() {
+            const zone = document.getElementById('logo-drop');
+            zone.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    pickLogo();
+                }
+            });
+            ['dragenter', 'dragover'].forEach(ev => zone.addEventListener(ev, e => {
+                e.preventDefault();
+                zone.classList.add('dragging');
+            }));
+            ['dragleave', 'dragend', 'drop'].forEach(ev => zone.addEventListener(ev, e => {
+                e.preventDefault();
+                if (ev !== 'dragleave' || !zone.contains(e.relatedTarget)) zone.classList.remove('dragging');
+            }));
+            zone.addEventListener('drop', e => {
+                const f = e.dataTransfer && e.dataTransfer.files[0];
+                if (f) readLogoFile(f);
+            });
+            /* Paste a logo straight from the clipboard while the Design tab is open. */
+            document.addEventListener('paste', e => {
+                if (!document.getElementById('tab-design').classList.contains('active')) return;
+                const items = (e.clipboardData || {}).items || [];
+                for (const it of items) {
+                    if (it.kind === 'file' && it.type.startsWith('image/')) {
+                        readLogoFile(it.getAsFile());
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            });
         }
 
         /* ---- LINE ITEMS ---- */
@@ -1318,6 +2089,285 @@
             document.getElementById('invoice-frame').contentWindow.print();
         }
 
+        /* ---- SAVED TEMPLATES ----
+           Everything that tends to stay the same between invoices is stored under a name in
+           localStorage. Client details, invoice number and dates are deliberately excluded:
+           they change every time, so applying a template never clobbers them. */
+        const TPL_KEY = 'seoto.invoice.templates.v1';
+        const TPL_DEFAULT_KEY = 'seoto.invoice.defaultTemplate.v1';
+        /* id -> element id, for the plain text/number fields a template carries. */
+        const TPL_FIELDS = {
+            wordmark: 'wordmark', fromName: 'from-name', fromEmail: 'from-email',
+            fromPhone: 'from-phone', fromLoc: 'from-location', invDesc: 'inv-desc',
+            currency: 'currency', taxRate: 'tax-rate', bankName: 'bank-name',
+            accName: 'acc-name', accNum: 'acc-num', momo: 'momo', notes: 'notes',
+        };
+
+        let templates = [];
+        let selectedTemplateId = null;
+
+        function tplStorage() {
+            try {
+                localStorage.setItem('__tpl_probe__', '1');
+                localStorage.removeItem('__tpl_probe__');
+                return localStorage;
+            } catch (e) {
+                return null;   /* private mode / storage disabled */
+            }
+        }
+
+        function loadTemplates() {
+            const store = tplStorage();
+            if (!store) {
+                templates = [];
+                return;
+            }
+            try {
+                const raw = JSON.parse(store.getItem(TPL_KEY));
+                templates = Array.isArray(raw) ? raw.filter(t => t && t.id && t.name && t.data) : [];
+            } catch (e) {
+                templates = [];
+            }
+        }
+
+        /* Writes the current list, rolling back to what's on disk if the quota is blown. */
+        function tplCommit(successMsg) {
+            const store = tplStorage();
+            if (!store) {
+                tplStatus('This browser has storage disabled, so templates can’t be saved.', true);
+                return false;
+            }
+            try {
+                store.setItem(TPL_KEY, JSON.stringify(templates));
+                tplStatus(successMsg);
+                return true;
+            } catch (e) {
+                loadTemplates();
+                renderTemplateBar();
+                tplStatus('There isn’t enough browser storage left. Delete a template, or remove the logo before saving.', true);
+                return false;
+            }
+        }
+
+        function tplStatus(msg, isError) {
+            const el = document.getElementById('tpl-status');
+            el.textContent = msg || '';
+            el.classList.toggle('error', !!isError);
+        }
+
+        function collectTemplateData() {
+            const data = {items: items.map(i => ({...i})), dateFormat: selectedFormat, colors: {}};
+            Object.keys(TPL_FIELDS).forEach(k => data[k] = g(TPL_FIELDS[k]));
+            COLOR_IDS.forEach(id => data.colors[id] = document.getElementById(id).value);
+            data.logo = logoData
+                ? {data: logoData, name: logoName, placement: logoPlacement, size: logoSize, plate: logoPlate}
+                : null;
+            return data;
+        }
+
+        function applyTemplateData(d) {
+            Object.keys(TPL_FIELDS).forEach(k => {
+                if (typeof d[k] === 'string') document.getElementById(TPL_FIELDS[k]).value = d[k];
+            });
+            if (Array.isArray(d.items) && d.items.length) {
+                items = d.items.map(i => ({desc: i.desc || '', detail: i.detail || '', amount: i.amount || ''}));
+            }
+            if (d.colors) {
+                COLOR_IDS.forEach((id, i) => {
+                    const val = d.colors[id];
+                    if (/^#[0-9A-Fa-f]{6}$/.test(val || '')) {
+                        document.getElementById(id).value = val;
+                        document.getElementById(HEX_IDS[i]).value = val;
+                    }
+                });
+            }
+            if (d.dateFormat && DATE_FORMATS.some(f => f.id === d.dateFormat)) selectedFormat = d.dateFormat;
+
+            if (d.logo && d.logo.data) {
+                logoData = d.logo.data;
+                logoName = d.logo.name || 'logo';
+                logoPlacement = LOGO_PLACEMENTS.some(p => p.id === d.logo.placement) ? d.logo.placement : 'header-left';
+                logoSize = LOGO_SIZES[d.logo.size] ? d.logo.size : 'md';
+                logoPlate = !!d.logo.plate;
+                /* The saved choice is the user's, so don't let auto-contrast override it. */
+                logoPlateTouched = true;
+                logoInfo = null;
+                analyzeLogo(logoData, info => {
+                    logoInfo = info;
+                    updateLogoUI();
+                });
+            } else {
+                logoData = null;
+                logoInfo = null;
+                logoName = '';
+                logoPlate = false;
+                logoPlateTouched = false;
+                logoPlacement = 'header-left';
+                logoSize = 'md';
+            }
+
+            buildFormatOptions();
+            syncPresetSelection();
+            updateLogoUI();
+            renderItems();
+            updateDatePreview();
+        }
+
+        function renderTemplateBar() {
+            const sel = document.getElementById('tpl-select');
+            const defaultId = (tplStorage() || {getItem: () => null}).getItem(TPL_DEFAULT_KEY);
+            if (!templates.some(t => t.id === selectedTemplateId)) selectedTemplateId = templates[0] ? templates[0].id : null;
+
+            sel.innerHTML = '';
+            if (!templates.length) {
+                sel.innerHTML = '<option value="">No templates saved yet</option>';
+                sel.disabled = true;
+            } else {
+                sel.disabled = false;
+                templates.forEach(t => {
+                    const o = document.createElement('option');
+                    o.value = t.id;
+                    o.textContent = t.name + (t.id === defaultId ? '  ★ default' : '');
+                    if (t.id === selectedTemplateId) o.selected = true;
+                    sel.appendChild(o);
+                });
+            }
+
+            const none = !templates.length;
+            document.getElementById('tpl-apply').disabled = none;
+            ['tpl-update', 'tpl-default', 'tpl-delete'].forEach(id => document.getElementById(id).disabled = none);
+            document.getElementById('tpl-default').textContent =
+                selectedTemplateId && selectedTemplateId === defaultId ? 'Clear default' : 'Set as default';
+        }
+
+        function onTemplateSelect() {
+            selectedTemplateId = document.getElementById('tpl-select').value || null;
+            closeTemplateInline();
+            renderTemplateBar();
+        }
+
+        function selectedTemplate() {
+            return templates.find(t => t.id === selectedTemplateId) || null;
+        }
+
+        function closeTemplateInline() {
+            const box = document.getElementById('tpl-inline');
+            box.classList.remove('show');
+            box.innerHTML = '';
+        }
+
+        function promptSaveTemplate() {
+            const box = document.getElementById('tpl-inline');
+            tplStatus('');
+            box.innerHTML = `<input type="text" id="tpl-name" maxlength="60" placeholder="Template name — e.g. Studio retainer">
+                <button class="btn-sm" onclick="confirmSaveTemplate()">Save</button>
+                <button class="btn-sm" onclick="closeTemplateInline()">Cancel</button>`;
+            box.classList.add('show');
+            const input = document.getElementById('tpl-name');
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmSaveTemplate();
+                } else if (e.key === 'Escape') {
+                    closeTemplateInline();
+                }
+            });
+            input.focus();
+        }
+
+        function confirmSaveTemplate() {
+            const name = (document.getElementById('tpl-name').value || '').trim();
+            if (!name) {
+                tplStatus('Give the template a name first.', true);
+                return;
+            }
+            if (templates.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+                tplStatus(`You already have a template called “${name}”. Pick another name, or use Update selected.`, true);
+                return;
+            }
+            const tpl = {
+                id: 'tpl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+                name: name,
+                savedAt: new Date().toISOString(),
+                data: collectTemplateData(),
+            };
+            templates.push(tpl);
+            selectedTemplateId = tpl.id;
+            if (tplCommit(`Saved “${name}”.`)) closeTemplateInline();
+            renderTemplateBar();
+        }
+
+        function updateSelectedTemplate() {
+            const t = selectedTemplate();
+            if (!t) return;
+            closeTemplateInline();
+            t.data = collectTemplateData();
+            t.savedAt = new Date().toISOString();
+            tplCommit(`Updated “${t.name}” with the current details.`);
+            renderTemplateBar();
+        }
+
+        function applySelectedTemplate() {
+            const t = selectedTemplate();
+            if (!t) return;
+            closeTemplateInline();
+            applyTemplateData(t.data);
+            tplStatus(`Applied “${t.name}”. Client details, invoice # and dates were left as they are.`);
+        }
+
+        function toggleDefaultTemplate() {
+            const store = tplStorage(), t = selectedTemplate();
+            if (!store || !t) return;
+            closeTemplateInline();
+            if (store.getItem(TPL_DEFAULT_KEY) === t.id) {
+                store.removeItem(TPL_DEFAULT_KEY);
+                tplStatus(`“${t.name}” will no longer load automatically.`);
+            } else {
+                store.setItem(TPL_DEFAULT_KEY, t.id);
+                tplStatus(`“${t.name}” will load automatically when you open this page.`);
+            }
+            renderTemplateBar();
+        }
+
+        function promptDeleteTemplate() {
+            const t = selectedTemplate();
+            if (!t) return;
+            tplStatus('');
+            const box = document.getElementById('tpl-inline');
+            box.innerHTML = `<span class="prompt">Delete “${esc(t.name)}”? This can’t be undone.</span>
+                <button class="btn-sm danger" onclick="confirmDeleteTemplate()">Delete</button>
+                <button class="btn-sm" onclick="closeTemplateInline()">Cancel</button>`;
+            box.classList.add('show');
+        }
+
+        function confirmDeleteTemplate() {
+            const t = selectedTemplate();
+            if (!t) return;
+            const store = tplStorage();
+            templates = templates.filter(x => x.id !== t.id);
+            selectedTemplateId = null;
+            if (store && store.getItem(TPL_DEFAULT_KEY) === t.id) store.removeItem(TPL_DEFAULT_KEY);
+            tplCommit(`Deleted “${t.name}”.`);
+            closeTemplateInline();
+            renderTemplateBar();
+        }
+
+        function initTemplates() {
+            loadTemplates();
+            const store = tplStorage();
+            const defaultId = store ? store.getItem(TPL_DEFAULT_KEY) : null;
+            const fallback = templates.find(t => t.id === defaultId);
+            if (fallback) {
+                selectedTemplateId = fallback.id;
+                applyTemplateData(fallback.data);
+                tplStatus(`Loaded your default template, “${fallback.name}”.`);
+            }
+            renderTemplateBar();
+            if (!store) {
+                tplStatus('This browser has storage disabled, so templates can’t be saved.', true);
+            }
+        }
+
         /* ---- GENERATE ---- */
         function generateInvoice() {
             const C = getColors();
@@ -1327,24 +2377,29 @@
             const taxAmt = subtotal * (taxRate / 100);
             const total = subtotal + taxAmt;
 
+            /* Nothing here falls back to invented copy — a field left blank is simply
+               left off the invoice rather than printing words nobody typed. */
             const v = {
-                fromName: g('from-name') || 'Your Business',
-                fromEmail: g('from-email'),
-                fromPhone: g('from-phone'),
-                fromLoc: g('from-location'),
-                invDesc: g('inv-desc') || 'Professional Services',
-                toName: g('to-name') || 'Client',
-                toEmail: g('to-email'),
-                toLoc: g('to-location'),
-                invNum: g('inv-num') || 'INV-001',
+                wordmark: g('wordmark').trim(),
+                fromName: g('from-name').trim(),
+                fromEmail: g('from-email').trim(),
+                fromPhone: g('from-phone').trim(),
+                fromLoc: g('from-location').trim(),
+                invDesc: g('inv-desc').trim(),
+                toName: g('to-name').trim(),
+                toEmail: g('to-email').trim(),
+                toLoc: g('to-location').trim(),
+                invNum: g('inv-num').trim(),
                 invDate: fmtDate(g('inv-date')),
                 dueDate: fmtDate(g('due-date')),
-                bankName: g('bank-name'),
-                accName: g('acc-name'),
-                accNum: g('acc-num'),
-                momo: g('momo'),
-                notes: g('notes') || 'Thank you for your patronage!'
+                bankName: g('bank-name').trim(),
+                accName: g('acc-name').trim(),
+                accNum: g('acc-num').trim(),
+                momo: g('momo').trim(),
+                notes: g('notes').trim()
             };
+            const hasFrom = v.fromName || v.fromEmail || v.fromPhone || v.fromLoc;
+            const hasTo = v.toName || v.toEmail || v.toLoc;
 
             const rows = items.map((it, i) => `
     <tr style="background:${i % 2 === 0 ? '#fff' : C.stripe}">
@@ -1354,7 +2409,25 @@
       <td style="padding:11px 16px;border:1px solid #e2e5ea;text-align:right;font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:${C.bodyText}">${cur} ${fmt(it.amount)}</td>
     </tr>`).join('');
 
-            const logoHtml = logoData ? `<img src="${logoData}" style="max-height:64px;max-width:180px;object-fit:contain;display:block;margin-bottom:8px" alt="Logo">` : '';
+            /* ---- Logo placement ---- */
+            const sz = LOGO_SIZES[logoSize] || LOGO_SIZES.md;
+            const place = logoData ? logoPlacement : null;
+            const logoImg = (h, w) => `<img src="${logoData}" alt="${v.fromName ? esc(v.fromName) + ' logo' : 'Logo'}" style="display:block;width:auto;height:auto;object-fit:contain;max-height:${h}px;max-width:${w}px">`;
+            const headerLogoHtml = (place === 'header-left' || place === 'header-right')
+                ? `<div class="logo-wrap">${logoPlate
+                    ? `<span class="logo-plate">${logoImg(sz.h, sz.w)}</span>`
+                    : logoImg(sz.h, sz.w)}</div>`
+                : '';
+
+            const lhContact = [v.fromEmail, v.fromPhone, v.fromLoc].filter(Boolean).join(' &nbsp;&middot;&nbsp; ');
+            const letterheadHtml = place === 'letterhead'
+                ? `<div class="lh">
+    <div class="lh-logo">${logoImg(sz.h + 8, sz.w + 40)}</div>
+    ${v.fromName || lhContact ? `<div class="lh-biz">${v.fromName ? `<div class="n">${v.fromName}</div>` : ''}${lhContact ? `<div class="c">${lhContact}</div>` : ''}</div>` : ''}
+  </div>`
+                : '';
+            /* The letterhead band already carries the business details — don't repeat them below. */
+            const showFromInMeta = place !== 'letterhead';
 
             const payParts = [];
             if (v.bankName) payParts.push(`<b>Bank:</b> ${v.bankName}`);
@@ -1366,7 +2439,7 @@
       <tr class="sub-row"><td colspan="3">Tax (${taxRate}%)</td><td>${cur} ${fmt(taxAmt)}</td></tr>` : '';
 
             const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-<title>Invoice ${v.invNum} — ${v.toName}</title>
+<title>${[v.wordmark || 'Invoice', v.invNum, v.toName].filter(Boolean).join(' — ')}</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -1389,36 +2462,48 @@ thead th{padding:12px 16px;color:#fff;font-size:11px;font-weight:600;letter-spac
 thead th:last-child{text-align:right}
 .sub-row td{padding:11px 16px;border:1px solid #e2e5ea;text-align:right;font-weight:600;background:#f7f8fa;color:#555;font-family:'DM Mono',monospace}
 .total-row td{padding:14px 16px;background:${C.accent};color:#fff;font-weight:700;font-size:16px;text-align:right;font-family:'DM Mono',monospace}
-.payment{margin:22px 36px;padding:16px 18px;background:${C.stripe};border-radius:8px;font-size:13px;color:#333;line-height:1.9;border-left:4px solid ${C.accent}}
+.payment{margin:22px 36px;padding:16px 18px;background:${C.stripe};border-radius:8px;font-size:13px;color:#333;line-height:1.9;border:1px solid ${C.accent}}
 .payment .plbl{font-size:10px;font-weight:700;color:${C.accent};text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
 .footer{margin:0 36px 28px;padding-top:16px;border-top:1px solid #e2e5ea;font-size:12px;color:#aaa;text-align:center;font-style:italic}
-@media print{body{background:#fff;padding:0}.page{box-shadow:none;border-radius:0}}
+/* Logo */
+.logo-wrap{margin-bottom:15px}
+.hr .logo-wrap{display:flex;justify-content:flex-end}
+.logo-plate{display:inline-flex;background:#fff;padding:9px 11px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.16)}
+.lh{display:flex;align-items:center;justify-content:space-between;gap:28px;padding:24px 36px 20px;background:#fff;border-bottom:3px solid ${C.accent};page-break-inside:avoid}
+.lh-logo{flex-shrink:0}
+.lh-biz{text-align:right;min-width:0}
+.lh-biz .n{font-size:16px;font-weight:700;color:#111;letter-spacing:.01em}
+.lh-biz .c{font-size:12px;color:#777;margin-top:4px;line-height:1.65}
+@media(max-width:560px){.lh{flex-direction:column;align-items:flex-start;gap:14px}.lh-biz{text-align:left}}
+@media print{body{background:#fff;padding:0}.page{box-shadow:none;border-radius:0}.header,.lh{page-break-inside:avoid}}
 *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
 </style></head><body>
 <div class="page">
+  ${letterheadHtml}
   <div class="header">
-    <div class="hl">${logoHtml}<h1>INVOICE</h1>${v.invDesc ? `<p>${v.invDesc}</p>` : ''}</div>
+    <div class="hl">${place === 'header-left' ? headerLogoHtml : ''}${v.wordmark ? `<h1>${v.wordmark}</h1>` : ''}${v.invDesc ? `<p>${v.invDesc}</p>` : ''}</div>
     <div class="hr">
-      <div class="inv"># ${v.invNum}</div>
+      ${place === 'header-right' ? headerLogoHtml : ''}
+      ${v.invNum ? `<div class="inv"># ${v.invNum}</div>` : ''}
       ${v.invDate ? `<p>Date: ${v.invDate}</p>` : ''}
       ${v.dueDate ? `<p>Due: ${v.dueDate}</p>` : ''}
     </div>
   </div>
-  <div class="meta">
-    <div class="mb">
+  ${hasTo || (showFromInMeta && hasFrom) ? `<div class="meta">
+    ${hasTo ? `<div class="mb">
       <div class="lbl">Billed to</div>
-      <div class="name">${v.toName}</div>
+      ${v.toName ? `<div class="name">${v.toName}</div>` : ''}
       ${v.toEmail ? `<div class="sub">${v.toEmail}</div>` : ''}
       ${v.toLoc ? `<div class="sub">${v.toLoc}</div>` : ''}
-    </div>
-    <div class="mb" style="text-align:right">
+    </div>` : ''}
+    ${showFromInMeta && hasFrom ? `<div class="mb" style="text-align:right">
       <div class="lbl">From</div>
-      <div class="name">${v.fromName}</div>
+      ${v.fromName ? `<div class="name">${v.fromName}</div>` : ''}
       ${v.fromEmail ? `<div class="sub">${v.fromEmail}</div>` : ''}
       ${v.fromPhone ? `<div class="sub">${v.fromPhone}</div>` : ''}
       ${v.fromLoc ? `<div class="sub">${v.fromLoc}</div>` : ''}
-    </div>
-  </div>
+    </div>` : ''}
+  </div>` : ''}
   <table>
     <thead><tr>
       <th style="width:44px">#</th><th>Description</th><th>Details</th><th style="text-align:right">Amount</th>
@@ -1431,7 +2516,7 @@ thead th:last-child{text-align:right}
     </tfoot>
   </table>
   ${payParts.length ? `<div class="payment"><div class="plbl">Payment information</div>${payParts.join(' &nbsp;&bull;&nbsp; ')}</div>` : ''}
-  <div class="footer">${v.notes}</div>
+  ${v.notes ? `<div class="footer">${v.notes}</div>` : ''}
 </div>
 </body></html>`;
 
@@ -1447,6 +2532,7 @@ thead th:last-child{text-align:right}
                 'to-name', 'to-email', 'to-location', 'inv-num',
                 'bank-name', 'acc-name', 'acc-num', 'momo'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('inv-num').value = 'INV-001';
+            document.getElementById('wordmark').value = 'INVOICE';
             document.getElementById('tax-rate').value = '0';
             document.getElementById('notes').value = 'Thank you for your patronage! Please make payment within 14 days of invoice date.';
             document.getElementById('currency').value = 'GHC';
@@ -1460,8 +2546,11 @@ thead th:last-child{text-align:right}
         setDates();
         buildFormatOptions();
         buildPresets();
+        initLogoDropzone();
+        updateLogoUI();
         renderItems();
         updateDatePreview();
+        initTemplates();
     </script>
 
 {% endblock %}
