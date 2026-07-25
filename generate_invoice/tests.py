@@ -1,3 +1,5 @@
+import re
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -30,8 +32,13 @@ class LogoUploadMarkupTests(TestCase):
                 self.assertIn(marker, self.html)
 
     def test_dropzone_is_keyboard_reachable(self):
-        self.assertIn('role="button"', self.html)
-        self.assertIn('tabindex="0"', self.html)
+        """Assert against the dropzone's own tag — a match elsewhere in the page
+        would otherwise hide a regression here."""
+        tag = re.search(r'<div[^>]*id="logo-drop"[^>]*>', self.html)
+        self.assertIsNotNone(tag, 'logo dropzone element not found')
+        self.assertIn('role="button"', tag.group(0))
+        self.assertIn('tabindex="0"', tag.group(0))
+        self.assertIn('aria-label=', tag.group(0))
 
     def test_upload_is_constrained_to_images_under_2mb(self):
         self.assertIn('accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif"', self.html)
