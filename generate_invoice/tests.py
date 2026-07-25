@@ -82,6 +82,24 @@ class InvoiceCopyTests(TestCase):
                 self.assertNotIn(invented, self.html)
 
 
+class EmailNormalisationTests(TestCase):
+    """A pasted mail link must print as the bare address, not 'mailto:someone@example.com'."""
+
+    def setUp(self):
+        self.html = self.client.get(reverse('generate_invoice')).content.decode()
+
+    def test_cleaner_exists(self):
+        self.assertIn('function cleanEmail(', self.html)
+        self.assertIn("replace(/^mailto:/i, '')", self.html)
+
+    def test_both_email_fields_normalise_on_change(self):
+        self.assertEqual(self.html.count('onchange="normalizeEmailField(this)"'), 2)
+
+    def test_generated_invoice_cleans_both_addresses(self):
+        self.assertIn("fromEmail: cleanEmail(g('from-email'))", self.html)
+        self.assertIn("toEmail: cleanEmail(g('to-email'))", self.html)
+
+
 class InvoiceTemplateStoreTests(TestCase):
     def setUp(self):
         self.html = self.client.get(reverse('generate_invoice')).content.decode()

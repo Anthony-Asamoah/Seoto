@@ -1220,7 +1220,8 @@
                     <div class="field"><label>Business / your name</label>
                         <input type="text" id="from-name" placeholder="Your Agency"></div>
                     <div class="field"><label>Email</label>
-                        <input type="email" id="from-email" placeholder="you@example.com"></div>
+                        <input type="email" id="from-email" placeholder="you@example.com"
+                               onchange="normalizeEmailField(this)"></div>
                     <div class="field"><label>Phone</label>
                         <input type="text" id="from-phone" placeholder="+233 XXX XXX XXX"></div>
                     <div class="field"><label>Location</label>
@@ -1251,7 +1252,8 @@
                     <div class="field"><label>Client name</label>
                         <input type="text" id="to-name" required></div>
                     <div class="field"><label>Client email</label>
-                        <input type="email" id="to-email" placeholder="client@example.com"></div>
+                        <input type="email" id="to-email" placeholder="client@example.com"
+                               onchange="normalizeEmailField(this)"></div>
                     <div class="field"><label>Location</label>
                         <input type="text" id="to-location" placeholder="Accra, Ghana"></div>
                     <div class="field"><label>Invoice #</label>
@@ -2071,6 +2073,24 @@
             return document.getElementById(id).value;
         }
 
+        /* Pasting a mail link rather than the address itself is easy to do — copying an
+           <a href="mailto:…"> from a web page yields the whole href. Print the address alone. */
+        function cleanEmail(raw) {
+            let s = (raw || '').trim()
+                .replace(/^mailto:/i, '')
+                .split('?')[0]
+                .replace(/^<|>$/g, '');
+            try {
+                s = decodeURIComponent(s);
+            } catch (e) { /* not percent-encoded — keep it as typed */
+            }
+            return s.trim();
+        }
+
+        function normalizeEmailField(el) {
+            el.value = cleanEmail(el.value);
+        }
+
         /* ---- DATE PREVIEW ---- */
         function updateDatePreview() {
             const inv = document.getElementById('inv-date').value;
@@ -2382,12 +2402,12 @@
             const v = {
                 wordmark: g('wordmark').trim(),
                 fromName: g('from-name').trim(),
-                fromEmail: g('from-email').trim(),
+                fromEmail: cleanEmail(g('from-email')),
                 fromPhone: g('from-phone').trim(),
                 fromLoc: g('from-location').trim(),
                 invDesc: g('inv-desc').trim(),
                 toName: g('to-name').trim(),
-                toEmail: g('to-email').trim(),
+                toEmail: cleanEmail(g('to-email')),
                 toLoc: g('to-location').trim(),
                 invNum: g('inv-num').trim(),
                 invDate: fmtDate(g('inv-date')),
