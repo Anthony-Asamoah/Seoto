@@ -58,3 +58,65 @@ class LogoUploadMarkupTests(TestCase):
         for rule in ('.logo-wrap{', '.hr .logo-wrap{', '.logo-plate{', '.lh{'):
             with self.subTest(rule=rule):
                 self.assertIn(rule, self.html)
+
+
+class InvoiceCopyTests(TestCase):
+    """Blank fields must be omitted rather than replaced with copy the user never typed."""
+
+    def setUp(self):
+        self.html = self.client.get(reverse('generate_invoice')).content.decode()
+
+    def test_document_title_is_editable(self):
+        self.assertIn('id="wordmark"', self.html)
+        self.assertIn('${v.wordmark}', self.html)
+        self.assertNotIn('<h1>INVOICE</h1>', self.html)
+
+    def test_no_invented_copy_is_substituted_for_blank_fields(self):
+        for invented in (
+            "'Professional Services'",
+            "'Your Business'",
+            "'Client'",
+            "|| 'Thank you for your patronage!'",
+        ):
+            with self.subTest(invented=invented):
+                self.assertNotIn(invented, self.html)
+
+
+class InvoiceTemplateStoreTests(TestCase):
+    def setUp(self):
+        self.html = self.client.get(reverse('generate_invoice')).content.decode()
+
+    def test_template_bar_is_present(self):
+        for marker in (
+            'id="tpl-select"',
+            'id="tpl-apply"',
+            'id="tpl-save-new"',
+            'id="tpl-update"',
+            'id="tpl-default"',
+            'id="tpl-delete"',
+            'id="tpl-status"',
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker, self.html)
+
+    def test_storage_keys_are_versioned(self):
+        self.assertIn("TPL_KEY = 'seoto.invoice.templates.v1'", self.html)
+        self.assertIn("TPL_DEFAULT_KEY = 'seoto.invoice.defaultTemplate.v1'", self.html)
+
+    def test_template_carries_the_repeated_fields(self):
+        for field in ('wordmark', 'from-name', 'from-email', 'from-phone', 'from-location',
+                      'inv-desc', 'currency', 'tax-rate', 'bank-name', 'acc-name',
+                      'acc-num', 'momo', 'notes'):
+            with self.subTest(field=field):
+                self.assertIn("'%s'" % field, self.html)
+
+    def test_template_excludes_client_number_and_dates(self):
+        """These change every invoice, so applying a template must not touch them."""
+        block = self.html.split('const TPL_FIELDS = {')[1].split('};')[0]
+        for excluded in ('to-name', 'to-email', 'to-location', 'inv-num', 'inv-date', 'due-date'):
+            with self.subTest(excluded=excluded):
+                self.assertNotIn(excluded, block)
+
+    def test_quota_failure_is_handled(self):
+        self.assertIn('function tplCommit(', self.html)
+        self.assertIn('There isn’t enough browser storage left', self.html)

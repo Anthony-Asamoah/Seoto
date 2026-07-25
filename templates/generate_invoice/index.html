@@ -848,6 +848,127 @@
             margin-left: 8px
         }
 
+        .field-hint {
+            font-size: 11px;
+            color: var(--text-hint);
+            line-height: 1.45
+        }
+
+        /* Saved templates */
+        .tpl-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px 18px;
+            margin-bottom: 14px
+        }
+
+        .tpl-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 13px
+        }
+
+        .tpl-head .card-title {
+            margin-bottom: 0
+        }
+
+        .tpl-scope {
+            font-size: 10px;
+            color: var(--text-hint);
+            text-align: right;
+            line-height: 1.4;
+            flex-shrink: 0
+        }
+
+        .tpl-row {
+            display: flex;
+            gap: 8px;
+            align-items: center
+        }
+
+        .tpl-row select {
+            flex: 1;
+            min-width: 0
+        }
+
+        .btn-apply {
+            padding: 9px 18px;
+            border: none;
+            border-radius: var(--radius);
+            background: var(--navy);
+            color: #fff;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: opacity .15s
+        }
+
+        .btn-apply:disabled {
+            opacity: .4;
+            cursor: not-allowed
+        }
+
+        .tpl-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 10px
+        }
+
+        .tpl-inline {
+            display: none;
+            gap: 8px;
+            align-items: center;
+            margin-top: 11px;
+            padding: 11px 12px;
+            border: 1px solid var(--border2);
+            border-radius: var(--radius);
+            background: var(--surface2);
+            flex-wrap: wrap
+        }
+
+        .tpl-inline.show {
+            display: flex
+        }
+
+        .tpl-inline input {
+            flex: 1;
+            min-width: 150px
+        }
+
+        .tpl-inline .prompt {
+            font-size: 13px;
+            color: var(--text);
+            flex: 1;
+            min-width: 150px
+        }
+
+        .tpl-status {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 10px;
+            line-height: 1.45
+        }
+
+        .tpl-status:empty {
+            display: none
+        }
+
+        .tpl-status.error {
+            color: #B91C1C
+        }
+
+        .tpl-empty {
+            font-size: 12px;
+            color: var(--text-hint);
+            line-height: 1.5
+        }
+
         /* Invoice preview overlay */
         #preview-overlay {
             display: none;
@@ -1020,6 +1141,31 @@
             </div>
         </div>
 
+        <!-- SAVED TEMPLATES -->
+        <div class="tpl-card" id="tpl-card">
+            <div class="tpl-head">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/>
+                    </svg>
+                    Saved Templates
+                </div>
+                <div class="tpl-scope">Saved in this browser<br>Client, invoice&nbsp;# and dates stay untouched</div>
+            </div>
+            <div class="tpl-row">
+                <select id="tpl-select" onchange="onTemplateSelect()" aria-label="Saved templates"></select>
+                <button class="btn-apply" id="tpl-apply" onclick="applySelectedTemplate()">Apply</button>
+            </div>
+            <div class="tpl-actions">
+                <button class="btn-sm" id="tpl-save-new" onclick="promptSaveTemplate()">Save current as new…</button>
+                <button class="btn-sm" id="tpl-update" onclick="updateSelectedTemplate()">Update selected</button>
+                <button class="btn-sm" id="tpl-default" onclick="toggleDefaultTemplate()">Set as default</button>
+                <button class="btn-sm danger" id="tpl-delete" onclick="promptDeleteTemplate()">Delete</button>
+            </div>
+            <div class="tpl-inline" id="tpl-inline"></div>
+            <div class="tpl-status" id="tpl-status" role="status" aria-live="polite"></div>
+        </div>
+
         <div class="tabs">
             <button class="tab active" onclick="switchTab('details',this)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1080,9 +1226,17 @@
                     <div class="field"><label>Location</label>
                         <input type="text" id="from-location" placeholder="Accra, Ghana"></div>
                 </div>
-                <div class="field" style="margin-top:14px">
-                    <label>Invoice description / service type</label>
-                    <input type="text" id="inv-desc" placeholder="e.g. Web Development Services">
+                <div class="grid2" style="margin-top:14px">
+                    <div class="field">
+                        <label>Document title</label>
+                        <input type="text" id="wordmark" placeholder="INVOICE" value="INVOICE" maxlength="28">
+                        <span class="field-hint">The large heading — try QUOTE, RECEIPT or PROFORMA.</span>
+                    </div>
+                    <div class="field">
+                        <label>Invoice description / service type</label>
+                        <input type="text" id="inv-desc" placeholder="e.g. Web Development Services">
+                        <span class="field-hint">Sits under the title. Leave blank to omit it.</span>
+                    </div>
                 </div>
             </div>
             <div class="card">
@@ -1522,6 +1676,7 @@
 
         function syncHex(cid, hid) {
             document.getElementById(hid).value = document.getElementById(cid).value;
+            syncPresetSelection();
             updateLogoUI();
         }
 
@@ -1529,8 +1684,17 @@
             const v = document.getElementById(hid).value;
             if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
                 document.getElementById(cid).value = v;
+                syncPresetSelection();
                 updateLogoUI();
             }
+        }
+
+        /* Highlight the preset that matches the current colours — or none, once they're custom. */
+        function syncPresetSelection() {
+            const cur = COLOR_IDS.map(id => document.getElementById(id).value.toUpperCase());
+            document.querySelectorAll('.preset').forEach((el, i) => {
+                el.classList.toggle('active', PRESETS[i].colors.every((c, j) => c.toUpperCase() === cur[j]));
+            });
         }
 
         function getColors() {
@@ -1925,6 +2089,285 @@
             document.getElementById('invoice-frame').contentWindow.print();
         }
 
+        /* ---- SAVED TEMPLATES ----
+           Everything that tends to stay the same between invoices is stored under a name in
+           localStorage. Client details, invoice number and dates are deliberately excluded:
+           they change every time, so applying a template never clobbers them. */
+        const TPL_KEY = 'seoto.invoice.templates.v1';
+        const TPL_DEFAULT_KEY = 'seoto.invoice.defaultTemplate.v1';
+        /* id -> element id, for the plain text/number fields a template carries. */
+        const TPL_FIELDS = {
+            wordmark: 'wordmark', fromName: 'from-name', fromEmail: 'from-email',
+            fromPhone: 'from-phone', fromLoc: 'from-location', invDesc: 'inv-desc',
+            currency: 'currency', taxRate: 'tax-rate', bankName: 'bank-name',
+            accName: 'acc-name', accNum: 'acc-num', momo: 'momo', notes: 'notes',
+        };
+
+        let templates = [];
+        let selectedTemplateId = null;
+
+        function tplStorage() {
+            try {
+                localStorage.setItem('__tpl_probe__', '1');
+                localStorage.removeItem('__tpl_probe__');
+                return localStorage;
+            } catch (e) {
+                return null;   /* private mode / storage disabled */
+            }
+        }
+
+        function loadTemplates() {
+            const store = tplStorage();
+            if (!store) {
+                templates = [];
+                return;
+            }
+            try {
+                const raw = JSON.parse(store.getItem(TPL_KEY));
+                templates = Array.isArray(raw) ? raw.filter(t => t && t.id && t.name && t.data) : [];
+            } catch (e) {
+                templates = [];
+            }
+        }
+
+        /* Writes the current list, rolling back to what's on disk if the quota is blown. */
+        function tplCommit(successMsg) {
+            const store = tplStorage();
+            if (!store) {
+                tplStatus('This browser has storage disabled, so templates can’t be saved.', true);
+                return false;
+            }
+            try {
+                store.setItem(TPL_KEY, JSON.stringify(templates));
+                tplStatus(successMsg);
+                return true;
+            } catch (e) {
+                loadTemplates();
+                renderTemplateBar();
+                tplStatus('There isn’t enough browser storage left. Delete a template, or remove the logo before saving.', true);
+                return false;
+            }
+        }
+
+        function tplStatus(msg, isError) {
+            const el = document.getElementById('tpl-status');
+            el.textContent = msg || '';
+            el.classList.toggle('error', !!isError);
+        }
+
+        function collectTemplateData() {
+            const data = {items: items.map(i => ({...i})), dateFormat: selectedFormat, colors: {}};
+            Object.keys(TPL_FIELDS).forEach(k => data[k] = g(TPL_FIELDS[k]));
+            COLOR_IDS.forEach(id => data.colors[id] = document.getElementById(id).value);
+            data.logo = logoData
+                ? {data: logoData, name: logoName, placement: logoPlacement, size: logoSize, plate: logoPlate}
+                : null;
+            return data;
+        }
+
+        function applyTemplateData(d) {
+            Object.keys(TPL_FIELDS).forEach(k => {
+                if (typeof d[k] === 'string') document.getElementById(TPL_FIELDS[k]).value = d[k];
+            });
+            if (Array.isArray(d.items) && d.items.length) {
+                items = d.items.map(i => ({desc: i.desc || '', detail: i.detail || '', amount: i.amount || ''}));
+            }
+            if (d.colors) {
+                COLOR_IDS.forEach((id, i) => {
+                    const val = d.colors[id];
+                    if (/^#[0-9A-Fa-f]{6}$/.test(val || '')) {
+                        document.getElementById(id).value = val;
+                        document.getElementById(HEX_IDS[i]).value = val;
+                    }
+                });
+            }
+            if (d.dateFormat && DATE_FORMATS.some(f => f.id === d.dateFormat)) selectedFormat = d.dateFormat;
+
+            if (d.logo && d.logo.data) {
+                logoData = d.logo.data;
+                logoName = d.logo.name || 'logo';
+                logoPlacement = LOGO_PLACEMENTS.some(p => p.id === d.logo.placement) ? d.logo.placement : 'header-left';
+                logoSize = LOGO_SIZES[d.logo.size] ? d.logo.size : 'md';
+                logoPlate = !!d.logo.plate;
+                /* The saved choice is the user's, so don't let auto-contrast override it. */
+                logoPlateTouched = true;
+                logoInfo = null;
+                analyzeLogo(logoData, info => {
+                    logoInfo = info;
+                    updateLogoUI();
+                });
+            } else {
+                logoData = null;
+                logoInfo = null;
+                logoName = '';
+                logoPlate = false;
+                logoPlateTouched = false;
+                logoPlacement = 'header-left';
+                logoSize = 'md';
+            }
+
+            buildFormatOptions();
+            syncPresetSelection();
+            updateLogoUI();
+            renderItems();
+            updateDatePreview();
+        }
+
+        function renderTemplateBar() {
+            const sel = document.getElementById('tpl-select');
+            const defaultId = (tplStorage() || {getItem: () => null}).getItem(TPL_DEFAULT_KEY);
+            if (!templates.some(t => t.id === selectedTemplateId)) selectedTemplateId = templates[0] ? templates[0].id : null;
+
+            sel.innerHTML = '';
+            if (!templates.length) {
+                sel.innerHTML = '<option value="">No templates saved yet</option>';
+                sel.disabled = true;
+            } else {
+                sel.disabled = false;
+                templates.forEach(t => {
+                    const o = document.createElement('option');
+                    o.value = t.id;
+                    o.textContent = t.name + (t.id === defaultId ? '  ★ default' : '');
+                    if (t.id === selectedTemplateId) o.selected = true;
+                    sel.appendChild(o);
+                });
+            }
+
+            const none = !templates.length;
+            document.getElementById('tpl-apply').disabled = none;
+            ['tpl-update', 'tpl-default', 'tpl-delete'].forEach(id => document.getElementById(id).disabled = none);
+            document.getElementById('tpl-default').textContent =
+                selectedTemplateId && selectedTemplateId === defaultId ? 'Clear default' : 'Set as default';
+        }
+
+        function onTemplateSelect() {
+            selectedTemplateId = document.getElementById('tpl-select').value || null;
+            closeTemplateInline();
+            renderTemplateBar();
+        }
+
+        function selectedTemplate() {
+            return templates.find(t => t.id === selectedTemplateId) || null;
+        }
+
+        function closeTemplateInline() {
+            const box = document.getElementById('tpl-inline');
+            box.classList.remove('show');
+            box.innerHTML = '';
+        }
+
+        function promptSaveTemplate() {
+            const box = document.getElementById('tpl-inline');
+            tplStatus('');
+            box.innerHTML = `<input type="text" id="tpl-name" maxlength="60" placeholder="Template name — e.g. Studio retainer">
+                <button class="btn-sm" onclick="confirmSaveTemplate()">Save</button>
+                <button class="btn-sm" onclick="closeTemplateInline()">Cancel</button>`;
+            box.classList.add('show');
+            const input = document.getElementById('tpl-name');
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmSaveTemplate();
+                } else if (e.key === 'Escape') {
+                    closeTemplateInline();
+                }
+            });
+            input.focus();
+        }
+
+        function confirmSaveTemplate() {
+            const name = (document.getElementById('tpl-name').value || '').trim();
+            if (!name) {
+                tplStatus('Give the template a name first.', true);
+                return;
+            }
+            if (templates.some(t => t.name.toLowerCase() === name.toLowerCase())) {
+                tplStatus(`You already have a template called “${name}”. Pick another name, or use Update selected.`, true);
+                return;
+            }
+            const tpl = {
+                id: 'tpl_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+                name: name,
+                savedAt: new Date().toISOString(),
+                data: collectTemplateData(),
+            };
+            templates.push(tpl);
+            selectedTemplateId = tpl.id;
+            if (tplCommit(`Saved “${name}”.`)) closeTemplateInline();
+            renderTemplateBar();
+        }
+
+        function updateSelectedTemplate() {
+            const t = selectedTemplate();
+            if (!t) return;
+            closeTemplateInline();
+            t.data = collectTemplateData();
+            t.savedAt = new Date().toISOString();
+            tplCommit(`Updated “${t.name}” with the current details.`);
+            renderTemplateBar();
+        }
+
+        function applySelectedTemplate() {
+            const t = selectedTemplate();
+            if (!t) return;
+            closeTemplateInline();
+            applyTemplateData(t.data);
+            tplStatus(`Applied “${t.name}”. Client details, invoice # and dates were left as they are.`);
+        }
+
+        function toggleDefaultTemplate() {
+            const store = tplStorage(), t = selectedTemplate();
+            if (!store || !t) return;
+            closeTemplateInline();
+            if (store.getItem(TPL_DEFAULT_KEY) === t.id) {
+                store.removeItem(TPL_DEFAULT_KEY);
+                tplStatus(`“${t.name}” will no longer load automatically.`);
+            } else {
+                store.setItem(TPL_DEFAULT_KEY, t.id);
+                tplStatus(`“${t.name}” will load automatically when you open this page.`);
+            }
+            renderTemplateBar();
+        }
+
+        function promptDeleteTemplate() {
+            const t = selectedTemplate();
+            if (!t) return;
+            tplStatus('');
+            const box = document.getElementById('tpl-inline');
+            box.innerHTML = `<span class="prompt">Delete “${esc(t.name)}”? This can’t be undone.</span>
+                <button class="btn-sm danger" onclick="confirmDeleteTemplate()">Delete</button>
+                <button class="btn-sm" onclick="closeTemplateInline()">Cancel</button>`;
+            box.classList.add('show');
+        }
+
+        function confirmDeleteTemplate() {
+            const t = selectedTemplate();
+            if (!t) return;
+            const store = tplStorage();
+            templates = templates.filter(x => x.id !== t.id);
+            selectedTemplateId = null;
+            if (store && store.getItem(TPL_DEFAULT_KEY) === t.id) store.removeItem(TPL_DEFAULT_KEY);
+            tplCommit(`Deleted “${t.name}”.`);
+            closeTemplateInline();
+            renderTemplateBar();
+        }
+
+        function initTemplates() {
+            loadTemplates();
+            const store = tplStorage();
+            const defaultId = store ? store.getItem(TPL_DEFAULT_KEY) : null;
+            const fallback = templates.find(t => t.id === defaultId);
+            if (fallback) {
+                selectedTemplateId = fallback.id;
+                applyTemplateData(fallback.data);
+                tplStatus(`Loaded your default template, “${fallback.name}”.`);
+            }
+            renderTemplateBar();
+            if (!store) {
+                tplStatus('This browser has storage disabled, so templates can’t be saved.', true);
+            }
+        }
+
         /* ---- GENERATE ---- */
         function generateInvoice() {
             const C = getColors();
@@ -1934,24 +2377,29 @@
             const taxAmt = subtotal * (taxRate / 100);
             const total = subtotal + taxAmt;
 
+            /* Nothing here falls back to invented copy — a field left blank is simply
+               left off the invoice rather than printing words nobody typed. */
             const v = {
-                fromName: g('from-name') || 'Your Business',
-                fromEmail: g('from-email'),
-                fromPhone: g('from-phone'),
-                fromLoc: g('from-location'),
-                invDesc: g('inv-desc') || 'Professional Services',
-                toName: g('to-name') || 'Client',
-                toEmail: g('to-email'),
-                toLoc: g('to-location'),
-                invNum: g('inv-num') || 'INV-001',
+                wordmark: g('wordmark').trim(),
+                fromName: g('from-name').trim(),
+                fromEmail: g('from-email').trim(),
+                fromPhone: g('from-phone').trim(),
+                fromLoc: g('from-location').trim(),
+                invDesc: g('inv-desc').trim(),
+                toName: g('to-name').trim(),
+                toEmail: g('to-email').trim(),
+                toLoc: g('to-location').trim(),
+                invNum: g('inv-num').trim(),
                 invDate: fmtDate(g('inv-date')),
                 dueDate: fmtDate(g('due-date')),
-                bankName: g('bank-name'),
-                accName: g('acc-name'),
-                accNum: g('acc-num'),
-                momo: g('momo'),
-                notes: g('notes') || 'Thank you for your patronage!'
+                bankName: g('bank-name').trim(),
+                accName: g('acc-name').trim(),
+                accNum: g('acc-num').trim(),
+                momo: g('momo').trim(),
+                notes: g('notes').trim()
             };
+            const hasFrom = v.fromName || v.fromEmail || v.fromPhone || v.fromLoc;
+            const hasTo = v.toName || v.toEmail || v.toLoc;
 
             const rows = items.map((it, i) => `
     <tr style="background:${i % 2 === 0 ? '#fff' : C.stripe}">
@@ -1964,7 +2412,7 @@
             /* ---- Logo placement ---- */
             const sz = LOGO_SIZES[logoSize] || LOGO_SIZES.md;
             const place = logoData ? logoPlacement : null;
-            const logoImg = (h, w) => `<img src="${logoData}" alt="${esc(v.fromName)} logo" style="display:block;width:auto;height:auto;object-fit:contain;max-height:${h}px;max-width:${w}px">`;
+            const logoImg = (h, w) => `<img src="${logoData}" alt="${v.fromName ? esc(v.fromName) + ' logo' : 'Logo'}" style="display:block;width:auto;height:auto;object-fit:contain;max-height:${h}px;max-width:${w}px">`;
             const headerLogoHtml = (place === 'header-left' || place === 'header-right')
                 ? `<div class="logo-wrap">${logoPlate
                     ? `<span class="logo-plate">${logoImg(sz.h, sz.w)}</span>`
@@ -1975,7 +2423,7 @@
             const letterheadHtml = place === 'letterhead'
                 ? `<div class="lh">
     <div class="lh-logo">${logoImg(sz.h + 8, sz.w + 40)}</div>
-    <div class="lh-biz"><div class="n">${v.fromName}</div>${lhContact ? `<div class="c">${lhContact}</div>` : ''}</div>
+    ${v.fromName || lhContact ? `<div class="lh-biz">${v.fromName ? `<div class="n">${v.fromName}</div>` : ''}${lhContact ? `<div class="c">${lhContact}</div>` : ''}</div>` : ''}
   </div>`
                 : '';
             /* The letterhead band already carries the business details — don't repeat them below. */
@@ -1991,7 +2439,7 @@
       <tr class="sub-row"><td colspan="3">Tax (${taxRate}%)</td><td>${cur} ${fmt(taxAmt)}</td></tr>` : '';
 
             const html = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-<title>Invoice ${v.invNum} — ${v.toName}</title>
+<title>${[v.wordmark || 'Invoice', v.invNum, v.toName].filter(Boolean).join(' — ')}</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -2033,29 +2481,29 @@ thead th:last-child{text-align:right}
 <div class="page">
   ${letterheadHtml}
   <div class="header">
-    <div class="hl">${place === 'header-left' ? headerLogoHtml : ''}<h1>INVOICE</h1>${v.invDesc ? `<p>${v.invDesc}</p>` : ''}</div>
+    <div class="hl">${place === 'header-left' ? headerLogoHtml : ''}${v.wordmark ? `<h1>${v.wordmark}</h1>` : ''}${v.invDesc ? `<p>${v.invDesc}</p>` : ''}</div>
     <div class="hr">
       ${place === 'header-right' ? headerLogoHtml : ''}
-      <div class="inv"># ${v.invNum}</div>
+      ${v.invNum ? `<div class="inv"># ${v.invNum}</div>` : ''}
       ${v.invDate ? `<p>Date: ${v.invDate}</p>` : ''}
       ${v.dueDate ? `<p>Due: ${v.dueDate}</p>` : ''}
     </div>
   </div>
-  <div class="meta">
-    <div class="mb">
+  ${hasTo || (showFromInMeta && hasFrom) ? `<div class="meta">
+    ${hasTo ? `<div class="mb">
       <div class="lbl">Billed to</div>
-      <div class="name">${v.toName}</div>
+      ${v.toName ? `<div class="name">${v.toName}</div>` : ''}
       ${v.toEmail ? `<div class="sub">${v.toEmail}</div>` : ''}
       ${v.toLoc ? `<div class="sub">${v.toLoc}</div>` : ''}
-    </div>
-    ${showFromInMeta ? `<div class="mb" style="text-align:right">
+    </div>` : ''}
+    ${showFromInMeta && hasFrom ? `<div class="mb" style="text-align:right">
       <div class="lbl">From</div>
-      <div class="name">${v.fromName}</div>
+      ${v.fromName ? `<div class="name">${v.fromName}</div>` : ''}
       ${v.fromEmail ? `<div class="sub">${v.fromEmail}</div>` : ''}
       ${v.fromPhone ? `<div class="sub">${v.fromPhone}</div>` : ''}
       ${v.fromLoc ? `<div class="sub">${v.fromLoc}</div>` : ''}
     </div>` : ''}
-  </div>
+  </div>` : ''}
   <table>
     <thead><tr>
       <th style="width:44px">#</th><th>Description</th><th>Details</th><th style="text-align:right">Amount</th>
@@ -2068,7 +2516,7 @@ thead th:last-child{text-align:right}
     </tfoot>
   </table>
   ${payParts.length ? `<div class="payment"><div class="plbl">Payment information</div>${payParts.join(' &nbsp;&bull;&nbsp; ')}</div>` : ''}
-  <div class="footer">${v.notes}</div>
+  ${v.notes ? `<div class="footer">${v.notes}</div>` : ''}
 </div>
 </body></html>`;
 
@@ -2084,6 +2532,7 @@ thead th:last-child{text-align:right}
                 'to-name', 'to-email', 'to-location', 'inv-num',
                 'bank-name', 'acc-name', 'acc-num', 'momo'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('inv-num').value = 'INV-001';
+            document.getElementById('wordmark').value = 'INVOICE';
             document.getElementById('tax-rate').value = '0';
             document.getElementById('notes').value = 'Thank you for your patronage! Please make payment within 14 days of invoice date.';
             document.getElementById('currency').value = 'GHC';
@@ -2101,6 +2550,7 @@ thead th:last-child{text-align:right}
         updateLogoUI();
         renderItems();
         updateDatePreview();
+        initTemplates();
     </script>
 
 {% endblock %}
