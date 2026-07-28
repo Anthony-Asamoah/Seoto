@@ -79,7 +79,16 @@
 
     <div class="main container">
         {% if pending_occurrences %}
-            <h4 class="mb-3">Pending Approval ({{ pending_occurrences|length }})</h4>
+            <div class="d-flex justify-content-between align-items-center mb-3 gap-2">
+                <h4 class="mb-0">Pending Approval ({{ pending_occurrences|length }})</h4>
+                <form method="post" action="{% url 'spending_tracker:clear_pending_occurrences' %}"
+                      onsubmit="return confirm('Clear all {{ pending_occurrences|length }} pending approval{{ pending_occurrences|length|pluralize }}? They will be skipped — no transactions are created, and they will not come back.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-secondary btn-sm text-nowrap">
+                        <i class="fas fa-check-double"></i> Clear all
+                    </button>
+                </form>
+            </div>
             {% for occurrence in pending_occurrences %}
                 <div class="pending-card d-flex justify-content-between align-items-center">
                     <div>

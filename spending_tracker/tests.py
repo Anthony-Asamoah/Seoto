@@ -581,6 +581,121 @@ class ConfirmRecurringOccurrenceTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class ClearPendingOccurrencesTests(TestCase):
+    """Bulk-dismissing every pending approval from the recurring list page."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='clearuser', password='pass')
+        self.other_user = User.objects.create_user(username='clearother', password='pass')
+        self.account = Account.objects.create(name='Main', user=self.user, balance=Decimal('300.00'))
+        self.today = date(2026, 6, 1)
+        self.url = reverse('spending_tracker:clear_pending_occurrences')
+        self.client.force_login(self.user)
+
+    def _pending_schedule(self, user=None, renewal_date=None, amount='40.00'):
+        """A needs-approval schedule, processed so it has one PENDING occurrence."""
+        schedule = RecurringTransaction.objects.create(
+            user=user or self.user,
+            mode='EXPENSE',
+            amount=Decimal(amount),
+            currency='GHS',
+            account=Account.objects.create(name='Theirs', user=user, balance=Decimal('100.00'))
+            if user else self.account,
+            frequency=RecurringFrequencyChoices.MONTHLY,
+            renewal_date=renewal_date or self.today,
+            is_auto_renew=False,
+        )
+        process_due_occurrences(schedule, today=renewal_date or self.today)
+        return schedule
+
+    def test_clears_every_pending_occurrence(self):
+        self._pending_schedule()
+        self._pending_schedule(renewal_date=date(2026, 5, 1))
+
+        self.client.post(self.url)
+
+        occurrences = RecurringTransactionOccurrence.objects.filter(recurring_transaction__user=self.user)
+        self.assertEqual(occurrences.count(), 2)
+        for occurrence in occurrences:
+            self.assertEqual(occurrence.status, RecurringOccurrenceStatusChoices.DISMISSED)
+            self.assertIsNotNone(occurrence.resolved_at)
+
+    def test_clearing_creates_no_transactions_and_leaves_balance_alone(self):
+        self._pending_schedule()
+
+        self.client.post(self.url)
+
+        self.assertEqual(Transaction.objects.count(), 0)
+        self.account.refresh_from_db()
+        self.assertEqual(self.account.balance, Decimal('300.00'))
+
+    def test_clearing_leaves_schedules_active(self):
+        schedule = self._pending_schedule()
+
+        self.client.post(self.url)
+
+        schedule.refresh_from_db()
+        self.assertTrue(schedule.is_active)
+
+    def test_already_resolved_occurrences_are_untouched(self):
+        auto_schedule = RecurringTransaction.objects.create(
+            user=self.user, mode='EXPENSE', amount=Decimal('40.00'), currency='GHS',
+            account=self.account, frequency=RecurringFrequencyChoices.MONTHLY,
+            renewal_date=self.today, is_auto_renew=True,
+        )
+        process_due_occurrences(auto_schedule, today=self.today)
+        auto_occurrence = RecurringTransactionOccurrence.objects.get(recurring_transaction=auto_schedule)
+        resolved_at_before = auto_occurrence.resolved_at
+
+        self.client.post(self.url)
+
+        auto_occurrence.refresh_from_db()
+        self.assertEqual(auto_occurrence.status, RecurringOccurrenceStatusChoices.AUTO_CREATED)
+        self.assertEqual(auto_occurrence.resolved_at, resolved_at_before)
+        self.assertIsNotNone(auto_occurrence.transaction)
+
+    def test_does_not_touch_another_users_pending_occurrences(self):
+        theirs = self._pending_schedule(user=self.other_user)
+
+        self.client.post(self.url)
+
+        occurrence = RecurringTransactionOccurrence.objects.get(recurring_transaction=theirs)
+        self.assertEqual(occurrence.status, RecurringOccurrenceStatusChoices.PENDING)
+
+    def test_second_post_is_a_noop(self):
+        self._pending_schedule()
+        self.client.post(self.url)
+        occurrence = RecurringTransactionOccurrence.objects.get(recurring_transaction__user=self.user)
+        resolved_at_before = occurrence.resolved_at
+
+        self.client.post(self.url)
+
+        occurrence.refresh_from_db()
+        self.assertEqual(occurrence.resolved_at, resolved_at_before)
+
+    def test_get_is_not_allowed(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 405)
+
+    def test_redirects_back_to_the_recurring_list(self):
+        self._pending_schedule()
+        response = self.client.post(self.url)
+        self.assertRedirects(response, reverse('spending_tracker:recurring_list'))
+
+    def test_button_only_rendered_when_something_is_pending(self):
+        list_url = reverse('spending_tracker:recurring_list')
+        self.assertNotContains(self.client.get(list_url), self.url)
+
+        self._pending_schedule()
+        self.assertContains(self.client.get(list_url), self.url)
+
+    def test_login_required(self):
+        self.client.logout()
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/login', response.url)
+
+
 class EditTransactionRecurringBannerTests(TestCase):
     """Editing a one-off transaction should link back to its schedule when it was
     generated by a recurring occurrence, and say nothing otherwise."""

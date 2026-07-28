@@ -1614,6 +1614,33 @@ def delete_recurring_transaction(request, pk):
 
 
 @login_required
+@require_http_methods(["POST"])
+def clear_pending_occurrences(request):
+    """Dismiss every pending approval the user has, in one go.
+
+    This is the bulk form of the confirm view's 'dismiss' action, so it only ever skips —
+    it never creates transactions. Bulk-approving is deliberately not offered: each approval
+    moves money and is editable before it is committed, so it stays a per-occurrence decision.
+
+    The update is filtered on PENDING rather than applied to a pre-read list, so a second
+    submission (double tap, two tabs) can't rewrite `resolved_at` on already-resolved rows.
+    """
+    cleared = RecurringTransactionOccurrence.objects.filter(
+        recurring_transaction__user=request.user,
+        status=RecurringOccurrenceStatusChoices.PENDING,
+    ).update(
+        status=RecurringOccurrenceStatusChoices.DISMISSED,
+        resolved_at=timezone.now(),
+    )
+
+    if cleared:
+        messages.success(request, f"Cleared {cleared} pending approval{'' if cleared == 1 else 's'}.")
+    else:
+        messages.info(request, 'No pending approvals to clear.')
+    return redirect('spending_tracker:recurring_list')
+
+
+@login_required
 def confirm_recurring_occurrence(request, pk):
     """Approve or dismiss a pending recurring transaction occurrence (the notification's CTA target).
 
