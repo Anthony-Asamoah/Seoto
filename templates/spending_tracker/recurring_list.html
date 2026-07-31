@@ -64,7 +64,6 @@
 
         .pending-card {
             background: #fef9e7;
-            border-left: 4px solid #f39c12;
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 10px;
@@ -89,9 +88,18 @@
                         <br>
                         <small class="text-muted">Due {{ occurrence.scheduled_date }}</small>
                     </div>
-                    <a href="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}" class="btn btn-warning btn-sm">
-                        Review
-                    </a>
+                    <div class="d-flex gap-2 align-items-center">
+                        <a href="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}" class="btn btn-warning btn-sm">
+                            Review
+                        </a>
+                        <form method="post" action="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}" class="d-none d-sm-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="dismiss">
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </form>
+                    </div>
                 </div>
             {% endfor %}
             <hr class="my-4">
