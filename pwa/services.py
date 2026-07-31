@@ -23,7 +23,7 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
         user=user,
         title=title,
         body=body,
-        icon=icon or '/static/img/pwa/icon-192x192.png',
+        icon=icon or '/static/img/pwa/android-chrome-192x192.png',
         url=url,
         data=data or {}
     )
@@ -34,8 +34,8 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
     payload = json.dumps({
         'title': title,
         'body': body,
-        'icon': icon or '/static/img/pwa/icon-192x192.png',
-        'badge': '/static/img/pwa/icon-72x72.png',
+        'icon': icon or '/static/img/pwa/android-chrome-192x192.png',
+        'badge': '/static/img/pwa/favicon-32x32.png',
         'data': {
             'url': url or '/',
             **(data or {})

@@ -1,7 +1,7 @@
 // Service Worker for Seoto PWA
-// Version: 1.2.0
+// Version: 1.2.1
 
-const CACHE_VERSION = 'seoto-v1.2.0';
+const CACHE_VERSION = 'seoto-v1.2.1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
@@ -34,8 +34,8 @@ const STATIC_ASSETS = [
   '/offline/',
   '/manifest.json',
   '/static/img/logo.png',
-  '/static/img/pwa/icon-192x192.png',
-  '/static/img/pwa/icon-512x512.png',
+  '/static/img/pwa/android-chrome-192x192.png',
+  '/static/img/pwa/android-chrome-512x512.png',
   // CDN resources
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js',
@@ -232,8 +232,8 @@ self.addEventListener('push', (event) => {
   let notificationData = {
     title: 'Seoto',
     body: 'You have a new notification',
-    icon: '/static/img/pwa/icon-192x192.png',
-    badge: '/static/img/pwa/icon-72x72.png',
+    icon: '/static/img/pwa/android-chrome-192x192.png',
+    badge: '/static/img/pwa/favicon-32x32.png',
     data: {}
   };
 
