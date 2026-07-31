@@ -1,3 +1,4 @@
+{% load static %}
 {% url 'pwa:notifications_list' as notif_url %}
 {% url 'pwa:mark_notifications_read' as notif_read_url %}
 {% url 'weather_forecast' as weather_url %}
@@ -126,6 +127,12 @@
         <span>Back</span>
     </button>
 
+    <!-- Fills the back button's slot when there is nowhere to go back to,
+         so the nav never ends on an empty gap. Shown from JS. -->
+    <div class="bottom-nav-logo" id="bottom-nav-logo" aria-hidden="true" hidden>
+        <img src="{% static 'img/logo-mark.png' %}" alt="">
+    </div>
+
 </nav>
 
 <script>
@@ -243,10 +250,12 @@
     window.SeotoCloseNotifPanel = closePanel;
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Hide back button when there is nowhere to go back to
+        // Nowhere to go back to — swap the back button for the logo mark
         var backBtn = document.getElementById('bottom-nav-back');
+        var navLogo = document.getElementById('bottom-nav-logo');
         if (backBtn && window.history.length <= 1) {
-            backBtn.style.visibility = 'hidden';
+            backBtn.hidden = true;
+            if (navLogo) navLogo.hidden = false;
         }
 
         // Fetch unread count on load to populate badge

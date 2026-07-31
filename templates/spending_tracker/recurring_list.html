@@ -6,14 +6,12 @@
     <style>
         .recurring-card {
             background: white;
-            border-radius: 8px;
+            border-radius: 14px;
             padding: 20px;
-            margin-bottom: 15px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .recurring-card.paused {
-            border-left-color: #adb5bd;
             opacity: 0.75;
         }
 
@@ -62,11 +60,265 @@
             color: #d68910;
         }
 
+        /* ── Rows ────────────────────────────────────────────────────────────
+           Two modes, one markup. Pointer devices keep real buttons in the row:
+           a mouse drag on a card fights text selection and native link
+           dragging, so the gesture isn't offered there. Touch devices hide
+           those buttons and get the iOS swipe instead — an action layer fixed
+           behind a content layer that translates left. The media query is
+           mirrored by SWIPE_QUERY in the page script; keep them in step. */
+
+        .swipe-container {
+            --swipe-action-w: 104px;
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .swipe-container--dual {
+            --swipe-action-w: 184px;
+        }
+
+        .swipe-actions {
+            display: none;
+        }
+
+        .swipe-content {
+            position: relative;
+        }
+
+        .card-tap-target {
+            display: none;
+        }
+
+        .touch-only {
+            display: none;
+        }
+
+        /* The card body is the click target; the buttons float above it. */
         .pending-card {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
             background: #fef9e7;
+            border-radius: 14px;
+            transition: background 0.15s ease;
+        }
+
+        .pending-card:hover {
+            background: #fdf3d7;
+        }
+
+        .pending-link {
+            color: #212529;
+            text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .pending-link:hover {
+            color: #212529;
+        }
+
+        .pending-link::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+        }
+
+        .pending-link:focus-visible::after {
+            outline: 2px solid #175a9c;
+            outline-offset: -2px;
+        }
+
+        .pending-amount {
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pending-meta {
+            margin-top: 2px;
+            font-size: 0.8rem;
+            color: #8a8a8e;
+        }
+
+        .pending-chevron {
+            font-size: 0.8rem;
+            color: #c7c7cc;
+        }
+
+        .row-hint {
+            margin: -2px 0 12px;
+            font-size: 0.78rem;
+            color: #8a8a8e;
+        }
+
+        /* Buttons live above the stretched link so they stay clickable. */
+        .row-actions {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pending-card .row-actions {
+            margin-left: auto;
+        }
+
+        .row-skip-btn {
+            border: 1px solid #dee2e6;
             border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 10px;
+            padding: 5px 12px;
+            background: #fff;
+            color: #6c757d;
+            font-size: 0.82rem;
+            font-weight: 500;
+            transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+        }
+
+        .row-skip-btn:hover {
+            border-color: #ff3b30;
+            color: #ff3b30;
+            background: rgba(255, 59, 48, 0.06);
+        }
+
+        .row-skip-btn:focus-visible {
+            outline: 2px solid #ff3b30;
+            outline-offset: 2px;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .swipe-container {
+                overflow: hidden;
+                border-radius: 14px;
+                background: #ff3b30;
+            }
+
+            .swipe-actions {
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                width: var(--swipe-action-w);
+                display: flex;
+            }
+
+            .swipe-actions form {
+                flex: 1 1 0;
+                display: flex;
+            }
+
+            .swipe-btn {
+                width: 100%;
+                border: 0;
+                border-radius: 0;
+                background: transparent;
+                color: #fff;
+                font-size: 0.78rem;
+                font-weight: 600;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .swipe-btn i {
+                font-size: 1.05rem;
+            }
+
+            .swipe-btn--pause {
+                background: #ff9f0a;
+            }
+
+            .swipe-btn:active {
+                filter: brightness(0.9);
+            }
+
+            .swipe-btn:focus-visible {
+                outline: 2px solid #fff;
+                outline-offset: -5px;
+            }
+
+            .swipe-content {
+                transform: translate3d(0, 0, 0);
+                transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
+                /* Vertical scrolling stays the page's; horizontal is ours. */
+                touch-action: pan-y;
+                will-change: transform;
+                user-select: none;
+                -webkit-user-select: none;
+            }
+
+            .swipe-container.is-dragging .swipe-content {
+                transition: none;
+            }
+
+            .swipe-container.is-open .swipe-content {
+                transform: translate3d(calc(-1 * var(--swipe-action-w)), 0, 0);
+            }
+
+            .swipe-container.is-committing .swipe-content {
+                transform: translate3d(-100%, 0, 0);
+            }
+
+            /* Whole card taps through to its detail page. */
+            .card-tap-target {
+                display: block;
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                border-radius: 14px;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .recurring-card {
+                position: relative;
+                box-shadow: none;
+            }
+
+            .row-actions {
+                display: none;
+            }
+
+            .touch-only {
+                display: block;
+            }
+
+            /* One-time nudge on the first row so the gesture is learnable. */
+            @keyframes swipe-hint {
+                0%, 100% { transform: translate3d(0, 0, 0); }
+                45%      { transform: translate3d(-30px, 0, 0); }
+            }
+
+            .swipe-container.hint .swipe-content {
+                animation: swipe-hint 1.1s cubic-bezier(0.32, 0.72, 0, 1) 0.5s 1;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .swipe-content,
+                .swipe-container.hint .swipe-content {
+                    transition: none;
+                    animation: none;
+                }
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .swipe-container {
+                --swipe-action-w: 92px;
+            }
+
+            .swipe-container--dual {
+                --swipe-action-w: 168px;
+            }
+
+            .recurring-card {
+                padding: 16px;
+            }
         }
     </style>
 {% endblock %}
@@ -78,85 +330,131 @@
 
     <div class="main container">
         {% if pending_occurrences %}
-            <h4 class="mb-3">Pending Approval ({{ pending_occurrences|length }})</h4>
+            <h4 class="mb-1">Pending Approval ({{ pending_occurrences|length }})</h4>
+            <p class="row-hint touch-only">Tap a row to review · swipe left to skip</p>
             {% for occurrence in pending_occurrences %}
-                <div class="pending-card d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>{{ occurrence.recurring_transaction.currency }} {{ occurrence.recurring_transaction.amount }}</strong>
-                        {{ occurrence.recurring_transaction.get_mode_display }}
-                        — {{ occurrence.recurring_transaction.details|default:"No description"|striptags }}
-                        <br>
-                        <small class="text-muted">Due {{ occurrence.scheduled_date }}</small>
-                    </div>
-                    <div class="d-flex gap-2 align-items-center">
-                        <a href="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}" class="btn btn-warning btn-sm">
-                            Review
-                        </a>
-                        <form method="post" action="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}" class="d-none d-sm-inline">
+                <div class="swipe-container" data-occurrence-id="{{ occurrence.pk }}" data-swipe-commit="true">
+                    {# Action layer: sits behind the card, revealed as it slides left. #}
+                    <div class="swipe-actions">
+                        <form method="post" action="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="dismiss">
-                            <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-times"></i> Cancel
+                            <button type="submit" class="swipe-btn">
+                                <i class="fas fa-forward"></i> Skip
                             </button>
                         </form>
+                    </div>
+
+                    {# Content layer: the card body links to the review page. #}
+                    <div class="swipe-content">
+                        <div class="pending-card">
+                            <a href="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}"
+                               class="pending-link" draggable="false">
+                                <div>
+                                    <span class="pending-amount">{{ occurrence.recurring_transaction.currency }} {{ occurrence.recurring_transaction.amount }}</span>
+                                    {{ occurrence.recurring_transaction.get_mode_display }}
+                                    — {{ occurrence.recurring_transaction.details|default:"No description"|striptags }}
+                                </div>
+                                <div class="pending-meta">Due {{ occurrence.scheduled_date }}</div>
+                            </a>
+                            <div class="row-actions">
+                                <form method="post" action="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="dismiss">
+                                    <button type="submit" class="row-skip-btn">
+                                        <i class="fas fa-forward"></i> Skip
+                                    </button>
+                                </form>
+                            </div>
+                            <i class="fas fa-chevron-right pending-chevron touch-only ms-auto"></i>
+                        </div>
                     </div>
                 </div>
             {% endfor %}
             <hr class="my-4">
         {% endif %}
 
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
             <h4 class="mb-0">Your Schedules</h4>
             <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-outline-primary btn-sm">
                 <i class="fas fa-plus"></i> New Recurring Transaction
             </a>
         </div>
+        <p class="row-hint touch-only">Tap to edit · swipe left for actions</p>
 
         {% if recurring_transactions %}
             {% for recurring in recurring_transactions %}
-                <div class="recurring-card {% if not recurring.is_active %}paused{% endif %}">
-                    <div class="row align-items-center">
-                        <div class="col-md-5">
-                            <div class="recurring-amount {{ recurring.mode|lower }}">
-                                {{ currency_symbol }}{{ recurring.amount }}
+                <div class="swipe-container swipe-container--dual" data-recurring-id="{{ recurring.pk }}">
+                    {# Two actions, so no full-swipe commit: reveal, then tap. #}
+                    <div class="swipe-actions">
+                        <form method="post" action="{% url 'spending_tracker:toggle_recurring_transaction' recurring.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="swipe-btn swipe-btn--pause">
+                                {% if recurring.is_active %}
+                                    <i class="fas fa-pause"></i> Pause
+                                {% else %}
+                                    <i class="fas fa-play"></i> Resume
+                                {% endif %}
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'spending_tracker:delete_recurring_transaction' recurring.pk %}"
+                              onsubmit="return confirm('Delete this recurring transaction? Transactions already created from it will not be affected.');">
+                            {% csrf_token %}
+                            <button type="submit" class="swipe-btn">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="swipe-content">
+                        <div class="recurring-card {% if not recurring.is_active %}paused{% endif %}">
+                            <a href="{% url 'spending_tracker:edit_recurring_transaction' recurring.pk %}"
+                               class="card-tap-target" draggable="false"
+                               aria-label="Edit {{ recurring.details|default:recurring.get_mode_display|striptags }}"></a>
+                            <div class="row align-items-center">
+                                <div class="col-md-5">
+                                    <div class="recurring-amount {{ recurring.mode|lower }}">
+                                        {{ currency_symbol }}{{ recurring.amount }}
+                                    </div>
+                                    <div>
+                                        {{ recurring.details|default:recurring.get_mode_display|striptags }}
+                                        <span class="frequency-badge">{{ recurring.get_frequency_display }}</span>
+                                        <span class="mode-badge {% if recurring.is_auto_renew %}auto{% else %}approval{% endif %}">
+                                            {% if recurring.is_auto_renew %}Auto{% else %}Needs Approval{% endif %}
+                                        </span>
+                                    </div>
+                                    <small class="text-muted">{{ recurring.account.name }}</small>
+                                </div>
+                                <div class="col-md-3">
+                                    {% if recurring.is_active %}
+                                        <small class="text-muted">Next run</small><br>
+                                        {{ recurring.next_run_date }}
+                                    {% else %}
+                                        <span class="badge bg-secondary">Paused</span>
+                                    {% endif %}
+                                    {% if recurring.end_date %}
+                                        <br><small class="text-muted">Ends {{ recurring.end_date }}</small>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-4 text-end row-actions justify-content-end">
+                                    <a href="{% url 'spending_tracker:edit_recurring_transaction' recurring.pk %}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                    <form method="post" action="{% url 'spending_tracker:toggle_recurring_transaction' recurring.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                            {% if recurring.is_active %}<i class="fas fa-pause"></i> Pause{% else %}<i class="fas fa-play"></i> Resume{% endif %}
+                                        </button>
+                                    </form>
+                                    <form method="post" action="{% url 'spending_tracker:delete_recurring_transaction' recurring.pk %}"
+                                          class="d-inline" onsubmit="return confirm('Delete this recurring transaction? Transactions already created from it will not be affected.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
-                            <div>
-                                {{ recurring.details|default:recurring.get_mode_display|striptags }}
-                                <span class="frequency-badge">{{ recurring.get_frequency_display }}</span>
-                                <span class="mode-badge {% if recurring.is_auto_renew %}auto{% else %}approval{% endif %}">
-                                    {% if recurring.is_auto_renew %}Auto{% else %}Needs Approval{% endif %}
-                                </span>
-                            </div>
-                            <small class="text-muted">{{ recurring.account.name }}</small>
-                        </div>
-                        <div class="col-md-3">
-                            {% if recurring.is_active %}
-                                <small class="text-muted">Next run</small><br>
-                                {{ recurring.next_run_date }}
-                            {% else %}
-                                <span class="badge bg-secondary">Paused</span>
-                            {% endif %}
-                            {% if recurring.end_date %}
-                                <br><small class="text-muted">Ends {{ recurring.end_date }}</small>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <a href="{% url 'spending_tracker:edit_recurring_transaction' recurring.pk %}" class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-edit"></i> Edit
-                            </a>
-                            <form method="post" action="{% url 'spending_tracker:toggle_recurring_transaction' recurring.pk %}" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                    {% if recurring.is_active %}<i class="fas fa-pause"></i> Pause{% else %}<i class="fas fa-play"></i> Resume{% endif %}
-                                </button>
-                            </form>
-                            <form method="post" action="{% url 'spending_tracker:delete_recurring_transaction' recurring.pk %}"
-                                  class="d-inline" onsubmit="return confirm('Delete this recurring transaction? Transactions already created from it will not be affected.');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </form>
                         </div>
                     </div>
                 </div>
@@ -169,4 +467,143 @@
             </div>
         {% endif %}
     </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        (function () {
+            // Mirrors the media query in this page's stylesheet: only touch
+            // devices swipe, everything else uses the in-row buttons.
+            const SWIPE_QUERY = '(hover: none) and (pointer: coarse)';
+            if (!window.matchMedia(SWIPE_QUERY).matches) return;
+
+            const rows = document.querySelectorAll('.swipe-container');
+            if (!rows.length) return;
+
+            // Past this much travel a single-action row counts as committed and
+            // submits on release, the way a full swipe in Mail does.
+            const commitDistance = (el) => Math.min(el.offsetWidth * 0.5, 220);
+            const actionWidth = (el) => parseInt(
+                getComputedStyle(el).getPropertyValue('--swipe-action-w'), 10
+            ) || 104;
+
+            let openRow = null;
+
+            function closeRow(row) {
+                if (!row) return;
+                row.classList.remove('is-open');
+                if (openRow === row) openRow = null;
+            }
+
+            function openRowExclusive(row) {
+                if (openRow && openRow !== row) closeRow(openRow);
+                row.classList.add('is-open');
+                openRow = row;
+            }
+
+            rows.forEach(function (row) {
+                const content = row.querySelector('.swipe-content');
+                const link = row.querySelector('.pending-link, .card-tap-target');
+                const commitForm = row.dataset.swipeCommit === 'true'
+                    ? row.querySelector('.swipe-actions form')
+                    : null;
+
+                let startX = 0, startY = 0, offset = 0;
+                let pointerId = null, tracking = false, sliding = false;
+
+                content.addEventListener('pointerdown', function (event) {
+                    pointerId = event.pointerId;
+                    startX = event.clientX;
+                    startY = event.clientY;
+                    offset = 0;
+                    tracking = true;
+                    sliding = false;
+                    row.classList.remove('hint');
+                });
+
+                content.addEventListener('pointermove', function (event) {
+                    if (!tracking || event.pointerId !== pointerId) return;
+
+                    const dx = event.clientX - startX;
+                    const dy = event.clientY - startY;
+
+                    // Decide once whether this is a swipe or a scroll; vertical
+                    // intent hands the gesture back to the page for good.
+                    if (!sliding) {
+                        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+                        if (Math.abs(dy) > Math.abs(dx)) {
+                            tracking = false;
+                            return;
+                        }
+                        sliding = true;
+                        row.classList.add('is-dragging');
+                        content.setPointerCapture(pointerId);
+                    }
+
+                    const width = actionWidth(row);
+                    let x = (row.classList.contains('is-open') ? -width : 0) + dx;
+                    if (x > 0) x = 0;                                // nothing to reveal right
+                    if (x < -width) x = -width + (x + width) * 0.55; // resist past the action
+                    offset = x;
+                    content.style.transform = 'translate3d(' + x + 'px, 0, 0)';
+                    event.preventDefault();
+                });
+
+                function release() {
+                    if (!tracking) return;
+                    tracking = false;
+                    if (!sliding) return;
+
+                    row.classList.remove('is-dragging');
+                    content.style.transform = '';
+
+                    const width = actionWidth(row);
+                    if (commitForm && offset <= -commitDistance(row)) {
+                        closeRow(row);
+                        row.classList.add('is-committing');
+                        setTimeout(function () { commitForm.requestSubmit(); }, 240);
+                    } else if (offset <= -width * 0.45) {
+                        openRowExclusive(row);
+                    } else {
+                        closeRow(row);
+                    }
+
+                    // Swallow the click the browser fires at the end of a drag.
+                    row.dataset.suppressClick = 'true';
+                    setTimeout(function () { delete row.dataset.suppressClick; }, 0);
+                }
+
+                content.addEventListener('pointerup', release);
+                content.addEventListener('pointercancel', release);
+
+                if (link) {
+                    link.addEventListener('click', function (event) {
+                        // A drag, or a tap on an open row, closes rather than navigates.
+                        if (row.dataset.suppressClick || row.classList.contains('is-open')) {
+                            event.preventDefault();
+                            closeRow(row);
+                        }
+                    });
+                }
+
+                // Keyboard/screen-reader: focusing an action slides it into view.
+                row.querySelectorAll('.swipe-btn').forEach(function (button) {
+                    button.addEventListener('focus', function () { openRowExclusive(row); });
+                    button.addEventListener('blur', function () { closeRow(row); });
+                });
+            });
+
+            document.addEventListener('pointerdown', function (event) {
+                if (openRow && !openRow.contains(event.target)) closeRow(openRow);
+            }, true);
+
+            // Nudge the first row once ever, so the gesture is discoverable.
+            try {
+                if (!localStorage.getItem('recurringSwipeHintSeen')) {
+                    rows[0].classList.add('hint');
+                    localStorage.setItem('recurringSwipeHintSeen', '1');
+                }
+            } catch (e) { /* private mode: the hint is optional */ }
+        })();
+    </script>
 {% endblock %}

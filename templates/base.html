@@ -39,6 +39,18 @@
 
     <style>
 
+        /* Brand palette, sampled from the SEOTO logo mark (img/logo-mark.png) */
+        :root {
+            --logo-navy: #0b2650;
+            --logo-gold: #d0a23e;
+            /* The logo gold only manages ~2.3:1 on white — too weak for a
+               small icon. This deeper shade of the same hue clears 3:1. */
+            --logo-gold-deep: #b3862c;
+            /* Idle nav icons: navy washed out enough to recede, but still
+               reads as part of the brand rather than a neutral grey. */
+            --logo-navy-muted: #7d8ba3;
+        }
+
         .navbar-home {
             padding-left: 15px
         }
@@ -206,7 +218,7 @@
             left: 0;
             right: 0;
             background: #fff;
-            box-shadow: 0 -1px 0 rgba(0, 0, 0, .06), 0 -4px 20px rgba(0, 0, 0, .07);
+            box-shadow: 0 -1px 0 rgba(11, 38, 80, .10), 0 -4px 20px rgba(11, 38, 80, .09);
             display: none; /* hidden by default; shown on mobile below */
             justify-content: center;
             gap: 4px;
@@ -216,15 +228,19 @@
             z-index: 1030;
         }
 
+        /* Slots share the row and shrink as needed: five fixed 72px slots
+           overflow a 390px phone, which used to push the last one (Back)
+           off the right edge. */
         .bottom-nav-item {
-            flex: 0 0 72px;
+            flex: 1 1 0;
+            max-width: 72px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 3px;
             padding: 8px 4px 6px;
-            color: #9ca3af;
+            color: var(--logo-navy-muted);
             font-size: 0.7rem;
             font-weight: 500;
             letter-spacing: 0.01em;
@@ -247,7 +263,13 @@
 
         /* Active page indicator — thin bar at top of item */
         .bottom-nav-item.active {
-            color: #175a9c;
+            color: var(--logo-navy);
+        }
+
+        /* Gold icon against the navy label mirrors the two-tone logo mark;
+           the label keeps the navy so the text stays legible on white. */
+        .bottom-nav-item.active i {
+            color: var(--logo-gold-deep);
         }
 
         .bottom-nav-item.active::before {
@@ -258,7 +280,7 @@
             transform: translateX(-50%);
             width: 28px;
             height: 3px;
-            background: #175a9c;
+            background: var(--logo-gold-deep);
             border-radius: 0 0 4px 4px;
         }
 
@@ -269,21 +291,22 @@
 
         /* Keyboard focus ring — use :focus-visible so mouse clicks are unaffected */
         .bottom-nav-item:focus-visible {
-            outline: 2px solid #175a9c;
+            outline: 2px solid var(--logo-navy);
             outline-offset: -3px;
             border-radius: 6px;
         }
 
         /* Back button — regular flex item, sits naturally after the others */
         .bottom-nav-back {
-            flex: 0 0 72px;
+            flex: 1 1 0;
+            max-width: 72px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 3px;
             padding: 8px 4px 6px;
-            color: #9ca3af;
+            color: var(--logo-navy-muted);
             font-size: 0.7rem;
             font-weight: 500;
             min-height: 44px;
@@ -306,14 +329,37 @@
         }
 
         .bottom-nav-back:focus-visible {
-            outline: 2px solid #175a9c;
+            outline: 2px solid var(--logo-navy);
             outline-offset: -3px;
             border-radius: 6px;
         }
 
+        /* Logo mark standing in for the back button on first-load pages */
+        .bottom-nav-logo {
+            flex: 1 1 0;
+            max-width: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 4px 6px;
+            pointer-events: none;
+        }
+
+        .bottom-nav-logo img {
+            height: 26px;
+            width: auto;
+            opacity: 0.55;
+        }
+
+        /* Beats the display:flex above, which would otherwise defeat [hidden] */
+        .bottom-nav-back[hidden],
+        .bottom-nav-logo[hidden] {
+            display: none;
+        }
+
         /* Tap flash — triggered by .nav-tap class added in JS on pointerdown */
         @keyframes nav-tap-flash {
-            0%   { background: rgba(23, 90, 156, 0.14); border-radius: 8px; color: #175a9c; }
+            0%   { background: rgba(208, 162, 62, 0.18); border-radius: 8px; color: var(--logo-navy); }
             100% { background: transparent; color: inherit; }
         }
 
@@ -326,7 +372,7 @@
         .nav-divider {
             width: 1px;
             height: 20px;
-            background: #e5e7eb;
+            background: rgba(11, 38, 80, 0.14);
             align-self: center;
             flex-shrink: 0;
             margin: 0 2px;
