@@ -41,6 +41,7 @@ Single Django project (`seoto/`) hosting many small feature apps. Routing is cen
 - `seoto/middleware.py` — `BotScannerMiddleware` (first in chain) and `RateLimitMiddleware` (last). Per-path limits in `settings.RATE_LIMIT_CONFIG`; storage is the default `LocMemCache` so limits are per-process, not cluster-wide.
 - `seoto/external_services/` — `recaptcha.py` (v3 verification, threshold from `RECAPTCHA_SCORE_THRESHOLD`) and `email_validation.py` (IPQualityScore).
 - `seoto/context_processors.py` — exposes `RECAPTCHA_SITE_KEY` to all templates.
+- CSRF: `static/js/csrf.js` (loaded from `base.html`) rewrites every rendered `csrfmiddlewaretoken` from the cookie at submit time, so service-worker-cached or long-open pages don't post a stale token; use its `csrfFetch` for JS POSTs. Failures land on `CSRF_FAILURE_VIEW` → `home.views.error_handlers.csrf_failure`, which re-issues the cookie and offers a one-click retry (same-origin posts only, sensitive fields and uploads never replayed).
 - `seoto/utils/` — `GetEnv` (typed env reader; all settings go through it), `media.py` (`MediaHelper` for thumbnail generation, used across foodie/accounts), `choices.py`.
 - `seoto/mixins/views.py` — shared CBV mixins.
 - `utils/paginator.py` — shared pagination helper.

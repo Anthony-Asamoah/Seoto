@@ -1,7 +1,7 @@
 // Service Worker for Seoto PWA
-// Version: 1.2.1
+// Version: 1.3.0
 
-const CACHE_VERSION = 'seoto-v1.2.1';
+const CACHE_VERSION = 'seoto-v1.3.0';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;

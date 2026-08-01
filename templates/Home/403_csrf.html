@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}| Session Expired{% endblock %}
+
+{% block style %}
+    {% include 'partials/error_styles.html' %}
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="header">
+            <h2>Your security token expired</h2>
+        </div>
+        <div class="main mt-2">
+            <p>
+                Nothing was saved. This usually happens when you signed in again in
+                another tab, or the page sat open for a while before you submitted it.
+            </p>
+
+            {% if can_retry %}
+                {% if dropped_fields %}
+                    <p>
+                        For your safety, these fields weren't kept and need retyping:
+                        <strong>{{ dropped_fields|join:", " }}</strong>. Go back to fill
+                        them in again.
+                    </p>
+                    <button class="btn btn-primary" onclick="history.back()">Go Back</button>
+                {% else %}
+                    <p>Your details were kept — submit again to continue.</p>
+                    <form method="post" action="{{ retry_action }}" style="display: inline;">
+                        {% csrf_token %}
+                        {% for name, value in retry_fields %}
+                            <input type="hidden" name="{{ name }}" value="{{ value }}">
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary">Try Again</button>
+                    </form>
+                    <button class="btn btn-warning" onclick="history.back()">Go Back</button>
+                {% endif %}
+            {% else %}
+                <p>Go back and submit the form again to continue.</p>
+                <button class="btn btn-primary" onclick="history.back()">Go Back</button>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

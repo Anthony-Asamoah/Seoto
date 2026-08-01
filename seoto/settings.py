@@ -30,6 +30,9 @@ SECURE_SSL_REDIRECT = not DEBUG
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', cast=Csv(post_process=tuple))
+
+# Recoverable page (fresh token + one-click retry) instead of Django's bare 403
+CSRF_FAILURE_VIEW = 'home.views.error_handlers.csrf_failure'
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv(post_process=tuple))
 APP_DOMAIN = config('APP_DOMAIN')
 

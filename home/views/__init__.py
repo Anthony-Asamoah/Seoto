@@ -1,4 +1,5 @@
 __all__ = [
+    "csrf_failure",
     "error404",
     "error500",
     "incoming",
@@ -15,7 +16,7 @@ __all__ = [
 ]
 
 from home.views.dash import dashboard
-from home.views.error_handlers import error500, error404
+from home.views.error_handlers import csrf_failure, error500, error404
 from home.views.index import Home, Apps
 from home.views.incoming import incoming
 from home.views.monitoring import (
