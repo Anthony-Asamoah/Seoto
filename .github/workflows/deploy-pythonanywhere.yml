@@ -44,6 +44,8 @@ jobs:
           git pull --ff-only
           source ~/.virtualenvs/"$VIRTUALENV"/bin/activate
           pip install -r requirements.txt
+          # manage.py lives in src/, which is also the import root.
+          cd src
           python manage.py migrate --noinput
           python manage.py collectstatic --noinput
           echo DEPLOYMENT_SUCCESS

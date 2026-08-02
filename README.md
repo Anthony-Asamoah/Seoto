@@ -13,7 +13,7 @@ API layer. The project is ASGI-ready (Daphne + Channels) and ships as a PWA with
 - **Static files:** WhiteNoise
 - **Rich text:** CKEditor 5
 - **Web push:** VAPID (`pywebpush`)
-- **Deploy:** Vercel (`vercel.json` → `api/index`, build via `build.sh`)
+- **Deploy:** PythonAnywhere (GitHub Actions workflow, build via `build.sh`)
 
 ## Apps
 
@@ -31,8 +31,9 @@ API layer. The project is ASGI-ready (Daphne + Channels) and ships as a PWA with
 | `theme` | Theme presets, gated behind `IS_THEME_ENABLED`; injects CSS via context processor |
 | `pwa` | Service worker, manifest, web push (VAPID) |
 
-Routing is centralized in `seoto/urls.py`; each app mounts its own `urls.py` from there.
-See `CLAUDE.md` for deeper architecture notes.
+Apps live under `src/domains/`; the Django project package is `src/infrastructure/core/`.
+Routing is centralized in `src/infrastructure/core/urls.py`; each app mounts its own `urls.py`
+from there. See `CLAUDE.md` for deeper architecture notes.
 
 ## Getting started
 
@@ -54,9 +55,11 @@ At minimum set `SECRET_KEY`. Settings are read via `python-decouple` (OS env var
 `.env`). See `.env.example` for all options — database, email, media storage, VAPID, reCAPTCHA,
 and feature flags.
 
-Set up the database and run the server:
+Set up the database and run the server. `manage.py` lives in `src/`, which is also the
+Python import root — run all management commands from there:
 
 ```bash
+cd src
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
@@ -65,7 +68,7 @@ python manage.py runserver
 `runserver` is fine for HTTP. For WebSocket / Channels testing, run under Daphne:
 
 ```bash
-daphne seoto.asgi:application
+daphne infrastructure.core.asgi:application
 ```
 
 ## Configuration
@@ -80,24 +83,29 @@ All settings come from `.env` (see `.env.example`). Common toggles:
 
 ## Testing
 
-There is no top-level test config; tests run per app.
+There is no top-level test config; tests run per app. Run from `src/` — discovery walks up
+from the working directory, so it only finds every app when started there.
 
 ```bash
-python manage.py test                    # all apps
-python manage.py test spending_tracker   # single app
-python manage.py test spending_tracker.tests.TestClassName.test_method
+cd src
+python manage.py test                                  # all apps
+python manage.py test domains.apps.spending_tracker    # single app
+python manage.py test domains.apps.spending_tracker.tests.TestClassName.test_method
 ```
 
 ## Deployment
 
-`build.sh` collects static files and runs migrations:
+Deployment targets PythonAnywhere. Pushing to `master` triggers
+`.github/workflows/deploy-pythonanywhere.yml`, which pulls the branch over SSH, installs
+requirements, then runs migrations and `collectstatic` from `src/` and reloads the web app.
+
+`build.sh` does the same collect-static + migrate pair locally, if you need to run it by hand:
 
 ```bash
 bash build.sh
 ```
 
-Deployment targets Vercel via `vercel.json` (routes all requests to `api/index`). HTTPS is
-forced when `DEBUG=False` (`SECURE_SSL_REDIRECT`).
+HTTPS is forced when `DEBUG=False` (`SECURE_SSL_REDIRECT`).
 
 ## Management commands
 
