@@ -1,3 +1,5 @@
+from typing import Optional
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -17,7 +19,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
         model = ProductImage
         fields = ('id', 'url', 'alt_text', 'caption', 'is_cover', 'order')
 
-    def get_url(self, obj) -> str | None:
+    def get_url(self, obj) -> Optional[str]:
         if not obj.image: return None
         request = self.context.get('request')
         url = obj.image.url
