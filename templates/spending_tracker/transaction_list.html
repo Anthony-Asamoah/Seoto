@@ -4,6 +4,12 @@
 
 {% block style %}
 <style>
+    /* Rows read left-label / right-amount, so they need a capped measure to
+       stay scannable — 760px matches .aura-page in spending_tracker.css. */
+    .list-shell {
+        max-width: 760px;
+        margin-inline: auto;
+    }
     .filter-card {
         background: white;
         border-radius: 8px;
@@ -99,11 +105,11 @@
     <h1><a href="{% url 'spending_tracker:dashboard' %}" class="crumb">Expense & Income</a> | History</h1>
 </div>
 
-<div class="main container">
+<div class="main container list-shell">
     <!-- Filters -->
     <div class="filter-card">
         <form method="get" class="row g-3">
-            <div class="col-md-3">
+            <div class="col-sm-6 col-lg-4">
                 <label class="form-label">Transaction Type</label>
                 <select name="mode" class="form-select">
                     <option value="">All Types</option>
@@ -112,7 +118,7 @@
                     <option value="TRANSFER" {% if request.GET.mode == 'TRANSFER' %}selected{% endif %}>Transfer</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-sm-6 col-lg-4">
                 <label class="form-label">Category</label>
                 <select name="category" class="form-select">
                     <option value="">All Categories</option>
@@ -123,7 +129,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-sm-6 col-lg-4">
                 <label class="form-label">Account</label>
                 <select name="account" class="form-select">
                     <option value="">All Accounts</option>
@@ -134,7 +140,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-sm-6 col-lg-4">
                 <label class="form-label">Sort By</label>
                 <select name="sort" class="form-select">
                     {% for value, label in sort_options.items %}
@@ -144,7 +150,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-sm-6 col-lg-4">
                 <label class="form-label">Group By</label>
                 <select name="group_by" class="form-select">
                     <option value="" {% if not group_by %}selected{% endif %}>No Grouping</option>
@@ -155,11 +161,11 @@
                     <option value="year" {% if group_by == 'year' %}selected{% endif %}>Year</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-sm-6 col-lg-4">
                 <label class="form-label">From</label>
                 <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
             </div>
-            <div class="col-md-3">
+            <div class="col-sm-6 col-lg-4">
                 <label class="form-label">To</label>
                 <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
             </div>

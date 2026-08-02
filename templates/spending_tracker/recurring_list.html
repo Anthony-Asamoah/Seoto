@@ -4,6 +4,13 @@
 
 {% block style %}
     <style>
+        /* Rows read left-label / right-amount, so they need a capped measure to
+           stay scannable — 760px matches .aura-page in spending_tracker.css. */
+        .list-shell {
+            max-width: 760px;
+            margin-inline: auto;
+        }
+
         .recurring-card {
             background: white;
             border-radius: 14px;
@@ -328,7 +335,7 @@
         <h1><a href="{% url 'spending_tracker:dashboard' %}" class="crumb">Expense & Income</a> - Recurring Transactions</h1>
     </div>
 
-    <div class="main container">
+    <div class="main container list-shell">
         {% if pending_occurrences %}
             <h4 class="mb-1">Pending Approval ({{ pending_occurrences|length }})</h4>
             <p class="row-hint touch-only">Tap a row to review · swipe left to skip</p>
