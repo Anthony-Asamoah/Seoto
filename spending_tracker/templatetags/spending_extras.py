@@ -35,6 +35,15 @@ def relative_date(value):
 
 
 @register.filter
+def abs_value(value):
+    """Absolute value, for templates that render the sign themselves."""
+    try:
+        return abs(float(value))
+    except (TypeError, ValueError):
+        return value
+
+
+@register.filter
 def humanize_amount(value):
     """
     Formats a currency amount for compact display, abbreviating with K/M/B

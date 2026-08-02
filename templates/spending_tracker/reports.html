@@ -1,6 +1,9 @@
 {% load static spending_extras %}
 {{ trend_data|json_script:"trend-data" }}
 {{ json_expense_categories|json_script:"expense-categories-data" }}
+{{ json_account_performance|json_script:"account-performance-data" }}
+{{ json_income_categories|json_script:"income-categories-data" }}
+{{ json_transfer_routes|json_script:"transfer-routes-data" }}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -174,6 +177,190 @@
             .metric-label {
                 font-size: 0.55rem;
                 letter-spacing: 0;
+            }
+        }
+
+        .account-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .account-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 6px 16px rgba(16, 24, 40, 0.06);
+        }
+
+        .account-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .account-name {
+            font-weight: 600;
+            font-size: 1rem;
+            line-height: 1.2;
+        }
+
+        .account-type {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #8a94a6;
+            margin-top: 2px;
+        }
+
+        .account-balance-block {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .account-balance {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #2c3e50;
+            line-height: 1.1;
+        }
+
+        .net-chip {
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+
+        .net-chip.net-up {
+            color: #1e8449;
+            background: rgba(39, 174, 96, 0.12);
+        }
+
+        .net-chip.net-down {
+            color: #c0392b;
+            background: rgba(231, 76, 60, 0.12);
+        }
+
+        .net-pct {
+            font-weight: 500;
+            opacity: 0.75;
+        }
+
+        .account-spark {
+            position: relative;
+            height: 90px;
+            margin: 12px 0 10px;
+        }
+
+        .flow-bar {
+            display: flex;
+            height: 6px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: #eef1f5;
+        }
+
+        .flow-in {
+            background: #27ae60;
+        }
+
+        .flow-out {
+            background: #e74c3c;
+        }
+
+        .flow-empty {
+            width: 100%;
+            background: #eef1f5;
+        }
+
+        .flow-legend {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 6px;
+        }
+
+        .account-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 14px 0 0;
+            padding-top: 12px;
+            border-top: 1px solid #f0f2f5;
+        }
+
+        .account-stats dt {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #8a94a6;
+            font-weight: 500;
+        }
+
+        .account-stats dd {
+            margin: 2px 0 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Both category cards keep the height of a full five-row list, so a short
+           list never shrinks the card or misaligns it with its neighbour. */
+        .category-card {
+            height: 100%;
+        }
+
+        /* Fixed chart box: a card with two categories is the same height as one
+           with five, so the pair stays aligned. */
+        .category-chart {
+            position: relative;
+            height: 260px;
+        }
+
+        .route-path {
+            font-weight: 600;
+            font-size: 0.95rem;
+            line-height: 1.3;
+        }
+
+        .route-arrow {
+            color: #8a94a6;
+            margin: 0 4px;
+        }
+
+        .route-node-muted {
+            color: #c0392b;
+        }
+
+        .net-chip.route-chip {
+            color: #1f6feb;
+            background: rgba(31, 111, 235, 0.12);
+        }
+
+        .flow-route {
+            background: #1f6feb;
+        }
+
+        .account-notes {
+            margin-top: 12px;
+            font-size: 0.75rem;
+            color: #6c757d;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 576px) {
+            .account-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .account-stats {
+                grid-template-columns: repeat(2, 1fr);
+                row-gap: 10px;
             }
         }
 
@@ -398,38 +585,29 @@
     <!-- Top Income & Expense Sources -->
     <div class="row">
         <div class="col-lg-6">
-            <div class="report-card">
-                <h5 class="mb-3">💰 Top Income Sources</h5>
-                <div class="list-group list-group-flush">
-                    {% if income_categories %}
-                        {% for income in income_categories %}
-                            <div class="list-group-item d-flex justify-content-between">
-                                <span>{{ income.category_label|default:"Uncategorized" }}</span>
-                                <span class="fw-bold text-success">+{{ currency_symbol }}{{ income.total | floatformat:2 }}</span>
-                            </div>
-                        {% endfor %}
-                    {% else %}
-                        <div class="list-group-item text-center text-muted">
-                            No income transactions for this period
-                        </div>
-                    {% endif %}
+            <div class="report-card category-card">
+                <h5 class="mb-1">💰 Top Income Sources</h5>
+                <p class="text-muted small mb-3">Largest earners this period</p>
+                <div class="category-chart">
+                    <canvas id="incomeCategoryBarChart"></canvas>
+                    <div id="incomeCategoryBarEmpty" class="chart-empty-state" style="display: none;">
+                        <div class="emoji">💰</div>
+                        <div class="message">No income transactions for this period</div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-6">
-            <div class="report-card">
-                <h5 class="mb-3">💸 Top Expense Categories</h5>
-                <div class="list-group list-group-flush">
-                    {% if expense_categories %}
-                        {% for expense in expense_categories %}
-                            {% include "spending_tracker/partials/_expense_category_row.html" %}
-                        {% endfor %}
-                    {% else %}
-                        <div class="list-group-item text-center text-muted">
-                            No expense transactions for this period
-                        </div>
-                    {% endif %}
+            <div class="report-card category-card">
+                <h5 class="mb-1">💸 Top Expense Categories</h5>
+                <p class="text-muted small mb-3">Largest outflows this period</p>
+                <div class="category-chart">
+                    <canvas id="expenseCategoryBarChart"></canvas>
+                    <div id="expenseCategoryBarEmpty" class="chart-empty-state" style="display: none;">
+                        <div class="emoji">💸</div>
+                        <div class="message">No expense transactions for this period</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -479,44 +657,92 @@
 
     <!-- Account Performance -->
     <div class="report-card">
-        <h5 class="mb-3">🏦 Account Performance</h5>
+        <h5 class="mb-1">🏦 Accounts</h5>
+        <p class="text-muted small mb-3">Balance movement per account over {{ period_name|lower }}</p>
 
         {% if account_performance %}
-            <div class="mb-4" id="accountPerformanceChartWrapper">
-                <canvas id="accountPerformanceChart"></canvas>
-            </div>
-        {% endif %}
+            <div class="account-grid">
+                {% for row in account_performance %}
+                    <div class="account-card">
+                        <div class="account-card-head">
+                            <div class="account-identity">
+                                <div class="account-name">{{ row.account.name }}</div>
+                                <div class="account-type">{{ row.account.get_account_type_display|cut:"_" }}</div>
+                            </div>
+                            <div class="account-balance-block">
+                                <div class="account-balance">{{ currency_symbol }}{{ row.current_balance|humanize_amount }}</div>
+                                <span class="net-chip {% if row.net_change >= 0 %}net-up{% else %}net-down{% endif %}">
+                                    {% if row.net_change >= 0 %}▲ +{% else %}▼ −{% endif %}{{ currency_symbol }}{{ row.net_change|abs_value|humanize_amount }}
+                                    {% if row.pct_change is not None %}
+                                        <span class="net-pct">({{ row.pct_change }}%)</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
 
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
-                <tr>
-                    <th>Account</th>
-                    <th>Starting Balance</th>
-                    <th>Total Income</th>
-                    <th>Total Expenses</th>
-                    <th>Current Balance</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% if account_performance %}
-                    {% for row in account_performance %}
-                        <tr>
-                            <td><strong>{{ row.account }}</strong></td>
-                            <td>{{ currency_symbol }}{{ row.starting_balance }}</td>
-                            <td class="text-success">+{{ currency_symbol }}{{ row.income }}</td>
-                            <td class="text-danger">-{{ currency_symbol }}{{ row.expenses }}</td>
-                            <td><strong>{{ currency_symbol }}{{ row.current_balance }}</strong></td>
-                        </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted">No accounts found</td>
-                    </tr>
-                {% endif %}
-                </tbody>
-            </table>
-        </div>
+                        <div class="account-spark">
+                            <canvas class="account-spark-canvas" data-account-id="{{ row.account.id }}"></canvas>
+                        </div>
+
+                        <div class="flow-bar" aria-hidden="true">
+                            {% if row.income or row.transfers_in %}
+                                <div class="flow-in"
+                                     style="width: {% widthratio row.income|add:row.transfers_in row.income|add:row.transfers_in|add:row.outflow 100 %}%"></div>
+                            {% endif %}
+                            {% if row.outflow %}
+                                <div class="flow-out"
+                                     style="width: {% widthratio row.outflow row.income|add:row.transfers_in|add:row.outflow 100 %}%"></div>
+                            {% endif %}
+                            {% if not row.income and not row.transfers_in and not row.outflow %}
+                                <div class="flow-empty"></div>
+                            {% endif %}
+                        </div>
+                        <div class="flow-legend">
+                            <span class="text-success">In {{ currency_symbol }}{{ row.income|add:row.transfers_in|humanize_amount }}</span>
+                            <span class="text-danger">Out {{ currency_symbol }}{{ row.outflow|humanize_amount }}</span>
+                        </div>
+
+                        <dl class="account-stats">
+                            <div>
+                                <dt>Opening</dt>
+                                <dd>{{ currency_symbol }}{{ row.starting_balance|humanize_amount }}</dd>
+                            </div>
+                            <div>
+                                <dt>Low point</dt>
+                                <dd>{{ currency_symbol }}{{ row.low_balance|humanize_amount }}</dd>
+                            </div>
+                            <div>
+                                <dt>Avg / day</dt>
+                                <dd class="{% if row.avg_daily_net >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                    {% if row.avg_daily_net >= 0 %}+{% else %}−{% endif %}{{ currency_symbol }}{{ row.avg_daily_net|abs_value|humanize_amount }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt>Entries</dt>
+                                <dd>{{ row.txn_count }}</dd>
+                            </div>
+                        </dl>
+
+                        <div class="account-notes">
+                            {% if row.top_category %}
+                                <div>Biggest outflow: <strong>{{ row.top_category.label }}</strong>
+                                    · {{ currency_symbol }}{{ row.top_category.total|humanize_amount }}</div>
+                            {% endif %}
+                            {% if row.transfers_in or row.transfers_out %}
+                                <div>Transfers: in {{ currency_symbol }}{{ row.transfers_in|humanize_amount }}
+                                    · out {{ currency_symbol }}{{ row.transfers_out|humanize_amount }}</div>
+                            {% endif %}
+                            {% if row.runway_days %}
+                                <div class="text-danger">At this burn rate, ~{{ row.runway_days }} day{{ row.runway_days|pluralize }}
+                                    of balance left</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-center text-muted mb-0">No accounts found</p>
+        {% endif %}
     </div>
     {% if transfer_count %}
         <div class="card shadow-sm border-0 mb-4">
@@ -537,53 +763,83 @@
                     <div class="col-sm-4">
                         <div class="p-3 rounded bg-light text-center">
                             <div class="text-muted small mb-1">Total Volume</div>
-                            <div class="fw-bold fs-5">{{ currency_symbol }}{{ total_transfer_volume }}</div>
+                            <div class="fw-bold fs-5">{{ currency_symbol }}{{ total_transfer_volume|humanize_amount }}</div>
                         </div>
                     </div>
                     <div class="col-sm-4">
                         <div class="p-3 rounded bg-light text-center">
                             <div class="text-muted small mb-1">Avg per Transfer</div>
                             <div class="fw-bold fs-5">
-                                {{ currency_symbol }}{% widthratio total_transfer_volume transfer_count 1 %}</div>
+                                {{ currency_symbol }}{{ avg_transfer_amount|humanize_amount }}</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Account breakdown -->
-                {% if transfer_by_source or transfer_by_dest %}
-                    <div class="row g-3 mb-4">
-                        {% if transfer_by_source %}
-                            <div class="col-md-6">
-                                <h6 class="text-muted mb-2">Most Transferred From</h6>
-                                <table class="table table-sm table-borderless">
-                                    <tbody>
-                                    {% for row in transfer_by_source %}
-                                        <tr>
-                                            <td>{{ row.account__name }}</td>
-                                            <td class="text-muted">{{ row.count }}×</td>
-                                            <td class="text-end fw-semibold">{{ currency_symbol }}{{ row.volume }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
+                <!-- Route breakdown: one card per source → destination corridor -->
+                {% if transfer_routes %}
+                    <h6 class="text-muted mb-2">Transfer Routes</h6>
+                    <div class="account-grid mb-4">
+                        {% for route in transfer_routes %}
+                            <div class="account-card route-card">
+                                <div class="account-card-head">
+                                    <div class="account-identity">
+                                        <div class="route-path">
+                                            <span class="route-node">{{ route.source }}</span>
+                                            <span class="route-arrow">→</span>
+                                            <span class="route-node {% if not route.has_destination %}route-node-muted{% endif %}">{{ route.destination }}</span>
+                                        </div>
+                                        <div class="account-type">
+                                            {% if route.is_routine %}
+                                                Routine · {{ route.active_buckets }} of {{ route.total_buckets }} periods
+                                            {% else %}
+                                                Ad hoc · {{ route.count }} movement{{ route.count|pluralize }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="account-balance-block">
+                                        <div class="account-balance">{{ currency_symbol }}{{ route.volume|humanize_amount }}</div>
+                                        <span class="net-chip route-chip">{{ route.share }}% of volume</span>
+                                    </div>
+                                </div>
+
+                                <div class="account-spark">
+                                    <canvas class="route-spark-canvas" data-route-index="{{ forloop.counter0 }}"></canvas>
+                                </div>
+
+                                <div class="flow-bar" aria-hidden="true">
+                                    <div class="flow-route" style="width: {{ route.share }}%"></div>
+                                </div>
+                                <div class="flow-legend">
+                                    <span class="text-muted fw-normal">Share of all transfer volume</span>
+                                    <span>{{ route.share }}%</span>
+                                </div>
+
+                                <dl class="account-stats">
+                                    <div>
+                                        <dt>Transfers</dt>
+                                        <dd>{{ route.count }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Average</dt>
+                                        <dd>{{ currency_symbol }}{{ route.avg_amount|humanize_amount }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Largest</dt>
+                                        <dd>{{ currency_symbol }}{{ route.largest|humanize_amount }}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Last</dt>
+                                        <dd>{{ route.last_at|date:"j M y" }}</dd>
+                                    </div>
+                                </dl>
+
+                                {% if not route.has_destination %}
+                                    <div class="account-notes text-danger">
+                                        No destination account recorded — these movements leave the ledger unbalanced.
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% endif %}
-                        {% if transfer_by_dest %}
-                            <div class="col-md-6">
-                                <h6 class="text-muted mb-2">Most Transferred To</h6>
-                                <table class="table table-sm table-borderless">
-                                    <tbody>
-                                    {% for row in transfer_by_dest %}
-                                        <tr>
-                                            <td>{{ row.destination_account__name }}</td>
-                                            <td class="text-muted">{{ row.count }}×</td>
-                                            <td class="text-end fw-semibold">{{ currency_symbol }}{{ row.volume }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% endif %}
+                        {% endfor %}
                     </div>
                 {% endif %}
 
@@ -845,135 +1101,146 @@
             if (trendCanvas) trendCanvas.style.display = 'none';
         }
 
-        // Account Performance Chart
-        const accountPerfCanvas = document.getElementById('accountPerformanceChart');
-        if (accountPerfCanvas) {
-            {#console.log('  - Creating account performance chart...');#}
+        // Per-account balance trajectory sparklines
+        const accountSeries = JSON.parse(document.getElementById('account-performance-data').textContent);
+        accountSeries.forEach((acct) => {
+            const canvas = document.querySelector(`.account-spark-canvas[data-account-id="${acct.id}"]`);
+            if (!canvas || !acct.series.length) return;
 
-            const accountPerformanceData = [
-                {% for row in account_performance %}
-                    {
-                        name: '{{ row.account.name|escapejs }}',
-                        starting: {{ row.starting_balance }},
-                        income: {{ row.income }},
-                        expenses: {{ row.expenses }},
-                        current: {{ row.current_balance }},
-                        netChange: {{ row.net_change }}
-                    }{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ].sort((a, b) => b.current - a.current);
+            const up = acct.net_change >= 0;
+            const line = up ? 'rgb(39, 174, 96)' : 'rgb(231, 76, 60)';
+            const ctxAcct = canvas.getContext('2d');
+            const gradient = ctxAcct.createLinearGradient(0, 0, 0, 90);
+            gradient.addColorStop(0, up ? 'rgba(39, 174, 96, 0.28)' : 'rgba(231, 76, 60, 0.28)');
+            gradient.addColorStop(1, up ? 'rgba(39, 174, 96, 0.02)' : 'rgba(231, 76, 60, 0.02)');
 
-            const accountNames = accountPerformanceData.map(acc => acc.name);
-            // Floating bar per account: spans from the period's starting balance to today's
-            // current balance, so the bar itself moves when the period changes - not just a label.
-            const balanceRanges = accountPerformanceData.map(acc => [acc.starting, acc.current]);
-            const currentBalances = accountPerformanceData.map(acc => acc.current);
-            const netChanges = accountPerformanceData.map(acc => acc.netChange);
-
-            // Give the chart enough vertical room to breathe as accounts are added
-            const wrapper = document.getElementById('accountPerformanceChartWrapper');
-            if (wrapper) {
-                wrapper.style.height = Math.max(220, accountNames.length * 55 + 50) + 'px';
-            }
-
-            // Pad the scale beyond the widest range so end-of-bar labels/markers never clip
-            const allValues = accountPerformanceData.flatMap(acc => [acc.starting, acc.current]);
-            const maxAbsBalance = Math.max(...allValues.map(v => Math.abs(v)), 1);
-            const scalePadding = maxAbsBalance * 0.3;
-
-            // Draws a "now" marker at the current-balance end plus the ▲/▼ net change label
-            const netChangeLabelsPlugin = {
-                id: 'netChangeLabels',
-                afterDatasetsDraw(chart) {
-                    const meta = chart.getDatasetMeta(0);
-                    const { ctx } = chart;
+            // Opening balance reference line, so the card shows direction at a glance
+            const openingLine = {
+                id: 'openingLine-' + acct.id,
+                beforeDatasetsDraw(chart) {
+                    const y = chart.scales.y.getPixelForValue(acct.starting_balance);
+                    if (!isFinite(y)) return;
+                    const {ctx, chartArea} = chart;
                     ctx.save();
-                    ctx.font = '600 12px sans-serif';
-                    ctx.textBaseline = 'middle';
-                    meta.data.forEach((bar, index) => {
-                        const netChange = netChanges[index];
-                        const isPositive = netChange >= 0;
-                        const color = isPositive ? 'rgba(39, 174, 96, 1)' : 'rgba(231, 76, 60, 1)';
+                    ctx.strokeStyle = 'rgba(108, 117, 125, 0.45)';
+                    ctx.setLineDash([4, 4]);
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(chartArea.left, y);
+                    ctx.lineTo(chartArea.right, y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            };
 
-                        // bar.x is the pixel for the "current" end of the range, bar.base for "starting"
-                        ctx.fillStyle = '#2c3e50';
-                        ctx.beginPath();
-                        ctx.arc(bar.x, bar.y, 4, 0, Math.PI * 2);
-                        ctx.fill();
-
-                        const arrow = isPositive ? '▲' : '▼';
-                        const sign = isPositive ? '+' : '-';
-                        const label = `${arrow} ${sign}${currencySymbol}${Math.abs(netChange).toFixed(0)}`;
-                        ctx.fillStyle = color;
-                        if (bar.x >= bar.base) {
-                            ctx.textAlign = 'left';
-                            ctx.fillText(label, bar.x + 10, bar.y);
-                        } else {
-                            ctx.textAlign = 'right';
-                            ctx.fillText(label, bar.x - 10, bar.y);
+            new Chart(ctxAcct, {
+                type: 'line',
+                data: {
+                    labels: acct.labels,
+                    datasets: [{
+                        label: 'Balance',
+                        data: acct.series,
+                        borderColor: line,
+                        backgroundColor: gradient,
+                        borderWidth: 2,
+                        // 'start' fills to the bottom of the scale; `true` fills to the
+                        // zero baseline, which floods the card when a balance is negative
+                        fill: 'start',
+                        tension: 0.35,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        pointHoverBackgroundColor: line
+                    }]
+                },
+                plugins: [openingLine],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {intersect: false, mode: 'index'},
+                    layout: {padding: {top: 4, bottom: 0}},
+                    plugins: {
+                        legend: {display: false},
+                        tooltip: {
+                            displayColors: false,
+                            callbacks: {
+                                label: (context) => {
+                                    const delta = context.parsed.y - acct.starting_balance;
+                                    const sign = delta >= 0 ? '+' : '-';
+                                    return [
+                                        'Balance: ' + currencySymbol + context.parsed.y.toFixed(2),
+                                        'vs opening: ' + sign + currencySymbol + Math.abs(delta).toFixed(2)
+                                    ];
+                                }
+                            }
                         }
+                    },
+                    scales: {
+                        x: {display: false},
+                        y: {display: false, grace: '12%'}
+                    }
+                }
+            });
+        });
+
+        // Top income / expense categories as ranked vertical bars
+        const categoryBar = (canvasId, emptyId, data, color) => {
+            const canvas = document.getElementById(canvasId);
+            const empty = document.getElementById(emptyId);
+            if (!canvas) return;
+
+            if (!data.length) {
+                canvas.style.display = 'none';
+                if (empty) empty.style.display = 'flex';
+                return;
+            }
+            if (empty) empty.style.display = 'none';
+
+            // Value on top of each column - the amount is the point of the card
+            const valueLabels = {
+                id: canvasId + '-values',
+                afterDatasetsDraw(chart) {
+                    const {ctx} = chart;
+                    ctx.save();
+                    ctx.font = '600 11px sans-serif';
+                    ctx.fillStyle = '#2c3e50';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'bottom';
+                    chart.getDatasetMeta(0).data.forEach((bar, i) => {
+                        ctx.fillText(currencySymbol + data[i].total.toFixed(2), bar.x, bar.y - 4);
                     });
                     ctx.restore();
                 }
             };
 
-            const ctxAcctPerf = accountPerfCanvas.getContext('2d');
-            new Chart(ctxAcctPerf, {
+            new Chart(canvas.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: accountNames,
-                    datasets: [
-                        {
-                            label: 'Balance range (start → now)',
-                            data: balanceRanges,
-                            backgroundColor: netChanges.map(val =>
-                                val >= 0 ? 'rgba(39, 174, 96, 0.35)' : 'rgba(231, 76, 60, 0.35)'
-                            ),
-                            borderColor: netChanges.map(val =>
-                                val >= 0 ? 'rgba(39, 174, 96, 1)' : 'rgba(231, 76, 60, 1)'
-                            ),
-                            borderWidth: 2,
-                            borderRadius: 4,
-                            minBarLength: 4
-                        }
-                    ]
+                    labels: data.map(item => item.label || 'Uncategorized'),
+                    datasets: [{
+                        label: 'Amount',
+                        data: data.map(item => item.total),
+                        backgroundColor: color.fill,
+                        borderColor: color.border,
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        maxBarThickness: 56
+                    }]
                 },
-                plugins: [netChangeLabelsPlugin],
+                plugins: [valueLabels],
                 options: {
-                    indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    layout: {
-                        padding: { right: 70, left: 10 }
-                    },
+                    layout: {padding: {top: 18}},
                     plugins: {
-                        legend: {
-                            display: false
-                        },
-                        title: {
-                            display: true,
-                            text: 'Account Balances & Period Performance',
-                            font: {
-                                size: 15,
-                                weight: 'bold'
-                            }
-                        },
-                        subtitle: {
-                            display: true,
-                            text: 'Bar spans starting → current balance for this period · dot = today',
-                            font: { size: 11, style: 'italic' },
-                            color: '#6c757d',
-                            padding: { bottom: 8 }
-                        },
+                        legend: {display: false},
                         tooltip: {
+                            displayColors: false,
                             callbacks: {
                                 label: (context) => {
-                                    const acc = accountPerformanceData[context.dataIndex];
-                                    const sign = acc.netChange >= 0 ? '+' : '-';
+                                    const item = data[context.dataIndex];
                                     return [
-                                        'Starting Balance: ' + currencySymbol + acc.starting.toFixed(2),
-                                        'Current Balance: ' + currencySymbol + acc.current.toFixed(2),
-                                        'Net Change (Period): ' + sign + currencySymbol + Math.abs(acc.netChange).toFixed(2)
+                                        currencySymbol + item.total.toFixed(2),
+                                        item.count + ' transaction' + (item.count === 1 ? '' : 's')
                                     ];
                                 }
                             }
@@ -981,27 +1248,72 @@
                     },
                     scales: {
                         x: {
-                            min: Math.min(0, ...allValues) - scalePadding,
-                            max: Math.max(0, ...allValues) + scalePadding,
-                            title: {
-                                display: true,
-                                text: 'Balance (' + currencySymbol + ')'
-                            },
-                            ticks: {
-                                callback: (value) => currencySymbol + value.toFixed(0)
-                            }
+                            grid: {display: false},
+                            ticks: {font: {size: 11}, maxRotation: 0, autoSkip: false}
                         },
                         y: {
-                            grid: {
-                                display: false
-                            }
+                            beginAtZero: true,
+                            border: {display: false},
+                            ticks: {callback: (value) => currencySymbol + value.toFixed(0)}
                         }
                     }
                 }
             });
+        };
 
-            {#console.log('  - Account performance chart created successfully');#}
-        }
+        const incomeCategoryData = JSON.parse(document.getElementById('income-categories-data').textContent);
+        categoryBar('incomeCategoryBarChart', 'incomeCategoryBarEmpty', incomeCategoryData, {
+            fill: 'rgba(39, 174, 96, 0.75)', border: 'rgba(39, 174, 96, 1)'
+        });
+        categoryBar('expenseCategoryBarChart', 'expenseCategoryBarEmpty', expenseCategoryData, {
+            fill: 'rgba(231, 76, 60, 0.75)', border: 'rgba(231, 76, 60, 1)'
+        });
+
+        // Transfer route cadence bars
+        const routeDataEl = document.getElementById('transfer-routes-data');
+        const routeData = routeDataEl ? JSON.parse(routeDataEl.textContent) : [];
+        routeData.forEach((route, index) => {
+            const canvas = document.querySelector(`.route-spark-canvas[data-route-index="${index}"]`);
+            if (!canvas || !route.series.length) return;
+
+            new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: route.labels,
+                    datasets: [{
+                        label: 'Transferred',
+                        data: route.series,
+                        backgroundColor: route.series.map(v =>
+                            v > 0 ? 'rgba(31, 111, 235, 0.75)' : 'rgba(31, 111, 235, 0.12)'
+                        ),
+                        borderRadius: 2,
+                        borderSkipped: false,
+                        // Keep empty periods visible so gaps in cadence read as gaps
+                        minBarLength: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {display: false},
+                        tooltip: {
+                            displayColors: false,
+                            callbacks: {
+                                title: (items) => items[0].label,
+                                label: (context) => context.parsed.y > 0
+                                    ? currencySymbol + context.parsed.y.toFixed(2)
+                                    : 'No transfers'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {display: false},
+                        y: {display: false, beginAtZero: true}
+                    }
+                }
+            });
+        });
 
         {#console.log('Charts initialization complete');#}
         {#console.log('='.repeat(80));#}

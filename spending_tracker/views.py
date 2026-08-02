@@ -1,14 +1,14 @@
 import json
 import logging
 import uuid
-from collections import OrderedDict
-from datetime import timedelta, datetime
+from collections import OrderedDict, defaultdict
+from datetime import timedelta, datetime, date
 from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, Count, Q, Value, Prefetch
-from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, Coalesce
+from django.db.models import Sum, Count, Q, Value, Prefetch, Avg, Max, Min
+from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, TruncYear, Coalesce
 from django.db.transaction import atomic
 from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404, redirect
@@ -37,6 +37,99 @@ def _get_currency_symbol(user):
         user=user, defaults={'default_currency': 'GHS'}
     )
     return CURRENCY_SYMBOLS.get(preferences.default_currency, preferences.default_currency)
+
+
+def _report_granularity(period, days_diff):
+    """Bucket size used by the reports charts, mirroring the trend-chart rules."""
+    if period == 'week':
+        return 'day'
+    if period == 'month':
+        return 'week'
+    if period == 'year':
+        return 'month'
+    if days_diff < 35:
+        return 'day'
+    if days_diff < 180:
+        return 'week'
+    if days_diff <= 1095:
+        return 'month'
+    return 'year'
+
+
+def _bucket_edges(granularity, start_date, end_date, now):
+    """
+    Ordered [(bucket_key, label)] covering start_date..min(end_date, now).
+
+    Keys are dates so they can be matched against Trunc* annotations.
+    """
+    end = min(end_date, now)
+    edges = []
+
+    if granularity == 'day':
+        current = start_date.date()
+        last = end.date()
+        while current <= last:
+            edges.append((current, current.strftime('%-d %b')))
+            current += timedelta(days=1)
+    elif granularity == 'week':
+        current = (start_date - timedelta(days=start_date.weekday())).date()
+        last = end.date()
+        while current <= last:
+            edges.append((current, current.strftime('%-d %b')))
+            current += timedelta(days=7)
+    elif granularity == 'month':
+        current = start_date.replace(day=1).date()
+        last = end.date()
+        while current <= last:
+            edges.append((current, current.strftime('%b %Y')))
+            current = (current.replace(day=28) + timedelta(days=4)).replace(day=1)
+    else:  # year
+        for year in range(start_date.year, end.year + 1):
+            edges.append((date(year, 1, 1), str(year)))
+
+    return edges
+
+
+def _as_date(value):
+    return value.date() if hasattr(value, 'date') else value
+
+
+def _account_balance_deltas(base_transactions, granularity):
+    """
+    Per (account_id, bucket_key) net balance movement for the period.
+
+    Income and incoming transfers add; expenses and outgoing transfers subtract,
+    so the running balance reconciles with Account.balance at the period end.
+    """
+    trunc = {
+        'day': TruncDate, 'week': TruncWeek, 'month': TruncMonth, 'year': TruncYear
+    }[granularity]
+
+    deltas = defaultdict(float)
+
+    outgoing = base_transactions.annotate(bucket=trunc('transaction_time')).values(
+        'account', 'bucket'
+    ).annotate(
+        income=Sum('amount', filter=Q(mode='INCOME')),
+        expenses=Sum('amount', filter=Q(mode='EXPENSE')),
+        transfers_out=Sum('amount', filter=Q(mode='TRANSFER')),
+    )
+    for row in outgoing:
+        key = (row['account'], _as_date(row['bucket']))
+        deltas[key] += float(row['income'] or 0)
+        deltas[key] -= float(row['expenses'] or 0)
+        deltas[key] -= float(row['transfers_out'] or 0)
+
+    incoming = base_transactions.filter(
+        mode='TRANSFER', destination_account__isnull=False
+    ).annotate(bucket=trunc('transaction_time')).values(
+        'destination_account', 'bucket'
+    ).annotate(transfers_in=Sum('amount'))
+    for row in incoming:
+        key = (row['destination_account'], _as_date(row['bucket']))
+        deltas[key] += float(row['transfers_in'] or 0)
+
+    return deltas
 
 
 def _group_transactions(transactions, group_by):
@@ -835,12 +928,17 @@ def reports(request):
         for record in expense_categories
     ]
 
-    income_categories = base_transactions.filter(mode='INCOME').values(
+    income_categories = list(base_transactions.filter(mode='INCOME').values(
         category_label=Coalesce('category__label', Value('Uncategorized'))
     ).annotate(
         total=Sum('amount'),
         count=Count('id')
-    ).order_by('-total')[:5]
+    ).order_by('-total')[:5])
+
+    json_income_categories = [
+        {'label': record['category_label'], 'total': float(record['total']), 'count': record['count']}
+        for record in income_categories
+    ]
 
     user_accounts = Account.objects.filter(user=request.user).prefetch_related(
         Prefetch(
@@ -849,11 +947,15 @@ def reports(request):
             to_attr='period_transactions'
         )
     )
+    if filter_account:
+        # A single-account report should only show that account's card.
+        user_accounts = user_accounts.filter(id=filter_account)
 
     account_stats = base_transactions.values('account').annotate(
         income=Sum('amount', filter=Q(mode='INCOME')),
         expenses=Sum('amount', filter=Q(mode='EXPENSE')),
         transfers_out=Sum('amount', filter=Q(mode='TRANSFER')),
+        txn_count=Count('id'),
     )
 
     # Transfers received per account (destination side, not covered by account_stats)
@@ -867,9 +969,29 @@ def reports(request):
 
     account_stats_dict = {stat['account']: stat for stat in account_stats}
 
+    days_diff = (end_date - start_date).days
+    logger.debug(f"Days difference: {days_diff}")
+
+    # Per-account balance trajectory: one small chart per account replaces the
+    # old single combined "account performance" chart.
+    granularity = _report_granularity(period, days_diff)
+    bucket_edges = _bucket_edges(granularity, start_date, end_date, now)
+    balance_deltas = _account_balance_deltas(base_transactions, granularity)
+
+    # Biggest expense category per account, for the "where it went" line
+    top_category_by_account = {}
+    for row in base_transactions.filter(mode='EXPENSE').values('account').annotate(
+        category_label=Coalesce('category__label', Value('Uncategorized'))
+    ).values('account', 'category_label').annotate(total=Sum('amount')).order_by('account', '-total'):
+        top_category_by_account.setdefault(
+            row['account'], {'label': row['category_label'], 'total': round(float(row['total'] or 0), 2)}
+        )
+
+    period_days = max(days_diff, 1)
+
     account_performance = []
     for account in user_accounts:
-        stats = account_stats_dict.get(account.id, {'income': 0, 'expenses': 0, 'transfers_out': 0})
+        stats = account_stats_dict.get(account.id, {})
         account_income = stats.get('income') or 0
         account_expenses = stats.get('expenses') or 0
         account_transfers_out = stats.get('transfers_out') or 0
@@ -877,17 +999,57 @@ def reports(request):
         net_change = account_income - account_expenses - account_transfers_out + account_transfers_in
         starting_balance = account.balance - net_change
 
+        # Running balance across the period, ending exactly at the live balance
+        running = float(starting_balance)
+        series = []
+        for key, _label in bucket_edges:
+            running += balance_deltas.get((account.id, key), 0.0)
+            series.append(round(running, 2))
+
+        outflow = float(account_expenses) + float(account_transfers_out)
+        low_balance = min(series) if series else float(starting_balance)
+        pct_change = (float(net_change) / abs(float(starting_balance)) * 100) if starting_balance else None
+        avg_daily_net = float(net_change) / period_days
+        # Runway only means something while the account is actually draining
+        runway_days = (
+            int(float(account.balance) / abs(avg_daily_net))
+            if avg_daily_net < 0 and account.balance > 0 else None
+        )
+
         account_performance.append({
             'account': account,
             'starting_balance': round(starting_balance, 2),
             'income': round(account_income, 2),
             'expenses': round(account_expenses, 2),
+            'transfers_in': round(account_transfers_in, 2),
+            'transfers_out': round(account_transfers_out, 2),
+            'outflow': round(outflow, 2),
             'net_change': round(net_change, 2),
+            'pct_change': round(pct_change, 1) if pct_change is not None else None,
             'current_balance': round(account.balance, 2),
+            'txn_count': stats.get('txn_count') or 0,
+            'avg_daily_net': round(avg_daily_net, 2),
+            'runway_days': runway_days,
+            'low_balance': round(low_balance, 2),
+            'top_category': top_category_by_account.get(account.id),
+            'series': series,
         })
 
-    days_diff = (end_date - start_date).days
-    logger.debug(f"Days difference: {days_diff}")
+    account_performance.sort(key=lambda row: row['current_balance'], reverse=True)
+
+    json_account_performance = [
+        {
+            'id': row['account'].id,
+            'name': row['account'].name,
+            'labels': [label for _key, label in bucket_edges],
+            'series': row['series'],
+            'net_change': float(row['net_change']),
+            'starting_balance': float(row['starting_balance']),
+            'income': float(row['income']) + float(row['transfers_in']),
+            'outflow': float(row['outflow']),
+        }
+        for row in account_performance
+    ]
 
     # Determine granularity based on period type
     if period == 'week':
@@ -1185,19 +1347,68 @@ def reports(request):
     )
     total_transfer_volume = round(float(transfer_agg['total_volume'] or 0), 2)
     transfer_count = transfer_agg['transfer_count'] or 0
+    avg_transfer_amount = round(total_transfer_volume / transfer_count, 2) if transfer_count else 0
 
-    # Most common source and destination accounts for transfers
-    transfer_by_source = (
-        transfers.values('account__name')
-        .annotate(count=Count('id'), volume=Sum('amount'))
-        .order_by('-volume')[:5]
+    # Transfer corridors: one card per source → destination pair. A route is the
+    # unit an accountant reconciles, not the source and destination lists apart.
+    route_rows = (
+        transfers.values(
+            'account_id', 'account__name', 'destination_account_id', 'destination_account__name'
+        )
+        .annotate(
+            count=Count('id'),
+            volume=Sum('amount'),
+            avg_amount=Avg('amount'),
+            largest=Max('amount'),
+            first_at=Min('transaction_time'),
+            last_at=Max('transaction_time'),
+        )
+        .order_by('-volume')
     )
-    transfer_by_dest = (
-        transfers.filter(destination_account__isnull=False)
-        .values('destination_account__name')
-        .annotate(count=Count('id'), volume=Sum('amount'))
-        .order_by('-volume')[:5]
-    )
+
+    # Volume per route per bucket, for the cadence sparkline
+    route_series = defaultdict(lambda: defaultdict(float))
+    trunc = {
+        'day': TruncDate, 'week': TruncWeek, 'month': TruncMonth, 'year': TruncYear
+    }[granularity]
+    for row in transfers.annotate(bucket=trunc('transaction_time')).values(
+        'account_id', 'destination_account_id', 'bucket'
+    ).annotate(volume=Sum('amount')):
+        route_key = (row['account_id'], row['destination_account_id'])
+        route_series[route_key][_as_date(row['bucket'])] += float(row['volume'] or 0)
+
+    transfer_routes = []
+    for row in route_rows:
+        route_key = (row['account_id'], row['destination_account_id'])
+        buckets = route_series.get(route_key, {})
+        volume = float(row['volume'] or 0)
+        active_buckets = sum(1 for _key, _label in bucket_edges if buckets.get(_key))
+        transfer_routes.append({
+            'source': row['account__name'],
+            'destination': row['destination_account__name'] or 'Unspecified',
+            'has_destination': row['destination_account_id'] is not None,
+            'count': row['count'],
+            'volume': round(volume, 2),
+            'share': round(volume / total_transfer_volume * 100, 1) if total_transfer_volume else 0,
+            'avg_amount': round(float(row['avg_amount'] or 0), 2),
+            'largest': round(float(row['largest'] or 0), 2),
+            'first_at': row['first_at'],
+            'last_at': row['last_at'],
+            # A route hitting most buckets reads as routine; one or two, as ad hoc
+            'active_buckets': active_buckets,
+            'total_buckets': len(bucket_edges),
+            'is_routine': len(bucket_edges) > 1 and active_buckets >= max(2, len(bucket_edges) // 2),
+            'series': [round(buckets.get(key, 0.0), 2) for key, _label in bucket_edges],
+        })
+
+    json_transfer_routes = [
+        {
+            'key': f"{route['source']}→{route['destination']}",
+            'labels': [label for _key, label in bucket_edges],
+            'series': route['series'],
+        }
+        for route in transfer_routes
+    ]
 
     # Compute summary metrics (Feature 9)
     days_in_period = max((end_date - start_date).days, 1)
@@ -1224,9 +1435,11 @@ def reports(request):
         'savings_rate': round(savings_rate, 1),
         'expense_categories': expense_categories,
         'json_expense_categories': json_expense_categories,
+        'json_income_categories': json_income_categories,
         'income_categories': income_categories,
         'trend_data': trend_data,
         'account_performance': account_performance,
+        'json_account_performance': json_account_performance,
         'currency_symbol': currency_symbol,
         'user_currency': user_currency,
         # Report filters (Feature 8)
@@ -1243,8 +1456,9 @@ def reports(request):
         'transfers': transfers,
         'transfer_count': transfer_count,
         'total_transfer_volume': total_transfer_volume,
-        'transfer_by_source': transfer_by_source,
-        'transfer_by_dest': transfer_by_dest,
+        'avg_transfer_amount': avg_transfer_amount,
+        'transfer_routes': transfer_routes,
+        'json_transfer_routes': json_transfer_routes,
     }
     return render(request, 'spending_tracker/reports.html', context)
 
