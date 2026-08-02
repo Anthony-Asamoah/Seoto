@@ -7,8 +7,7 @@
     </div>
 </div>
 {% for transaction in group.transactions %}
-    <div class="transaction-card"
-         style="border-left: 4px solid {% if transaction.mode == 'INCOME' %}#27ae60{% elif transaction.mode == 'TRANSFER' %}#3498db{% else %}#e74c3c{% endif %};">
+    <div class="transaction-card">
         <div class="transaction-summary"
              data-bs-toggle="collapse"
              data-bs-target="#transaction-g-{{ transaction.id }}"

@@ -7,12 +7,12 @@
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
     {% if status == 'Approved' %}
-    <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #28a745;">
+    <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
         <h2 style="color: #155724; margin-top: 0;">Congratulations! Your Theme Has Been Approved</h2>
         <p style="color: #155724; margin-bottom: 0;">Your theme "{{ theme.name }}" is now available to the Seoto community!</p>
     </div>
     {% else %}
-    <div style="background-color: #f8d7da; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #dc3545;">
+    <div style="background-color: #f8d7da; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
         <h2 style="color: #721c24; margin-top: 0;">Theme Review: Not Approved</h2>
         <p style="color: #721c24; margin-bottom: 0;">Unfortunately, your theme "{{ theme.name }}" was not approved for publication.</p>
     </div>
@@ -47,7 +47,7 @@
             </a>
         </div>
         {% else %}
-        <div style="margin-top: 30px; padding: 20px; background-color: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+        <div style="margin-top: 30px; padding: 20px; background-color: #fff3cd; border-radius: 8px;">
             <h4 style="color: #856404; margin-top: 0;">Common Reasons for Rejection:</h4>
             <ul style="margin: 10px 0; color: #856404;">
                 <li>Inappropriate color combinations (e.g., poor contrast, readability issues)</li>

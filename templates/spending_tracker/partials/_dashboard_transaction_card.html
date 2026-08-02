@@ -1,6 +1,5 @@
 {% load spending_extras %}
 <div class="transaction-card"
-     style="border-left: 4px solid {% if transaction.mode == 'INCOME' %}#27ae60{% elif transaction.mode == 'TRANSFER' %}#3498db{% else %}#e74c3c{% endif %};"
      data-bs-toggle="collapse"
      data-bs-target="#transaction-{{ transaction.id }}"
      aria-expanded="false">
