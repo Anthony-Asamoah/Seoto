@@ -7,7 +7,8 @@
  *
  * Everything is scoped under .aura-page, so the Bootstrap skin the rest of the app
  * relies on is untouched. Colour flows from one place: `data-mode` on .aura-page sets
- * --mode, and the badge, eyebrow, glow, focus rings and hero amount all read it.
+ * --mode, and the badge, eyebrow, focus rings and hero amount all read it. The page
+ * background is left to the site shell, so these screens match the rest of the app.
  */
 
 .aura-page {
@@ -30,7 +31,6 @@
     margin: 0 auto;
     font-family: 'Inter', sans-serif;
     color: var(--ink);
-    isolation: isolate;
 }
 
 .aura-page--narrow { max-width: 560px; }
@@ -39,40 +39,10 @@
 .aura-page[data-mode="INCOME"] { --mode: var(--income); --mode-soft: var(--income-soft); }
 .aura-page[data-mode="TRANSFER"] { --mode: var(--transfer); --mode-soft: var(--transfer-soft); }
 
-/* Ambient aura glow, tinted by transaction direction */
-.aura-page::before,
-.aura-page::after {
-    content: '';
-    position: absolute;
-    width: 60vw;
-    max-width: 480px;
-    height: 60vw;
-    max-height: 480px;
-    border-radius: 50%;
-    filter: blur(90px);
-    z-index: -1;
-    opacity: 0.5;
-    background: var(--mode);
-    pointer-events: none;
-    transition: background 0.4s ease;
-}
-.aura-page::before { top: -180px; left: -180px; }
-.aura-page::after { bottom: -200px; right: -180px; opacity: 0.28; }
-
-@media (prefers-reduced-motion: no-preference) {
-    .aura-page::before { animation: aura-drift 16s ease-in-out infinite alternate; }
-    .aura-page::after { animation: aura-drift 20s ease-in-out infinite alternate-reverse; }
-}
-@keyframes aura-drift {
-    to { transform: translate(26px, 20px) scale(1.06); }
-}
-
 .aura-card {
     position: relative;
-    background: rgba(255, 255, 255, 0.86);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    background: #fff;
+    border: 1px solid var(--line);
     border-radius: 26px;
     box-shadow: 0 40px 70px -40px rgba(27, 30, 43, 0.35);
     padding: 38px 40px 30px;
