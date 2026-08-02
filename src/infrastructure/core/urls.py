@@ -28,6 +28,7 @@ urlpatterns = [
     path('', Apps.as_view(), name='apps'),
     # path('info/', Home.as_view(), name='index'),
     path('admin/', admin.site.urls, name='admin'),
+    path('api/company/', include('domains.company.urls')),
     path('accounts/', include('domains.accounts.urls')),
     path('home/', include("domains.home.urls")),
     # Anonymous
@@ -53,6 +54,11 @@ urlpatterns = [
 # Only include theme URLs if feature is enabled
 if settings.IS_THEME_ENABLED:
     urlpatterns.append(path('theme/', include('domains.theme.urls')))
+
+# Only include API docs if feature is enabled. Appended after the API routes so
+# /api/schema/ can never shadow a real endpoint.
+if settings.IS_API_DOCS_ENABLED:
+    urlpatterns.append(path('api/', include('infrastructure.core.docs')))
 
 # Only serve media locally; S3 handles its own URLs
 if settings.MEDIA_STORAGE == 'LOCAL':

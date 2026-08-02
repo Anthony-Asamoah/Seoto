@@ -77,3 +77,4 @@ Routing is centralized in `src/infrastructure/core/urls.py` — each app owns it
 - When moving an app, remember migrations can hold fully-qualified references in their *bodies* (`upload_to=`, `validators=`), not just imports — both need updating.
 - Errors that should surface in admin go through standard logging; the DB log handler captures `django` and `django.request` at ERROR+.
 - HTTPS is forced when `DEBUG=False` (`SECURE_SSL_REDIRECT`).
+- dont comment unless absolutely necessary. and if you have to, use concise one liners

@@ -24,3 +24,6 @@ django-storages[s3]
 django-ckeditor-5
 dj-database-url
 whitenoise
+djangorestframework
+django-cors-headers
+drf-spectacular

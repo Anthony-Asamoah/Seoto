@@ -44,7 +44,11 @@ INSTALLED_APPS = [
     'daphne',
     'channels',
     'django_ckeditor_5',
+    'rest_framework',
+    'corsheaders',
+    'drf_spectacular',
     # My apps
+    'domains.company.products.apps.ProductsConfig',
     'domains.accounts',
     'domains.author',
     'domains.home',
@@ -72,6 +76,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'infrastructure.core.middleware.BotScannerMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    # Must sit above CommonMiddleware so preflights get their headers.
+    'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -241,6 +247,38 @@ DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')
 
 # Theme feature flag
 IS_THEME_ENABLED = config('IS_THEME_ENABLED', default=False, cast=bool)
+
+API_PAGE_SIZE = config('API_PAGE_SIZE', default=10, cast=int)
+API_MAX_PAGE_SIZE = config('API_MAX_PAGE_SIZE', default=60, cast=int)
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
+    'DEFAULT_AUTHENTICATION_CLASSES': (),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+    ) + (('rest_framework.renderers.BrowsableAPIRenderer',) if DEBUG else ()),
+    'UNAUTHENTICATED_USER': None,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+IS_API_DOCS_ENABLED = config('IS_API_DOCS_ENABLED', default=False, cast=bool)
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Seoto Company API',
+    'DESCRIPTION': 'Public read-only API backing the seoto.org marketing site.',
+    'VERSION': '1.0.0',
+    # The schema endpoint should not describe itself.
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Only the /api/ tree is DRF; keeps the server-rendered site out of the schema.
+    'SCHEMA_PATH_PREFIX': '/api',
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
+}
+
+# CORS — the marketing site (seoto.org) is a separate origin from apps.seoto.org.
+# The API is public and read-only, so no credentials are exchanged.
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='', cast=Csv())
+CORS_ALLOW_CREDENTIALS = False
+CORS_URLS_REGEX = r'^/api/.*$'
 
 # Accounts config
 LOGIN_REDIRECT_URL = 'apps'
