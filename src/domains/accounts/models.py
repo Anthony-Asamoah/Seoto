@@ -27,7 +27,7 @@ class user_profile(models.Model):
             self._generate_thumbnail()
 
     def _generate_thumbnail(self):
-        from infrastructure.core.utils import MediaHelper
+        from infrastructure.utils import MediaHelper
 
         if not self.picture:
             if self.picture_thumbnail:

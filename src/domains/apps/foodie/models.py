@@ -76,7 +76,7 @@ class meal(models.Model):
             type(self).objects.filter(pk=self.pk).update(main_img_thumbnail='')
             return
 
-        from infrastructure.core.utils import MediaHelper
+        from infrastructure.utils import MediaHelper
 
         slug = slugify(self.name) or str(self.pk)
         if self.created_by_id:

@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     # My apps
     'domains.company.products.apps.ProductsConfig',
+    'domains.company.faqs.apps.FAQsConfig',
     'domains.accounts',
     'domains.author',
     'domains.home',
@@ -358,7 +359,7 @@ RECAPTCHA_ENABLED = all([RECAPTCHA_SITE_KEY, RECAPTCHA_SECRET_KEY, RECAPTCHA_VER
 IP_QUALITY_SCORE_API_KEY = config('IP_QUALITY_SCORE_API_KEY', default="None")
 
 # Weather widget — provider name selects an implementation via the factory in
-# src/infrastructure/core/external_services/weather/factory.py, so providers can be swapped
+# src/infrastructure/external_services/weather/factory.py, so providers can be swapped
 # without touching call sites. Both defaults are free and require no API key.
 WEATHER_PROVIDER = config('WEATHER_PROVIDER', default='open_meteo')
 GEOLOCATION_PROVIDER = config('GEOLOCATION_PROVIDER', default='ip_api')

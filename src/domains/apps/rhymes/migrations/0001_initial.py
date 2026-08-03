@@ -5,7 +5,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 import infrastructure.core.model_validators
-import infrastructure.core.utils
+import infrastructure.utils
 
 
 class Migration(migrations.Migration):

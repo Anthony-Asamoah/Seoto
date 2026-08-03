@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from domains.home.utils import get_client_ip
-from infrastructure.core.external_services.weather import get_geolocation_provider, get_weather_provider
+from infrastructure.external_services.weather import get_geolocation_provider, get_weather_provider
 
 logger = logging.getLogger(__name__)
 

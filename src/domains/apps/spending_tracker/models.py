@@ -7,7 +7,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
 
-from infrastructure.core.utils import BaseChoices
+from infrastructure.utils import BaseChoices
 
 
 class TransactionModeChoices(BaseChoices):

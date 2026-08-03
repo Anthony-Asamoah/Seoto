@@ -3,7 +3,7 @@ from datetime import date
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from infrastructure.core.utils.validators import normalize_phone, validate_phone
+from infrastructure.utils import normalize_phone, validate_phone
 from domains.author.forms import DiscoveryCallForm
 from domains.author.models import CertificateType, Education
 

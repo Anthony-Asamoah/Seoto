@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from infrastructure.core.utils import RichTextAdminMixin
+from infrastructure.utils import RichTextAdminMixin
 from .models import Post, PostTags, PostReadGroup, PostComment
 
 

@@ -4,7 +4,7 @@ from django.db import models
 from django.utils.text import slugify
 
 from infrastructure.core.model_validators import Validators
-from infrastructure.core.utils import BaseChoices
+from infrastructure.utils import BaseChoices
 
 
 def product_image_path(instance, filename):

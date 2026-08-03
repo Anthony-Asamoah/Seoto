@@ -2,8 +2,8 @@ from django import forms
 from django.forms import ModelForm, TextInput
 
 from infrastructure.core.mixins.views import HoneypotMixin, RecaptchaMixin
-from infrastructure.core.utils.profanity import contains_profanity
-from infrastructure.core.utils.validators import normalize_phone, validate_phone
+from infrastructure.utils.profanity import contains_profanity
+from infrastructure.utils import normalize_phone, validate_phone
 from domains.author.models import Message
 
 

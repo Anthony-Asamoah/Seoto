@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase
 
-from infrastructure.core.external_services.weather.providers import OpenMeteoWeatherProvider
+from infrastructure.external_services.weather.providers import OpenMeteoWeatherProvider
 
 
 class BuildDailyTests(SimpleTestCase):

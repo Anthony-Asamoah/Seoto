@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 
 from infrastructure.core.model_validators import Validators
-from infrastructure.core.utils import BaseChoices
+from infrastructure.utils import BaseChoices
 
 
 class IntroLinks(models.Model):
