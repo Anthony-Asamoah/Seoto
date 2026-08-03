@@ -13,6 +13,5 @@ class AdminSafeStaticFilesStorage(CompressedManifestStaticFilesStorage):
     tolerated_missing = frozenset({'vendor/bootswatch'})
 
     def stored_name(self, name):
-        if name in self.tolerated_missing:
-            return name
+        if name in self.tolerated_missing: return name
         return super().stored_name(name)
