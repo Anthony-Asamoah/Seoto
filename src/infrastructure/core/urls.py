@@ -58,7 +58,10 @@ if settings.IS_THEME_ENABLED:
 # Only include API docs if feature is enabled. Appended after the API routes so
 # /api/schema/ can never shadow a real endpoint.
 if settings.IS_API_DOCS_ENABLED:
-    urlpatterns.append(path('api/', include('infrastructure.core.docs')))
+    urlpatterns += [
+        path('api/schema/', SpectacularAPIView.as_view(), name='api_schema'),
+        path('api/', SpectacularSwaggerView.as_view(url_name='api_schema'), name='api_docs'),
+    ]
 
 # Only serve media locally; S3 handles its own URLs
 if settings.MEDIA_STORAGE == 'LOCAL':
