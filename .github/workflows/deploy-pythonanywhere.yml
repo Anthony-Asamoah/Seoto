@@ -43,7 +43,12 @@ jobs:
           # uv installs to ~/.local/bin, which a non-interactive shell may miss.
           export PATH="$HOME/.local/bin:$PATH"
           # --frozen installs exactly what uv.lock pins and never re-resolves.
-          uv sync --frozen --no-dev
+          # only-system: fail loudly if the interpreter is missing rather than
+          # downloading a 33MB one into a quota-limited home directory.
+          # --no-progress: PythonAnywhere closes sessions that print too much.
+          uv sync --frozen --no-dev --python-preference only-system --no-progress
+          # Keep the wheel cache from growing against the disk quota.
+          uv cache prune --ci --no-progress
           # manage.py lives in src/, which is also the import root.
           cd src
           uv run --no-sync python manage.py migrate --noinput
