@@ -52,19 +52,15 @@ urlpatterns = [
 
 ]
 
-# Only include theme URLs if feature is enabled
 if settings.IS_THEME_ENABLED:
     urlpatterns.append(path('theme/', include('domains.theme.urls')))
 
-# Only include API docs if feature is enabled. Appended after the API routes so
-# /api/schema/ can never shadow a real endpoint.
 if settings.IS_API_DOCS_ENABLED:
     urlpatterns += [
         path('api/schema/', SpectacularAPIView.as_view(), name='api_schema'),
         path('api/', SpectacularSwaggerView.as_view(url_name='api_schema'), name='api_docs'),
     ]
 
-# Only serve media locally; S3 handles its own URLs
 if settings.MEDIA_STORAGE == 'LOCAL':
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
