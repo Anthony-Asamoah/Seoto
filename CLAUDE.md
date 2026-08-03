@@ -37,11 +37,10 @@ Single Django project migrating from stock Django MVT toward a repository-patter
     │   └── apps/              blog/ foodie/ spending_tracker/ jotter/ rhymes/
     │                          throw_a_die/ flip_a_coin/ interest_calc/ generate_invoice/
     ├── templates/             project-level templates (TEMPLATES.DIRS)
-    ├── static/                project-level static (STATICFILES_DIRS)
-    └── utils/                 shared helpers (paginator, admin mixins, enums)
+    └── static/                project-level static (STATICFILES_DIRS)
 ```
 
-Import roots are therefore `infrastructure.core.*`, `domains.*`, and `utils.*` — never prefixed with `src.`.
+Import roots are therefore `infrastructure.core.*` and `domains.*` — never prefixed with `src.`. Shared helpers live in `infrastructure/core/utils/`; there is no top-level `utils` package.
 
 `settings.BASE_DIR` is the repo root (owns `.env`, the sqlite file, `media/`, `staticfiles/`); `settings.SRC_DIR` is `src/`. Use `SRC_DIR` for anything under `src/`.
 
@@ -66,9 +65,9 @@ Routing is centralized in `src/infrastructure/core/urls.py` — each app owns it
 - `infrastructure/core/external_services/` — `recaptcha.py` (v3 verification, threshold from `RECAPTCHA_SCORE_THRESHOLD`), `email_validation.py` (IPQualityScore), and `weather/` (provider factory selected by `WEATHER_PROVIDER` / `GEOLOCATION_PROVIDER`).
 - `infrastructure/core/context_processors.py` — exposes `RECAPTCHA_SITE_KEY` to all templates.
 - CSRF: `static/js/csrf.js` (loaded from `base.html`) rewrites every rendered `csrfmiddlewaretoken` from the cookie at submit time, so service-worker-cached or long-open pages don't post a stale token; use its `csrfFetch` for JS POSTs. Failures land on `CSRF_FAILURE_VIEW` → `domains.home.views.error_handlers.csrf_failure`, which re-issues the cookie and offers a one-click retry (same-origin posts only, sensitive fields and uploads never replayed).
-- `infrastructure/core/utils/` — `media.py` (`MediaHelper` for thumbnail generation, used across foodie/accounts), `choices.py`, `validators.py`, `profanity.py`.
+- `infrastructure/core/utils/` — `media.py` (`MediaHelper` for thumbnail generation, used across foodie/accounts), `choices.py` (`BaseChoices`, the `TextChoices` base every model enum subclasses), `admin.py` (`RichTextAdminMixin`), `validators.py`, `profanity.py`.
 - `infrastructure/core/mixins/views.py` — shared CBV mixins.
-- `utils/paginator.py` — shared pagination helper.
+- `infrastructure/core/pagination.py` — `DefaultAPIPagination` (DRF page-number class, sizes from `API_PAGE_SIZE`/`API_MAX_PAGE_SIZE`) and `apply_view_pagination(data, page_number, per_page)` for server-rendered views.
 - Storage abstraction: when `MEDIA_STORAGE=AWS`, both `default` and `staticfiles` storages route to S3 with `AWS_S3_BUCKET_PREFIX`. Don't hardcode local-path assumptions in new image-handling code — go through `MediaHelper`.
 
 ### Conventions to preserve

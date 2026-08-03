@@ -1,8 +1,11 @@
+from datetime import date
+
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from infrastructure.core.utils.validators import normalize_phone, validate_phone
 from domains.author.forms import DiscoveryCallForm
+from domains.author.models import CertificateType, Education
 
 
 class ValidatePhoneTests(TestCase):
@@ -113,3 +116,39 @@ class DiscoveryCallFormQuickModeTests(TestCase):
         self.assertIn('call back', instance.subject.lower())
         self.assertIn('+233244123456', instance.message)
         self.assertIn('Please call me', instance.message)
+
+
+class EducationCertificateTypeTests(TestCase):
+    def _education(self, **overrides):
+        data = {
+            'school': 'University of Ghana',
+            'certificate_title': 'Computer Science',
+            'certificate_type': CertificateType.BACHELORS_DEGREE,
+            'start_date': date(2015, 9, 1),
+        }
+        data.update(overrides)
+        return Education(**data)
+
+    def test_standard_type_mirrors_into_other_certificate_type(self):
+        education = self._education()
+        education.save()
+        self.assertEqual(education.other_certificate_type, CertificateType.BACHELORS_DEGREE)
+
+    def test_other_keeps_the_supplied_text(self):
+        education = self._education(
+            certificate_type=CertificateType.OTHER,
+            other_certificate_type='Bootcamp Certificate',
+        )
+        education.save()
+        self.assertEqual(education.other_certificate_type, 'Bootcamp Certificate')
+
+    def test_other_without_text_is_rejected(self):
+        education = self._education(certificate_type=CertificateType.OTHER)
+        with self.assertRaises(ValidationError) as ctx:
+            education.clean()
+        self.assertIn('other_certificate_type', ctx.exception.message_dict)
+
+    def test_other_without_text_is_rejected_on_save(self):
+        education = self._education(certificate_type=CertificateType.OTHER)
+        with self.assertRaises(ValidationError):
+            education.save()

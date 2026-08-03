@@ -2,7 +2,7 @@ from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import clear_url_caches, reverse
 
-from infrastructure.core.pagination import DefaultPagination
+from infrastructure.core.pagination import DefaultAPIPagination
 
 from . import services
 from .models import Product, ProductStatus, ProductTag
@@ -90,9 +90,9 @@ class ProductApiTests(TestCase):
         )
 
     def test_pagination_sizes_come_from_settings(self):
-        self.assertEqual(DefaultPagination.page_size, settings.API_PAGE_SIZE)
+        self.assertEqual(DefaultAPIPagination.page_size, settings.API_PAGE_SIZE)
         self.assertEqual(
-            DefaultPagination.max_page_size, settings.API_MAX_PAGE_SIZE
+            DefaultAPIPagination.max_page_size, settings.API_MAX_PAGE_SIZE
         )
 
     def test_list_omits_body(self):

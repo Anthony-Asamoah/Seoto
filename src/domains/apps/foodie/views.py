@@ -5,11 +5,11 @@ from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_http_methods
 
+from infrastructure.core.pagination import apply_view_pagination
 from . import services
 from .forms import UserMealForm
 from .models import meal, userPreference, MealTimeSlot, UserMealSchedule
 from .serializer import serialize_mealtime, serialize_all
-from utils.paginator import apply_pagination
 
 
 def foodie(request):
@@ -71,7 +71,7 @@ def foodie_config(request, mealtime=None):
         for cat in (cats or [])
     })
 
-    page_obj = apply_pagination(available_qs, request.GET.get('page'), 13)
+    page_obj = apply_view_pagination(available_qs, request.GET.get('page'), 13)
 
     query_params = {}
     if search_query:

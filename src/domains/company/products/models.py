@@ -4,7 +4,7 @@ from django.db import models
 from django.utils.text import slugify
 
 from infrastructure.core.model_validators import Validators
-from utils.enums import DefaultEnum
+from infrastructure.core.utils import BaseChoices
 
 
 def product_image_path(instance, filename):
@@ -14,12 +14,12 @@ def product_image_path(instance, filename):
     return f'company/products/{slug}/{instance.order}{ext}'
 
 
-class ProductStatus(DefaultEnum):
-    DRAFT = "Draft"
-    IN_PROGRESS = "In Progress"
-    LAUNCHED = "Launched"
-    ARCHIVED = "Archived"
-    MANAGED = "Managed"
+class ProductStatus(BaseChoices):
+    DRAFT = "DRAFT", "Draft"
+    IN_PROGRESS = "IN_PROGRESS", "In Progress"
+    LAUNCHED = "LAUNCHED", "Launched"
+    ARCHIVED = "ARCHIVED", "Archived"
+    MANAGED = "MANAGED", "Managed"
 
 
 class ProductTag(models.Model):
@@ -55,8 +55,8 @@ class Product(models.Model):
 
     live_url = models.URLField(max_length=1000, blank=True, null=True)
     status = models.CharField(
-        max_length=50, choices=list(ProductStatus.key_value_pairs()),
-        default=ProductStatus.DRAFT.name,
+        max_length=50, choices=ProductStatus.choices,
+        default=ProductStatus.DRAFT,
     )
 
     # Plain lists of names. JSONField rather than related models: these are

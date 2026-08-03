@@ -17,7 +17,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from utils.paginator import apply_pagination
+from infrastructure.core.pagination import apply_view_pagination
 from .forms import (
     TransactionForm, AccountForm, CategoryForm, RecurringTransactionForm, ConfirmOccurrenceForm,
 )
@@ -297,11 +297,11 @@ def transaction_list(request):
 
     if group_by:
         all_groups = _group_transactions(list(transactions), group_by)
-        page_obj = apply_pagination(all_groups, request.GET.get('page'), 5)
+        page_obj = apply_view_pagination(all_groups, request.GET.get('page'), 5)
         grouped_transactions = page_obj.object_list
     else:
         grouped_transactions = None
-        page_obj = apply_pagination(transactions, request.GET.get('page'), 10)
+        page_obj = apply_view_pagination(transactions, request.GET.get('page'), 10)
 
     if _is_partial(request):
         if group_by:
@@ -661,7 +661,7 @@ def account_detail(request, pk):
     """View account details and transactions"""
     account = get_object_or_404(Account, id=pk, user=request.user)
     transactions = account.transactions.all().select_related('category').prefetch_related('tags')
-    transactions_page = apply_pagination(transactions, request.GET.get('page'), 10)
+    transactions_page = apply_view_pagination(transactions, request.GET.get('page'), 10)
 
     if _is_partial(request):
         return _render_fragment(

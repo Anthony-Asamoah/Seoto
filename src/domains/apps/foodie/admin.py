@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html, mark_safe, strip_tags
 
-from utils.admin import RichTextAdminMixin
+from infrastructure.core.utils import RichTextAdminMixin
 from .models import meal, userPreference, MealTimeSlot, UserMealSchedule, DailyMealSuggestion
 
 

@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from infrastructure.core.pagination import DefaultPagination
+from infrastructure.core.pagination import DefaultAPIPagination
 
 from ..serializers import (
     PaginatedProductListSerializer,
@@ -54,8 +54,8 @@ class ProductListApi(APIView):
             OpenApiParameter('page', OpenApiTypes.INT, description='Page number.'),
             OpenApiParameter(
                 'page_size', OpenApiTypes.INT,
-                description=f'Results per page (default {DefaultPagination.page_size}, '
-                            f'max {DefaultPagination.max_page_size}).',
+                description=f'Results per page (default {DefaultAPIPagination.page_size}, '
+                            f'max {DefaultAPIPagination.max_page_size}).',
             ),
         ],
     )
@@ -79,7 +79,7 @@ class ProductListApi(APIView):
                 {'detail': str(error)}, status=http_status.HTTP_400_BAD_REQUEST
             )
 
-        paginator = DefaultPagination()
+        paginator = DefaultAPIPagination()
         page = paginator.paginate_queryset(queryset, request, view=self)
         serializer = ProductListSerializer(
             page, many=True, context={'request': request}

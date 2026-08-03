@@ -11,7 +11,7 @@ from django.http import Http404, HttpResponseForbidden, HttpResponseRedirect, Js
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
 
-from utils.paginator import apply_pagination
+from infrastructure.core.pagination import apply_view_pagination
 from .forms import PostForm
 from .models import Post, PostTags, PostReadGroup, PostComment
 from .utils import (
@@ -56,7 +56,7 @@ def explore(request):
     if tag_filter: posts = posts.filter(tags__label=tag_filter)
 
     posts = posts.order_by('-date_posted')
-    page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
+    page_obj = apply_view_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
 
     for post in page_obj:
         post.tag_list = post.tags.all()
@@ -246,7 +246,7 @@ def tag_posts(request, tag_id):
     else:
         posts = Post.objects.filter(tags=tag, is_public=True).order_by('-date_posted')
 
-    page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
+    page_obj = apply_view_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
 
     tag.increment_hits(ids=[tag.id])
 
@@ -276,7 +276,7 @@ def author_posts(request, username):
     else:
         posts = Post.objects.filter(author=author, is_public=True).order_by('-date_posted')
 
-    page_obj = apply_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
+    page_obj = apply_view_pagination(posts, request.GET.get('page'), RESULTS_PER_PAGE)
     for post in page_obj:
         post.tag_list = post.tags.all()
 

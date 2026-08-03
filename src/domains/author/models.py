@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 
 from infrastructure.core.model_validators import Validators
-from utils.enums import DefaultEnum
+from infrastructure.core.utils import BaseChoices
 
 
 class IntroLinks(models.Model):
@@ -51,11 +51,11 @@ class Intro(models.Model):
         return f"{self.first_name} {self.last_name}"
 
 
-class CertificateType(DefaultEnum):
+class CertificateType(BaseChoices):
     HIGH_SCHOOL_DIPLOMA = "High School Diploma"
     ASSOCIATE_DEGREE = "Associate Degree"
-    BACHELORS_DEGREE = "Bachelor's Degree"
-    MASTERS_DEGREE = "Master's Degree"
+    BACHELORS_DEGREE = "Bachelor's Degree", "Bachelor's Degree"
+    MASTERS_DEGREE = "Master's Degree", "Master's Degree"
     DOCTORATE_DEGREE = "Doctorate Degree"
     PROFESSIONAL_DEGREE = "Professional Degree"
     CERTIFICATE = "Certificate"
@@ -71,7 +71,7 @@ class CertificateType(DefaultEnum):
 class Education(models.Model):
     school = models.CharField(max_length=250)
     certificate_title = models.CharField(max_length=250)
-    certificate_type = models.CharField(max_length=250, choices=CertificateType.value_value_pairs())
+    certificate_type = models.CharField(max_length=250, choices=CertificateType.choices)
     other_certificate_type = models.CharField(
         max_length=250, blank=True, null=True,
     )
@@ -95,8 +95,11 @@ class Education(models.Model):
         return super().save(*args, **kwargs)
 
     def validate_certificate_type(self):
-        if self.certificate_type == CertificateType.OTHER.name and not self.other_certificate_type:
-            raise ValidationError(dict(other_certificate_type='Kindly specify the type of certificate.'))
+        # `other_certificate_type` is what the template renders.
+        if self.certificate_type == CertificateType.OTHER:
+            if not self.other_certificate_type:
+                raise ValidationError(dict(other_certificate_type='Kindly specify the type of certificate.'))
+            return
         self.other_certificate_type = self.certificate_type
 
 
