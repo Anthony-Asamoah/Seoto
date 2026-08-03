@@ -14,3 +14,4 @@ Rhymes_Seoto.txt
 .qwen/
 .claude/
 .DS_Store
+.venv/

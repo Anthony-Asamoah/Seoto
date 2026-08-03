@@ -25,29 +25,29 @@ jobs:
         env:
           PA_USERNAME: ${{ secrets.PYTHONANYWHERE_USERNAME }}
           PA_PROJECT_PATH: ${{ secrets.PYTHONANYWHERE_PROJECT_PATH }}
-          PA_VIRTUALENV: ${{ secrets.PYTHONANYWHERE_VIRTUALENV }}
         run: |
           set -euo pipefail
 
           PROJECT_PATH="${PA_PROJECT_PATH:-~/seoto.org}"
-          VIRTUALENV="${PA_VIRTUALENV:-seoto.org}"
 
           echo "🚀 Deploying to PythonAnywhere ($PA_USERNAME) ..."
 
           # Run the deploy remotely. Output streams back live and the remote
           # exit code propagates, so any failure (set -e) fails this job.
           ssh "${PA_USERNAME}@ssh.pythonanywhere.com" \
-            "PROJECT_PATH='${PROJECT_PATH}' VIRTUALENV='${VIRTUALENV}' bash -l" <<'REMOTE'
+            "PROJECT_PATH='${PROJECT_PATH}' bash -l" <<'REMOTE'
           set -e
           eval cd "$PROJECT_PATH"
           git checkout master
           git pull --ff-only
-          source ~/.virtualenvs/"$VIRTUALENV"/bin/activate
-          pip install -r requirements.txt
+          # uv installs to ~/.local/bin, which a non-interactive shell may miss.
+          export PATH="$HOME/.local/bin:$PATH"
+          # --frozen installs exactly what uv.lock pins and never re-resolves.
+          uv sync --frozen --no-dev
           # manage.py lives in src/, which is also the import root.
           cd src
-          python manage.py migrate --noinput
-          python manage.py collectstatic --noinput
+          uv run --no-sync python manage.py migrate --noinput
+          uv run --no-sync python manage.py collectstatic --noinput
           echo DEPLOYMENT_SUCCESS
           REMOTE
 

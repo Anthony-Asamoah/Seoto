@@ -1,0 +1,51 @@
+[project]
+name = "seoto-monolith"
+version = "0.1.0"
+description = "Seoto — Django monolith"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "asgiref",
+    "better-profanity~=0.7.0",
+    "boto3",
+    "channels",
+    "cryptography>=42.0.0,<46.0.0",
+    "daphne",
+    "dj-database-url",
+    "django-ckeditor-5",
+    "django-cors-headers",
+    "django-jazzmin>=3.0.5",
+    "django-otp>=1.7",
+    "django-storages[s3]",
+    "django",
+    "djangorestframework",
+    "drf-spectacular",
+    "gunicorn",
+    "httpx",
+    "markdown",
+    "packaging",
+    "pendulum",
+    "phonenumbers~=8.13",
+    "pillow",
+    "psycopg2-binary",
+    "py-vapid==1.9.1",
+    "python-decouple",
+    "pywebpush==2.1.2",
+    "qrcode>=8.2",
+    "random-string-detector~=1.1.1",
+    "sqlparse",
+    "twisted[http2,tls]",
+    "tzdata",
+    "whitenoise",
+]
+
+[dependency-groups]
+dev = [
+    "django-stubs",
+    "djangorestframework-stubs",
+    "types-pyyaml",
+]
+
+# src/ is the import root, not a package — nothing here is built or installed.
+[tool.uv]
+package = false

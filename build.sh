@@ -2,10 +2,16 @@
 set -euo pipefail
 
 # manage.py lives in src/, which is also the import root.
-cd "$(dirname "$0")/src"
+cd "$(dirname "$0")"
+
+echo "Installing dependencies..."
+uv sync --frozen --no-dev
+
+# manage.py lives in src/, which is also the import root.
+cd src
 
 echo "Collecting static files..."
-python3 manage.py collectstatic --noinput
+uv run --no-sync python manage.py collectstatic --noinput
 
 echo "Running migrations..."
-python3 manage.py migrate --noinput
+uv run --no-sync python manage.py migrate --noinput

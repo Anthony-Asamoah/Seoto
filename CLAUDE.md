@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Run everything from `src/`** (`cd src`) with the project's virtualenv active — `manage.py` lives there and `src/` is the Python import root. Settings come from `.env` at the repo root (read via `decouple.AutoConfig` in `src/infrastructure/core/settings.py`).
 
+Dependencies are managed by **uv** (`pyproject.toml` + `uv.lock` at the repo root; `.python-version` pins 3.13). `uv sync` builds `.venv/`; `uv add` / `uv remove` change deps — never hand-edit `uv.lock`, and don't reintroduce `requirements.txt`. `requires-python` is `>=3.12` because Django 6.0 requires it; note `django-jazzmin` independently floors the project at 3.10, so neither constraint can be relaxed without dropping a dependency. `uv run <cmd>` works without activating the venv. `[tool.uv] package = false` is required — `src/` is deliberately not a package, so there is nothing to build or install.
+
 - Run dev server: `python manage.py runserver`
   - ASGI is configured (`daphne` + `channels`); `runserver` works for HTTP, use `daphne infrastructure.core.asgi:application` for WebSocket testing.
 - Migrations: `python manage.py makemigrations` / `python manage.py migrate`

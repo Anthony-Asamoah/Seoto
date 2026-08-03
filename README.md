@@ -38,13 +38,21 @@ from there. See `CLAUDE.md` for deeper architecture notes.
 
 ## Getting started
 
-Requires Python 3 and `pip`. Create a virtualenv and install dependencies:
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). Install it, then sync — this
+creates `.venv/` on the Python pinned in `.python-version` (3.13) and installs the exact
+versions in `uv.lock`:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync
 ```
+
+The project requires Python >= 3.12 (Django 6.0). `uv` downloads a matching interpreter if the
+system has none. Prefix commands with `uv run` instead of activating the venv, or activate it
+the usual way with `source .venv/bin/activate`.
+
+To add or remove a dependency, use `uv add <pkg>` / `uv remove <pkg>` — both update
+`pyproject.toml` and `uv.lock` together. Commit the lockfile.
 
 Create your environment file and fill in values:
 
