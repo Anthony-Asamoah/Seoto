@@ -87,3 +87,14 @@ Routing is centralized in `src/infrastructure/core/urls.py` — each app owns it
 - Errors that should surface in admin go through standard logging; the DB log handler captures `django` and `django.request` at ERROR+.
 - HTTPS is forced when `DEBUG=False` (`SECURE_SSL_REDIRECT`).
 - dont comment unless absolutely necessary. and if you have to, use concise one liners
+
+## Deployment
+
+Host is **PythonAnywhere**, deployed by `.github/workflows/deploy-pythonanywhere.yml` on push to `master` (SSH → `git pull` → `uv sync --frozen --no-dev` → `migrate` → `collectstatic` → touch the WSGI file to reload → health check).
+
+- **`apps.seoto.org` is the Django app**; `seoto.org` is a separate marketing site. The `APP_DOMAIN` secret must be the former — it selects both the health-check target and the WSGI filename (`/var/www/apps_seoto_org_wsgi.py`). Probing `seoto.org` returns a green 200 from an app that was never deployed.
+- Project dir is `~/<PA_USERNAME>.pythonanywhere.com`, the venv is `.venv` **inside** it (not `~/.virtualenvs/`), and the Web tab's Virtualenv field holds that absolute path. `workon` only sees `~/.virtualenvs`, so it needs a symlink there to keep working.
+- PythonAnywhere kills sessions that emit too much output, so uv runs with `--no-progress`; `--python-preference only-system` stops uv downloading a ~33MB interpreter into a quota-limited home, and `uv cache prune --ci` keeps the wheel cache off the quota. Disk quota is the binding constraint — this dependency set is ~400MB installed, so two copies of it do not fit.
+- The PA WSGI file is hand-written, lives outside the repo, and is **not** `src/infrastructure/core/wsgi.py`. It only needs to put `src/` on `sys.path` and set `DJANGO_SETTINGS_MODULE`; it must not load `.env` itself, since `settings.py` reads it via `AutoConfig(search_path=BASE_DIR)` from the repo root.
+- Because `uv sync` prunes to match the lock exactly, anything hand-installed into the venv disappears on the next deploy. Undeclared packages that survived under `pip install -r` will surface as `ModuleNotFoundError` — declare them in `pyproject.toml` or remove the import.
+- Prod runs on **sqlite** (`DEFAULT_DB=sqlite`), same as dev.
