@@ -62,7 +62,7 @@ jobs:
           APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
         run: |
           set -euo pipefail
-          HOST="${APP_DOMAIN:-seoto.org}"
+          HOST="${APP_DOMAIN:-apps.seoto.org}"
           # Touch the WSGI file to reload the webapp. This avoids the reload
           # API's CNAME validation (it returns 409 cname_error for custom/apex
           # domains) and needs no API token. PythonAnywhere names the file
@@ -74,32 +74,39 @@ jobs:
             "if [ -f '$WSGI' ]; then touch '$WSGI'; else echo 'WSGI file not found: $WSGI'; exit 1; fi"
           echo "✅ Reload triggered"
 
-      - name: Wait for deployment to settle
-        run: sleep 10
-
       - name: Health check
         env:
           APP_DOMAIN: ${{ secrets.APP_DOMAIN }}
         run: |
-          HOST="${APP_DOMAIN:-seoto.org}"
+          set -uo pipefail
+          HOST="${APP_DOMAIN:-apps.seoto.org}"
           echo "🏥 Running health check on https://$HOST"
 
-          # Try to fetch the homepage. Send a browser-like User-Agent and
-          # follow redirects: PythonAnywhere's edge proxy returns 403 to
-          # automated clients (e.g. the default curl/x.y UA), even though the
-          # homepage is public and serves 200 to real browsers.
-          HTTP_CODE=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 30 \
-            -A "Mozilla/5.0 (compatible; SeotoHealthCheck/1.0)" \
-            "https://$HOST" || echo "000")
+          # Retry rather than probing once: the worker is cold straight after a
+          # reload, so a single early request can fail a healthy deploy.
+          HTTP_CODE=000
+          for attempt in 1 2 3 4 5; do
+            sleep 10
+            # Send a browser-like User-Agent and follow redirects: PythonAnywhere's
+            # edge proxy returns 403 to automated clients (e.g. the default curl/x.y
+            # UA), even though the homepage is public and serves 200 to real browsers.
+            HTTP_CODE=$(curl -s -L -o /dev/null -w "%{http_code}" --max-time 30 \
+              -A "Mozilla/5.0 (compatible; SeotoHealthCheck/1.0)" \
+              "https://$HOST" || echo "000")
 
-          if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 302 ]; then
-            echo "✅ Health check passed (HTTP $HTTP_CODE)"
-            echo "🌐 Application is responding at https://$HOST"
-          else
-            echo "⚠️  Warning: Health check returned HTTP $HTTP_CODE"
-            echo "The deployment may still be successful. Check PythonAnywhere logs if needed."
-            # Don't fail the workflow on health check issues
-          fi
+            if [ "$HTTP_CODE" -eq 200 ] || [ "$HTTP_CODE" -eq 302 ]; then
+              echo "✅ Health check passed on attempt $attempt (HTTP $HTTP_CODE)"
+              echo "🌐 Application is responding at https://$HOST"
+              exit 0
+            fi
+            echo "  attempt $attempt: HTTP $HTTP_CODE"
+          done
+
+          # A deploy that leaves the site broken must fail the job — otherwise a
+          # 500 from a missing dependency looks identical to a good deploy.
+          echo "❌ Health check failed after 5 attempts (last: HTTP $HTTP_CODE)"
+          echo "The site is not serving. Check the PythonAnywhere error log."
+          exit 1
 
       - name: Deployment summary
         if: always()
