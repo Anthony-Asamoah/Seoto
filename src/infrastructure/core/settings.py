@@ -38,15 +38,24 @@ CSRF_FAILURE_VIEW = 'domains.home.views.error_handlers.csrf_failure'
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv(post_process=tuple))
 APP_DOMAIN = config('APP_DOMAIN')
 
+# Gates the TOTP requirement on the admin. Turn off only to recover from a lockout;
+# django_otp itself stays installed either way so the devices survive the round trip.
+IS_ADMIN_OTP_ENABLED = config('IS_ADMIN_OTP_ENABLED', default=True, cast=bool)
+
 # Application definition
 INSTALLED_APPS = [
     # Third-party
+    # jazzmin must precede django.contrib.admin so its template overrides win.
+    'jazzmin',
     'daphne',
     'channels',
     'django_ckeditor_5',
     'rest_framework',
     'corsheaders',
     'drf_spectacular',
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
     # My apps
     'domains.company.products.apps.ProductsConfig',
     'domains.company.faqs.apps.FAQsConfig',
@@ -66,7 +75,7 @@ INSTALLED_APPS = [
     'domains.pwa',
 
     # Django default apps
-    'django.contrib.admin',
+    'infrastructure.core.apps.OTPAdminConfig' if IS_ADMIN_OTP_ENABLED else 'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -84,6 +93,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Must follow AuthenticationMiddleware; adds request.user.is_verified().
+    'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'infrastructure.core.middleware.RateLimitMiddleware',
@@ -158,6 +169,9 @@ RATE_LIMIT_CONFIG = {
     '/accounts/password_reset/': {'max_requests': 3, 'window': 300},
     '/@sean_or_tony': {'max_requests': 3, 'window': 300},
     '/reach-out': {'max_requests': 5, 'window': 300},
+    # Roomier than the other auth endpoints: a mistyped rotating code costs an attempt,
+    # and django-otp throttles the device itself on top of this.
+    '/admin/login/': {'max_requests': 10, 'window': 300},
 }
 
 # Password validation
@@ -284,6 +298,98 @@ CORS_URLS_REGEX = r'^/api/.*$'
 # Accounts config
 LOGIN_REDIRECT_URL = 'apps'
 LOGOUT_REDIRECT_URL = 'apps'
+
+# Admin two-factor (django-otp) — enrol devices with `manage.py setup_admin_totp <user>`
+# and mint emergency codes with `manage.py addstatictoken <user>`.
+OTP_TOTP_ISSUER = config('OTP_TOTP_ISSUER', default='Seoto')
+# Leaving this False keeps the shared secret and QR code reachable in the admin, which is
+# how a verified admin enrols a second device without shell access.
+OTP_ADMIN_HIDE_SENSITIVE_DATA = config('OTP_ADMIN_HIDE_SENSITIVE_DATA', default=False, cast=bool)
+
+# Admin skin (django-jazzmin)
+JAZZMIN_SETTINGS = {
+    'site_title': 'Seoto Administration',
+    'site_header': 'Seoto',
+    'site_brand': 'Seoto',
+    'site_logo': 'img/logo-mark-light.png',
+    'login_logo': 'img/logo.png',
+    'site_logo_classes': '',
+    'site_icon': 'img/logo-mark.png',
+    'welcome_sign': 'Sign in to Seoto administration',
+    'copyright': 'Seoto',
+    'search_model': ['auth.User', 'blog.Post'],
+    'user_avatar': None,
+    'topmenu_links': [
+        {'name': 'Site', 'url': 'apps', 'new_window': True},
+        {'model': 'auth.User'},
+    ],
+    'show_sidebar': True,
+    'navigation_expanded': False,
+    'order_with_respect_to': [
+        'auth',
+        'otp_totp',
+        'otp_static',
+        'blog',
+        'spending_tracker',
+        'foodie',
+        'company_products',
+        'company_faqs',
+        'author',
+        'pwa',
+        'home',
+    ],
+    'icons': {
+        'auth': 'fas fa-users-cog',
+        'auth.user': 'fas fa-user',
+        'auth.Group': 'fas fa-users',
+        'accounts.user_profile': 'fas fa-id-badge',
+        'otp_totp': 'fas fa-shield-halved',
+        'otp_totp.TOTPDevice': 'fas fa-mobile-screen',
+        'otp_static': 'fas fa-key',
+        'otp_static.StaticDevice': 'fas fa-key',
+        'otp_static.StaticToken': 'fas fa-hashtag',
+        'blog': 'fas fa-newspaper',
+        'blog.Post': 'fas fa-file-lines',
+        'blog.PostComment': 'fas fa-comments',
+        'blog.PostTags': 'fas fa-tags',
+        'spending_tracker': 'fas fa-wallet',
+        'spending_tracker.Transaction': 'fas fa-receipt',
+        'spending_tracker.Account': 'fas fa-piggy-bank',
+        'foodie': 'fas fa-utensils',
+        'jotter': 'fas fa-list-check',
+        'rhymes': 'fas fa-music',
+        'theme': 'fas fa-palette',
+        'pwa': 'fas fa-bell',
+        'author': 'fas fa-feather',
+        'company_products': 'fas fa-cubes',
+        'company_faqs': 'fas fa-circle-question',
+        'home.ErrorLog': 'fas fa-triangle-exclamation',
+    },
+    'related_modal_active': True,
+    'custom_css': 'css/admin.css',
+    'show_ui_builder': DEBUG,
+    'changeform_format': 'horizontal_tabs',
+}
+
+# jazzmin 3.x rides on Bootstrap 5.3 + AdminLTE 4, which dropped the `accent-*`,
+# `navbar-*` and `sidebar-dark-*` colour classes — the silver & brown palette is
+# applied through CSS custom properties in static/css/admin.css instead.
+JAZZMIN_UI_TWEAKS = {
+    'no_navbar_border': True,
+    'navbar_fixed': True,
+    'sidebar_fixed': True,
+    'sidebar_nav_child_indent': True,
+    'theme': 'default',
+    'default_theme_mode': 'auto',
+    'button_classes': {
+        'primary': 'btn-primary',
+        'secondary': 'btn-outline-secondary',
+        'info': 'btn-info',
+        'warning': 'btn-warning',
+        'danger': 'btn-danger',
+        'success': 'btn-success',
+    },
+}
 
 # CKEditor 5
 CKEDITOR_5_CONFIGS = {

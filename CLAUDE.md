@@ -19,7 +19,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Switch DB: set `DEFAULT_DB=sqlite` or `DEFAULT_DB=postgres` in `.env` (both are pre-configured in `settings.DATABASES`).
 - Switch storage: `MEDIA_STORAGE=LOCAL` or `AWS` in `.env` (S3 backend wired via `django-storages`).
 
-App-specific management commands (full list in `README.md`): blog content/tag migrations, S3 image migrations per app (`migrate_*_images_to_s3`), thumbnail generators (`generate_*_thumbnails`), `seed_themes`, `seed_hobbies`, `generate_vapid_keys`.
+App-specific management commands (full list in `README.md`): blog content/tag migrations, S3 image migrations per app (`migrate_*_images_to_s3`), thumbnail generators (`generate_*_thumbnails`), `seed_themes`, `seed_hobbies`, `generate_vapid_keys`, `setup_admin_totp`.
+
+`/admin/` needs a TOTP code as well as a password (see "Admin two-factor" below). Enrol a device with `python manage.py setup_admin_totp <username>` before expecting to get in.
 
 ## Architecture
 
@@ -67,6 +69,8 @@ Routing is centralized in `src/infrastructure/core/urls.py` — each app owns it
 - CSRF: `static/js/csrf.js` (loaded from `base.html`) rewrites every rendered `csrfmiddlewaretoken` from the cookie at submit time, so service-worker-cached or long-open pages don't post a stale token; use its `csrfFetch` for JS POSTs. Failures land on `CSRF_FAILURE_VIEW` → `domains.home.views.error_handlers.csrf_failure`, which re-issues the cookie and offers a one-click retry (same-origin posts only, sensitive fields and uploads never replayed).
 - `infrastructure/utils/` — `media.py` (`MediaHelper` for thumbnail generation, used across foodie/accounts), `choices.py` (`BaseChoices`, the `TextChoices` base every model enum subclasses), `admin.py` (`RichTextAdminMixin`), `validators.py`, `profanity.py`. The package `__init__` re-exports everything but `contains_profanity`.
 - `infrastructure/core/mixins/views.py` — shared CBV mixins.
+- Admin two-factor: `IS_ADMIN_OTP_ENABLED` swaps `django.contrib.admin` in `INSTALLED_APPS` for `infrastructure.core.apps.OTPAdminConfig`, which points the default admin site at `infrastructure.core.admin.SeotoAdminSite` (a `django_otp` `OTPAdminSite`). The site class must live in a separate module from the `AppConfig` — importing `django_otp.admin` while `INSTALLED_APPS` is being read pulls in auth models and blows up with `AppRegistryNotReady`. `SeotoAdminSite` keeps `name = 'admin'` so `{% url 'admin:...' %}` still resolves. Users without a verified device are treated as non-staff, so a device must be enrolled out of band (`setup_admin_totp`, or `addstatictoken` for emergency codes) — there is no self-service enrolment page.
+- Admin skin: `jazzmin` (Bootstrap 5.3 + AdminLTE 4) — it must stay ahead of the admin app in `INSTALLED_APPS`, and **do not add `src/templates/admin/base_site.html`**; a project-level override wins over jazzmin's and silently reverts the whole admin to the stock skin. Branding lives in `JAZZMIN_SETTINGS`; the silver/brown palette is applied through Bootstrap CSS custom properties in `static/css/admin.css` (`custom_css`), since jazzmin 3.x dropped the AdminLTE `accent-*` / `sidebar-dark-*` classes that `JAZZMIN_UI_TWEAKS` used to drive. `templates/admin/login.html` is a copy of jazzmin's with the `otp_token` field added — re-sync it if jazzmin's login template changes.
 - `infrastructure/core/pagination.py` — `DefaultAPIPagination` (DRF page-number class, sizes from `API_PAGE_SIZE`/`API_MAX_PAGE_SIZE`) and `apply_view_pagination(data, page_number, per_page)` for server-rendered views.
 - Storage abstraction: when `MEDIA_STORAGE=AWS`, both `default` and `staticfiles` storages route to S3 with `AWS_S3_BUCKET_PREFIX`. Don't hardcode local-path assumptions in new image-handling code — go through `MediaHelper`.
 

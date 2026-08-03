@@ -1,6 +1,6 @@
-/* Silver & Brown Admin Theme */
+/* Silver & Brown Admin Theme — layered over jazzmin (Bootstrap 5.3 + AdminLTE 4).
+   Colour scheme is driven by data-bs-theme on <html>, set by jazzmin's boot script. */
 
-/* Palette via CSS variables for easy tweaking */
 :root {
     /* Silvers */
     --silver-0: #f6f7f8; /* near white */
@@ -15,232 +15,112 @@
     --brown-3: #5d4037; /* dark brown */
     --brown-4: #3e2723; /* deepest brown */
 
-    /* Text */
-    --text-main: #1b1b1b;
-    --text-inv: #fafafa;
-
-    /* Components (light defaults) */
-    --header-bg: var(--brown-3);
-    --header-link: var(--silver-0);
-    --header-link-hover: var(--silver-2);
-    --breadcrumbs-bg: var(--silver-2);
-    --breadcrumbs-text: var(--brown-4);
-    --breadcrumbs-link-hover: var(--brown-2);
-    --module-header-bg: var(--silver-1);
-    --table-bg: #ffffff;
-    --button-bg: var(--brown-2);
-    --button-text: var(--silver-0);
-    --button-hover-bg: var(--brown-1);
-    --button-hover-text: #ffffff;
+    /* Active brand colour, re-pointed per colour scheme below */
+    --brand: var(--brown-2);
+    --brand-strong: var(--brown-3);
+    --brand-soft: var(--brown-1);
+    --brand-rgb: 109, 76, 65;
+    --brand-on: var(--silver-0);
 }
 
-/* global styles */
-a:link, a:visited {
-    color: var(--brown-3);
-    transition: color 0.25s ease, background-color 0.25s ease;
-}
-a:hover {
-    color: var(--brown-4);
-}
-
-/* Header and Title */
-#header {
-    background-color: var(--header-bg);
-    height: 50px;
-}
-#branding h1 {
-    color: var(--silver-0);
-}
-#user-tools {
-    color: var(--header-link);
+:root[data-bs-theme="dark"] {
+    --brand: var(--brown-1);
+    --brand-strong: var(--silver-3);
+    --brand-soft: var(--brown-2);
+    --brand-rgb: 141, 110, 99;
+    --brand-on: #1f1412;
 }
 
-#header a:link {
-    color: var(--header-link);
-    transition: color 0.2s ease;
-}
-#header a:hover {
-    color: var(--header-link-hover);
-}
-#header a:visited {
-    color: var(--header-link);
-}
-
-/* Breadcrumbs */
-div .content table {
-    background-color: var(--table-bg);
-    border-radius: 10px;
+/* Bootstrap theming hooks — everything below inherits from these */
+:root {
+    --bs-primary: var(--brand);
+    --bs-primary-rgb: var(--brand-rgb);
+    --bs-link-color: var(--brand-strong);
+    --bs-link-color-rgb: var(--brand-rgb);
+    --bs-link-hover-color: var(--brown-4);
+    --bs-focus-ring-color: rgba(var(--brand-rgb), 0.35);
 }
 
-div .breadcrumbs {
-    background-color: var(--breadcrumbs-bg);
-    color: var(--breadcrumbs-text);
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-div.breadcrumbs a {
-    color: var(--breadcrumbs-text);
-}
-div.breadcrumbs a:hover {
-    color: var(--breadcrumbs-link-hover);
+:root[data-bs-theme="dark"] {
+    --bs-link-hover-color: #ffffff;
 }
 
-/* Sidebar */
-.module h2, .module caption, .inline-group h2 {
-    background-color: var(--module-header-bg);
+.btn-primary {
+    --bs-btn-bg: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-color: var(--brand-on);
+    --bs-btn-hover-bg: var(--brand-soft);
+    --bs-btn-hover-border-color: var(--brand-soft);
+    --bs-btn-hover-color: var(--brand-on);
+    --bs-btn-active-bg: var(--brand-strong);
+    --bs-btn-active-border-color: var(--brand-strong);
+    --bs-btn-disabled-bg: var(--brand);
+    --bs-btn-disabled-border-color: var(--brand);
 }
 
-/* Dark mode overrides */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --text-main: #eaecef;
-        --text-inv: #121212;
-
-        --header-bg: var(--brown-4);
-        --header-link: var(--silver-3);
-        --header-link-hover: #ffffff;
-        --breadcrumbs-bg: #2a201d; /* very dark brown */
-        --breadcrumbs-text: var(--silver-3);
-        --breadcrumbs-link-hover: #ffffff;
-        --module-header-bg: #2f2a28; /* muted dark */
-        --table-bg: #1e1a18; /* dark panel */
-        --button-bg: var(--silver-3); /* silver button on dark */
-        --button-text: #1f1412; /* dark brown-ish text */
-        --button-hover-bg: var(--silver-1);
-        --button-hover-text: #000;
-    }
-
-    a:link, a:visited {
-        color: var(--silver-3);
-        transition: color 0.25s ease;
-    }
-    a:hover {
-        color: #ffffff;
-    }
-
-    /* Sidebar */
-    .module h2, .module caption, .inline-group h2 {
-        background-color: var(--module-header-bg);
-    }
-
-    /* Submit Form Buttons */
-    .submit-row input {
-        background-color: var(--button-bg);
-        color: var(--button-text);
-        border-color: transparent;
-        transition: background-color 0.2s ease, color 0.2s ease;
-    }
-
-    .submit-row input:hover, .submit-row input.default {
-        background-color: var(--button-hover-bg);
-        color: var(--button-hover-text);
-    }
-
-    .submit-row input.default:hover {
-        background-color: var(--button-bg);
-        color: var(--button-text);
-    }
+/* Sidebar — jazzmin pins it to data-bs-theme="dark", so it stays brown in both modes */
+#jazzy-sidebar {
+    background-color: var(--brown-4);
+    --lte-sidebar-color: var(--silver-2);
+    --lte-sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+    --lte-sidebar-hover-color: #ffffff;
+    --lte-sidebar-active-color: #ffffff;
+    --lte-sidebar-menu-active-bg: var(--brown-2);
+    --lte-sidebar-menu-active-color: #ffffff;
+    --lte-sidebar-submenu-bg: rgba(0, 0, 0, 0.18);
+    --lte-sidebar-submenu-color: var(--silver-3);
+    --lte-sidebar-submenu-hover-bg: rgba(255, 255, 255, 0.06);
+    --lte-sidebar-submenu-hover-color: #ffffff;
+    --lte-sidebar-submenu-active-bg: var(--brown-2);
+    --lte-sidebar-submenu-active-color: #ffffff;
+    --lte-sidebar-header-color: var(--silver-4);
 }
 
-/* Light mode overrides */
-@media (prefers-color-scheme: light) {
-    :root {
-        --header-bg: var(--brown-3);
-        --header-link: var(--silver-0);
-        --header-link-hover: var(--silver-2);
-        --breadcrumbs-bg: var(--silver-2);
-        --breadcrumbs-text: var(--brown-4);
-        --breadcrumbs-link-hover: var(--brown-2);
-        --module-header-bg: var(--silver-1);
-        --table-bg: #ffffff;
-        --button-bg: var(--brown-2);
-        --button-text: var(--silver-0);
-        --button-hover-bg: var(--brown-1);
-        --button-hover-text: #ffffff;
-    }
-
-    a:link, a:visited {
-        color: var(--brown-3);
-        transition: color 0.25s ease;
-    }
-    a:hover {
-        color: var(--brown-4);
-    }
-
-    /* Sidebar */
-    .module h2, .module caption, .inline-group h2 {
-        background-color: var(--module-header-bg);
-    }
-
-    /* Submit Form Buttons */
-    .submit-row input {
-        background-color: var(--button-bg);
-        color: var(--button-text);
-        border-color: transparent;
-        transition: background-color 0.2s ease, color 0.2s ease;
-    }
-
-    .submit-row input:hover, .submit-row input.default {
-        background-color: var(--button-hover-bg);
-        color: var(--button-hover-text);
-    }
-
-    .submit-row input.default:hover {
-        background-color: var(--button-bg);
-        color: var(--button-text);
-    }
+#jazzy-sidebar .sidebar-brand {
+    background-color: var(--brown-3);
+    border-bottom: 0;
 }
 
-/* Light mode readability enhancements */
-@media (prefers-color-scheme: light) {
-    /* Base text/background for better contrast */
-    body {
-        color: var(--text-main);
-        background: #f7f8fa;
-    }
-    body, input, select, textarea {
-        color: var(--text-main);
-    }
+#jazzy-navbar {
+    border-bottom: 1px solid var(--bs-border-color);
+}
 
-    /* Breadcrumbs: clearer separation and weight */
-    div.breadcrumbs {
-        border-bottom: 1px solid var(--silver-3);
-        font-weight: 600;
-    }
-    div.breadcrumbs a { text-decoration: none; }
+/* Tables and cards — flat surfaces, no accent edges */
+.card {
+    border-color: var(--bs-border-color);
+}
 
-    /* Tables: stronger headers, zebra rows, hover state */
-    table#result_list, .results, .inline-group table {
-        border: 1px solid var(--silver-2);
-    }
-    table#result_list thead th, .results thead th, .inline-group table thead th {
-        background: var(--silver-1);
-        color: var(--brown-4);
-        font-weight: 600;
-    }
-    table#result_list tbody tr:nth-child(even), .results tbody tr:nth-child(even), .inline-group table tbody tr:nth-child(even) {
-        background: #fbfcfe; /* very light silver */
-    }
-    table#result_list tbody tr:hover, .results tbody tr:hover, .inline-group table tbody tr:hover {
-        background: #eef2f5; /* hover highlight */
-    }
+.table > thead {
+    --bs-table-bg: var(--bs-tertiary-bg);
+    font-weight: 600;
+}
 
-    /* Form fields: clearer borders and focus ring */
-    input[type="text"], input[type="number"], input[type="email"], input[type="url"], input[type="search"],
-    input[type="password"], select, textarea {
-        border: 1px solid #b7bfc6;
-        background: #ffffff;
-        color: var(--text-main);
-    }
-    input:focus, select:focus, textarea:focus {
-        outline: 2px solid var(--brown-2);
-        outline-offset: 1px;
-        border-color: var(--brown-2);
-        box-shadow: 0 0 0 2px color-mix(in srgb, var(--brown-2) 20%, transparent);
-    }
+#result_list tbody tr:hover > * {
+    --bs-table-accent-bg: var(--bs-tertiary-bg);
+    background-color: var(--bs-tertiary-bg);
+}
 
-    /* Buttons: keep color but add visible focus */
-    .submit-row input:focus {
-        outline: 2px solid var(--brown-2);
-        outline-offset: 2px;
-    }
+/* Selected/highlighted rows should read as brand, not bootstrap blue */
+.table-active > *,
+#result_list tbody tr.selected > * {
+    --bs-table-accent-bg: rgba(var(--brand-rgb), 0.14);
+    background-color: rgba(var(--brand-rgb), 0.14);
+}
+
+/* Form focus */
+.form-control:focus,
+.form-select:focus,
+.vTextField:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 0.2rem rgba(var(--brand-rgb), 0.2);
+}
+
+/* Login card */
+.login-logo img {
+    max-height: 72px;
+    width: auto;
+}
+
+.login-box-msg {
+    color: var(--bs-secondary-color);
 }

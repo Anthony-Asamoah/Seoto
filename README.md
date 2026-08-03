@@ -12,6 +12,7 @@ API layer. The project is ASGI-ready (Daphne + Channels) and ships as a PWA with
 - **Storage:** local filesystem by default, S3 optional (`django-storages`)
 - **Static files:** WhiteNoise
 - **Rich text:** CKEditor 5
+- **Admin:** jazzmin skin, TOTP second factor (`django-otp`)
 - **Web push:** VAPID (`pywebpush`)
 - **Deploy:** PythonAnywhere (GitHub Actions workflow, build via `build.sh`)
 
@@ -62,6 +63,7 @@ Python import root — run all management commands from there:
 cd src
 python manage.py migrate
 python manage.py createsuperuser
+python manage.py setup_admin_totp <username>   # required — see Admin access below
 python manage.py runserver
 ```
 
@@ -71,6 +73,34 @@ python manage.py runserver
 daphne infrastructure.core.asgi:application
 ```
 
+## Admin access
+
+`/admin/` requires two factors: password plus a rotating code from an authenticator app
+(Google Authenticator, 1Password, Authy, Bitwarden — anything that speaks TOTP). A staff
+user with no verified device is treated as non-staff, so **enrol a device before you need
+one**:
+
+```bash
+cd src
+python manage.py setup_admin_totp <username>
+```
+
+It prints a QR code to scan, then asks for the code your app shows so it can prove the
+secret took before trusting the device. `--reset` reissues the secret, `--name` adds a
+second device (phone plus laptop, say), `--noinput` skips the confirmation prompt.
+
+Mint single-use emergency codes as well — they work in the same field on the login form:
+
+```bash
+python manage.py addstatictoken <username>
+```
+
+If you are locked out entirely, set `IS_ADMIN_OTP_ENABLED=False` in `.env` and restart.
+That drops the admin back to password-only; the enrolled devices survive, so you can
+re-enable it once you are back in. Once signed in, devices are also manageable under
+**OTP_TOTP → TOTP devices** in the admin (set `OTP_ADMIN_HIDE_SENSITIVE_DATA=True` to hide
+secrets and QR codes there).
+
 ## Configuration
 
 All settings come from `.env` (see `.env.example`). Common toggles:
@@ -78,6 +108,7 @@ All settings come from `.env` (see `.env.example`). Common toggles:
 - **Database:** `DEFAULT_DB=sqlite` or `postgres` (Postgres vars only needed when selected).
 - **Media storage:** `MEDIA_STORAGE=LOCAL` or `AWS` (S3 vars only needed when `AWS`).
 - **Theme feature:** `IS_THEME_ENABLED=True/False`.
+- **Admin 2FA:** `IS_ADMIN_OTP_ENABLED=True/False`, issuer name via `OTP_TOTP_ISSUER`.
 - **Web push:** generate keys with `python manage.py generate_vapid_keys` and paste into `.env`.
 - **reCAPTCHA v3:** leave keys blank to skip verification locally.
 
@@ -136,6 +167,16 @@ python manage.py cleanup_orphan_blog_images
 ```
 
 ### Accounts
+
+#### `setup_admin_totp`
+Enrols a TOTP device for a user so they can sign in to the admin. Prints a QR code to scan, then asks for the code shown by the app before trusting the device. See [Admin access](#admin-access).
+
+```bash
+python manage.py setup_admin_totp <username>
+python manage.py setup_admin_totp <username> --reset          # reissue the secret
+python manage.py setup_admin_totp <username> --name Laptop    # add a second device
+python manage.py setup_admin_totp <username> --light-terminal # QR for a light background
+```
 
 #### `migrate_accounts_images_to_s3`
 Migrates user profile images from local storage to S3. Requires `MEDIA_STORAGE=AWS` to be configured.
