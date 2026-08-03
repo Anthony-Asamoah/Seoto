@@ -192,6 +192,22 @@ Processes due recurring transactions: auto-creates the transaction (`is_auto_ren
 python manage.py process_recurring_transactions
 ```
 
+### Company
+
+#### `seed_products`
+Seeds the products shown on the marketing site. Re-running skips products that already exist, so copy edited in the admin survives; pass `--refresh` to overwrite it.
+
+```bash
+python manage.py seed_products [--refresh]
+```
+
+#### `seed_faqs`
+Seeds the FAQs shown on the marketing site (mirrors `faqItems` in the `seoto_ui` project). Same `--refresh` semantics as `seed_products`.
+
+```bash
+python manage.py seed_faqs [--refresh]
+```
+
 ### Theme
 
 #### `seed_themes`

@@ -58,7 +58,7 @@ Routing is centralized in `src/infrastructure/core/urls.py` — each app owns it
 - `jotter`, `rhymes`, `throw_a_die`, `flip_a_coin`, `interest_calc`, `generate_invoice` — small standalone tools.
 - `theme` — gated behind `IS_THEME_ENABLED` flag; injects CSS via `domains.theme.context_processors.theme_css`.
 - `pwa` — service worker, manifest, web push (VAPID keys required in `.env`). `sw.js`/`manifest.json` are read off disk from `SRC_DIR/static/`.
-- `domains/company/` — empty placeholder, not in `INSTALLED_APPS`; inactive.
+- `domains/company/` — the marketing site's read-only DRF API, mounted at `/api/company/` from `domains/company/urls.py`; each subdomain owns its `urls.py` and is included there. `products` (work we've shipped) and `faqs` (question/answer accordion, optional `FAQCategory` sections). Both follow the same layout — `models.py`, `serializers.py`, `services/` holding the querysets and filter validation, `apis/` as thin `APIView`s that translate a `*FilterError` into a 400, and a `seed_*` management command. App labels are namespaced (`company_products`, `company_faqs`) since the directory name alone would collide.
 
 ### Cross-cutting infrastructure
 - `infrastructure/core/middleware.py` — `BotScannerMiddleware` (first in chain) and `RateLimitMiddleware` (last). Per-path limits in `settings.RATE_LIMIT_CONFIG`; storage is the default `LocMemCache` so limits are per-process, not cluster-wide.
