@@ -1,0 +1,59 @@
+{% if needs_confirmation %}
+    <div class="alert alert-warning">
+        <h6 class="alert-heading">{{ account }} already has a working authenticator</h6>
+        <p class="mb-0">
+            Continuing wipes it and issues a new secret with new backup codes. Their current app will
+            stop opening the admin, and they will need to scan the new code before they can sign in again.
+        </p>
+    </div>
+    <div class="text-end">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" id="totp-confirm-reset">Reset two-factor</button>
+    </div>
+{% else %}
+    <div class="row g-4">
+        <div class="col-md-5 text-center">
+            <div class="totp-qr-plate">{{ qr_svg }}</div>
+            <p class="text-muted small mt-2 mb-1">Or enter this key by hand:</p>
+            <code class="totp-secret">{{ secret }}</code>
+        </div>
+        <div class="col-md-7">
+            <p>Have {{ account }} scan this with their authenticator app, then type the code it shows.</p>
+
+            <div class="input-group mb-2">
+                <input type="text" class="form-control" id="totp-code" placeholder="6-digit code"
+                       inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="6">
+                <button type="button" class="btn btn-primary" id="totp-verify">Verify &amp; activate</button>
+            </div>
+
+            {% if account.email %}
+                <button type="button" class="btn btn-outline-secondary w-100" id="totp-email">
+                    <i class="fas fa-envelope"></i> Email setup link to {{ account.email }}
+                </button>
+                <p class="text-muted small mt-2 mb-0">
+                    The email carries a one-time link only — never the QR code or the key above.
+                    It expires in 24 hours and dies once the app is paired.
+                </p>
+            {% else %}
+                <p class="text-muted small mb-0">
+                    No email address on file, so the setup link can't be sent. Add one to the account first,
+                    or read the code out from here.
+                </p>
+            {% endif %}
+
+            <div id="totp-message" class="mt-3"></div>
+        </div>
+    </div>
+
+    <hr>
+
+    <h6>Backup codes</h6>
+    <p class="text-muted small">
+        Each signs in once if the phone is lost. Hand them over now — they are not shown again.
+    </p>
+    <ul class="totp-backup-codes">
+        {% for code in backup_codes %}
+            <li>{{ code }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}

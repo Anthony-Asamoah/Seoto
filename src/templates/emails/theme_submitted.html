@@ -1,46 +1,48 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Theme Submitted for Review</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h2 style="color: #007bff; margin-top: 0;">New Theme Submitted for Review</h2>
-        <p>A user has submitted a new theme for verification and publication.</p>
+{% extends "emails/base_email.html" %}
+
+{% block title %}New Theme Submitted for Review{% endblock %}
+
+{% block header %}Theme Submitted{% endblock %}
+
+{% block content %}
+    <h2>New Theme Submitted for Review</h2>
+
+    <p>A user has submitted a new theme for verification and publication.</p>
+
+    <div class="highlight-box">
+        <p style="margin: 0;"><strong>Theme Details:</strong></p>
+        <p style="margin: 10px 0 0 0;">Name: <strong>{{ theme.name }}</strong></p>
+        <p style="margin: 5px 0 0 0;">Description: {{ theme.description|default:"No description provided." }}</p>
+        <p style="margin: 5px 0 0 0;">Created by: <strong>{{ theme.created_by.username }}</strong> ({{ theme.created_by.email }})</p>
+        <p style="margin: 5px 0 0 0;">Submitted: {{ theme.created_at|date:"F j, Y g:i A" }}</p>
     </div>
 
-    <div style="background-color: white; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-        <h3 style="color: #333; margin-top: 0;">Theme Details</h3>
+    <h3>Theme Colours</h3>
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="width: 100%;">
+        {% for label, value in theme_colors %}
+            <tr>
+                <td style="padding: 4px 0; font-size: 15px; width: 130px;">{{ label }}</td>
+                <td style="padding: 4px 0;">
+                    <span style="display: inline-block; width: 20px; height: 20px; background-color: {{ value }}; border: 1px solid #e8ded8; vertical-align: middle; margin-right: 8px;"></span>
+                    <span style="font-size: 14px;">{{ value }}</span>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
 
-        <p><strong>Theme Name:</strong> {{ theme.name }}</p>
-        <p><strong>Description:</strong> {{ theme.description|default:"No description provided." }}</p>
-        <p><strong>Created by:</strong> {{ theme.created_by.username }} ({{ theme.created_by.email }})</p>
-        <p><strong>Submitted on:</strong> {{ theme.created_at|date:"F j, Y g:i A" }}</p>
-
-        <h4 style="color: #333; margin-top: 20px;">Theme Colors:</h4>
-        <ul style="list-style: none; padding: 0;">
-            <li><strong>Primary:</strong> <span style="display: inline-block; width: 20px; height: 20px; background-color: {{ theme.primary_color }}; border: 1px solid #ddd; vertical-align: middle; margin-right: 5px;"></span> {{ theme.primary_color }}</li>
-            <li><strong>Secondary:</strong> <span style="display: inline-block; width: 20px; height: 20px; background-color: {{ theme.secondary_color }}; border: 1px solid #ddd; vertical-align: middle; margin-right: 5px;"></span> {{ theme.secondary_color }}</li>
-            <li><strong>Background:</strong> <span style="display: inline-block; width: 20px; height: 20px; background-color: {{ theme.background_color }}; border: 1px solid #ddd; vertical-align: middle; margin-right: 5px;"></span> {{ theme.background_color }}</li>
-            <li><strong>Text:</strong> <span style="display: inline-block; width: 20px; height: 20px; background-color: {{ theme.text_color }}; border: 1px solid #ddd; vertical-align: middle; margin-right: 5px;"></span> {{ theme.text_color }}</li>
-            <li><strong>Navbar BG:</strong> <span style="display: inline-block; width: 20px; height: 20px; background-color: {{ theme.navbar_bg }}; border: 1px solid #ddd; vertical-align: middle; margin-right: 5px;"></span> {{ theme.navbar_bg }}</li>
-            <li><strong>Navbar Text:</strong> <span style="display: inline-block; width: 20px; height: 20px; background-color: {{ theme.navbar_text }}; border: 1px solid #ddd; vertical-align: middle; margin-right: 5px;"></span> {{ theme.navbar_text }}</li>
-        </ul>
-
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-            <p style="margin-bottom: 15px;"><strong>Action Required:</strong> Please review this theme and approve or reject it.</p>
-            <a href="http://{{ site_url }}/theme/admin/verify/"
-               style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">
-                Review in Verification Queue
-            </a>
-        </div>
+    <div class="accent-box">
+        <p style="margin: 0; font-size: 14px;">
+            <strong>Action Required:</strong> review this theme and approve or reject it.
+        </p>
     </div>
 
-    <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; font-size: 12px; color: #666;">
-        <p style="margin: 0;">This is an automated notification from Seoto Theme System.</p>
-        <p style="margin: 5px 0 0 0;">You received this email because you are an administrator.</p>
-    </div>
-</body>
-</html>
+    <center>
+        <a href="{{ app_domain }}/theme/admin/verify/" class="button">Review in Verification Queue</a>
+    </center>
+
+    <div class="divider"></div>
+
+    <p style="font-size: 14px; color: #6b5f5a;">
+        You received this because you are an administrator.
+    </p>
+{% endblock %}

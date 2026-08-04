@@ -1,0 +1,37 @@
+{% extends "admin/change_form.html" %}
+
+{% comment %}
+Adds the 2FA enrolment button. `extra_actions` is jazzmin's own empty hook inside
+object-tools-items, so overriding it cannot drop jazzmin's own change_form_object_tools.
+The modal shell goes in extrajs because after_related_objects sits inside the change form.
+{% endcomment %}
+
+{% block extra_actions %}
+    {{ block.super }}
+    <a href="#" class="btn btn-outline-secondary" id="totp-setup-btn"
+       data-url="{% url 'admin:auth_user_totp_setup' original.pk %}"
+       data-verify-url="{% url 'admin:auth_user_totp_verify' original.pk %}"
+       data-email-url="{% url 'admin:auth_user_totp_email' original.pk %}">
+        <i class="fas fa-mobile-screen"></i>
+        {% if totp_status == 'active' %}Reset 2FA
+        {% elif totp_status == 'pending' %}Resume 2FA setup
+        {% else %}Set up 2FA{% endif %}
+    </a>
+{% endblock %}
+
+{% block extrajs %}
+    {{ block.super }}
+    <div class="modal fade" id="totpSetupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-shield-halved"></i> Two-Factor Authentication
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="totpSetupBody"></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

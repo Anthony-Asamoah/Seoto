@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Seoto{% endblock %}</title>
     <style>
+        /* Brand: the admin's brown as the structural tone, the logo's gold as the accent.
+           Every pair below clears WCAG AA (4.5:1). */
+
         /* Reset styles */
         body {
             margin: 0;
@@ -23,7 +26,7 @@
 
         /* Header */
         .email-header {
-            background: linear-gradient(135deg, #00695f 0%, #003d38 100%);
+            background: linear-gradient(135deg, #5d4037 0%, #3e2723 100%);
             padding: 30px 20px;
             text-align: center;
         }
@@ -36,21 +39,30 @@
             letter-spacing: 1px;
         }
 
+        /* Sits in the footer, on the deep brown — the mark is gold on transparent. */
+        .email-logo {
+            display: block;
+            margin: 0 auto 12px auto;
+            width: 48px;
+            height: auto;
+            border: 0;
+        }
+
         /* Content */
         .email-content {
             padding: 40px 30px;
-            color: #102854;
+            color: #3a3230;
         }
 
         .email-content h2 {
-            color: #00695f;
+            color: #5d4037;
             font-size: 24px;
             margin-top: 0;
             margin-bottom: 20px;
         }
 
         .email-content h3 {
-            color: #00695f;
+            color: #5d4037;
             font-size: 20px;
             margin-top: 20px;
             margin-bottom: 15px;
@@ -58,17 +70,17 @@
 
         .email-content p {
             margin: 15px 0;
-            color: #102854;
+            color: #3a3230;
             font-size: 16px;
         }
 
         .email-content a {
-            color: #00695f;
+            color: #5d4037;
             text-decoration: none;
         }
 
         .email-content a:hover {
-            color: #003d38;
+            color: #3e2723;
             text-decoration: underline;
         }
 
@@ -77,7 +89,7 @@
             display: inline-block;
             padding: 14px 30px;
             margin: 20px 0;
-            background-color: #00695f;
+            background-color: #5d4037;
             color: #ffffff !important;
             text-decoration: none;
             border-radius: 5px;
@@ -87,35 +99,35 @@
         }
 
         .button:hover {
-            background-color: #003d38;
+            background-color: #6d4c41;
         }
 
         .button-warning {
-            background-color: darkgoldenrod;
+            background-color: #8f6b23;
         }
 
         .button-warning:hover {
-            background-color: #996515;
+            background-color: #725419;
         }
 
         /* Highlight box */
         .highlight-box {
-            background-color: #f0f8f7;
+            background-color: #f5f0ec;
             padding: 20px;
             margin: 20px 0;
             border-radius: 4px;
         }
 
         .accent-box {
-            background-color: #fffef0;
+            background-color: #fdf6e6;
             padding: 20px;
             margin: 20px 0;
             border-radius: 4px;
         }
 
-        /* Footer */
+        /* Footer — deeper than the header so the mail is bookended, not banded */
         .email-footer {
-            background-color: #102854;
+            background-color: #3e2723;
             padding: 30px 20px;
             text-align: center;
             color: #ffffff;
@@ -124,11 +136,11 @@
         .email-footer p {
             margin: 5px 0;
             font-size: 14px;
-            color: #d9d9d9;
+            color: #e8ded8;
         }
 
         .email-footer a {
-            color: darkgoldenrod;
+            color: #d0a23e;
             text-decoration: none;
         }
 
@@ -140,7 +152,7 @@
         /* Divider */
         .divider {
             height: 1px;
-            background-color: #d9d9d9;
+            background-color: #e8ded8;
             margin: 30px 0;
         }
 
@@ -191,12 +203,15 @@
                     <tr>
                         <td class="email-footer">
                             {% block footer %}
+                            {% if logo_cid %}
+                                <img src="cid:{{ logo_cid }}" alt="Seoto" width="48" class="email-logo">
+                            {% endif %}
                             <p><strong>Seoto</strong></p>
                             <p>Your personal web platform</p>
                             <p style="margin-top: 15px;">
                                 <a href="{{ app_domain }}">Visit our website</a>
                             </p>
-                            <p style="font-size: 12px; margin-top: 20px; color: #999;">
+                            <p style="font-size: 12px; margin-top: 20px; color: #bfa89c;">
                                 This email was sent automatically. Please do not reply to this email.
                             </p>
                             {% endblock %}

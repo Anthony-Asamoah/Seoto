@@ -1,15 +1,16 @@
 {% extends "emails/base_email.html" %}
 
-{% block title %}Password Reset Request{% endblock %}
+{% block title %}Set Up Two-Factor Authentication{% endblock %}
 
-{% block header %}Password Reset Request{% endblock %}
+{% block header %}Set Up Two-Factor Authentication{% endblock %}
 
 {% block content %}
-    <h2>Reset Your Password</h2>
+    <h2>Pair Your Authenticator App</h2>
 
     <p>Hello{% if user.first_name %} {{ user.first_name }}{% endif %},</p>
 
-    <p>You're receiving this email because you (or someone else) requested a password reset for your Seoto account.</p>
+    <p>An administrator has set up two-factor authentication for your Seoto account. From now on you'll
+        need a code from an authenticator app as well as your password.</p>
 
     <div class="highlight-box">
         <p style="margin: 0;"><strong>Account Details:</strong></p>
@@ -17,10 +18,11 @@
         <p style="margin: 5px 0 0 0;">Email: <strong>{{ user.email }}</strong></p>
     </div>
 
-    <p>Click the button below to reset your password. This link is valid for a limited time only.</p>
+    <p>Open the link below on the device you want to keep your codes on. It shows a QR code to scan and
+        a set of backup codes to save.</p>
 
     <center>
-        <a href="{{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}" class="button">Reset My Password</a>
+        <a href="{{ setup_url }}" class="button">Set Up Two-Factor Authentication</a>
     </center>
 
     <div class="accent-box">
@@ -28,7 +30,8 @@
             <strong>Security Note:</strong>
         </p>
         <p style="margin: 10px 0 0 0; font-size: 14px;">
-            If you didn't request this password reset, please ignore this email. Your password will remain unchanged.
+            This link expires in 24 hours and stops working the moment your app is paired. If you weren't
+            expecting it, ignore this email — nothing on your account changes until the link is opened.
         </p>
     </div>
 
@@ -38,7 +41,7 @@
         If the button above doesn't work, copy and paste this link into your browser:
     </p>
     <p style="font-size: 12px; color: #5d4037; word-break: break-all;">
-        {{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}
+        {{ setup_url }}
     </p>
 
     <p style="margin-top: 30px;">Best regards,<br><strong style="color: #5d4037;">The Seoto Team</strong></p>

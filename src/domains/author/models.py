@@ -2,13 +2,11 @@ from datetime import datetime
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.mail import EmailMultiAlternatives
 from django.db import models
-from django.template.loader import render_to_string
 from django.utils import timezone
 
 from infrastructure.core.model_validators import Validators
-from infrastructure.utils import BaseChoices
+from infrastructure.utils import BaseChoices, send_branded_email
 
 
 class IntroLinks(models.Model):
@@ -166,33 +164,17 @@ class Message(models.Model):
         return f'Message from {self.name}'
 
     def forward_to_email(self):
-        mail_title = f'Seoto - {self.subject}'
-
-        # Render HTML template
-        html_content = render_to_string('emails/contact_form.html', {
-            'message': self,
-            'app_domain': getattr(settings, 'APP_DOMAIN', 'http://localhost:8000')
-        })
-
-        # Plain text fallback
-        mail_body = f'''{self.message}
+        send_branded_email(
+            f'Seoto - {self.subject}',
+            'emails/contact_form.html',
+            {'message': self},
+            [settings.EMAIL_HOST_USER],
+            text_body=f'''{self.message}
 
 Sent on {self.pretty_time}
 From {self.name}
 {self.email}
 
 ~ Seoto Contact Form
-'''
-
-        mail_sender = settings.EMAIL_HOST_USER
-        mail_recipient = [settings.EMAIL_HOST_USER]
-
-        # Create email with both HTML and plain text versions
-        email = EmailMultiAlternatives(
-            subject=mail_title,
-            body=mail_body,
-            from_email=mail_sender,
-            to=mail_recipient
+''',
         )
-        email.attach_alternative(html_content, "text/html")
-        email.send(fail_silently=False)

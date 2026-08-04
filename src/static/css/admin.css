@@ -220,3 +220,42 @@
 .login-box-msg {
     color: var(--bs-secondary-color);
 }
+
+/* Two-factor enrolment modal (templates/admin/accounts/totp_setup_modal.html) */
+.totp-qr-plate {
+    /* qrcode draws a solid black path, so it needs a light plate even in dark mode. */
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px;
+    display: inline-block;
+    line-height: 0;
+}
+
+.totp-qr-plate svg {
+    width: 200px;
+    height: auto;
+}
+
+.totp-secret {
+    font-size: .95rem;
+    letter-spacing: .05em;
+    word-break: break-all;
+}
+
+.totp-backup-codes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
+}
+
+.totp-backup-codes li {
+    background: var(--bs-secondary-bg);
+    border-radius: 6px;
+    padding: 6px 10px;
+    text-align: center;
+    font-family: var(--bs-font-monospace);
+    letter-spacing: .05em;
+}

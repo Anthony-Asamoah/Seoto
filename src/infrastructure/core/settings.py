@@ -331,7 +331,6 @@ JAZZMIN_SETTINGS = {
     # `<section>.<ModelName>` rather than `<app_label>.<ModelName>`.
     'icons': {
         'site': 'fas fa-globe',
-        'site.user_profile': 'fas fa-id-badge',
         'site.Intro': 'fas fa-feather',
         'site.Education': 'fas fa-graduation-cap',
         'site.JobExperience': 'fas fa-briefcase',

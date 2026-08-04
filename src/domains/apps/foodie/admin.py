@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html, mark_safe, strip_tags
 
 from infrastructure.utils import RichTextAdminMixin
-from .models import meal, userPreference, MealTimeSlot, UserMealSchedule, DailyMealSuggestion
+from .models import MealTimeSlot, UserMealSchedule, DailyMealSuggestion, meal, userPreference
 
 
 class CategoriesFilter(admin.SimpleListFilter):
@@ -11,14 +11,14 @@ class CategoriesFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         all_cats = set()
-        for cats in meal.objects.exclude(categories=[]).values_list('categories', flat=True):
+        for cats in meal.objects.exclude(categories__in=[[], None]).values_list('categories', flat=True):
             if cats:
                 all_cats.update(cats)
         return [(c, c.capitalize()) for c in sorted(all_cats)]
 
     def queryset(self, request, queryset):
         if self.value():
-            return queryset.filter(categories__icontains=f'"{self.value()}"')
+            return queryset.filter(categories__contains=[self.value()])
         return queryset
 
 
@@ -39,8 +39,9 @@ class UserMealScheduleAdmin(admin.ModelAdmin):
 
 
 @admin.register(meal)
-class mealAdmin(RichTextAdminMixin, admin.ModelAdmin):
+class MealAdmin(RichTextAdminMixin, admin.ModelAdmin):
     richtext_fields = ('description', 'ingredients', 'nutrients', 'benefits')
+    richtext_config = 'foodie'
 
     exclude = ['main_img_thumbnail']
 
@@ -67,10 +68,10 @@ class mealAdmin(RichTextAdminMixin, admin.ModelAdmin):
         text = strip_tags(obj.description)
         return (text[:60] + '…') if len(text) > 60 else text
 
-
     @admin.display(description='Categories')
     def categories_preview(self, obj):
-        if not obj.categories: return []
+        if not obj.categories:
+            return 'None'
         return ', '.join(obj.categories)
 
 
@@ -85,10 +86,9 @@ class DailyMealSuggestionAdmin(admin.ModelAdmin):
 
 
 @admin.register(userPreference)
-class userPreferenceAdmin(admin.ModelAdmin):
+class UserPreferenceAdmin(admin.ModelAdmin):
     list_display = ['user', 'meal', 'slot', 'isAvailable']
     list_filter = ['slot', 'isAvailable']
     search_fields = ['user__username', 'meal__name']
     autocomplete_fields = ['user', 'meal']
     list_per_page = 20
-

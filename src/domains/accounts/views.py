@@ -7,6 +7,7 @@ from django.contrib.auth.views import LoginView, PasswordResetView
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 
+from . import services
 from .forms import RegisterForm, LoginForm, CustomPasswordResetForm
 from .models import user_profile
 from .utils import trigger_user_onboarded_email
@@ -55,6 +56,37 @@ def register(request):
     else:
         form = RegisterForm(request=request)
     return render(request, 'accounts/register.html', {'form': form})
+
+
+def totp_setup_confirm(request, token):
+    """Enrolment page behind the emailed link: scan the QR, then prove it works.
+
+    Deliberately open to anonymous visitors, like password reset — the signed token is the
+    credential, and the device it points at grants nothing until this page confirms it.
+    """
+    device = services.read_setup_token(token)
+    if device is None:
+        return render(request, 'accounts/totp_setup.html', {'valid_link': False})
+
+    error = None
+    if request.method == 'POST':
+        # django-otp throttles the device itself, so repeated wrong codes back off here.
+        if services.confirm_device(device, request.POST.get('code', '').strip()):
+            return redirect('totp_setup_done')
+        error = 'That code did not match. Check your authenticator app and try again.'
+
+    return render(request, 'accounts/totp_setup.html', {
+        'valid_link': True,
+        'account': device.user,
+        'qr_svg': services.qr_svg(device.config_url),
+        'secret': services.secret_b32(device),
+        'backup_codes': services.backup_codes(device.user),
+        'error': error,
+    })
+
+
+def totp_setup_done(request):
+    return render(request, 'accounts/totp_setup_done.html')
 
 
 @login_required

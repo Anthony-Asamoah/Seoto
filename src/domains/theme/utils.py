@@ -1,9 +1,19 @@
 from django.conf import settings
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
+
+from infrastructure.utils import send_branded_email
 
 from domains.theme.models import UserTheme, ThemePreset
+
+
+def _theme_colors(theme):
+    return [
+        ('Primary', theme.primary_color),
+        ('Secondary', theme.secondary_color),
+        ('Background', theme.background_color),
+        ('Text', theme.text_color),
+        ('Navbar BG', theme.navbar_bg),
+        ('Navbar Text', theme.navbar_text),
+    ]
 
 
 def send_theme_notification(theme, notification_type, user_email=None):
@@ -20,42 +30,26 @@ def send_theme_notification(theme, notification_type, user_email=None):
         from django.contrib.auth.models import User
         staff_emails = User.objects.filter(is_staff=True).values_list('email', flat=True)
 
-        subject = f'New Theme Submitted for Review: {theme.name}'
-        html_message = render_to_string('emails/theme_submitted.html', {
-            'theme': theme,
-            'site_url': settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'
-        })
-        plain_message = strip_tags(html_message)
-
-        send_mail(
-            subject,
-            plain_message,
-            settings.DEFAULT_FROM_EMAIL,
-            staff_emails,
-            html_message=html_message,
-            fail_silently=True
+        send_branded_email(
+            f'New Theme Submitted for Review: {theme.name}',
+            'emails/theme_submitted.html',
+            {'theme': theme, 'theme_colors': _theme_colors(theme)},
+            list(staff_emails),
+            fail_silently=True,
         )
 
     elif notification_type in ['verified', 'rejected']:
         # Notify the theme creator
-        subject = f'Theme Review: {theme.name}'
-        status = 'Approved' if notification_type == 'verified' else 'Rejected'
-
-        html_message = render_to_string('emails/theme_verified.html', {
-            'theme': theme,
-            'status': status,
-            'user': theme.created_by,
-            'site_url': settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'
-        })
-        plain_message = strip_tags(html_message)
-
-        send_mail(
-            subject,
-            plain_message,
-            settings.DEFAULT_FROM_EMAIL,
+        send_branded_email(
+            f'Theme Review: {theme.name}',
+            'emails/theme_verified.html',
+            {
+                'theme': theme,
+                'status': 'Approved' if notification_type == 'verified' else 'Rejected',
+                'user': theme.created_by,
+            },
             [theme.created_by.email],
-            html_message=html_message,
-            fail_silently=True
+            fail_silently=True,
         )
 
 

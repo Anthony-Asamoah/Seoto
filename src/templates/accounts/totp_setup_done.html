@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}| Two-Factor Authentication Active{% endblock %}
+
+{% block style %}
+    <style>
+        .header {
+            text-align: center;
+        }
+
+        .main {
+            max-width: 600px;
+            margin: auto;
+            text-align: center;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="header">
+            <h2>Two-Factor Authentication Is Active</h2>
+        </div>
+        <div class="main">
+            <div class="alert alert-success">
+                <p class="mb-0">
+                    Your authenticator app is now paired. You'll be asked for a code from it every time you sign in.
+                </p>
+            </div>
+            <p class="text-muted">
+                Keep your backup codes somewhere safe — they're the only way back in if you lose your phone.
+            </p>
+            <a href="{% url 'login' %}" class="btn btn-primary mt-2">Go to Login</a>
+        </div>
+    </div>
+{% endblock %}

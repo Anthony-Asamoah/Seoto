@@ -1,6 +1,9 @@
 from django.urls import path
 from django.contrib.auth import views
-from .views import register, profile, CustomLoginView, CustomPasswordResetView
+from .views import (
+	register, profile, totp_setup_confirm, totp_setup_done,
+	CustomLoginView, CustomPasswordResetView,
+)
 from .forms import CustomPasswordChangeForm, CustomSetPasswordForm
 
 
@@ -32,5 +35,8 @@ urlpatterns = [
 		name="password_reset_complete",
 	),
 	path('register', register, name='register'),
+	# Both must stay above the username catch-all, and 'done' above the token pattern.
+	path('2fa/setup/done/', totp_setup_done, name='totp_setup_done'),
+	path('2fa/setup/<str:token>/', totp_setup_confirm, name='totp_setup_confirm'),
 	path('<str:username>', profile, name='profile'),
 ]

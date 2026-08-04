@@ -1,76 +1,69 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Theme Review: {{ theme.name }}</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+{% extends "emails/base_email.html" %}
+
+{% block title %}Theme Review: {{ theme.name }}{% endblock %}
+
+{% block header %}Theme Review{% endblock %}
+
+{% block content %}
     {% if status == 'Approved' %}
-    <div style="background-color: #d4edda; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h2 style="color: #155724; margin-top: 0;">Congratulations! Your Theme Has Been Approved</h2>
-        <p style="color: #155724; margin-bottom: 0;">Your theme "{{ theme.name }}" is now available to the Seoto community!</p>
-    </div>
+        <h2>Your Theme Has Been Approved</h2>
+
+        <p>Hello{% if user.first_name %} {{ user.first_name }}{% endif %},</p>
+
+        <p>Your theme "<strong>{{ theme.name }}</strong>" is now available to the Seoto community.</p>
     {% else %}
-    <div style="background-color: #f8d7da; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h2 style="color: #721c24; margin-top: 0;">Theme Review: Not Approved</h2>
-        <p style="color: #721c24; margin-bottom: 0;">Unfortunately, your theme "{{ theme.name }}" was not approved for publication.</p>
-    </div>
+        <h2>Theme Review: Not Approved</h2>
+
+        <p>Hello{% if user.first_name %} {{ user.first_name }}{% endif %},</p>
+
+        <p>Unfortunately your theme "<strong>{{ theme.name }}</strong>" was not approved for publication.</p>
     {% endif %}
 
-    <div style="background-color: white; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
-        <h3 style="color: #333; margin-top: 0;">Theme Details</h3>
-
-        <p><strong>Theme Name:</strong> {{ theme.name }}</p>
-        <p><strong>Description:</strong> {{ theme.description|default:"No description provided." }}</p>
-        <p><strong>Status:</strong>
+    <div class="highlight-box">
+        <p style="margin: 0;"><strong>Theme Details:</strong></p>
+        <p style="margin: 10px 0 0 0;">Name: <strong>{{ theme.name }}</strong></p>
+        <p style="margin: 5px 0 0 0;">Description: {{ theme.description|default:"No description provided." }}</p>
+        <p style="margin: 5px 0 0 0;">
+            Status:
             {% if status == 'Approved' %}
-                <span style="color: #28a745; font-weight: bold;">✓ Approved & Published</span>
+                <strong style="color: #1b6e46;">Approved &amp; published</strong>
             {% else %}
-                <span style="color: #dc3545; font-weight: bold;">✗ Rejected</span>
+                <strong style="color: #a3282a;">Rejected</strong>
             {% endif %}
         </p>
+    </div>
 
-        {% if status == 'Approved' %}
-        <div style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 8px;">
-            <h4 style="color: #333; margin-top: 0;">What's Next?</h4>
-            <ul style="margin: 10px 0;">
-                <li>Your theme is now live and visible to all users</li>
-                <li>Users can discover it in the theme gallery</li>
-                <li>Users can rate your theme to help others find quality themes</li>
-                <li>You'll continue to be credited as the creator</li>
-            </ul>
+    {% if status == 'Approved' %}
+        <h3>What's Next?</h3>
+        <ul>
+            <li>Your theme is live and visible to all users</li>
+            <li>Users can discover it in the theme gallery</li>
+            <li>Users can rate it to help others find quality themes</li>
+            <li>You'll continue to be credited as the creator</li>
+        </ul>
 
-            <a href="http://{{ site_url }}/theme/presets/{{ theme.id }}/"
-               style="display: inline-block; background-color: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 10px;">
-                View Your Published Theme
-            </a>
-        </div>
-        {% else %}
-        <div style="margin-top: 30px; padding: 20px; background-color: #fff3cd; border-radius: 8px;">
-            <h4 style="color: #856404; margin-top: 0;">Common Reasons for Rejection:</h4>
-            <ul style="margin: 10px 0; color: #856404;">
-                <li>Inappropriate color combinations (e.g., poor contrast, readability issues)</li>
-                <li>Duplicate or very similar to existing themes</li>
+        <center>
+            <a href="{{ app_domain }}/theme/presets/{{ theme.id }}/" class="button">View Your Published Theme</a>
+        </center>
+    {% else %}
+        <div class="accent-box">
+            <p style="margin: 0; font-size: 14px;"><strong>Common reasons for rejection:</strong></p>
+            <ul style="margin: 10px 0 0 0; font-size: 14px;">
+                <li>Poor contrast or readability</li>
+                <li>Duplicate of, or very similar to, an existing theme</li>
                 <li>Inappropriate theme name or description</li>
-                <li>Colors that make text unreadable</li>
+                <li>Colour choices that make text unreadable</li>
             </ul>
-
-            <p style="color: #856404; margin-top: 15px;">
-                <strong>You can try again!</strong> Feel free to create a new theme with different colors and submit it for review.
-            </p>
-
-            <a href="http://{{ site_url }}/theme/customize/"
-               style="display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold; margin-top: 10px;">
-                Create New Theme
-            </a>
         </div>
-        {% endif %}
-    </div>
 
-    <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; font-size: 12px; color: #666;">
-        <p style="margin: 0;">This is an automated notification from Seoto Theme System.</p>
-        <p style="margin: 5px 0 0 0;">If you have questions, please contact the administrators.</p>
-    </div>
-</body>
-</html>
+        <p><strong>You can try again.</strong> Create a new theme with different colours and submit it for review.</p>
+
+        <center>
+            <a href="{{ app_domain }}/theme/customize/" class="button">Create New Theme</a>
+        </center>
+    {% endif %}
+
+    <div class="divider"></div>
+
+    <p style="margin-top: 30px;">Best regards,<br><strong style="color: #5d4037;">The Seoto Team</strong></p>
+{% endblock %}
