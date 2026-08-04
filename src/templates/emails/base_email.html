@@ -39,11 +39,10 @@
             letter-spacing: 1px;
         }
 
-        /* Sits in the footer, on the deep brown — the mark is gold on transparent. */
+        /* Locked up beside the wordmark in the footer; the mark is gold on transparent. */
         .email-logo {
             display: block;
-            margin: 0 auto 12px auto;
-            width: 48px;
+            width: 34px;
             height: auto;
             border: 0;
         }
@@ -125,10 +124,12 @@
             border-radius: 4px;
         }
 
-        /* Footer — deeper than the header so the mail is bookended, not banded */
+        /* Footer — deeper than the header so the mail is bookended, not banded.
+           Kept to two rows: a logo/wordmark lockup, then one line of fine print. It is
+           the least important thing in the mail and should not out-weigh the content. */
         .email-footer {
             background-color: #3e2723;
-            padding: 30px 20px;
+            padding: 22px 20px;
             text-align: center;
             color: #ffffff;
         }
@@ -137,6 +138,19 @@
             margin: 5px 0;
             font-size: 14px;
             color: #e8ded8;
+        }
+
+        .email-wordmark {
+            font-size: 17px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: .5px;
+        }
+
+        .email-fineprint {
+            margin: 10px 0 0 0 !important;
+            font-size: 12px;
+            color: #bfa89c !important;
         }
 
         .email-footer a {
@@ -203,16 +217,21 @@
                     <tr>
                         <td class="email-footer">
                             {% block footer %}
-                            {% if logo_cid %}
-                                <img src="cid:{{ logo_cid }}" alt="Seoto" width="48" class="email-logo">
-                            {% endif %}
-                            <p><strong>Seoto</strong></p>
-                            <p>Your personal web platform</p>
-                            <p style="margin-top: 15px;">
-                                <a href="{{ app_domain }}">Visit our website</a>
-                            </p>
-                            <p style="font-size: 12px; margin-top: 20px; color: #bfa89c;">
-                                This email was sent automatically. Please do not reply to this email.
+                            {# A centred table, not inline-block: Outlook ignores the latter. #}
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
+                                <tr>
+                                    {% if logo_cid %}
+                                        <td style="padding-right: 10px; line-height: 0;">
+                                            <a href="{{ app_domain }}"><img src="cid:{{ logo_cid }}" alt="Seoto" width="34" class="email-logo"></a>
+                                        </td>
+                                    {% endif %}
+                                    <td class="email-wordmark">
+                                        <a href="{{ app_domain }}" style="color: #ffffff;">Seoto</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p class="email-fineprint">
+                                Sent automatically — please don't reply.
                             </p>
                             {% endblock %}
                         </td>
