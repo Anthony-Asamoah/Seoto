@@ -1,11 +1,11 @@
-import re
 import string
-from os import path
 
 from infrastructure.core.exceptions import InvalidInput
+from infrastructure.words import ENGLISH_DICTIONARY, load_words
 
-# Word list ships alongside this module, so resolve it relative to the package.
-BASE_DIR = path.dirname(path.abspath(__file__))
+# The dictionary is broad, so a common ending can match thousands of entries.
+# Keep the shortest ones — they are the familiar words — and cap the list.
+MAX_RHYMES_PER_SUFFIX = 100
 
 
 class RhymeDB:
@@ -43,30 +43,28 @@ class RhymeDB:
             return 3
         return 4
 
-    def _find_rhymes_for_word(self, word: str, temp: str) -> None:
+    def _find_rhymes_for_word(self, word: str, dictionary: tuple) -> None:
         # Try the ideal suffix for this word's length, shortening only if the
         # longer (more specific) ending matches nothing in the dictionary.
         for n in range(self._ideal_suffix_length(word), 0, -1):
-            if len(word) >= n:
-                suffix = word[-n:]
-                regex = re.compile(f'\\w*{suffix}\\s')
-                data = sorted({i.title() for i in regex.findall(temp)})
-                if data:
-                    self._result[suffix] = data
-                    return
+            if len(word) < n:
+                continue
+            suffix = word[-n:]
+            matches = [entry for entry in dictionary if entry.endswith(suffix)]
+            if not matches:
+                continue
+            matches.sort(key=lambda entry: (len(entry), entry))
+            self._result[suffix] = sorted(
+                {entry.title() for entry in matches[:MAX_RHYMES_PER_SUFFIX]}
+            )
+            return
 
     def findall(self) -> None:
-        dictionary_path = path.join(BASE_DIR, "Words.txt")  # default Path for english dictionary
-        dictionary = open(dictionary_path, "r")
-        all_text = dictionary.readlines()
-        dictionary.close()
-        temp = " ".join(all_text)
-
-        if ',' not in self._rhyme_string:
-            self._find_rhymes_for_word(self._rhyme_string.strip(), temp)
-        else:
-            for item in self._rhyme_string.split(','):
-                self._find_rhymes_for_word(item.strip(), temp)
+        dictionary = load_words(ENGLISH_DICTIONARY)
+        for item in self._rhyme_string.split(','):
+            item = item.strip()
+            if item:
+                self._find_rhymes_for_word(item, dictionary)
 
     def get_all_words(self) -> list:
         if not self._all_words:

@@ -228,6 +228,19 @@
                         </a>
                     </div>
                     <div class="card mb-3" id="card">
+                        <a href="{% url 'spending_tracker:dashboard' %}">
+                            <img src="{% static 'img/spending-tracker-app-icon.png' %}" class="card-img-top" alt="Icon">
+                            <div class="card-body">
+                                <h5 class="card-title">SpendThrifts</h5>
+                                <div class="info" id="info3">
+                                <span class="card-text">
+                                Your budget. Your rules.
+                            </span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="card mb-3" id="card">
                         <a href="{% url 'interest_calculator' %}">
                             <img src="{% static 'img/interest-app-icon.png' %}" class="card-img-top" alt="Icon">
                             <div class="card-body">
@@ -254,14 +267,12 @@
                         </a>
                     </div>
                     <div class="card mb-3" id="card">
-                        <a href="{% url 'spending_tracker:dashboard' %}">
-                            <img src="{% static 'img/spending-tracker-app-icon.png' %}" class="card-img-top" alt="Icon">
+                        <a href="{% url 'anagrams' %}">
+                            <img src="{% static 'img/anagrams-app-icon.svg' %}" class="card-img-top" alt="Icon">
                             <div class="card-body">
-                                <h5 class="card-title">SpendThrifts</h5>
+                                <h5 class="card-title">Anagram Solver</h5>
                                 <div class="info" id="info3">
-                                <span class="card-text">
-                                Your budget. Your rules.
-                            </span>
+                                <span class="card-text">Can't let her win.</span>
                                 </div>
                             </div>
                         </a>
@@ -292,19 +303,19 @@
 {#                            </div>#}
 {#                        </a>#}
 {#                    </div>#}
-{#                    <div class="card mb-3" id="card">#}
-{#                        <a href="{% url 'flip_a_coin' %}">#}
-{#                            <img src="{% static 'img/coin-app-icon.png' %}" class="card-img-top" alt="Icon">#}
-{#                            <div class="card-body">#}
-{#                                <h5 class="card-title">Flip a coin</h5>#}
-{#                                <div class="info" id="info5">#}
-{#                                <span class="card-text">#}
-{#                                Settle a dispute maybe.#}
-{#                            </span>#}
-{#                                </div>#}
-{#                            </div>#}
-{#                        </a>#}
-{#                    </div>#}
+                    <div class="card mb-3" id="card">
+                        <a href="{% url 'flip_a_coin' %}">
+                            <img src="{% static 'img/coin-app-icon.png' %}" class="card-img-top" alt="Icon">
+                            <div class="card-body">
+                                <h5 class="card-title">Flip a coin</h5>
+                                <div class="info" id="info5">
+                                <span class="card-text">
+                                Settle a dispute maybe.
+                            </span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

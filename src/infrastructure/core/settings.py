@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'domains.apps.foodie.apps.FoodieConfig',
     'domains.apps.interest_calc',
     'domains.apps.rhymes',
+    'domains.apps.anagrams.apps.AnagramsConfig',
     'domains.apps.throw_a_die',
     'domains.apps.flip_a_coin',
     'domains.apps.jotter',

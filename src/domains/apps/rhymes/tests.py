@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from domains.apps.rhymes.models import Rhyme
-from domains.apps.rhymes.the_code import RhymeDB
+from domains.apps.rhymes.the_code import MAX_RHYMES_PER_SUFFIX, RhymeDB
 
 
 class SuffixLengthTests(TestCase):
@@ -30,6 +30,29 @@ class SuffixLengthTests(TestCase):
         # without raising and simply yield no result rather than erroring.
         helper = RhymeDB('qzzz')
         self.assertIsInstance(helper.get_result(), dict)
+
+
+class RhymeSelectionTests(TestCase):
+    def test_result_is_capped(self):
+        # "tion" matches thousands of entries; the page shows a usable slice.
+        words = RhymeDB('action').get_result()['tion']
+        self.assertEqual(len(words), MAX_RHYMES_PER_SUFFIX)
+
+    def test_shortest_words_win_the_cap(self):
+        # Short words are the familiar ones, so they must survive the cut.
+        words = RhymeDB('time').get_result()['ime']
+        for expected in ('Time', 'Chime', 'Crime', 'Lime'):
+            self.assertIn(expected, words)
+
+    def test_words_are_clean_titles(self):
+        for word in RhymeDB('cat').get_result()['at']:
+            self.assertEqual(word, word.strip())
+            self.assertTrue(word.isalpha())
+            self.assertTrue(word[0].isupper())
+
+    def test_each_comma_separated_word_gets_its_own_group(self):
+        result = RhymeDB('time, cat').get_result()
+        self.assertEqual(sorted(result.keys()), ['at', 'ime'])
 
 
 class GenerateFileContentTests(TestCase):

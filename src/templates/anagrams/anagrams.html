@@ -1,0 +1,430 @@
+{% extends 'base.html' %}
+
+{% block title %}| Anagram Solver{% endblock %}
+
+{% block style %}
+    <style>
+        .anagrams-page .main {
+            margin-top: 3rem;
+        }
+
+        .search-bar form {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: flex-end;
+            align-content: flex-start;
+            align-items: flex-start;
+        }
+
+        .search-bar .input {
+            margin-top: 2px;
+            width: 80%;
+            transition: 0.5s ease;
+            text-align: right;
+        }
+
+        .search-bar .input small {
+            display: block;
+            margin-top: 6px;
+            line-height: 1.3;
+        }
+
+        .search-bar .input input {
+            width: 100%;
+            height: 40px;
+            padding: 0 10px;
+            outline: none;
+            border-radius: 5px;
+            transition: 0.5s ease;
+            text-align: right;
+            letter-spacing: 0.15em;
+            text-transform: lowercase;
+            background-color: white;
+            border: none;
+            border-bottom: 2px solid #006fc9;
+        }
+
+        .search-bar .input:hover input,
+        .search-bar .input input:focus {
+            color: black;
+            background-color: white;
+        }
+
+        .search-bar .button {
+            flex-grow: 4;
+            margin: 0 10px;
+        }
+
+        .search-bar .button button {
+            height: 40px;
+            width: 100px;
+            padding: 5px 10px;
+            transition: 0.5s ease;
+        }
+
+        /* ── Empty state (before the first solve) ───────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: #6c757d;
+        }
+
+        .empty-state .empty-icon {
+            color: #006fc9;
+            opacity: 0.85;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            color: #343a40;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            max-width: 26rem;
+            margin: 0 auto 1.25rem;
+            line-height: 1.5;
+        }
+
+        .example-chips {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .example-chips .chip {
+            border: 1px solid #006fc9;
+            color: #006fc9;
+            background: transparent;
+            border-radius: 999px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.9rem;
+            letter-spacing: 0.12em;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .example-chips .chip:hover,
+        .example-chips .chip:focus-visible {
+            background: #006fc9;
+            color: #fff;
+            outline: none;
+        }
+
+        /* ── Results ────────────────────────────────────────────────────── */
+        .result-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .result-group .result-title {
+            margin-bottom: 0.75rem;
+        }
+
+        .result-group.is-empty .result-title {
+            color: #6c757d;
+        }
+
+        .result-group.is-error .result-title {
+            color: #dc3545;
+        }
+
+        .word-set + .word-set {
+            margin-top: 1.25rem;
+        }
+
+        .word-set .set-label {
+            display: block;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+
+        .word-tiles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            list-style: none;
+            padding: 0;
+        }
+
+        .word-tiles li {
+            background: #fff;
+            border-radius: 6px;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.95rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+        }
+
+        .word-set.is-exact .word-tiles li {
+            background: #006fc9;
+            color: #fff;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+        }
+
+        .partials {
+            max-height: 45vh;
+            overflow-y: auto;
+        }
+
+        @keyframes dropIn {
+            from { opacity: 0; transform: translateY(-28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes riseIn {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-title.animate-drop,
+        .word-tiles li.animate-drop {
+            animation: dropIn 0.35s ease both;
+        }
+
+        .result-title.animate-rise,
+        .word-tiles li.animate-rise {
+            animation: riseIn 0.35s ease both;
+        }
+
+        @media (max-width: 768px) {
+            .search-bar {
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                z-index: 1000;
+                padding: 12px 16px;
+                padding-bottom: calc(64px + env(safe-area-inset-bottom) + 8px);
+                background-color: whitesmoke;
+                border-top: 1px solid #e0e0e0;
+                box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.06);
+            }
+
+            .search-bar .input small {
+                display: none;
+            }
+
+            .partials {
+                max-height: none;
+                overflow: visible;
+            }
+
+            .results {
+                padding-bottom: 150px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+    <div class="container anagrams-page">
+        <div class="header">
+            <h2>Jumble some letters, see what words fall out</h2>
+        </div>
+        <div class="main mt-3">
+            <div class="search-bar">
+                <form id="search-form" action="{% url 'anagrams' %}" method="post">
+                    {% csrf_token %}
+                    <div class="input">
+                        <input type="text" name="letters" id="letters" required autocomplete="off"
+                               maxlength="15" placeholder="example: listen">
+                        <small class="text-muted">Up to 15 letters. Full anagrams come first, then every shorter word hiding inside.</small>
+                    </div>
+                    <div class="button">
+                        <button class="btn btn-primary" type="submit">Solve</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="results mt-4" id="results">
+                {# Server-rendered fallback for the no-JS / full-reload path #}
+                {% if amount %}
+                    <div class="result-group">
+                        <h4 class="result-title">"{{ input }}" makes {{ amount }} word(s).</h4>
+                        {% if exact %}
+                            <div class="word-set is-exact">
+                                <span class="set-label">Full anagrams</span>
+                                <ul class="word-tiles">
+                                    {% for word in exact %}
+                                        <li>{{ word }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        <div class="partials">
+                            {% for group in groups %}
+                                <div class="word-set">
+                                    <span class="set-label">{{ group.length }} letters</span>
+                                    <ul class="word-tiles">
+                                        {% for word in group.words %}
+                                            <li>{{ word }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% elif input %}
+                    <div class="result-group is-empty">
+                        <h4 class="result-title">Nothing hides in '{{ input }}'</h4>
+                    </div>
+                {% else %}
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2.5" y="7" width="8" height="8" rx="1.5"></rect>
+                                <rect x="13.5" y="9" width="8" height="8" rx="1.5"
+                                      transform="rotate(12 17.5 13)"></rect>
+                                <path d="M5 11.5h3.5M6.75 11.5V13"></path>
+                                <path d="M16 12.5h3.5"></path>
+                            </svg>
+                        </div>
+                        <h3>Unscramble anything</h3>
+                        <p>Type your letters and tap <strong>Solve</strong>. You'll get the full
+                            anagrams first, then every shorter word those letters can spell.</p>
+                        <div class="example-chips">
+                            <button type="button" class="chip" data-word="listen">listen</button>
+                            <button type="button" class="chip" data-word="teacher">teacher</button>
+                            <button type="button" class="chip" data-word="dormitory">dormitory</button>
+                            <button type="button" class="chip" data-word="astronomer">astronomer</button>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block script %}
+    <script>
+        (function () {
+            const searchForm = document.getElementById('search-form');
+            const results = document.getElementById('results');
+            const input = document.getElementById('letters');
+            if (!searchForm || !results) return;
+
+            const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+
+            function buildSet(label, words, isExact, anim, offset) {
+                const set = document.createElement('div');
+                set.className = 'word-set' + (isExact ? ' is-exact' : '');
+
+                const caption = document.createElement('span');
+                caption.className = 'set-label';
+                caption.textContent = label;
+                set.appendChild(caption);
+
+                const list = document.createElement('ul');
+                list.className = 'word-tiles';
+                words.forEach(function (word, index) {
+                    const li = document.createElement('li');
+                    li.className = anim;
+                    // Stagger the tiles so they land one after another.
+                    li.style.animationDelay = (0.06 + (offset + index) * 0.012) + 's';
+                    li.textContent = word;
+                    list.appendChild(li);
+                });
+                set.appendChild(list);
+                return set;
+            }
+
+            function buildGroup(data) {
+                const anim = isMobile() ? 'animate-rise' : 'animate-drop';
+                const group = document.createElement('div');
+                group.className = 'result-group';
+
+                const title = document.createElement('h4');
+                title.className = 'result-title ' + anim;
+
+                if (data.error) {
+                    group.classList.add('is-error');
+                    title.textContent = data.error;
+                    group.appendChild(title);
+                    return group;
+                }
+
+                if (!data.amount) {
+                    group.classList.add('is-empty');
+                    title.textContent = "Nothing hides in '" + data.input + "'";
+                    group.appendChild(title);
+                    return group;
+                }
+
+                title.textContent = '"' + data.input + '" makes ' + data.amount + ' word(s).';
+                group.appendChild(title);
+
+                let offset = 0;
+                if (data.exact && data.exact.length) {
+                    group.appendChild(buildSet('Full anagrams', data.exact, true, anim, offset));
+                    offset += data.exact.length;
+                }
+
+                const partials = document.createElement('div');
+                partials.className = 'partials';
+                (data.groups || []).forEach(function (set) {
+                    partials.appendChild(buildSet(set.length + ' letters', set.words, false, anim, offset));
+                    offset += set.words.length;
+                });
+                group.appendChild(partials);
+                return group;
+            }
+
+            // Example chips: drop the letters into the box and run the solve.
+            results.querySelectorAll('.example-chips .chip').forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    if (!input) return;
+                    input.value = chip.dataset.word;
+                    if (searchForm.requestSubmit) {
+                        searchForm.requestSubmit();
+                    } else {
+                        searchForm.dispatchEvent(new Event('submit', {cancelable: true}));
+                    }
+                });
+            });
+
+            searchForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                const button = searchForm.querySelector('button[type="submit"]');
+                const originalText = button ? button.textContent : '';
+                if (button) {
+                    button.disabled = true;
+                    button.textContent = '...';
+                }
+
+                try {
+                    const token = searchForm.querySelector('[name="csrfmiddlewaretoken"]').value;
+                    const response = await fetch(searchForm.action, {
+                        method: 'POST',
+                        headers: {'X-CSRFToken': token, 'X-Requested-With': 'XMLHttpRequest'},
+                        body: new FormData(searchForm),
+                    });
+                    const data = await response.json();
+
+                    results.innerHTML = '';
+                    results.appendChild(buildGroup(data));
+
+                    if (!data.error && input) {
+                        input.value = '';
+                        input.focus();
+                    }
+                } catch (err) {
+                    // No JS-friendly response: fall back to a normal submit (full reload).
+                    searchForm.submit();
+                } finally {
+                    if (button) {
+                        button.disabled = false;
+                        button.textContent = originalText;
+                    }
+                }
+            });
+        })();
+    </script>
+{% endblock %}

@@ -7,6 +7,7 @@ from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from domains.author.views import About, ReachOut
+from domains.apps.anagrams.views import Anagrams
 from domains.apps.flip_a_coin.views import Coin
 from domains.apps.generate_invoice.views import generate_invoice
 from domains.home.views import (
@@ -39,6 +40,7 @@ urlpatterns = [
     path('interest_calculator', Interest.as_view(), name='interest_calculator'),
     path('rhymes', Rhymes.as_view(), name='rhymes'),
     path('rhymes/download', Rhymes.download, name='rhymes_download'),
+    path('anagrams', Anagrams.as_view(), name='anagrams'),
     path('throw_a_die', Die.as_view(), name='throw_a_die'),
     path('flip_a_coin', Coin.as_view(), name='flip_a_coin'),
     # Login required
