@@ -1,8 +1,11 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block title %}| Rhyme DB{% endblock %}
 
 {% block style %}
+    <link rel="stylesheet" href="{% static 'css/word-definition.css' %}">
     <style>
         /* Consistent top spacing with the other tool pages */
         .rhymes-page .main {
@@ -249,7 +252,8 @@
                         <h4 class="result-title">"...{{ input }}" matched {{ amount }} word(s).</h4>
                         <ol class="list-group">
                             {% for word in words %}
-                                <li class="list-group-item">{{ word }}</li>
+                                <li class="list-group-item" role="button" tabindex="0"
+                                    aria-expanded="false">{{ word }}</li>
                             {% endfor %}
                         </ol>
                     </div>
@@ -286,6 +290,7 @@
 {% endblock %}
 
 {% block script %}
+    <script src="{% static 'js/word-definition.js' %}"></script>
     <script>
         (function () {
             const searchForm = document.getElementById('search-form');
@@ -330,6 +335,7 @@
                 data.words.forEach(function (word, index) {
                     const li = document.createElement('li');
                     li.className = 'list-group-item ' + anim;
+                    WordDefinitions.prepare(li);
                     // Stagger each word so they emerge one after another.
                     li.style.animationDelay = (0.06 + index * 0.006) + 's';
                     li.textContent = word;
@@ -344,6 +350,9 @@
                 results.innerHTML = '';
                 results.appendChild(group);
             }
+
+            // Clicking any word opens its dictionary entry underneath it.
+            WordDefinitions.attach(results, '.list-group-item');
 
             // Example chips: drop the word into the box and run the search.
             results.querySelectorAll('.example-chips .chip').forEach(function (chip) {

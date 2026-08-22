@@ -1,0 +1,127 @@
+/* Dropdown panel for a clicked word. Spans the full grid row it opens under. */
+.definition-panel {
+    grid-column: 1 / -1;
+    list-style: none;
+}
+
+.definition-card {
+    background: #fff;
+    border-radius: 8px;
+    border-top: 2px solid #006fc9;
+    border-bottom: 2px solid #006fc9;
+    padding: 0.9rem 1rem;
+    text-align: left;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    animation: definitionOpen 0.2s ease both;
+}
+
+@keyframes definitionOpen {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.definition-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+}
+
+.definition-word {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+.definition-phonetic {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.definition-close {
+    margin-left: auto;
+    border: none;
+    background: transparent;
+    color: #6c757d;
+    font-size: 1.4rem;
+    line-height: 1;
+    padding: 0 0.25rem;
+    cursor: pointer;
+}
+
+.definition-close:hover,
+.definition-close:focus-visible {
+    color: #212529;
+    outline: none;
+}
+
+.definition-sense + .definition-sense {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #f1f1f1;
+}
+
+.definition-pos {
+    display: inline-block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #006fc9;
+    margin-bottom: 0.2rem;
+}
+
+.definition-text {
+    margin: 0;
+    color: #343a40;
+    line-height: 1.5;
+}
+
+.definition-example {
+    margin: 0.35rem 0 0;
+    color: #6c757d;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+.definition-synonyms {
+    margin: 0.35rem 0 0;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.definition-loading {
+    color: #6c757d;
+}
+
+/* The tiles are interactive now, so they need to look it. */
+.list-group-item[role="button"] {
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.list-group-item[role="button"]:hover,
+.list-group-item[role="button"]:focus-visible {
+    box-shadow: 0 2px 8px rgba(0, 111, 201, 0.35);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.list-group-item[aria-expanded="true"] {
+    background: #006fc9;
+    color: #fff;
+}
+
+.definition-credit {
+    margin: 0.75rem 0 0;
+    font-size: 0.85rem;
+}
+
+.definition-link {
+    color: #006fc9;
+    text-decoration: none;
+}
+
+.definition-link:hover,
+.definition-link:focus-visible {
+    text-decoration: underline;
+}
