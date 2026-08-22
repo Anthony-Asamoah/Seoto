@@ -176,11 +176,21 @@
         if (!container) return;
 
         function closeOpen() {
-            const open = container.querySelector('.definition-panel');
-            if (open) open.remove();
+            const open = container.querySelector('.definition-panel:not(.is-closing)');
             container.querySelectorAll('[aria-expanded="true"]').forEach(function (item) {
                 item.setAttribute('aria-expanded', 'false');
             });
+            if (!open) return;
+
+            open.classList.add('is-closing');
+            let done = false;
+            const drop = function () {
+                if (done) return;
+                done = true;
+                open.remove();
+            };
+            open.addEventListener('animationend', drop);
+            setTimeout(drop, 300); // animation may not run (reduced motion, hidden tab)
         }
 
         function toggle(item) {

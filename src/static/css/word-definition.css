@@ -1,7 +1,15 @@
-/* Dropdown panel for a clicked word. Spans the full grid row it opens under. */
+/* Dropdown panel for a clicked word. Always a full row of its own, directly
+   under the word — in the desktop grid and the mobile flex layout alike, so it
+   never tries to sit beside the word it belongs to. */
 .definition-panel {
     grid-column: 1 / -1;
+    flex: 0 0 100%;
+    flex-basis: 100%;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
     list-style: none;
+    overflow: hidden;
 }
 
 .definition-card {
@@ -16,8 +24,24 @@
 }
 
 @keyframes definitionOpen {
-    from { opacity: 0; transform: translateY(-6px); }
+    from { opacity: 0; transform: translateY(-8px); }
     to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes definitionClose {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-8px); }
+}
+
+.definition-panel.is-closing .definition-card {
+    animation: definitionClose 0.18s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .definition-card,
+    .definition-panel.is-closing .definition-card {
+        animation: none;
+    }
 }
 
 .definition-head {

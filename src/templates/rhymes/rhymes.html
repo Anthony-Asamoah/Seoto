@@ -204,7 +204,22 @@
             .result-group .list-group {
                 max-height: none;
                 overflow: visible;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+                /* Flex, not grid: a grid row always holds the same number of
+                   columns, so a long word had to wrap onto a second line. Here
+                   each word takes the width it needs. */
+                display: flex;
+                flex-direction: row;  /* bootstrap's .list-group is column */
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            /* A third of the row is the floor, so three short words still share
+               a row — but two longer ones, or one very long one, take it alone
+               rather than wrapping mid-word. */
+            .result-group .list-group-item {
+                flex: 0 1 auto;
+                min-width: calc(33.333% - 0.34rem);
+                white-space: nowrap;
             }
 
             /* Leave room so the last result isn't hidden behind the fixed bar */
