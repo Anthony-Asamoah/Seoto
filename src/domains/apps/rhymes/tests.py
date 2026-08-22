@@ -3,7 +3,9 @@ from django.test import TestCase
 from django.urls import reverse
 
 from domains.apps.rhymes.models import Rhyme
-from domains.apps.rhymes.the_code import MAX_RHYMES_PER_SUFFIX, RhymeDB
+from domains.apps.rhymes.the_code import (
+    DEFAULT_RHYME_LIMIT, MAX_RHYME_LIMIT, RhymeDB
+)
 
 
 class SuffixLengthTests(TestCase):
@@ -33,16 +35,41 @@ class SuffixLengthTests(TestCase):
 
 
 class RhymeSelectionTests(TestCase):
-    def test_result_is_capped(self):
+    def test_result_is_capped_at_the_limit(self):
         # "tion" matches thousands of entries; the page shows a usable slice.
         words = RhymeDB('action').get_result()['tion']
-        self.assertEqual(len(words), MAX_RHYMES_PER_SUFFIX)
+        self.assertEqual(len(words), DEFAULT_RHYME_LIMIT)
 
-    def test_shortest_words_win_the_cap(self):
-        # Short words are the familiar ones, so they must survive the cut.
+    def test_limit_is_honoured_and_clamped(self):
+        self.assertEqual(len(RhymeDB('action', limit=20).get_result()['tion']), 20)
+        self.assertEqual(
+            len(RhymeDB('action', limit=9000).get_result()['tion']), MAX_RHYME_LIMIT
+        )
+
+    def test_bad_limit_falls_back_to_the_default(self):
+        self.assertEqual(RhymeDB.clamp_limit('not a number'), DEFAULT_RHYME_LIMIT)
+        self.assertEqual(RhymeDB.clamp_limit(None), DEFAULT_RHYME_LIMIT)
+        self.assertEqual(RhymeDB.clamp_limit(-5), 1)
+
+    def test_everything_is_returned_when_under_the_limit(self):
+        # Only 78 words end in "ime", so the sample is the whole set.
         words = RhymeDB('time').get_result()['ime']
-        for expected in ('Time', 'Chime', 'Crime', 'Lime'):
-            self.assertIn(expected, words)
+        self.assertEqual(len(words), 78)
+        self.assertIn('Time', words)
+
+    def test_selection_varies_between_searches(self):
+        first = RhymeDB('action').get_result()['tion']
+        second = RhymeDB('action').get_result()['tion']
+        self.assertNotEqual(first, second)
+
+    def test_no_duplicate_words(self):
+        helper = RhymeDB('cat, format')
+        words = helper.get_all_words()
+        self.assertEqual(len(words), len(set(words)))
+
+    def test_repeated_ending_is_not_searched_twice(self):
+        # "cat" and "hat" share an ending — one group, not two identical ones.
+        self.assertEqual(list(RhymeDB('cat, hat').get_result().keys()), ['at'])
 
     def test_words_are_clean_titles(self):
         for word in RhymeDB('cat').get_result()['at']:
@@ -50,7 +77,7 @@ class RhymeSelectionTests(TestCase):
             self.assertTrue(word.isalpha())
             self.assertTrue(word[0].isupper())
 
-    def test_each_comma_separated_word_gets_its_own_group(self):
+    def test_each_distinct_ending_gets_its_own_group(self):
         result = RhymeDB('time, cat').get_result()
         self.assertEqual(sorted(result.keys()), ['at', 'ime'])
 

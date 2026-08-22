@@ -24,6 +24,7 @@ class Rhymes(View):
     @method_decorator(never_cache)
     def post(self, request):
         rhyme = request.POST.get('rhyme', '')
+        limit = request.POST.get('limit')
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         context = {
             'input': rhyme,
@@ -32,7 +33,7 @@ class Rhymes(View):
         }
         error = None
         try:
-            helper = RhymeDB(rhyme)
+            helper = RhymeDB(rhyme, limit=limit) if limit else RhymeDB(rhyme)
             context['words'] = helper.get_all_words()
             context['amount'] = helper.word_count()
             if request.user.is_authenticated and not helper.is_empty():
