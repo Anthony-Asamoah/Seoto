@@ -1,0 +1,2 @@
+{# Toasts for an htmx response: appended to the tray base.html already rendered. #}
+<div id="toast-tray" hx-swap-oob="beforeend">{% for message in messages %}{% include 'partials/_toast_item.html' %}{% endfor %}</div>

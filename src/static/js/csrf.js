@@ -70,6 +70,14 @@
     return fetch(url, config);
   }
 
+  // htmx intercepts submit and issues its own XHR, so the form-field token above
+  // is not the whole story — send the header too, read at request time.
+  document.body.addEventListener('htmx:configRequest', function (event) {
+    if (event.detail.verb === 'get') return;
+    var token = getCsrfToken();
+    if (token) event.detail.headers['X-CSRFToken'] = token;
+  });
+
   window.getCsrfToken = getCsrfToken;
   window.csrfFetch = csrfFetch;
 })();

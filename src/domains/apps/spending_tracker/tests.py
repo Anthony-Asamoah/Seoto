@@ -612,11 +612,19 @@ class RecurringListPendingRowTests(TestCase):
         self.assertContains(response, 'row-skip-btn')  # in the row, for pointer devices
 
     def test_no_separate_review_button(self):
-        """Three references to the confirm URL per row — the card link plus the two
-        skip forms. A fourth would mean the old Review button is back."""
+        """Five references to the confirm URL per row — the card link, plus an
+        action and an hx-post on each of the two skip forms. A sixth would mean
+        the old Review button is back."""
         confirm_url = reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk])
         response = self.client.get(self.url)
-        self.assertContains(response, confirm_url, count=3)
+        self.assertContains(response, confirm_url, count=5)
+
+    def test_skip_forms_swap_the_pending_section_rather_than_reloading(self):
+        """Both skip forms keep their plain action= for the no-JS post and carry
+        the htmx attributes that turn it into a section swap."""
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="pending-approvals"')
+        self.assertContains(response, 'hx-target="#pending-approvals" hx-swap="outerHTML"', count=2)
 
     def test_resolved_occurrence_drops_out_of_the_pending_list(self):
         self.occurrence.status = RecurringOccurrenceStatusChoices.DISMISSED
@@ -633,15 +641,177 @@ class RecurringListPendingRowTests(TestCase):
 
         self.assertContains(response, f'data-recurring-id="{self.schedule.pk}"')
         self.assertContains(response, 'card-tap-target')
-        self.assertContains(response, reverse('spending_tracker:toggle_recurring_transaction', args=[self.schedule.pk]), count=2)
-        self.assertContains(response, reverse('spending_tracker:delete_recurring_transaction', args=[self.schedule.pk]), count=2)
-        self.assertContains(response, edit_url, count=2)
+        # Two forms each, and each form names its URL twice: action= and hx-post=.
+        self.assertContains(response, reverse('spending_tracker:toggle_recurring_transaction', args=[self.schedule.pk]), count=4)
+        self.assertContains(response, reverse('spending_tracker:delete_recurring_transaction', args=[self.schedule.pk]), count=4)
+        self.assertContains(response, edit_url, count=2)  # tap target + Edit button, both plain links
+
+    def test_schedule_actions_swap_the_schedule_section(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, 'id="schedule-list"')
+        self.assertContains(response, 'hx-target="#schedule-list" hx-swap="outerHTML"', count=4)
+
+    def test_delete_confirms_through_htmx_not_onsubmit(self):
+        """onsubmit="return confirm(...)" cannot gate an htmx request — htmx does not
+        read the handler's return value — so the guard has to be hx-confirm."""
+        response = self.client.get(self.url)
+        self.assertContains(response, 'hx-confirm=', count=2)
+        self.assertNotContains(response, 'onsubmit=')
 
     def test_schedule_row_has_no_full_swipe_commit(self):
         """Two actions and a destructive one: reveal-then-tap only, never a
         gesture that deletes on release."""
         response = self.client.get(self.url)
         self.assertContains(response, 'data-swipe-commit="true"', count=1)  # the pending row only
+
+
+class RecurringListHtmxTests(TestCase):
+    """Skipping an occurrence, and pausing or deleting a schedule, swap one section
+    of the recurring list instead of reloading the page. Every one of them keeps its
+    original redirect for a plain, non-htmx post."""
+
+    HX = {'HTTP_HX_REQUEST': 'true'}
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='htmxuser', password='pass')
+        self.account = Account.objects.create(name='Main', user=self.user, balance=Decimal('300.00'))
+        self.today = date(2026, 6, 1)
+        self.schedule = RecurringTransaction.objects.create(
+            user=self.user, mode='EXPENSE', amount=Decimal('40.00'), currency='GHS',
+            account=self.account, frequency=RecurringFrequencyChoices.MONTHLY,
+            renewal_date=self.today, is_auto_renew=False,
+        )
+        process_due_occurrences(self.schedule, today=self.today)
+        self.occurrence = RecurringTransactionOccurrence.objects.get(recurring_transaction=self.schedule)
+        self.dismiss_url = reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk])
+        self.toggle_url = reverse('spending_tracker:toggle_recurring_transaction', args=[self.schedule.pk])
+        self.delete_url = reverse('spending_tracker:delete_recurring_transaction', args=[self.schedule.pk])
+        self.list_url = reverse('spending_tracker:recurring_list')
+        self.client.force_login(self.user)
+
+    # ── Skip ─────────────────────────────────────────────────────────────
+
+    def test_htmx_skip_returns_the_section_not_a_redirect(self):
+        response = self.client.post(self.dismiss_url, {'action': 'dismiss'}, **self.HX)
+
+        self.assertEqual(response.status_code, 200)
+        self.occurrence.refresh_from_db()
+        self.assertEqual(self.occurrence.status, RecurringOccurrenceStatusChoices.DISMISSED)
+
+        # The section came back, minus the row that was just skipped.
+        self.assertContains(response, 'id="pending-approvals"')
+        self.assertNotContains(response, f'data-occurrence-id="{self.occurrence.pk}"')
+        # A fragment, not a whole page.
+        self.assertNotContains(response, '<body')
+
+    def test_htmx_skip_carries_the_toast_out_of_band(self):
+        """No full-page render happens, so the success message has to ride along
+        as an OOB append or the user never sees it."""
+        response = self.client.post(self.dismiss_url, {'action': 'dismiss'}, **self.HX)
+
+        self.assertContains(response, 'hx-swap-oob="beforeend"')
+        self.assertContains(response, 'Skipped this one.')
+
+    def test_htmx_skip_of_the_last_row_empties_the_section(self):
+        response = self.client.post(self.dismiss_url, {'action': 'dismiss'}, **self.HX)
+
+        self.assertNotContains(response, 'Pending Approval')
+        # The wrapper survives regardless: it is the target of any later swap.
+        self.assertContains(response, 'id="pending-approvals"')
+
+    def test_htmx_skip_leaves_the_other_pending_rows_in_place(self):
+        second = RecurringTransaction.objects.create(
+            user=self.user, mode='EXPENSE', amount=Decimal('12.00'), currency='GHS',
+            account=self.account, frequency=RecurringFrequencyChoices.MONTHLY,
+            renewal_date=self.today, is_auto_renew=False,
+        )
+        process_due_occurrences(second, today=self.today)
+        survivor = RecurringTransactionOccurrence.objects.get(recurring_transaction=second)
+
+        response = self.client.post(self.dismiss_url, {'action': 'dismiss'}, **self.HX)
+
+        self.assertContains(response, 'Pending Approval (1)')
+        self.assertContains(response, f'data-occurrence-id="{survivor.pk}"')
+
+    def test_plain_skip_still_redirects(self):
+        response = self.client.post(self.dismiss_url, {'action': 'dismiss'})
+
+        self.assertRedirects(response, self.list_url)
+        self.occurrence.refresh_from_db()
+        self.assertEqual(self.occurrence.status, RecurringOccurrenceStatusChoices.DISMISSED)
+
+    def test_htmx_skip_of_a_resolved_occurrence_redirects_the_browser(self):
+        """htmx would follow a 302 itself and swap a whole page into the section,
+        so a stale link has to come back as HX-Redirect instead."""
+        self.occurrence.status = RecurringOccurrenceStatusChoices.DISMISSED
+        self.occurrence.save()
+
+        response = self.client.post(self.dismiss_url, {'action': 'dismiss'}, **self.HX)
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response['HX-Redirect'], self.list_url)
+
+    def test_htmx_skip_of_a_deleted_occurrence_redirects_the_browser(self):
+        pk = self.occurrence.pk
+        self.occurrence.delete()
+
+        response = self.client.post(
+            reverse('spending_tracker:confirm_recurring_occurrence', args=[pk]),
+            {'action': 'dismiss'}, **self.HX,
+        )
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response['HX-Redirect'], self.list_url)
+
+    # ── Pause / resume ───────────────────────────────────────────────────
+
+    def test_htmx_toggle_returns_the_section_with_the_label_flipped(self):
+        response = self.client.post(self.toggle_url, **self.HX)
+
+        self.assertEqual(response.status_code, 200)
+        self.schedule.refresh_from_db()
+        self.assertFalse(self.schedule.is_active)
+
+        self.assertContains(response, 'id="schedule-list"')
+        # Both toggle buttons — the swipe one and the in-row one — flip together.
+        self.assertContains(response, 'fa-play"></i> Resume', count=2)
+        self.assertNotContains(response, 'fa-pause')
+        self.assertContains(response, '<span class="badge bg-secondary">Paused</span>')
+        self.assertContains(response, 'Recurring transaction paused.')
+
+    def test_plain_toggle_still_redirects(self):
+        response = self.client.post(self.toggle_url)
+
+        self.assertRedirects(response, self.list_url)
+        self.schedule.refresh_from_db()
+        self.assertFalse(self.schedule.is_active)
+
+    # ── Delete ───────────────────────────────────────────────────────────
+
+    def test_htmx_delete_returns_the_section_with_the_empty_state(self):
+        response = self.client.post(self.delete_url, **self.HX)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(RecurringTransaction.objects.filter(pk=self.schedule.pk).exists())
+
+        self.assertContains(response, 'id="schedule-list"')
+        self.assertNotContains(response, f'data-recurring-id="{self.schedule.pk}"')
+        self.assertContains(response, 'No Recurring Transactions Yet')
+        self.assertContains(response, 'Recurring transaction deleted.')
+
+    def test_plain_delete_still_redirects(self):
+        response = self.client.post(self.delete_url)
+
+        self.assertRedirects(response, self.list_url)
+        self.assertFalse(RecurringTransaction.objects.filter(pk=self.schedule.pk).exists())
+
+    def test_htmx_actions_do_not_reach_another_users_schedule(self):
+        intruder = User.objects.create_user(username='htmxintruder', password='pass')
+        self.client.force_login(intruder)
+
+        self.assertEqual(self.client.post(self.toggle_url, **self.HX).status_code, 404)
+        self.assertEqual(self.client.post(self.delete_url, **self.HX).status_code, 404)
+        self.assertTrue(RecurringTransaction.objects.filter(pk=self.schedule.pk).exists())
 
 
 class EditTransactionRecurringBannerTests(TestCase):

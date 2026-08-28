@@ -1,0 +1,11 @@
+<div class="toast-item alert alert-{{ message.tags }} alert-dismissible" role="alert">
+    <strong>
+        {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+            Error
+        {% else %}
+            {{ message.tags|title }}
+        {% endif %}
+    </strong>
+    {{ message }}
+    <button type="button" class="btn-close" aria-label="Close"></button>
+</div>

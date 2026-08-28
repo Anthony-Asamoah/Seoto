@@ -336,143 +336,8 @@
     </div>
 
     <div class="main container list-shell">
-        {% if pending_occurrences %}
-            <h4 class="mb-1">Pending Approval ({{ pending_occurrences|length }})</h4>
-            <p class="row-hint touch-only">Tap a row to review · swipe left to skip</p>
-            {% for occurrence in pending_occurrences %}
-                <div class="swipe-container" data-occurrence-id="{{ occurrence.pk }}" data-swipe-commit="true">
-                    {# Action layer: sits behind the card, revealed as it slides left. #}
-                    <div class="swipe-actions">
-                        <form method="post" action="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="dismiss">
-                            <button type="submit" class="swipe-btn">
-                                <i class="fas fa-forward"></i> Skip
-                            </button>
-                        </form>
-                    </div>
-
-                    {# Content layer: the card body links to the review page. #}
-                    <div class="swipe-content">
-                        <div class="pending-card">
-                            <a href="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}"
-                               class="pending-link" draggable="false">
-                                <div>
-                                    <span class="pending-amount">{{ occurrence.recurring_transaction.currency }} {{ occurrence.recurring_transaction.amount }}</span>
-                                    {{ occurrence.recurring_transaction.get_mode_display }}
-                                    — {{ occurrence.recurring_transaction.details|default:"No description"|striptags }}
-                                </div>
-                                <div class="pending-meta">Due {{ occurrence.scheduled_date }}</div>
-                            </a>
-                            <div class="row-actions">
-                                <form method="post" action="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="action" value="dismiss">
-                                    <button type="submit" class="row-skip-btn">
-                                        <i class="fas fa-forward"></i> Skip
-                                    </button>
-                                </form>
-                            </div>
-                            <i class="fas fa-chevron-right pending-chevron touch-only ms-auto"></i>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-            <hr class="my-4">
-        {% endif %}
-
-        <div class="d-flex justify-content-between align-items-center mb-1">
-            <h4 class="mb-0">Your Schedules</h4>
-            <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-plus"></i> New Recurring Transaction
-            </a>
-        </div>
-        <p class="row-hint touch-only">Tap to edit · swipe left for actions</p>
-
-        {% if recurring_transactions %}
-            {% for recurring in recurring_transactions %}
-                <div class="swipe-container swipe-container--dual" data-recurring-id="{{ recurring.pk }}">
-                    {# Two actions, so no full-swipe commit: reveal, then tap. #}
-                    <div class="swipe-actions">
-                        <form method="post" action="{% url 'spending_tracker:toggle_recurring_transaction' recurring.pk %}">
-                            {% csrf_token %}
-                            <button type="submit" class="swipe-btn swipe-btn--pause">
-                                {% if recurring.is_active %}
-                                    <i class="fas fa-pause"></i> Pause
-                                {% else %}
-                                    <i class="fas fa-play"></i> Resume
-                                {% endif %}
-                            </button>
-                        </form>
-                        <form method="post" action="{% url 'spending_tracker:delete_recurring_transaction' recurring.pk %}"
-                              onsubmit="return confirm('Delete this recurring transaction? Transactions already created from it will not be affected.');">
-                            {% csrf_token %}
-                            <button type="submit" class="swipe-btn">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="swipe-content">
-                        <div class="recurring-card {% if not recurring.is_active %}paused{% endif %}">
-                            <a href="{% url 'spending_tracker:edit_recurring_transaction' recurring.pk %}"
-                               class="card-tap-target" draggable="false"
-                               aria-label="Edit {{ recurring.details|default:recurring.get_mode_display|striptags }}"></a>
-                            <div class="row align-items-center">
-                                <div class="col-md-5">
-                                    <div class="recurring-amount {{ recurring.mode|lower }}">
-                                        {{ currency_symbol }}{{ recurring.amount }}
-                                    </div>
-                                    <div>
-                                        {{ recurring.details|default:recurring.get_mode_display|striptags }}
-                                        <span class="frequency-badge">{{ recurring.get_frequency_display }}</span>
-                                        <span class="mode-badge {% if recurring.is_auto_renew %}auto{% else %}approval{% endif %}">
-                                            {% if recurring.is_auto_renew %}Auto{% else %}Needs Approval{% endif %}
-                                        </span>
-                                    </div>
-                                    <small class="text-muted">{{ recurring.account.name }}</small>
-                                </div>
-                                <div class="col-md-3">
-                                    {% if recurring.is_active %}
-                                        <small class="text-muted">Next run</small><br>
-                                        {{ recurring.next_run_date }}
-                                    {% else %}
-                                        <span class="badge bg-secondary">Paused</span>
-                                    {% endif %}
-                                    {% if recurring.end_date %}
-                                        <br><small class="text-muted">Ends {{ recurring.end_date }}</small>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-4 text-end row-actions justify-content-end">
-                                    <a href="{% url 'spending_tracker:edit_recurring_transaction' recurring.pk %}" class="btn btn-outline-primary btn-sm">
-                                        <i class="fas fa-edit"></i> Edit
-                                    </a>
-                                    <form method="post" action="{% url 'spending_tracker:toggle_recurring_transaction' recurring.pk %}" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-outline-secondary btn-sm">
-                                            {% if recurring.is_active %}<i class="fas fa-pause"></i> Pause{% else %}<i class="fas fa-play"></i> Resume{% endif %}
-                                        </button>
-                                    </form>
-                                    <form method="post" action="{% url 'spending_tracker:delete_recurring_transaction' recurring.pk %}"
-                                          class="d-inline" onsubmit="return confirm('Delete this recurring transaction? Transactions already created from it will not be affected.');">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">
-                                            <i class="fas fa-trash"></i> Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        {% else %}
-            <div class="alert alert-info">
-                <h5>No Recurring Transactions Yet</h5>
-                <p>Set one up from the "Make Recurring" option when adding a transaction.</p>
-                <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-primary">Add a Transaction</a>
-            </div>
-        {% endif %}
+        {% include 'spending_tracker/partials/_pending_approvals.html' %}
+        {% include 'spending_tracker/partials/_schedule_list.html' %}
     </div>
 {% endblock %}
 
@@ -483,9 +348,6 @@
             // devices swipe, everything else uses the in-row buttons.
             const SWIPE_QUERY = '(hover: none) and (pointer: coarse)';
             if (!window.matchMedia(SWIPE_QUERY).matches) return;
-
-            const rows = document.querySelectorAll('.swipe-container');
-            if (!rows.length) return;
 
             // Past this much travel a single-action row counts as committed and
             // submits on release, the way a full swipe in Mail does.
@@ -508,7 +370,9 @@
                 openRow = row;
             }
 
-            rows.forEach(function (row) {
+            function bindRow(row) {
+                row.dataset.swipeBound = 'true';
+
                 const content = row.querySelector('.swipe-content');
                 const link = row.querySelector('.pending-link, .card-tap-target');
                 const commitForm = row.dataset.swipeCommit === 'true'
@@ -568,6 +432,8 @@
                     if (commitForm && offset <= -commitDistance(row)) {
                         closeRow(row);
                         row.classList.add('is-committing');
+                        // The row finishes sliding out before htmx swaps the
+                        // section under it, so the commit still reads as one move.
                         setTimeout(function () { commitForm.requestSubmit(); }, 240);
                     } else if (offset <= -width * 0.45) {
                         openRowExclusive(row);
@@ -598,7 +464,17 @@
                     button.addEventListener('focus', function () { openRowExclusive(row); });
                     button.addEventListener('blur', function () { closeRow(row); });
                 });
-            });
+            }
+
+            // Rows are replaced wholesale by every htmx swap, so binding has to
+            // be re-runnable; the flag keeps surviving rows from doubling up.
+            function initSwipeRows() {
+                openRow = null;
+                document.querySelectorAll('.swipe-container:not([data-swipe-bound])').forEach(bindRow);
+            }
+
+            initSwipeRows();
+            document.addEventListener('htmx:load', initSwipeRows);
 
             document.addEventListener('pointerdown', function (event) {
                 if (openRow && !openRow.contains(event.target)) closeRow(openRow);
@@ -606,8 +482,9 @@
 
             // Nudge the first row once ever, so the gesture is discoverable.
             try {
-                if (!localStorage.getItem('recurringSwipeHintSeen')) {
-                    rows[0].classList.add('hint');
+                const first = document.querySelector('.swipe-container');
+                if (first && !localStorage.getItem('recurringSwipeHintSeen')) {
+                    first.classList.add('hint');
                     localStorage.setItem('recurringSwipeHintSeen', '1');
                 }
             } catch (e) { /* private mode: the hint is optional */ }

@@ -1,19 +1,6 @@
-{% if messages %}
-<div id="toast-tray" aria-live="polite" aria-atomic="false">
-    {% for message in messages %}
-    <div class="toast-item alert alert-{{ message.tags }} alert-dismissible" role="alert">
-        <strong>
-            {% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
-                Error
-            {% else %}
-                {{ message.tags|title }}
-            {% endif %}
-        </strong>
-        {{ message }}
-        <button type="button" class="btn-close" aria-label="Close"></button>
-    </div>
-    {% endfor %}
-</div>
+{# The tray renders even when empty: htmx responses append toasts into it out of
+   band, and an OOB swap silently no-ops if its target id is not already there. #}
+<div id="toast-tray" aria-live="polite" aria-atomic="false">{% for message in messages %}{% include 'partials/_toast_item.html' %}{% endfor %}</div>
 
 <style>
     #toast-tray {
@@ -29,6 +16,9 @@
         flex-direction: column;
         gap: .5rem;
         pointer-events: none;   /* tray itself is click-through */
+    }
+    #toast-tray:empty {
+        display: none;          /* nothing to show, nothing to sit over the page */
     }
     .toast-item {
         pointer-events: all;    /* individual toasts are clickable */
@@ -71,22 +61,31 @@
         });
     }
 
-    document.querySelectorAll('.toast-item').forEach(function (el) {
-        // Slide in
-        requestAnimationFrame(function () {
-            requestAnimationFrame(function () { el.classList.add('visible'); });
-        });
+    // Toasts also arrive mid-page from htmx responses, so this runs again on
+    // every swap; the flag keeps already-shown toasts from restarting.
+    function initToasts() {
+        document.querySelectorAll('.toast-item:not([data-toast-bound])').forEach(function (el) {
+            el.dataset.toastBound = 'true';
 
-        // Auto-dismiss after 5s
-        setTimeout(function () { dismiss(el); }, 5000);
+            // Slide in
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () { el.classList.add('visible'); });
+            });
 
-        // Manual close
-        var btn = el.querySelector('.btn-close');
-        if (btn) btn.addEventListener('click', function (e) {
-            e.preventDefault();
-            dismiss(el);
+            // Auto-dismiss after 5s
+            setTimeout(function () { dismiss(el); }, 5000);
+
+            // Manual close
+            var btn = el.querySelector('.btn-close');
+            if (btn) btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                dismiss(el);
+            });
         });
-    });
+    }
+
+    initToasts();
+    document.addEventListener('htmx:load', initToasts);
+    document.addEventListener('htmx:oobAfterSwap', initToasts);
 })();
 </script>
-{% endif %}

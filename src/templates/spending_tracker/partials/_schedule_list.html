@@ -1,0 +1,104 @@
+{# Same shell as the pending rows: swapped whole so a pause flips its own label
+   and a delete takes the empty state with it. #}
+<div id="schedule-list">
+    <div class="d-flex justify-content-between align-items-center mb-1">
+        <h4 class="mb-0">Your Schedules</h4>
+        <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-outline-primary btn-sm">
+            <i class="fas fa-plus"></i> New Recurring Transaction
+        </a>
+    </div>
+    <p class="row-hint touch-only">Tap to edit · swipe left for actions</p>
+
+    {% if recurring_transactions %}
+        {% for recurring in recurring_transactions %}
+            <div class="swipe-container swipe-container--dual" data-recurring-id="{{ recurring.pk }}">
+                {# Two actions, so no full-swipe commit: reveal, then tap. #}
+                <div class="swipe-actions">
+                    <form method="post" action="{% url 'spending_tracker:toggle_recurring_transaction' recurring.pk %}"
+                          hx-post="{% url 'spending_tracker:toggle_recurring_transaction' recurring.pk %}"
+                          hx-target="#schedule-list" hx-swap="outerHTML">
+                        {% csrf_token %}
+                        <button type="submit" class="swipe-btn swipe-btn--pause">
+                            {% if recurring.is_active %}
+                                <i class="fas fa-pause"></i> Pause
+                            {% else %}
+                                <i class="fas fa-play"></i> Resume
+                            {% endif %}
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'spending_tracker:delete_recurring_transaction' recurring.pk %}"
+                          hx-post="{% url 'spending_tracker:delete_recurring_transaction' recurring.pk %}"
+                          hx-target="#schedule-list" hx-swap="outerHTML"
+                          hx-confirm="Delete this recurring transaction? Transactions already created from it will not be affected.">
+                        {% csrf_token %}
+                        <button type="submit" class="swipe-btn">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+
+                <div class="swipe-content">
+                    <div class="recurring-card {% if not recurring.is_active %}paused{% endif %}">
+                        <a href="{% url 'spending_tracker:edit_recurring_transaction' recurring.pk %}"
+                           class="card-tap-target" draggable="false"
+                           aria-label="Edit {{ recurring.details|default:recurring.get_mode_display|striptags }}"></a>
+                        <div class="row align-items-center">
+                            <div class="col-md-5">
+                                <div class="recurring-amount {{ recurring.mode|lower }}">
+                                    {{ currency_symbol }}{{ recurring.amount }}
+                                </div>
+                                <div>
+                                    {{ recurring.details|default:recurring.get_mode_display|striptags }}
+                                    <span class="frequency-badge">{{ recurring.get_frequency_display }}</span>
+                                    <span class="mode-badge {% if recurring.is_auto_renew %}auto{% else %}approval{% endif %}">
+                                        {% if recurring.is_auto_renew %}Auto{% else %}Needs Approval{% endif %}
+                                    </span>
+                                </div>
+                                <small class="text-muted">{{ recurring.account.name }}</small>
+                            </div>
+                            <div class="col-md-3">
+                                {% if recurring.is_active %}
+                                    <small class="text-muted">Next run</small><br>
+                                    {{ recurring.next_run_date }}
+                                {% else %}
+                                    <span class="badge bg-secondary">Paused</span>
+                                {% endif %}
+                                {% if recurring.end_date %}
+                                    <br><small class="text-muted">Ends {{ recurring.end_date }}</small>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4 text-end row-actions justify-content-end">
+                                <a href="{% url 'spending_tracker:edit_recurring_transaction' recurring.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <form method="post" action="{% url 'spending_tracker:toggle_recurring_transaction' recurring.pk %}" class="d-inline"
+                                      hx-post="{% url 'spending_tracker:toggle_recurring_transaction' recurring.pk %}"
+                                      hx-target="#schedule-list" hx-swap="outerHTML">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm">
+                                        {% if recurring.is_active %}<i class="fas fa-pause"></i> Pause{% else %}<i class="fas fa-play"></i> Resume{% endif %}
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'spending_tracker:delete_recurring_transaction' recurring.pk %}" class="d-inline"
+                                      hx-post="{% url 'spending_tracker:delete_recurring_transaction' recurring.pk %}"
+                                      hx-target="#schedule-list" hx-swap="outerHTML"
+                                      hx-confirm="Delete this recurring transaction? Transactions already created from it will not be affected.">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">
+            <h5>No Recurring Transactions Yet</h5>
+            <p>Set one up from the "Make Recurring" option when adding a transaction.</p>
+            <a href="{% url 'spending_tracker:add_transaction' %}" class="btn btn-primary">Add a Transaction</a>
+        </div>
+    {% endif %}
+</div>

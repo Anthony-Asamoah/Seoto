@@ -1786,20 +1786,42 @@ def edit_recurring_transaction(request, pk):
     return render(request, 'spending_tracker/edit_recurring_transaction.html', context)
 
 
-@login_required
-def recurring_list(request):
-    """List the user's recurring transaction schedules and any pending approvals."""
-    recurring_transactions = RecurringTransaction.objects.filter(user=request.user).select_related(
+def _user_schedules(user):
+    return RecurringTransaction.objects.filter(user=user).select_related(
         'account', 'destination_account', 'category'
     )
-    pending_occurrences = RecurringTransactionOccurrence.objects.filter(
-        recurring_transaction__user=request.user,
+
+
+def _pending_occurrences(user):
+    return RecurringTransactionOccurrence.objects.filter(
+        recurring_transaction__user=user,
         status=RecurringOccurrenceStatusChoices.PENDING,
     ).select_related('recurring_transaction')
 
+
+def _htmx_section(request, template, context):
+    """Re-render one section of the recurring list, with any queued messages
+    appended to the toast tray out of band — an htmx swap never reaches the
+    full-page render that would otherwise show them."""
+    html = render_to_string(template, context, request=request)
+    html += render_to_string('partials/_toasts_oob.html', request=request)
+    return HttpResponse(html)
+
+
+def _htmx_redirect(url):
+    """htmx follows a 302 itself and would swap a whole page into a section, so
+    hand the browser a real navigation instead."""
+    response = HttpResponse(status=204)
+    response['HX-Redirect'] = url
+    return response
+
+
+@login_required
+def recurring_list(request):
+    """List the user's recurring transaction schedules and any pending approvals."""
     context = {
-        'recurring_transactions': recurring_transactions,
-        'pending_occurrences': pending_occurrences,
+        'recurring_transactions': _user_schedules(request.user),
+        'pending_occurrences': _pending_occurrences(request.user),
         'currency_symbol': _get_currency_symbol(request.user),
     }
     return render(request, 'spending_tracker/recurring_list.html', context)
@@ -1814,6 +1836,11 @@ def toggle_recurring_transaction(request, pk):
     recurring_transaction.save()
     state = 'resumed' if recurring_transaction.is_active else 'paused'
     messages.success(request, f'Recurring transaction {state}.')
+    if request.headers.get('HX-Request'):
+        return _htmx_section(request, 'spending_tracker/partials/_schedule_list.html', {
+            'recurring_transactions': _user_schedules(request.user),
+            'currency_symbol': _get_currency_symbol(request.user),
+        })
     return redirect('spending_tracker:recurring_list')
 
 
@@ -1824,6 +1851,11 @@ def delete_recurring_transaction(request, pk):
     recurring_transaction = get_object_or_404(RecurringTransaction, pk=pk, user=request.user)
     recurring_transaction.delete()
     messages.success(request, 'Recurring transaction deleted.')
+    if request.headers.get('HX-Request'):
+        return _htmx_section(request, 'spending_tracker/partials/_schedule_list.html', {
+            'recurring_transactions': _user_schedules(request.user),
+            'currency_symbol': _get_currency_symbol(request.user),
+        })
     return redirect('spending_tracker:recurring_list')
 
 
@@ -1839,8 +1871,13 @@ def confirm_recurring_occurrence(request, pk):
         'recurring_transaction', 'recurring_transaction__account'
     ).filter(pk=pk).first()
 
+    is_htmx = bool(request.headers.get('HX-Request'))
+    recurring_list_url = reverse('spending_tracker:recurring_list')
+
     if occurrence is None:
         messages.info(request, 'This recurring transaction no longer exists.')
+        if is_htmx:
+            return _htmx_redirect(recurring_list_url)
         return redirect('spending_tracker:recurring_list')
 
     # Belongs to someone else: a real 404, not a "gone" redirect — don't leak that the pk exists.
@@ -1852,9 +1889,13 @@ def confirm_recurring_occurrence(request, pk):
     if occurrence.status != RecurringOccurrenceStatusChoices.PENDING:
         if occurrence.transaction_id:
             messages.info(request, 'This recurring transaction was already confirmed.')
-            return redirect(f"{reverse('spending_tracker:transaction_list')}?highlight={occurrence.transaction_id}")
-        messages.info(request, 'This recurring transaction occurrence was already dismissed.')
-        return redirect('spending_tracker:recurring_list')
+            target = f"{reverse('spending_tracker:transaction_list')}?highlight={occurrence.transaction_id}"
+        else:
+            messages.info(request, 'This recurring transaction occurrence was already dismissed.')
+            target = recurring_list_url
+        if is_htmx:
+            return _htmx_redirect(target)
+        return redirect(target)
 
     recurring_transaction = occurrence.recurring_transaction
     form = None
@@ -1868,6 +1909,10 @@ def confirm_recurring_occurrence(request, pk):
             occurrence.resolved_at = timezone.now()
             occurrence.save()
             messages.success(request, 'Skipped this one.')
+            if is_htmx:
+                return _htmx_section(request, 'spending_tracker/partials/_pending_approvals.html', {
+                    'pending_occurrences': _pending_occurrences(request.user),
+                })
             return redirect('spending_tracker:recurring_list')
 
         form = ConfirmOccurrenceForm(

@@ -1,0 +1,52 @@
+{# Swapped whole, so the count, the hint and the emptied-out case all come back
+   from one code path. The wrapper stays even when empty: it is the swap target. #}
+<div id="pending-approvals">
+    {% if pending_occurrences %}
+        <h4 class="mb-1">Pending Approval ({{ pending_occurrences|length }})</h4>
+        <p class="row-hint touch-only">Tap a row to review · swipe left to skip</p>
+        {% for occurrence in pending_occurrences %}
+            <div class="swipe-container" data-occurrence-id="{{ occurrence.pk }}" data-swipe-commit="true">
+                {# Action layer: sits behind the card, revealed as it slides left. #}
+                <div class="swipe-actions">
+                    <form method="post" action="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}"
+                          hx-post="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}"
+                          hx-target="#pending-approvals" hx-swap="outerHTML">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="dismiss">
+                        <button type="submit" class="swipe-btn">
+                            <i class="fas fa-forward"></i> Skip
+                        </button>
+                    </form>
+                </div>
+
+                {# Content layer: the card body links to the review page. #}
+                <div class="swipe-content">
+                    <div class="pending-card">
+                        <a href="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}"
+                           class="pending-link" draggable="false">
+                            <div>
+                                <span class="pending-amount">{{ occurrence.recurring_transaction.currency }} {{ occurrence.recurring_transaction.amount }}</span>
+                                {{ occurrence.recurring_transaction.get_mode_display }}
+                                — {{ occurrence.recurring_transaction.details|default:"No description"|striptags }}
+                            </div>
+                            <div class="pending-meta">Due {{ occurrence.scheduled_date }}</div>
+                        </a>
+                        <div class="row-actions">
+                            <form method="post" action="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}"
+                                  hx-post="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}"
+                                  hx-target="#pending-approvals" hx-swap="outerHTML">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="dismiss">
+                                <button type="submit" class="row-skip-btn">
+                                    <i class="fas fa-forward"></i> Skip
+                                </button>
+                            </form>
+                        </div>
+                        <i class="fas fa-chevron-right pending-chevron touch-only ms-auto"></i>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+        <hr class="my-4">
+    {% endif %}
+</div>
