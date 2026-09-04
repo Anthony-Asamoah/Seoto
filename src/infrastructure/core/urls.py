@@ -34,7 +34,6 @@ urlpatterns = [
     path('accounts/', include('domains.accounts.urls')),
     path('home/', include("domains.home.urls")),
     # Anonymous
-    path('@sean_or_tony', About.as_view(), name='about'),
     path('reach-out', ReachOut.as_view(), name='reach_out'),
     path('foodie/', include('domains.apps.foodie.urls')),
     path('interest_calculator', Interest.as_view(), name='interest_calculator'),

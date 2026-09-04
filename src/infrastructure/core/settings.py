@@ -490,6 +490,9 @@ GEOLOCATION_PROVIDER = config('GEOLOCATION_PROVIDER', default='ip_api')
 # qualifying form is submitted. Swap the default for your real scheduling URL.
 CALENDLY_URL = config('CALENDLY_URL', default='https://calendly.com/anthony-asamoah/30min')
 
+# SEOTO — marketing site URL, linked from the apps page
+SEOTO_URL = config('SEOTO_URL', default='https://seoto.org')
+
 # Blog media upload limits (MB)
 BLOG_UPLOAD_MAX_SIZE_MB = config('BLOG_UPLOAD_MAX_SIZE_MB', default=10, cast=int)
 
