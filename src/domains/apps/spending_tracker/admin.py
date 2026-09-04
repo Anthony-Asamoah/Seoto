@@ -44,7 +44,6 @@ class TransactionAdmin(admin.ModelAdmin):
     list_display_links = ['mode', 'amount']
     list_filter = ['mode', 'currency', 'category', 'created_at']
     search_fields = ['details', 'reference', 'account__name', 'category__label']
-    filter_horizontal = ['tags']
     readonly_fields = ['created_at', 'transaction_time']
     date_hierarchy = 'transaction_time'
 
@@ -74,7 +73,6 @@ class RecurringTransactionAdmin(admin.ModelAdmin):
     list_display_links = ['mode', 'amount']
     list_filter = ['mode', 'frequency', 'is_auto_renew', 'is_active']
     search_fields = ['details', 'reference', 'account__name', 'user__username']
-    filter_horizontal = ['tags']
     readonly_fields = ['created_at', 'updated_at', 'last_run_at']
     date_hierarchy = 'next_run_date'
 

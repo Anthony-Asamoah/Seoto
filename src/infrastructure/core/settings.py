@@ -76,7 +76,7 @@ INSTALLED_APPS = [
     'domains.pwa',
 
     # Django default apps
-    'infrastructure.core.apps.OTPAdminConfig' if IS_ADMIN_OTP_ENABLED else 'django.contrib.admin',
+    'infrastructure.core.apps.OTPAdminConfig' if IS_ADMIN_OTP_ENABLED else 'infrastructure.core.apps.SeotoAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

@@ -38,7 +38,6 @@ class PostTagsAdmin(admin.ModelAdmin):
 
 class PostReadGroupAdmin(admin.ModelAdmin):
     list_display = ('label',)
-    filter_horizontal = ('users',)
     search_fields = ('label',)
 
 
