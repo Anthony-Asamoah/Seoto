@@ -32,8 +32,9 @@ class PostAdmin(RichTextAdminMixin, admin.ModelAdmin):
 
 
 class PostTagsAdmin(admin.ModelAdmin):
-    list_display = ('label',)
+    list_display = ('hits', 'label')
     search_fields = ('label',)
+    ordering = ('-hits',)
 
 
 class PostReadGroupAdmin(admin.ModelAdmin):
