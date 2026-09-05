@@ -28,6 +28,7 @@ SIDEBAR_SECTIONS = (
     ('company', 'Company', 'fas fa-building', (
         ('company_products', 'Products', 'fas fa-cubes'),
         ('company_faqs', 'FAQs', 'fas fa-circle-question'),
+        ('company_staff', 'Staff', 'fas fa-user-tie'),
     )),
     ('security', 'Security', 'fas fa-shield-halved', (
         ('auth', 'Users & Groups', 'fas fa-users-cog'),
