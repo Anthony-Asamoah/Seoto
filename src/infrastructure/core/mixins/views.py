@@ -4,7 +4,7 @@ from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
-from infrastructure.external_services.recaptcha import is_human
+from infrastructure.external_services.google.recaptcha import is_human
 
 
 
@@ -30,6 +30,21 @@ class HoneypotMixin:
         return cleaned_data
 
 
+def enforce_recaptcha(request, action):
+    """Raise ValidationError unless the request carries a passing reCAPTCHA v3 token."""
+    if not request or not getattr(settings, 'RECAPTCHA_ENABLED', True):
+        return
+
+    token = request.POST.get('g-recaptcha-response', '')
+    human, score = is_human(token, action=action)
+
+    logging.info(f"reCAPTCHA score for {action}: {score}")
+
+    if not human:
+        logging.warning(f"reCAPTCHA failed for {action}: score={score}")
+        raise ValidationError('Security verification failed. Please try again.')
+
+
 class RecaptchaMixin:
     """Mixin to add reCAPTCHA v3 protection to forms."""
     recaptcha_action = 'form_submit'  # Override in subclass
@@ -40,15 +55,5 @@ class RecaptchaMixin:
 
     def clean(self):
         cleaned_data = super().clean()
-
-        if self.request and getattr(settings, 'RECAPTCHA_ENABLED', True):
-            token = self.request.POST.get('g-recaptcha-response', '')
-            human, score = is_human(token, action=self.recaptcha_action)
-
-            logging.info(f"reCAPTCHA score for {self.recaptcha_action}: {score}")
-
-            if not human:
-                logging.warning(f"reCAPTCHA failed for {self.recaptcha_action}: score={score}")
-                raise ValidationError('Security verification failed. Please try again.')
-
+        enforce_recaptcha(self.request, self.recaptcha_action)
         return cleaned_data

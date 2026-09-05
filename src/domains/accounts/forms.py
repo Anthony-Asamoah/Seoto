@@ -9,7 +9,7 @@ from django.contrib.auth.forms import (
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
-from infrastructure.external_services.email_validation import is_valid_email
+from infrastructure.external_services.ipqualityscore.email_validation import is_valid_email
 from infrastructure.core.mixins.views import HoneypotMixin, RecaptchaMixin
 
 

@@ -4,7 +4,14 @@ Imported lazily by Django (see `infrastructure.core.apps.OTPAdminConfig`), becau
 django_otp pulls in auth models that aren't loadable while INSTALLED_APPS is being read.
 """
 
-from django_otp.admin import OTPAdminSite
+from django_otp.admin import OTPAdminAuthenticationForm, OTPAdminSite
+
+from infrastructure.core.admin_forms import RecaptchaAdminLoginMixin
+
+
+class OTPAdminLoginForm(RecaptchaAdminLoginMixin, OTPAdminAuthenticationForm):
+    pass
+
 
 # Sidebar sections mirroring the source tree, each holding the apps that live there:
 # (section label, heading, icon, ((app label, sub-heading, icon), ...)).
@@ -45,6 +52,8 @@ class SeotoAdminSite(OTPAdminSite):
 
     # django-otp defaults to its own bare template; use ours so jazzmin still skins it.
     login_template = 'admin/login.html'
+
+    login_form = OTPAdminLoginForm
 
     def __init__(self, name='admin'):
         super().__init__(name)
