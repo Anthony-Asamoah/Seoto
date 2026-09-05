@@ -21,6 +21,9 @@
     --brand-soft: var(--brown-1);
     --brand-rgb: 109, 76, 65;
     --brand-on: var(--silver-0);
+
+    /* Bootstrap's own .form-control height, so every control on a row matches */
+    --control-height: calc(1.5em + 0.75rem + 2px);
 }
 
 :root[data-bs-theme="dark"] {
@@ -298,4 +301,48 @@ select.admin-select2.is-invalid + .select2-container .select2-selection {
 
 select.admin-select2 + .select2-container ~ .invalid-feedback {
     display: none;
+}
+
+/* Changelist toolbars — select2 renders a 28px box, so the list filters and the
+   action dropdown sit short beside the search input and the buttons. */
+#changelist-search .form-group,
+.actions label {
+    margin-bottom: 0;
+}
+
+#changelist-search .select2-container,
+.actions .select2-container {
+    height: var(--control-height);
+}
+
+#changelist-search .select2-container--default .select2-selection--single,
+.actions .select2-container--default .select2-selection--single {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+#changelist-search .select2-container--default .select2-selection--single .select2-selection__rendered,
+.actions .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: normal;
+}
+
+/* The arrow is absolutely positioned against select2's hardcoded 26px box. */
+#changelist-search .select2-container--default .select2-selection--single .select2-selection__arrow,
+.actions .select2-container--default .select2-selection--single .select2-selection__arrow {
+    top: 0;
+    height: 100%;
+}
+
+/* The action row is plain inline content; line it up like the search row. */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+}
+
+.actions .btn {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
 }
