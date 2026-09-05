@@ -61,7 +61,6 @@ INSTALLED_APPS = [
     'domains.company.faqs.apps.FAQsConfig',
     'domains.company.hr.staff.apps.StaffConfig',
     'domains.accounts',
-    'domains.author',
     'domains.home',
     'domains.apps.foodie.apps.FoodieConfig',
     'domains.apps.interest_calc',
@@ -169,8 +168,6 @@ RATE_LIMIT_CONFIG = {
     '/accounts/login/': {'max_requests': 5, 'window': 300},
     '/accounts/register': {'max_requests': 5, 'window': 300},
     '/accounts/password_reset/': {'max_requests': 3, 'window': 300},
-    '/@sean_or_tony': {'max_requests': 3, 'window': 300},
-    '/reach-out': {'max_requests': 5, 'window': 300},
     # Roomier than the other auth endpoints: a mistyped rotating code costs an attempt,
     # and django-otp throttles the device itself on top of this.
     '/admin/login/': {'max_requests': 10, 'window': 300},
@@ -333,12 +330,6 @@ JAZZMIN_SETTINGS = {
     # `<section>.<ModelName>` rather than `<app_label>.<ModelName>`.
     'icons': {
         'site': 'fas fa-globe',
-        'site.Intro': 'fas fa-feather',
-        'site.Education': 'fas fa-graduation-cap',
-        'site.JobExperience': 'fas fa-briefcase',
-        'site.Stack': 'fas fa-layer-group',
-        'site.Hobby': 'fas fa-heart',
-        'site.Message': 'fas fa-envelope',
         'site.ErrorLog': 'fas fa-triangle-exclamation',
         'site.PushSubscription': 'fas fa-bell',
         'site.Notification': 'fas fa-paper-plane',
@@ -498,10 +489,6 @@ IP_QUALITY_SCORE_API_KEY = config('IP_QUALITY_SCORE_API_KEY', default="None")
 # without touching call sites. Both defaults are free and require no API key.
 WEATHER_PROVIDER = config('WEATHER_PROVIDER', default='open_meteo')
 GEOLOCATION_PROVIDER = config('GEOLOCATION_PROVIDER', default='ip_api')
-
-# Calendly — consultation booking link shown on the reach-out page after the
-# qualifying form is submitted. Swap the default for your real scheduling URL.
-CALENDLY_URL = config('CALENDLY_URL', default='https://calendly.com/anthony-asamoah/30min')
 
 # SEOTO — marketing site URL, linked from the apps page
 SEOTO_URL = config('SEOTO_URL', default='https://seoto.org')

@@ -15,7 +15,6 @@ def _is_staff(user):
 @login_required
 @user_passes_test(_is_staff)
 def dashboard(request):
-    from domains.author.models import Message
     from domains.apps.blog.models import Post
     from domains.home.models import ErrorLog
     from domains.apps.spending_tracker.models import Transaction
@@ -26,7 +25,6 @@ def dashboard(request):
         'total_users': User.objects.count(),
         'new_users_week': User.objects.filter(date_joined__gte=week_ago).count(),
         'error_count_week': ErrorLog.objects.filter(timestamp__gte=week_ago).count(),
-        'unread_messages': Message.objects.filter(replied=False).count(),
         'transactions_week': Transaction.objects.filter(created_at__gte=week_ago).count(),
         'posts_week': Post.objects.filter(date_posted__gte=week_ago).count(),
         'year': datetime.now().year,

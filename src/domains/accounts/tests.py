@@ -164,7 +164,7 @@ class SidebarSectionTests(TestCase):
         self.assertLessEqual({'User', 'Group', 'TOTPDevice'}, objects('security'))
         self.assertLessEqual({'Post', 'Transaction', 'meal'}, objects('feature_apps'))
         self.assertLessEqual({'Product', 'FAQ'}, objects('company'))
-        self.assertLessEqual({'Intro', 'ErrorLog'}, objects('site'))
+        self.assertLessEqual({'ErrorLog', 'ThemePreset'}, objects('site'))
 
     def test_every_model_is_claimed_by_exactly_one_section(self):
         flat = [

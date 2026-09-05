@@ -9,7 +9,7 @@ from .choices import (
 )
 from .contact import Address, Contact
 from .profile import Certificate, Education, Hobby, JobExperience, ProfileSection, Specialisation
-from .staff import Assignment, Member, Position
+from .staff import Assignment, Member, Position, StaffIdSequence
 from .team import Membership, Team
 
 __all__ = [
@@ -32,5 +32,6 @@ __all__ = [
     'Position',
     'ProfileSection',
     'Specialisation',
+    'StaffIdSequence',
     'Team',
 ]

@@ -2,10 +2,9 @@ from datetime import timedelta
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import render
 from django.utils import timezone
 
-from domains.author.models import Message
 from domains.home.models import ErrorLog
 
 User = get_user_model()
@@ -103,54 +102,8 @@ def app_usage(request):
             'week': tracker.objects.filter(added_on__gte=week_ago).count(),
             'month': tracker.objects.filter(added_on__gte=month_ago).count(),
         },
-        {
-            'name': 'Messages (Contact)',
-            'total': Message.objects.count(),
-            'week': Message.objects.filter(submitted_on__gte=week_ago).count(),
-            'month': Message.objects.filter(submitted_on__gte=month_ago).count(),
-        },
     ]
 
     context = {'apps': apps}
     return render(request, 'Home/dashboard/usage.html', context)
 
-
-# ── Messages ──────────────────────────────────────────────────────────────────
-
-@login_required
-@user_passes_test(_is_staff)
-def messages_list(request):
-    qs = Message.objects.all().order_by('-submitted_on')
-
-    replied = request.GET.get('replied', '')
-    search = request.GET.get('q', '').strip()
-
-    if replied == 'yes':
-        qs = qs.filter(replied=True)
-    elif replied == 'no':
-        qs = qs.filter(replied=False)
-
-    if search:
-        qs = qs.filter(name__icontains=search) | qs.filter(subject__icontains=search) | qs.filter(message__icontains=search)
-
-    context = {
-        'contact_messages': qs[:100],
-        'replied': replied,
-        'search': search,
-        'total': Message.objects.count(),
-        'unread': Message.objects.filter(replied=False).count(),
-    }
-    return render(request, 'Home/dashboard/messages.html', context)
-
-
-@login_required
-@user_passes_test(_is_staff)
-def message_detail(request, pk):
-    msg = get_object_or_404(Message, pk=pk)
-
-    if request.method == 'POST':
-        msg.replied = not msg.replied
-        msg.save(update_fields=['replied'])
-        return redirect('message_detail', pk=pk)
-
-    return render(request, 'Home/dashboard/message_detail.html', {'msg': msg})

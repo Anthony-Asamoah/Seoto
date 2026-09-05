@@ -9,8 +9,6 @@ __all__ = [
     "errors_list",
     "user_analytics",
     "app_usage",
-    "messages_list",
-    "message_detail",
     "weather_forecast",
     "weather_search",
 ]
@@ -22,8 +20,6 @@ from domains.home.views.incoming import incoming
 from domains.home.views.monitoring import (
     app_usage,
     errors_list,
-    message_detail,
-    messages_list,
     user_analytics,
 )
 from domains.home.views.weather import weather_forecast, weather_search

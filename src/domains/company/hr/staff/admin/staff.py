@@ -32,6 +32,8 @@ class MemberAdmin(admin.ModelAdmin):
         SpecialisationInline, HobbyInline,
     )
 
+    readonly_fields = ('staff_id',)
+
     fieldsets = (
         (None, {
             'fields': ('user', 'staff_id', ('started_on', 'ended_on')),
@@ -44,6 +46,16 @@ class MemberAdmin(admin.ModelAdmin):
             'description': 'Only public members are eligible to appear on the marketing site.',
         }),
     )
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+        if obj:
+            return fieldsets
+        # Nothing to show before the first save; the ID is issued on insert.
+        first, *rest = fieldsets
+        name, options = first
+        options = {**options, 'fields': tuple(f for f in options['fields'] if f != 'staff_id')}
+        return ((name, options), *rest)
 
     @admin.display(description='Position')
     def current_position(self, obj):

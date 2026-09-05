@@ -13,7 +13,6 @@ from django_otp.admin import OTPAdminSite
 SIDEBAR_SECTIONS = (
     ('site', 'Site', 'fas fa-globe', (
         ('accounts', 'Accounts', 'fas fa-id-badge'),
-        ('author', 'Author', 'fas fa-feather'),
         ('home', 'Home', 'fas fa-house'),
         ('pwa', 'PWA', 'fas fa-bell'),
         ('theme', 'Theme', 'fas fa-palette'),

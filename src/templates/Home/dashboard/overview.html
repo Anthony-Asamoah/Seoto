@@ -27,12 +27,6 @@
         </div>
     </div>
     <div class="col-6 col-md-4 col-lg-2">
-        <div class="stat-card" style="background:#fd7e14;">
-            <div class="stat-label">Unread Messages</div>
-            <div class="stat-value">{{ unread_messages }}</div>
-        </div>
-    </div>
-    <div class="col-6 col-md-4 col-lg-2">
         <div class="stat-card" style="background:#6f42c1;">
             <div class="stat-label">Transactions (7d)</div>
             <div class="stat-value">{{ transactions_week }}</div>
@@ -53,15 +47,6 @@
                 <h6 class="card-title text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Recent Errors</h6>
                 <p class="display-6 fw-bold">{{ error_count_week }}</p>
                 <a href="{% url 'dashboard_errors' %}" class="btn btn-sm btn-outline-danger">View all</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="card-title text-warning"><i class="fas fa-envelope me-1"></i> Unread Messages</h6>
-                <p class="display-6 fw-bold">{{ unread_messages }}</p>
-                <a href="{% url 'dashboard_messages' %}?replied=no" class="btn btn-sm btn-outline-warning">View messages</a>
             </div>
         </div>
     </div>

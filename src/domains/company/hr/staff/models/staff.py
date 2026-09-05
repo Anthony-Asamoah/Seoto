@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.utils import timezone
 
 from .choices import ContactChannel, CurrencyChoices, GenderChoices
@@ -19,6 +19,27 @@ class Position(models.Model):
         return self.name
 
 
+class StaffIdSequence(models.Model):
+    """single-row high-water mark, so a deleted member never frees their number"""
+    last_issued = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Staff ID sequence'
+        verbose_name_plural = 'Staff ID sequence'
+
+    def __str__(self):
+        return f'last issued: {self.last_issued}'
+
+    @classmethod
+    def claim(cls):
+        with transaction.atomic():
+            row = cls.objects.select_for_update().first() or cls.objects.create()
+            row.last_issued = models.F('last_issued') + 1
+            row.save(update_fields=['last_issued'])
+            row.refresh_from_db(fields=['last_issued'])
+        return row.last_issued
+
+
 class MemberQuerySet(models.QuerySet):
     def active(self):
         return self.filter(ended_on__isnull=True)
@@ -29,10 +50,14 @@ class MemberQuerySet(models.QuerySet):
 
 class Member(models.Model):
     """basically our staff"""
+    STAFF_ID_PREFIX = 'SEO'
+    STAFF_ID_PADDING = 4
+    STAFF_ID_ATTEMPTS = 5
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='member'
     )
-    staff_id = models.CharField(max_length=50, unique=True)
+    staff_id = models.CharField(max_length=50, unique=True, editable=False)
     started_on = models.DateField()
     ended_on = models.DateField(null=True, blank=True)
 
@@ -58,6 +83,25 @@ class Member(models.Model):
         if self.ended_on and self.ended_on < self.started_on:
             raise ValidationError({'ended_on': 'End date cannot precede the start date.'})
         return super().clean()
+
+    def save(self, *args, **kwargs):
+        if self.staff_id:
+            return super().save(*args, **kwargs)
+
+        # The unique index is the real guarantee; retry the sequence it rejects.
+        for attempt in range(self.STAFF_ID_ATTEMPTS):
+            self.staff_id = self.next_staff_id()
+            try:
+                with transaction.atomic():
+                    return super().save(*args, **kwargs)
+            except IntegrityError:
+                if attempt == self.STAFF_ID_ATTEMPTS - 1:
+                    raise
+                self.staff_id = ''
+
+    @classmethod
+    def next_staff_id(cls):
+        return f'{cls.STAFF_ID_PREFIX}-{StaffIdSequence.claim():0{cls.STAFF_ID_PADDING}d}'
 
     @property
     def is_active(self):

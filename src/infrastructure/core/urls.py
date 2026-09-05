@@ -6,7 +6,6 @@ from django.urls import path, include
 from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from domains.author.views import About, ReachOut
 from domains.apps.anagrams.views import Anagrams
 from domains.apps.flip_a_coin.views import Coin
 from domains.apps.generate_invoice.views import generate_invoice
@@ -34,7 +33,6 @@ urlpatterns = [
     path('accounts/', include('domains.accounts.urls')),
     path('home/', include("domains.home.urls")),
     # Anonymous
-    path('reach-out', ReachOut.as_view(), name='reach_out'),
     path('foodie/', include('domains.apps.foodie.urls')),
     path('interest_calculator', Interest.as_view(), name='interest_calculator'),
     path('rhymes', Rhymes.as_view(), name='rhymes'),
