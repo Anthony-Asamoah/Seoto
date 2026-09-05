@@ -386,3 +386,36 @@ select.admin-select2 + .select2-container ~ .invalid-feedback {
 #imagePreviewModal .modal-body img {
     max-height: 70vh;
 }
+
+/* Dashboard cards mirror the sidebar: section header, then per-app subgroups */
+.dashboard .card-header .dashboard-app-icon {
+    width: 1.25rem;
+    margin-right: 0.5rem;
+    color: var(--brand);
+    text-align: center;
+}
+
+.dashboard-table > tbody > tr.dashboard-subgroup > th {
+    padding-top: 0.9rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+    background-color: transparent;
+}
+
+.dashboard-table > tbody > tr.dashboard-subgroup:first-child > th {
+    padding-top: 0;
+}
+
+.dashboard-table > tbody > tr.dashboard-subgroup > th i {
+    width: 1.1rem;
+    margin-right: 0.4rem;
+    text-align: center;
+}
+
+.dashboard-table > tbody > tr.dashboard-subgroup ~ tr td:first-child {
+    padding-left: 1.5rem;
+}
