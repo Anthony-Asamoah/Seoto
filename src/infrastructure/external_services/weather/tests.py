@@ -1,6 +1,7 @@
 from django.test import SimpleTestCase
 
 from infrastructure.external_services.weather.providers import OpenMeteoWeatherProvider
+from infrastructure.external_services.weather.providers.wmo import DEFAULT_CONDITION, describe
 
 
 class BuildDailyTests(SimpleTestCase):
@@ -54,3 +55,12 @@ class BuildDailyTests(SimpleTestCase):
         days = OpenMeteoWeatherProvider._build_daily(self.daily, self.hourly, timezone_name='Not/AZone')
 
         self.assertEqual(len(days[0]['hourly']), 4)
+
+
+class DescribeTests(SimpleTestCase):
+    def test_known_code_resolves_to_text_and_icon(self):
+        self.assertEqual(describe(95), ('Thunderstorm', 'fa-bolt'))
+
+    def test_unknown_or_missing_code_falls_back(self):
+        self.assertEqual(describe(1234), DEFAULT_CONDITION)
+        self.assertEqual(describe(None), DEFAULT_CONDITION)
