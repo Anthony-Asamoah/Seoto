@@ -346,3 +346,43 @@ select.admin-select2 + .select2-container ~ .invalid-feedback {
     margin-left: 0 !important;
     margin-right: 0 !important;
 }
+
+/* ImagePreviewInput: thumbnail plus preview/upload/remove buttons, never a file URL. */
+.image-preview-widget {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.image-preview-widget .image-preview-file {
+    display: none;
+}
+
+.image-preview-thumb {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: .5rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .25);
+}
+
+.image-preview-widget.is-cleared .image-preview-thumb {
+    opacity: .35;
+    filter: grayscale(1);
+}
+
+.image-preview-actions {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+}
+
+.image-preview-status {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: .85em;
+}
+
+#imagePreviewModal .modal-body img {
+    max-height: 70vh;
+}

@@ -3,10 +3,11 @@ from infrastructure.utils.choices import BaseChoices
 from infrastructure.utils.email import send_branded_email
 from infrastructure.utils.media import MediaHelper
 from infrastructure.utils.validators import normalize_phone, validate_phone
-from infrastructure.utils.widgets import Select2MultipleWidget
+from infrastructure.utils.widgets import ImagePreviewInput, Select2MultipleWidget
 
 __all__ = [
     'BaseChoices',
+    'ImagePreviewInput',
     'MediaHelper',
     'RichTextAdminMixin',
     'Select2MultipleWidget',

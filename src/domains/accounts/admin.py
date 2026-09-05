@@ -1,14 +1,17 @@
 import logging
 
+from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 from django.db.models import Exists, OuterRef
 from django.http import HttpResponseForbidden, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, render
-from django.urls import path
+from django.urls import path, reverse
 from django.utils.html import format_html, mark_safe
 from django_otp.plugins.otp_totp.models import TOTPDevice
+
+from infrastructure.utils.widgets import ImagePreviewInput
 
 from . import services
 from .models import user_profile
@@ -29,18 +32,27 @@ def avatar_tag(thumbnail):
     )
 
 
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = user_profile
+        fields = ['contact', 'picture']
+        widgets = {'picture': ImagePreviewInput}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        thumbnail = getattr(self.instance, 'picture_thumbnail', None)
+        if thumbnail:
+            self.fields['picture'].widget.thumbnail_url = thumbnail.url
+
+
 class UserProfileInline(admin.StackedInline):
     """The profile only ever makes sense next to its user, so it has no menu entry of its own."""
 
     model = user_profile
+    form = UserProfileForm
     can_delete = False
     verbose_name_plural = 'Profile'
-    fields = ['contact', 'picture', 'thumbnail_preview']
-    readonly_fields = ['thumbnail_preview']
-
-    @admin.display(description='Thumbnail')
-    def thumbnail_preview(self, obj):
-        return avatar_tag(obj.picture_thumbnail)
+    fields = ['contact', 'picture']
 
 
 admin.site.unregister(User)
@@ -51,6 +63,14 @@ class CustomUserAdmin(UserAdmin):
     list_display = ['user_icon', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'has_2fa']
     change_form_template = 'admin/accounts/user_change_form.html'
     inlines = [UserProfileInline]
+    fieldsets = [
+        (None, {'fields': ['username', 'password_actions', 'last_login', 'date_joined']}),
+        ('Personal info', {'fields': ['first_name', 'last_name', 'email']}),
+        ('Permissions', {
+            'fields': ['is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'],
+        }),
+    ]
+    readonly_fields = ['password_actions', 'last_login', 'date_joined']
 
     class Media:
         # csrf.js is loaded from the site shell, which the admin does not extend, so
@@ -92,6 +112,18 @@ class CustomUserAdmin(UserAdmin):
         user = self.get_object(request, object_id)
         extra_context = {**(extra_context or {}), 'totp_status': self._totp_status(user)}
         return super().change_view(request, object_id, form_url, extra_context)
+
+    @admin.display(description='Password')
+    def password_actions(self, obj):
+        # The stored hash tells an admin nothing useful, so only the reset link is offered.
+        if obj is None or not obj.pk:
+            return '—'
+        if not obj.has_usable_password():
+            return mark_safe('<span class="text-muted">No usable password set.</span>')
+        return format_html(
+            '<a class="btn btn-sm btn-outline-secondary" href="{}">Reset password</a>',
+            reverse('admin:auth_user_password_change', args=[obj.pk]),
+        )
 
     @admin.display(description='2FA', boolean=True, ordering='_has_2fa')
     def has_2fa(self, obj):

@@ -1,11 +1,12 @@
 import copy
-from io import StringIO
+from io import BytesIO, StringIO
 from unittest import mock
 
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.core import mail
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.db import connection
@@ -15,8 +16,11 @@ from django.urls import NoReverseMatch, reverse
 from django_otp.oath import TOTP
 from django_otp.plugins.otp_static.models import StaticDevice, StaticToken
 from django_otp.plugins.otp_totp.models import TOTPDevice
+from PIL import Image
 
 from domains.accounts import services
+from domains.accounts.admin import CustomUserAdmin
+from domains.accounts.models import user_profile
 
 
 def current_token(device):
@@ -130,6 +134,34 @@ class AdminPageRenderTests(TestCase):
         for url in urls:
             with self.subTest(url=url):
                 self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_user_change_form_hides_password_hash(self):
+        response = self.client.get(reverse('admin:auth_user_change', args=[self.user.pk]))
+
+        self.assertNotContains(response, self.user.password)
+        self.assertContains(response, reverse('admin:auth_user_password_change', args=[self.user.pk]))
+
+    def test_important_dates_are_readonly_in_general_fieldset(self):
+        general = dict(CustomUserAdmin(User, admin.site).fieldsets)[None]['fields']
+
+        self.assertIn('last_login', general)
+        self.assertIn('date_joined', general)
+        response = self.client.get(reverse('admin:auth_user_change', args=[self.user.pk]))
+        self.assertNotContains(response, 'name="date_joined')
+        self.assertNotContains(response, 'name="last_login')
+
+    def test_profile_picture_renders_preview_buttons_not_a_url(self):
+        buffer = BytesIO()
+        Image.new('RGB', (8, 8), 'red').save(buffer, format='PNG')
+        picture = SimpleUploadedFile('avatar.png', buffer.getvalue(), content_type='image/png')
+        user_profile.objects.update_or_create(user=self.user, defaults={'picture': picture})
+
+        response = self.client.get(reverse('admin:auth_user_change', args=[self.user.pk]))
+
+        self.assertContains(response, 'image-preview-trigger')
+        self.assertContains(response, 'image-preview-upload')
+        self.assertContains(response, 'image-preview-remove')
+        self.assertNotContains(response, 'Currently:')
 
     def test_jazzmin_skin_is_applied(self):
         response = self.client.get(reverse('admin:index'))
