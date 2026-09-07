@@ -496,6 +496,9 @@ SEOTO_URL = config('SEOTO_URL', default='https://seoto.org')
 # Blog media upload limits (MB)
 BLOG_UPLOAD_MAX_SIZE_MB = config('BLOG_UPLOAD_MAX_SIZE_MB', default=10, cast=int)
 
+# Foodie share links — how long a signed suggestion token stays valid (days)
+FOODIE_SHARE_MAX_AGE_DAYS = config('FOODIE_SHARE_MAX_AGE_DAYS', default=7, cast=int)
+
 # Structured logging — write ERROR+ to the database via domains.home.log_handler
 LOGGING = {
     'version': 1,

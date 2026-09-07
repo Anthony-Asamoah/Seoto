@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from infrastructure.core.pagination import apply_view_pagination
@@ -14,6 +15,24 @@ from .serializer import serialize_mealtime, serialize_all
 
 def foodie(request):
     context = services.suggest(request.user, request=request)
+    token = services.make_share_token(context)
+    if token:
+        context['share_url'] = request.build_absolute_uri(
+            reverse('foodie_shared', kwargs={'token': token})
+        )
+    return render(request, 'foodie/foodie.html', context)
+
+
+def shared_suggestion(request, token):
+    """Read-only view of a suggestion someone shared, rebuilt from a signed token."""
+    try:
+        context = services.read_share_token(token)
+    except services.ShareTokenExpired:
+        return render(request, 'foodie/shared_unavailable.html', {'expired': True}, status=410)
+    except services.ShareTokenError:
+        return render(request, 'foodie/shared_unavailable.html', {'expired': False}, status=404)
+
+    context['is_shared'] = True
     return render(request, 'foodie/foodie.html', context)
 
 

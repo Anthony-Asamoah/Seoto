@@ -5,6 +5,7 @@ urlpatterns = [
     path('', views.foodie, name='foodie'),
     path('REST', views.foodie_rest, name='foodie_rest'),
     path('ALL', views.all_foodie_rest, name='all_foodie_rest'),
+    path('s/<str:token>/', views.shared_suggestion, name='foodie_shared'),
     path('config', views.foodie_config, name='foodie_config'),
     path('schedule/', views.meal_schedule, name='foodie_schedule'),
     path('config/<str:mealtime>', views.foodie_config, name='foodie_config_time'),

@@ -1,7 +1,21 @@
+import zlib
 from datetime import datetime
 from random import choice, sample
 
+from django.conf import settings
+from django.core import signing
+
 from .models import meal, userPreference, UserMealSchedule, DailyMealSuggestion, MealTimeSlot
+
+SHARE_SALT = 'foodie.share'
+
+
+class ShareTokenError(Exception):
+    """Raised when a share token is unreadable."""
+
+
+class ShareTokenExpired(ShareTokenError):
+    """Raised when a share token is valid but past its max age."""
 
 
 def _meal_data(m):
@@ -67,6 +81,26 @@ def _current_mealtime(user=None):
     return None
 
 
+FANCY_MOODS = (
+    'adventurous',
+    'fancy',
+    'daring',
+    'indulgent',
+    'a little extra',
+    'like treating yourself',
+    'bold',
+    'in the mood to splurge',
+)
+
+
+def _fancy_text(name, mealtime=None):
+    """Pick the mood word from the meal name so the line is stable across reloads
+    and identical on a shared link, but varies between meals and slots."""
+    seed = f"{name.lower()}:{mealtime or ''}"
+    mood = FANCY_MOODS[zlib.crc32(seed.encode()) % len(FANCY_MOODS)]
+    return f"Or, if you're feeling {mood}, let's get some {name.lower()}."
+
+
 def _build_context(mealtime, option_1_obj, option_2_obj, fancy_obj):
     option_1 = _meal_data(option_1_obj)
     option_2 = _meal_data(option_2_obj) if option_2_obj else None
@@ -77,9 +111,9 @@ def _build_context(mealtime, option_1_obj, option_2_obj, fancy_obj):
         names = option_1['name'].lower()
 
     if mealtime:
-        suggestion_text = f"It's time for {mealtime.lower()}, so I suggest {names}."
+        suggestion_text = f"How about {names} for {mealtime.lower()}?"
     else:
-        suggestion_text = f"Unfortunately you will be going to bed soon. Have {names} for now."
+        suggestion_text = f"It's nearly bedtime, but how about {names}?"
 
     context = {
         'mealtime': mealtime,
@@ -90,8 +124,63 @@ def _build_context(mealtime, option_1_obj, option_2_obj, fancy_obj):
     if fancy_obj:
         fancy = _meal_data(fancy_obj)
         context['fancy'] = fancy
-        context['fancy_text'] = f"Otherwise let's get some {fancy['name'].lower()}."
+        context['fancy_text'] = _fancy_text(fancy['name'], mealtime)
     return context
+
+
+def make_share_token(context):
+    """Sign the meal ids in a rendered suggestion context into an opaque URL-safe token.
+
+    Returns None when there is nothing worth sharing.
+    """
+    option_1 = context.get('option_1')
+    fancy = context.get('fancy')
+    if not option_1 and not fancy:
+        return None
+
+    option_2 = context.get('option_2')
+    payload = {
+        'm': context.get('mealtime'),
+        'o1': option_1['id'] if option_1 else None,
+        'o2': option_2['id'] if option_2 else None,
+        'f': fancy['id'] if fancy else None,
+    }
+    return signing.dumps(payload, salt=SHARE_SALT, compress=True)
+
+
+def read_share_token(token):
+    """Rebuild a suggestion context from a share token.
+
+    Raises ShareTokenExpired past FOODIE_SHARE_MAX_AGE_DAYS, ShareTokenError otherwise.
+    Private meals are resolved deliberately — sharing the link is the owner's consent.
+    """
+    max_age = settings.FOODIE_SHARE_MAX_AGE_DAYS * 86400
+    try:
+        payload = signing.loads(token, salt=SHARE_SALT, max_age=max_age)
+    except signing.SignatureExpired as exc:
+        raise ShareTokenExpired(str(exc)) from exc
+    except signing.BadSignature as exc:
+        raise ShareTokenError(str(exc)) from exc
+
+    if not isinstance(payload, dict):
+        raise ShareTokenError('malformed payload')
+
+    by_id = meal.objects.in_bulk([i for i in (payload.get('o1'), payload.get('o2'), payload.get('f')) if i])
+    option_1_obj = by_id.get(payload.get('o1'))
+    option_2_obj = by_id.get(payload.get('o2'))
+    fancy_obj = by_id.get(payload.get('f'))
+    mealtime = payload.get('m')
+
+    if option_1_obj is None:
+        if fancy_obj is None:
+            raise ShareTokenError('meals no longer exist')
+        return {
+            'mealtime': mealtime,
+            'fancy': _meal_data(fancy_obj),
+            'fancy_text': _fancy_text(fancy_obj.name, mealtime),
+        }
+
+    return _build_context(mealtime, option_1_obj, option_2_obj, fancy_obj)
 
 
 def _pick_options(pool, exclude_ids):
@@ -240,7 +329,7 @@ def suggest(user=None, slot=None, request=None):
         # Build a fancy-only context (no main options).
         ctx = {'mealtime': mealtime}
         ctx['fancy'] = _meal_data(fancy_obj)
-        ctx['fancy_text'] = f"Otherwise let's get some {ctx['fancy']['name'].lower()}."
+        ctx['fancy_text'] = _fancy_text(ctx['fancy']['name'], mealtime)
         return ctx
 
     # 5. Pick fancy (excluding used + chosen options)

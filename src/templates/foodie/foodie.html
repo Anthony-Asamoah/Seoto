@@ -119,6 +119,14 @@
             }
         }
 
+        #share-btn {
+            min-width: 8rem;
+        }
+
+        #share-btn:disabled {
+            opacity: 1;
+        }
+
         .configure-link {
             text-decoration: none;
         }
@@ -174,7 +182,11 @@
 {% block content %}
     <div class="">
         <div class="header container mt-3">
-            <h1>So you want something to eat...</h1>
+            {% if is_shared %}
+                <h1>Someone has a food suggestion for you...</h1>
+            {% else %}
+                <h1>So you want something to eat...</h1>
+            {% endif %}
             <hr/>
         </div>
         {% if suggestion_text %}
@@ -184,13 +196,25 @@
                     <h4>{{ fancy_text }}</h4>
                 {% endif %}
             </div>
-            {% if user.is_authenticated %}
-                <div class="nav-links pt-2">
-                    <a href="{% url 'foodie_config' %}" class="configure-link">
-                        <button class="btn btn-outline-secondary btn-sm">Configure</button>
+            <div class="nav-links pt-2">
+                {% if is_shared %}
+                    <a href="{% url 'foodie' %}" class="configure-link">
+                        <button class="btn btn-outline-secondary btn-sm">Get your own suggestion</button>
                     </a>
-                </div>
-            {% endif %}
+                {% else %}
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'foodie_config' %}" class="configure-link">
+                            <button class="btn btn-outline-secondary btn-sm">Configure</button>
+                        </a>
+                    {% endif %}
+                    {% if share_url %}
+                        <button class="btn btn-outline-secondary btn-sm" id="share-btn"
+                                data-share-url="{{ share_url }}"
+                                data-share-text="{{ suggestion_text }}">Share
+                        </button>
+                    {% endif %}
+                {% endif %}
+            </div>
             <div class="images">
                 <div class="pause-indicator">▶</div>
 
@@ -334,6 +358,40 @@
 
             showSlides();
             startRotation();
+        {% endif %}
+
+        {% if share_url %}
+            (function () {
+                const btn = document.getElementById('share-btn');
+                const url = btn.dataset.shareUrl;
+                const label = btn.textContent.trim();
+                let resetId = null;
+
+                btn.addEventListener('click', function () {
+                    // Not awaited — navigator.share needs the click's transient activation.
+                    if (navigator.clipboard) {
+                        navigator.clipboard.writeText(url).then(function () {
+                            btn.textContent = 'Link copied';
+                            btn.disabled = true;
+                            clearTimeout(resetId);
+                            resetId = setTimeout(function () {
+                                btn.textContent = label;
+                                btn.disabled = false;
+                            }, 3000);
+                        }, function () {
+                        });
+                    }
+
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'Foodie suggestion',
+                            text: btn.dataset.shareText || '',
+                            url: url,
+                        }).catch(function () {
+                        });
+                    }
+                });
+            })();
         {% endif %}
     </script>
 {% endblock %}
