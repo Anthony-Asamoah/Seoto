@@ -1,9 +1,35 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %} - Recurring Transactions {% endblock %}
 
 {% block style %}
+    {# The approval modal renders the aura form, so this page needs its assets too. #}
+    {% include 'spending_tracker/partials/_aura_head.html' %}
     <style>
+        /* The modal hosts the aura card directly — no bootstrap chrome around it. */
+        #occurrenceModalBody .aura-page {
+            padding: 0;
+            margin: 0;
+        }
+
+        .aura-modal-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 2;
+        }
+
+        #occurrenceModalBody .aura-card {
+            position: relative;
+        }
+
+        .htmx-request .swipe-btn,
+        .htmx-request .row-skip-btn {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
         /* Rows read left-label / right-amount, so they need a capped measure to
            stay scannable — 760px matches .aura-page in spending_tracker.css. */
         .list-shell {
@@ -336,50 +362,7 @@
     </div>
 
     <div class="main container list-shell">
-        {% if pending_occurrences %}
-            <h4 class="mb-1">Pending Approval ({{ pending_occurrences|length }})</h4>
-            <p class="row-hint touch-only">Tap a row to review · swipe left to skip</p>
-            {% for occurrence in pending_occurrences %}
-                <div class="swipe-container" data-occurrence-id="{{ occurrence.pk }}" data-swipe-commit="true">
-                    {# Action layer: sits behind the card, revealed as it slides left. #}
-                    <div class="swipe-actions">
-                        <form method="post" action="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="dismiss">
-                            <button type="submit" class="swipe-btn">
-                                <i class="fas fa-forward"></i> Skip
-                            </button>
-                        </form>
-                    </div>
-
-                    {# Content layer: the card body links to the review page. #}
-                    <div class="swipe-content">
-                        <div class="pending-card">
-                            <a href="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}"
-                               class="pending-link" draggable="false">
-                                <div>
-                                    <span class="pending-amount">{{ occurrence.recurring_transaction.currency }} {{ occurrence.recurring_transaction.amount }}</span>
-                                    {{ occurrence.recurring_transaction.get_mode_display }}
-                                    — {{ occurrence.recurring_transaction.details|default:"No description"|striptags }}
-                                </div>
-                                <div class="pending-meta">Due {{ occurrence.scheduled_date }}</div>
-                            </a>
-                            <div class="row-actions">
-                                <form method="post" action="{% url 'spending_tracker:confirm_recurring_occurrence' occurrence.pk %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="action" value="dismiss">
-                                    <button type="submit" class="row-skip-btn">
-                                        <i class="fas fa-forward"></i> Skip
-                                    </button>
-                                </form>
-                            </div>
-                            <i class="fas fa-chevron-right pending-chevron touch-only ms-auto"></i>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-            <hr class="my-4">
-        {% endif %}
+        {% include 'spending_tracker/partials/_pending_occurrences.html' %}
 
         <div class="d-flex justify-content-between align-items-center mb-1">
             <h4 class="mb-0">Your Schedules</h4>
@@ -474,18 +457,69 @@
             </div>
         {% endif %}
     </div>
+
+    {# Approval happens here; the pending rows load the form into it over htmx. #}
+    <div class="modal fade" id="occurrenceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 bg-transparent" id="occurrenceModalBody"></div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block script %}
+    <script src="{% static 'js/htmx.min.js' %}"></script>
     <script>
+        // Skip/approve go over htmx: the pending block comes back out-of-band, so
+        // only it re-renders. The modal is driven by HX-Trigger headers.
+        (function () {
+            const modalEl = document.getElementById('occurrenceModal');
+            const modalBody = document.getElementById('occurrenceModalBody');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+            document.body.addEventListener('htmx:afterSwap', function (event) {
+                if (event.target === modalBody && modalBody.children.length) modal.show();
+            });
+
+            // A successful confirm empties the modal body; hide rather than leave a shell.
+            document.body.addEventListener('closeOccurrenceModal', function () {
+                modal.hide();
+            });
+
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                modalBody.replaceChildren();
+            });
+
+            // The messages framework only renders on a full load, so htmx responses
+            // carry their message in an HX-Trigger and reuse the same toast markup.
+            document.body.addEventListener('stToast', function (event) {
+                const detail = event.detail || {};
+                let tray = document.getElementById('toast-tray');
+                if (!tray) {
+                    tray = document.createElement('div');
+                    tray.id = 'toast-tray';
+                    tray.setAttribute('aria-live', 'polite');
+                    document.body.appendChild(tray);
+                }
+                const toast = document.createElement('div');
+                toast.className = 'toast-item alert alert-' + (detail.level || 'success');
+                toast.setAttribute('role', 'alert');
+                toast.textContent = detail.text || '';
+                tray.appendChild(toast);
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () { toast.classList.add('visible'); });
+                });
+                setTimeout(function () {
+                    toast.classList.add('dismiss');
+                    toast.addEventListener('transitionend', function () { toast.remove(); });
+                }, 4000);
+            });
+        })();
+
         (function () {
             // Mirrors the media query in this page's stylesheet: only touch
             // devices swipe, everything else uses the in-row buttons.
             const SWIPE_QUERY = '(hover: none) and (pointer: coarse)';
             if (!window.matchMedia(SWIPE_QUERY).matches) return;
-
-            const rows = document.querySelectorAll('.swipe-container');
-            if (!rows.length) return;
 
             // Past this much travel a single-action row counts as committed and
             // submits on release, the way a full swipe in Mail does.
@@ -508,7 +542,7 @@
                 openRow = row;
             }
 
-            rows.forEach(function (row) {
+            function bindRow(row) {
                 const content = row.querySelector('.swipe-content');
                 const link = row.querySelector('.pending-link, .card-tap-target');
                 const commitForm = row.dataset.swipeCommit === 'true'
@@ -598,6 +632,30 @@
                     button.addEventListener('focus', function () { openRowExclusive(row); });
                     button.addEventListener('blur', function () { closeRow(row); });
                 });
+            }
+
+            // Re-run after every htmx swap: the pending rows are replaced wholesale.
+            function bindNewRows() {
+                document.querySelectorAll('.swipe-container:not([data-swipe-bound])')
+                    .forEach(function (row) {
+                        row.dataset.swipeBound = 'true';
+                        bindRow(row);
+                    });
+            }
+
+            bindNewRows();
+            document.body.addEventListener('htmx:load', bindNewRows);
+
+            // htmx fires its own click handler before ours can preventDefault, so a
+            // drag or a tap on an open row is cancelled at the request instead.
+            document.body.addEventListener('htmx:beforeRequest', function (event) {
+                const element = event.detail.elt;
+                if (!element.classList.contains('pending-link')) return;
+                const row = element.closest('.swipe-container');
+                if (row && (row.dataset.suppressClick || row.classList.contains('is-open'))) {
+                    event.preventDefault();
+                    closeRow(row);
+                }
             });
 
             document.addEventListener('pointerdown', function (event) {
@@ -606,8 +664,9 @@
 
             // Nudge the first row once ever, so the gesture is discoverable.
             try {
-                if (!localStorage.getItem('recurringSwipeHintSeen')) {
-                    rows[0].classList.add('hint');
+                const first = document.querySelector('.swipe-container');
+                if (first && !localStorage.getItem('recurringSwipeHintSeen')) {
+                    first.classList.add('hint');
                     localStorage.setItem('recurringSwipeHintSeen', '1');
                 }
             } catch (e) { /* private mode: the hint is optional */ }

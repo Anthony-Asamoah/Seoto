@@ -1729,6 +1729,37 @@ def create_transaction_api(request):
 
 
 # Recurring Transactions
+def _pending_occurrences_for(user):
+    return RecurringTransactionOccurrence.objects.filter(
+        recurring_transaction__user=user,
+        status=RecurringOccurrenceStatusChoices.PENDING,
+    ).select_related('recurring_transaction')
+
+
+def _pending_section_response(request, toast=None, close_modal=False):
+    """The pending-approval block as an out-of-band swap.
+
+    Every htmx action on the recurring list answers with this, so the requesting
+    element never has to know where the block lives. Messages can't come back as
+    toasts through the messages framework mid-page, so they ride an HX-Trigger.
+    """
+    html = render_to_string(
+        'spending_tracker/partials/_pending_occurrences.html',
+        {'pending_occurrences': _pending_occurrences_for(request.user), 'oob': True},
+        request=request,
+    )
+    response = HttpResponse(html)
+
+    triggers = {}
+    if toast:
+        triggers['stToast'] = {'level': toast[0], 'text': toast[1]}
+    if close_modal:
+        triggers['closeOccurrenceModal'] = True
+    if triggers:
+        response['HX-Trigger'] = json.dumps(triggers)
+    return response
+
+
 @login_required
 def edit_recurring_transaction(request, pk):
     """Edit a recurring transaction schedule, reusing the same field set as Add Transaction's
@@ -1792,10 +1823,7 @@ def recurring_list(request):
     recurring_transactions = RecurringTransaction.objects.filter(user=request.user).select_related(
         'account', 'destination_account', 'category'
     )
-    pending_occurrences = RecurringTransactionOccurrence.objects.filter(
-        recurring_transaction__user=request.user,
-        status=RecurringOccurrenceStatusChoices.PENDING,
-    ).select_related('recurring_transaction')
+    pending_occurrences = _pending_occurrences_for(request.user)
 
     context = {
         'recurring_transactions': recurring_transactions,
@@ -1835,11 +1863,16 @@ def confirm_recurring_occurrence(request, pk):
     recurring schedule (which cascades to its occurrences) before acting on an older
     notification. Rather than 404 on a stale link, send them back to the recurring list.
     """
+    is_htmx = request.headers.get('HX-Request') == 'true'
     occurrence = RecurringTransactionOccurrence.objects.select_related(
         'recurring_transaction', 'recurring_transaction__account'
     ).filter(pk=pk).first()
 
     if occurrence is None:
+        if is_htmx:
+            return _pending_section_response(
+                request, toast=('info', 'This recurring transaction no longer exists.'), close_modal=True
+            )
         messages.info(request, 'This recurring transaction no longer exists.')
         return redirect('spending_tracker:recurring_list')
 
@@ -1850,6 +1883,10 @@ def confirm_recurring_occurrence(request, pk):
     # Stale notification link (already acted on, e.g. from a re-delivered push or a second tab).
     # Send the user to where the outcome actually lives instead of re-showing a dead approval form.
     if occurrence.status != RecurringOccurrenceStatusChoices.PENDING:
+        if is_htmx:
+            return _pending_section_response(
+                request, toast=('info', 'This one was already handled.'), close_modal=True
+            )
         if occurrence.transaction_id:
             messages.info(request, 'This recurring transaction was already confirmed.')
             return redirect(f"{reverse('spending_tracker:transaction_list')}?highlight={occurrence.transaction_id}")
@@ -1867,6 +1904,10 @@ def confirm_recurring_occurrence(request, pk):
             occurrence.status = RecurringOccurrenceStatusChoices.DISMISSED
             occurrence.resolved_at = timezone.now()
             occurrence.save()
+            if is_htmx:
+                return _pending_section_response(
+                    request, toast=('success', 'Skipped this one.'), close_modal=True
+                )
             messages.success(request, 'Skipped this one.')
             return redirect('spending_tracker:recurring_list')
 
@@ -1900,6 +1941,10 @@ def confirm_recurring_occurrence(request, pk):
                 )
             except Exception as e:
                 logger.warning(f'Failed to send push notification: {e}')
+            if is_htmx:
+                return _pending_section_response(
+                    request, toast=('success', 'Confirmed.'), close_modal=True
+                )
             messages.success(request, 'Confirmed.')
             return redirect('spending_tracker:recurring_list')
         # Invalid: fall through and re-render the bound form. The occurrence stays PENDING.
@@ -1917,4 +1962,8 @@ def confirm_recurring_occurrence(request, pk):
         'form': form,
         'currency_symbol': recurring_transaction.currency_symbol,
     }
+    if is_htmx:
+        # Opening the modal, or re-rendering it with errors after an invalid submit.
+        context['is_modal'] = True
+        return render(request, 'spending_tracker/partials/_confirm_occurrence_form.html', context)
     return render(request, 'spending_tracker/confirm_recurring_occurrence.html', context)

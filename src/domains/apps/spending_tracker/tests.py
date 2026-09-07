@@ -1,3 +1,4 @@
+import json
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -612,11 +613,83 @@ class RecurringListPendingRowTests(TestCase):
         self.assertContains(response, 'row-skip-btn')  # in the row, for pointer devices
 
     def test_no_separate_review_button(self):
-        """Three references to the confirm URL per row — the card link plus the two
-        skip forms. A fourth would mean the old Review button is back."""
+        """Three places reference the confirm URL per row — the card link plus the two
+        skip forms — and each carries an htmx attribute alongside its plain fallback,
+        so six in all. Eight would mean the old Review button is back."""
         confirm_url = reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk])
         response = self.client.get(self.url)
-        self.assertContains(response, confirm_url, count=3)
+        self.assertContains(response, confirm_url, count=6)
+
+    def test_htmx_get_returns_only_the_modal_form(self):
+        response = self.client.get(
+            reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk]),
+            headers={'hx-request': 'true'},
+        )
+        self.assertNotContains(response, '<!DOCTYPE html>')
+        self.assertContains(response, 'aura-modal-close')
+        self.assertContains(response, 'hx-target="closest .aura-page"')
+
+    def test_htmx_skip_resolves_and_returns_the_pending_block_out_of_band(self):
+        response = self.client.post(
+            reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk]),
+            {'action': 'dismiss'},
+            headers={'hx-request': 'true'},
+        )
+        self.occurrence.refresh_from_db()
+
+        self.assertEqual(self.occurrence.status, RecurringOccurrenceStatusChoices.DISMISSED)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'hx-swap-oob="true"')
+        self.assertNotContains(response, f'data-occurrence-id="{self.occurrence.pk}"')
+        triggers = json.loads(response['HX-Trigger'])
+        self.assertTrue(triggers['closeOccurrenceModal'])
+        self.assertEqual(triggers['stToast']['level'], 'success')
+
+    def test_htmx_confirm_creates_the_transaction_and_closes_the_modal(self):
+        response = self.client.post(
+            reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk]),
+            {
+                'action': 'approve',
+                'amount': '25.00',
+                'transaction_time': '2026-06-01T09:00',
+                'account': self.account.pk,
+                'tags_input': '',
+                'details': '',
+            },
+            headers={'hx-request': 'true'},
+        )
+        self.occurrence.refresh_from_db()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.occurrence.status, RecurringOccurrenceStatusChoices.CONFIRMED)
+        self.assertIsNotNone(self.occurrence.transaction_id)
+        self.assertTrue(json.loads(response['HX-Trigger'])['closeOccurrenceModal'])
+
+    def test_htmx_confirm_with_errors_re_renders_the_form_and_leaves_it_pending(self):
+        response = self.client.post(
+            reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk]),
+            {'action': 'approve', 'amount': '', 'account': self.account.pk},
+            headers={'hx-request': 'true'},
+        )
+        self.occurrence.refresh_from_db()
+
+        self.assertEqual(self.occurrence.status, RecurringOccurrenceStatusChoices.PENDING)
+        self.assertContains(response, 'aura-error')
+        self.assertNotIn('HX-Trigger', response)
+
+    def test_htmx_request_for_an_already_resolved_occurrence_just_refreshes_the_block(self):
+        self.occurrence.status = RecurringOccurrenceStatusChoices.DISMISSED
+        self.occurrence.save()
+
+        response = self.client.post(
+            reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk]),
+            {'action': 'dismiss'},
+            headers={'hx-request': 'true'},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'hx-swap-oob="true"')
+        self.assertEqual(json.loads(response['HX-Trigger'])['stToast']['level'], 'info')
 
     def test_resolved_occurrence_drops_out_of_the_pending_list(self):
         self.occurrence.status = RecurringOccurrenceStatusChoices.DISMISSED
