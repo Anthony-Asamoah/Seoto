@@ -17,6 +17,52 @@
         margin-bottom: 20px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
+    .filter-toggle {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        background: none;
+        border: 0;
+        padding: 0;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    .filter-toggle .chevron-icon {
+        transition: transform 0.3s ease;
+    }
+    .filter-toggle[aria-expanded="true"] .chevron-icon {
+        transform: rotate(180deg);
+    }
+    /* The panel stays in the layout at a zero-height track rather than being
+       display:none, so nothing pops in before the slide starts. */
+    .filter-advanced {
+        margin-top: 0;
+        overflow: hidden;
+        display: grid;
+        grid-template-rows: 0fr;
+        transition: grid-template-rows 0.3s ease;
+    }
+    .filter-advanced.is-open {
+        grid-template-rows: 1fr;
+    }
+    .filter-advanced > .row {
+        margin-top: 0;
+        min-height: 0;
+        overflow: hidden;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .filter-advanced { transition: none; }
+    }
+    /* Desktop shows every filter, so dissolve the collapse wrapper and its inner
+       row into the outer grid rather than letting them start a new line. */
+    @media (min-width: 992px) {
+        .filter-advanced,
+        .filter-advanced > .row {
+            display: contents !important;
+        }
+    }
     .transaction-card {
         background: white;
         border-radius: 8px;
@@ -109,7 +155,7 @@
     <!-- Filters -->
     <div class="filter-card">
         <form method="get" class="row g-3">
-            <div class="col-sm-6 col-lg-4">
+            <div class="col-6 col-lg-4">
                 <label class="form-label">Transaction Type</label>
                 <select name="mode" class="form-select">
                     <option value="">All Types</option>
@@ -118,18 +164,7 @@
                     <option value="TRANSFER" {% if request.GET.mode == 'TRANSFER' %}selected{% endif %}>Transfer</option>
                 </select>
             </div>
-            <div class="col-sm-6 col-lg-4">
-                <label class="form-label">Category</label>
-                <select name="category" class="form-select">
-                    <option value="">All Categories</option>
-                    {% for category in categories %}
-                    <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
-                        {{ category.label }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-sm-6 col-lg-4">
+            <div class="col-6 col-lg-4">
                 <label class="form-label">Account</label>
                 <select name="account" class="form-select">
                     <option value="">All Accounts</option>
@@ -140,34 +175,59 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-sm-6 col-lg-4">
-                <label class="form-label">Sort By</label>
-                <select name="sort" class="form-select">
-                    {% for value, label in sort_options.items %}
-                    <option value="{{ value }}" {% if current_sort == value %}selected{% endif %}>
-                        {{ label }}
-                    </option>
-                    {% endfor %}
-                </select>
+            <div class="col-12 d-lg-none">
+                <button class="filter-toggle" type="button" id="filter-toggle"
+                        aria-expanded="false" aria-controls="filter-form">
+                    <span>
+                        <i class="fas fa-sliders-h me-1"></i> More filters
+                        {% if advanced_filter_count %}<span class="badge bg-primary ms-1">{{ advanced_filter_count }}</span>{% endif %}
+                    </span>
+                    <i class="fas fa-chevron-down chevron-icon"></i>
+                </button>
             </div>
-            <div class="col-sm-6 col-lg-4">
-                <label class="form-label">Group By</label>
-                <select name="group_by" class="form-select">
-                    <option value="" {% if not group_by %}selected{% endif %}>No Grouping</option>
-                    <option value="day" {% if group_by == 'day' %}selected{% endif %}>Day</option>
-                    <option value="week" {% if group_by == 'week' %}selected{% endif %}>Week</option>
-                    <option value="month" {% if group_by == 'month' %}selected{% endif %}>Month</option>
-                    <option value="quarter" {% if group_by == 'quarter' %}selected{% endif %}>Quarter</option>
-                    <option value="year" {% if group_by == 'year' %}selected{% endif %}>Year</option>
-                </select>
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <label class="form-label">From</label>
-                <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
-            </div>
-            <div class="col-sm-6 col-lg-4">
-                <label class="form-label">To</label>
-                <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+            <div class="col-12 filter-advanced" id="filter-form">
+                <div class="row g-3">
+                <div class="col-12 col-lg-4">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-6 col-lg-4">
+                    <label class="form-label">Sort By</label>
+                    <select name="sort" class="form-select">
+                        {% for value, label in sort_options.items %}
+                        <option value="{{ value }}" {% if current_sort == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-6 col-lg-4">
+                    <label class="form-label">Group By</label>
+                    <select name="group_by" class="form-select">
+                        <option value="" {% if not group_by %}selected{% endif %}>No Grouping</option>
+                        <option value="day" {% if group_by == 'day' %}selected{% endif %}>Day</option>
+                        <option value="week" {% if group_by == 'week' %}selected{% endif %}>Week</option>
+                        <option value="month" {% if group_by == 'month' %}selected{% endif %}>Month</option>
+                        <option value="quarter" {% if group_by == 'quarter' %}selected{% endif %}>Quarter</option>
+                        <option value="year" {% if group_by == 'year' %}selected{% endif %}>Year</option>
+                    </select>
+                </div>
+                <div class="col-6 col-lg-4">
+                    <label class="form-label">From</label>
+                    <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+                </div>
+                <div class="col-6 col-lg-4">
+                    <label class="form-label">To</label>
+                    <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+                </div>
+                </div>
             </div>
             <div class="col-12">
                 <div class="d-flex gap-2">
@@ -276,6 +336,25 @@
 </div>
 
 <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggle = document.getElementById('filter-toggle');
+        const panel = document.getElementById('filter-form');
+        if (!toggle || !panel) return;
+        // Desktop renders the panel via display:contents, so only gate it on mobile.
+        const isMobile = () => getComputedStyle(panel).display === 'grid';
+        const sync = () => {
+            const open = panel.classList.contains('is-open');
+            panel.inert = isMobile() && !open;
+        };
+        toggle.addEventListener('click', () => {
+            const open = panel.classList.toggle('is-open');
+            toggle.setAttribute('aria-expanded', String(open));
+            sync();
+        });
+        window.addEventListener('resize', sync);
+        sync();
+    });
+
     document.addEventListener('DOMContentLoaded', () => {
         const wireChevrons = (root) => {
             (root || document).querySelectorAll('.transaction-summary').forEach(summary => {

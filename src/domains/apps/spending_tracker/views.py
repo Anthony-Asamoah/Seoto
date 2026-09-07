@@ -334,8 +334,14 @@ def transaction_list(request):
     if group_by:
         query_params['group_by'] = group_by
 
+    # mode/account stay visible on mobile; the badge counts only what the collapse hides.
+    advanced_filter_count = sum(
+        1 for key in ('category', 'sort', 'date_from', 'date_to', 'group_by') if key in query_params
+    )
+
     context = {
         'page_obj': page_obj,
+        'advanced_filter_count': advanced_filter_count,
         'grouped_transactions': grouped_transactions,
         'group_by': group_by,
         'categories': Category.objects.filter(user=request.user),
