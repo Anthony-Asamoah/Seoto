@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load spending_extras %}
 
 {% block title %} - Edit Account{% endblock %}
 
@@ -87,7 +88,7 @@
 
             <div class="account-stats">
                 <div class="stat-item">
-                    <div class="stat-value">{{ currency_symbol }}{{ account.balance }}</div>
+                    <div class="stat-value">{{ currency_symbol }}{{ account.balance|comma_amount }}</div>
                     <div class="stat-label">Current Balance</div>
                 </div>
                 <div class="stat-item">

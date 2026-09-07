@@ -10,8 +10,12 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             padding: 20px;
-            margin-bottom: 20px;
             transition: transform 0.2s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 4px;
         }
 
         .stats-card:hover {
@@ -35,7 +39,7 @@
         @media (max-width: 576px) {
             .stats-card {
                 padding: 10px 4px;
-                margin-bottom: 10px;
+                gap: 2px;
             }
 
             .stat-value {
@@ -292,7 +296,7 @@
                                 <small class="text-muted">{{ account.transactions.count }} transactions</small>
                             </div>
                             <div class="mb-3">
-                                <p class="">Balance: {{ currency_symbol }}{{ account.balance }}</p>
+                                <p class="">Balance: {{ currency_symbol }}{{ account.balance|comma_amount }}</p>
                             </div>
                         </div>
                     </div>

@@ -1,4 +1,5 @@
+{% load spending_extras %}
 <div class="list-group-item d-flex justify-content-between">
     <span>{{ expense.category_label|default:"Uncategorized" }}</span>
-    <span class="fw-bold text-danger">-{{ currency_symbol }}{{ expense.total|floatformat:2 }}</span>
+    <span class="fw-bold text-danger">-{{ currency_symbol }}{{ expense.total|comma_amount }}</span>
 </div>

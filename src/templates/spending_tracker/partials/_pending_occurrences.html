@@ -3,6 +3,7 @@
     htmx responses render it with oob=True so any request can refresh it regardless
     of what the requesting element targeted.
 {% endcomment %}
+{% load spending_extras %}
 <div id="pending-section"{% if oob %} hx-swap-oob="true"{% endif %}>
     {% if pending_occurrences %}
         <h4 class="mb-1">Pending Approval ({{ pending_occurrences|length }})</h4>
@@ -31,7 +32,7 @@
                            hx-target="#occurrenceModalBody"
                            hx-swap="innerHTML">
                             <div>
-                                <span class="pending-amount">{{ occurrence.recurring_transaction.currency }} {{ occurrence.recurring_transaction.amount }}</span>
+                                <span class="pending-amount">{{ occurrence.recurring_transaction.currency }} {{ occurrence.recurring_transaction.amount|comma_amount }}</span>
                                 {{ occurrence.recurring_transaction.get_mode_display }}
                                 — {{ occurrence.recurring_transaction.details|default:"No description"|striptags }}
                             </div>

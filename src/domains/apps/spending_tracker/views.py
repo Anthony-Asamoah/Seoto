@@ -816,7 +816,7 @@ def reports(request):
         first_transaction = Transaction.objects.filter(account__user=request.user).order_by('transaction_time').first()
         start_date = first_transaction.transaction_time if first_transaction else now
         end_date = now
-        period_name = 'All Time'
+        period_name = 'Forever'
     else:  # month
         if modifier == 'this':
             # Current month (1st to today)

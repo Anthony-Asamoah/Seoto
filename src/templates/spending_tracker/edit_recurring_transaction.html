@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load spending_extras %}
 
 {% block title %} - Edit Recurring Transaction {% endblock %}
 
@@ -145,7 +146,7 @@
                            id="auraModeIcon"></i>
                     </div>
                     <div>
-                        <div class="aura-hero-amount">{{ recurring_transaction.currency }} {{ recurring_transaction.amount }}</div>
+                        <div class="aura-hero-amount">{{ recurring_transaction.currency }} {{ recurring_transaction.amount|comma_amount }}</div>
                         <div class="aura-hero-meta">
                             <strong id="auraModeLabel">{{ recurring_transaction.get_mode_display }}</strong>
                             · {{ recurring_transaction.account.name }}

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load spending_extras %}
 
 {% block title %}- Add Transaction{% endblock %}
 
@@ -184,7 +185,7 @@
                                             <option value="{{ account.pk }}"
                                                     {% if preserved_data.account and preserved_data.account|stringformat:"s" == account.pk|stringformat:"s" %}selected
                                                     {% elif not preserved_data.account and account == default_account %}selected{% endif %}>
-                                                {{ account.name }} ({{ currency_symbol }}{{ account.balance }})
+                                                {{ account.name }} ({{ currency_symbol }}{{ account.balance|comma_amount }})
                                             </option>
                                         {% endfor %}
                                     </select>
@@ -207,7 +208,7 @@
                                     {% for account in all_accounts %}
                                         <option value="{{ account.pk }}"
                                             {% if preserved_data.destination_account and preserved_data.destination_account|stringformat:"s" == account.pk|stringformat:"s" %}selected{% endif %}>
-                                            {{ account.name }} ({{ currency_symbol }}{{ account.balance }})
+                                            {{ account.name }} ({{ currency_symbol }}{{ account.balance|comma_amount }})
                                         </option>
                                     {% endfor %}
                                 </select>

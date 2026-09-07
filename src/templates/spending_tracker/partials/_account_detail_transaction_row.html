@@ -1,3 +1,4 @@
+{% load spending_extras %}
 <div class="transaction-row {{ transaction.mode }} mb-2">
     <div class="row align-items-center">
         <div class="col-md-2">
@@ -39,7 +40,7 @@
         <div class="col-md-3 text-end">
             <div class="amount-display {% if transaction.mode == 'INCOME' %}income-amount{% elif transaction.mode == 'TRANSFER' %}transfer-amount{% else %}expense-amount{% endif %}">
                 {% if transaction.mode == 'INCOME' %}+{% elif transaction.mode == 'TRANSFER' %}↔{% else %}-{% endif %}
-                {{ transaction.currency }} {{ transaction.amount|floatformat:2 }}
+                {{ transaction.currency }} {{ transaction.amount|comma_amount }}
             </div>
             <small class="text-muted">{{ transaction.transaction_time|time:"H:i" }}</small>
         </div>

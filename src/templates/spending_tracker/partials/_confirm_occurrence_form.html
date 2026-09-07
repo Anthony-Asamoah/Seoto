@@ -56,7 +56,7 @@
                     <strong>{{ recurring_transaction.get_frequency_display }} schedule</strong>
                 {% endif %}
                 This changes today's transaction only. Your schedule stays at
-                <code>{{ currency_symbol }}{{ recurring_transaction.amount }}</code>.
+                <code>{{ currency_symbol }}{{ recurring_transaction.amount|comma_amount }}</code>.
             </div>
         </div>
 
@@ -145,7 +145,7 @@
         {# Confirm is first so Enter in a field submits it, not Skip; CSS reverses the row. #}
         <div class="aura-actions aura-actions--confirm-first">
             <button type="submit" name="action" value="approve" class="aura-btn aura-btn-primary">
-                Confirm <span data-role="confirm-amount">{{ currency_symbol }}{{ recurring_transaction.amount }}</span>
+                Confirm <span data-role="confirm-amount">{{ currency_symbol }}{{ recurring_transaction.amount|comma_amount }}</span>
             </button>
             <button type="submit" name="action" value="dismiss" class="aura-btn aura-btn-ghost" formnovalidate>
                 Skip this one

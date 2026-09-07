@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load spending_extras %}
 
 {% block title %}- Edit Transaction{% endblock %}
 
@@ -125,7 +126,7 @@
                                 {% for account in all_accounts %}
                                     <option value="{{ account.pk }}"
                                             {% if transaction.account_id == account.pk %}selected{% endif %}>
-                                        {{ account.name }} ({{ currency_symbol }}{{ account.balance }})
+                                        {{ account.name }} ({{ currency_symbol }}{{ account.balance|comma_amount }})
                                     </option>
                                 {% endfor %}
                             </select>
@@ -143,7 +144,7 @@
                                 {% for account in all_accounts %}
                                     <option value="{{ account.pk }}"
                                             {% if transaction.destination_account_id == account.pk %}selected{% endif %}>
-                                        {{ account.name }} ({{ currency_symbol }}{{ account.balance }})
+                                        {{ account.name }} ({{ currency_symbol }}{{ account.balance|comma_amount }})
                                     </option>
                                 {% endfor %}
                             </select>

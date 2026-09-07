@@ -1,14 +1,20 @@
 {% extends 'base.html' %}
+{% load spending_extras %}
 
 {% block title %} - Your Accounts {% endblock %}
 
 {% block style %}
     <style>
+        .account-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 15px;
+        }
+
         .account-card {
             background: white;
             border-radius: 8px;
             padding: 20px;
-            margin-bottom: 15px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             cursor: pointer;
@@ -17,6 +23,13 @@
         .account-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .account-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
         }
 
         .account-name {
@@ -34,18 +47,19 @@
             text-transform: uppercase;
             background: #ecf0f1;
             color: #7f8c8d;
-            margin-left: 10px;
+            margin-bottom: 4px;
         }
 
         .account-balance {
             font-size: 1.8rem;
             font-weight: bold;
             color: #27ae60;
+            white-space: nowrap;
         }
 
         .account-stats {
             display: flex;
-            gap: 20px;
+            gap: 12px;
             margin-top: 15px;
             padding-top: 15px;
             border-top: 1px solid #ecf0f1;
@@ -53,6 +67,7 @@
 
         .stat-item {
             flex: 1;
+            min-width: 0;
         }
 
         .stat-label {
@@ -66,6 +81,7 @@
             font-size: 1.1rem;
             font-weight: 600;
             color: #2c3e50;
+            white-space: nowrap;
         }
 
         .stat-value.income {
@@ -110,7 +126,7 @@
             <div class="row align-items-center">
                 <div class="col-md-8">
                     <div class="summary-label">Total Balance Across All Accounts</div>
-                    <div class="summary-value">{{ currency_symbol }}{{ total_balance|floatformat:2 }}</div>
+                    <div class="summary-value">{{ currency_symbol }}{{ total_balance|comma_amount }}</div>
                 </div>
                 <div class="col-md-4 text-end">
                     <a href="{% url 'spending_tracker:add_account' %}" class="btn btn-light btn-lg">
@@ -122,43 +138,39 @@
 
         <!-- Accounts List -->
         {% if account_stats %}
-            <h4 class="mb-3">All Accounts ({{ account_stats|length }})</h4>
+            <h4 class="mb-3">{{ account_stats|length }} Account{{ account_stats|length|pluralize }}</h4>
 
+            <div class="account-grid">
             {% for stat in account_stats %}
                 <div class="account-card" onclick="window.location.href='{% url 'spending_tracker:transaction_list' %}?account={{ stat.account.id }}'">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <div class="account-name">
-                                {{ stat.account.name }}
-                                <span class="account-type">{{ stat.account.account_type }}</span>
-                            </div>
-                            <small class="text-muted">
+                    <div class="account-card-head">
+                        <div>
+                            <div class="account-name">{{ stat.account.name }}</div>
+                            <span class="account-type">{{ stat.account.account_type }}</span>
+                            <small class="text-muted d-block">
                                 {{ stat.transaction_count }} transaction{{ stat.transaction_count|pluralize }}
                             </small>
                         </div>
-                        <div class="col-md-6 text-end">
-                            <div class="account-balance">{{ currency_symbol }}{{ stat.account.balance|floatformat:2 }}</div>
-                        </div>
+                        <div class="account-balance">{{ currency_symbol }}{{ stat.account.balance|comma_amount }}</div>
                     </div>
 
                     <div class="account-stats">
                         <div class="stat-item">
-                            <div class="stat-label">Total Income</div>
-                            <div class="stat-value income">+{{ currency_symbol }}{{ stat.total_income|floatformat:2 }}</div>
+                            <div class="stat-label">Total In</div>
+                            <div class="stat-value income">{{ currency_symbol }}{{ stat.total_income|comma_amount }}</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-label">Total Expenses</div>
-                            <div class="stat-value expense">-{{ currency_symbol }}{{ stat.total_expenses|floatformat:2 }}</div>
+                            <div class="stat-label">Total Out</div>
+                            <div class="stat-value expense">{{ currency_symbol }}{{ stat.total_expenses|comma_amount }}</div>
                         </div>
                         <div class="stat-item">
                             <div class="stat-label">Net Flow</div>
-                            <div class="stat-value {% if stat.net_flow >= 0 %}income{% else %}expense{% endif %}">
-                                {% if stat.net_flow >= 0 %}+{% endif %}{{ currency_symbol }}{{ stat.net_flow|floatformat:2 }}
-                            </div>
+                            <div class="stat-value {% if stat.net_flow >= 0 %}income{% else %}expense{% endif %}">{% if stat.net_flow >= 0 %}+{% endif %}{{ currency_symbol }}{{ stat.net_flow|comma_amount }}</div>
                         </div>
                     </div>
                 </div>
             {% endfor %}
+            </div>
         {% else %}
             <div class="alert alert-info">
                 <h5>No Accounts Yet</h5>

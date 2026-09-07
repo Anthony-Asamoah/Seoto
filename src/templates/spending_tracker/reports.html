@@ -450,7 +450,7 @@
 
                     <input type="radio" class="btn-check" name="period" id="period-all-time" autocomplete="off"
                            {% if period == 'all_time' %}checked{% endif %}>
-                    <label class="btn btn-outline-primary" for="period-all-time">All Time</label>
+                    <label class="btn btn-outline-primary" for="period-all-time">Forever</label>
 
                     <input type="radio" class="btn-check" name="period" id="period-custom" autocomplete="off"
                            {% if period == 'custom' %}checked{% endif %}>
@@ -670,9 +670,9 @@
                                 <div class="account-type">{{ row.account.get_account_type_display|cut:"_" }}</div>
                             </div>
                             <div class="account-balance-block">
-                                <div class="account-balance">{{ currency_symbol }}{{ row.current_balance|humanize_amount }}</div>
+                                <div class="account-balance">{{ currency_symbol }}{{ row.current_balance|comma_amount }}</div>
                                 <span class="net-chip {% if row.net_change >= 0 %}net-up{% else %}net-down{% endif %}">
-                                    {% if row.net_change >= 0 %}▲ +{% else %}▼ −{% endif %}{{ currency_symbol }}{{ row.net_change|abs_value|humanize_amount }}
+                                    {% if row.net_change >= 0 %}▲ +{% else %}▼ −{% endif %}{{ currency_symbol }}{{ row.net_change|abs_value|comma_amount }}
                                     {% if row.pct_change is not None %}
                                         <span class="net-pct">({{ row.pct_change }}%)</span>
                                     {% endif %}
@@ -698,23 +698,23 @@
                             {% endif %}
                         </div>
                         <div class="flow-legend">
-                            <span class="text-success">In {{ currency_symbol }}{{ row.income|add:row.transfers_in|humanize_amount }}</span>
-                            <span class="text-danger">Out {{ currency_symbol }}{{ row.outflow|humanize_amount }}</span>
+                            <span class="text-success">In {{ currency_symbol }}{{ row.income|add:row.transfers_in|comma_amount }}</span>
+                            <span class="text-danger">Out {{ currency_symbol }}{{ row.outflow|comma_amount }}</span>
                         </div>
 
                         <dl class="account-stats">
                             <div>
                                 <dt>Opening</dt>
-                                <dd>{{ currency_symbol }}{{ row.starting_balance|humanize_amount }}</dd>
+                                <dd>{{ currency_symbol }}{{ row.starting_balance|comma_amount }}</dd>
                             </div>
                             <div>
                                 <dt>Low point</dt>
-                                <dd>{{ currency_symbol }}{{ row.low_balance|humanize_amount }}</dd>
+                                <dd>{{ currency_symbol }}{{ row.low_balance|comma_amount }}</dd>
                             </div>
                             <div>
                                 <dt>Avg / day</dt>
                                 <dd class="{% if row.avg_daily_net >= 0 %}text-success{% else %}text-danger{% endif %}">
-                                    {% if row.avg_daily_net >= 0 %}+{% else %}−{% endif %}{{ currency_symbol }}{{ row.avg_daily_net|abs_value|humanize_amount }}
+                                    {% if row.avg_daily_net >= 0 %}+{% else %}−{% endif %}{{ currency_symbol }}{{ row.avg_daily_net|abs_value|comma_amount }}
                                 </dd>
                             </div>
                             <div>
@@ -726,11 +726,11 @@
                         <div class="account-notes">
                             {% if row.top_category %}
                                 <div>Biggest outflow: <strong>{{ row.top_category.label }}</strong>
-                                    · {{ currency_symbol }}{{ row.top_category.total|humanize_amount }}</div>
+                                    · {{ currency_symbol }}{{ row.top_category.total|comma_amount }}</div>
                             {% endif %}
                             {% if row.transfers_in or row.transfers_out %}
-                                <div>Transfers: in {{ currency_symbol }}{{ row.transfers_in|humanize_amount }}
-                                    · out {{ currency_symbol }}{{ row.transfers_out|humanize_amount }}</div>
+                                <div>Transfers: in {{ currency_symbol }}{{ row.transfers_in|comma_amount }}
+                                    · out {{ currency_symbol }}{{ row.transfers_out|comma_amount }}</div>
                             {% endif %}
                             {% if row.runway_days %}
                                 <div class="text-danger">At this burn rate, ~{{ row.runway_days }} day{{ row.runway_days|pluralize }}
@@ -763,14 +763,14 @@
                     <div class="col-sm-4">
                         <div class="p-3 rounded bg-light text-center">
                             <div class="text-muted small mb-1">Total Volume</div>
-                            <div class="fw-bold fs-5">{{ currency_symbol }}{{ total_transfer_volume|humanize_amount }}</div>
+                            <div class="fw-bold fs-5">{{ currency_symbol }}{{ total_transfer_volume|comma_amount }}</div>
                         </div>
                     </div>
                     <div class="col-sm-4">
                         <div class="p-3 rounded bg-light text-center">
                             <div class="text-muted small mb-1">Avg per Transfer</div>
                             <div class="fw-bold fs-5">
-                                {{ currency_symbol }}{{ avg_transfer_amount|humanize_amount }}</div>
+                                {{ currency_symbol }}{{ avg_transfer_amount|comma_amount }}</div>
                         </div>
                     </div>
                 </div>
@@ -797,7 +797,7 @@
                                         </div>
                                     </div>
                                     <div class="account-balance-block">
-                                        <div class="account-balance">{{ currency_symbol }}{{ route.volume|humanize_amount }}</div>
+                                        <div class="account-balance">{{ currency_symbol }}{{ route.volume|comma_amount }}</div>
                                         <span class="net-chip route-chip">{{ route.share }}% of volume</span>
                                     </div>
                                 </div>
@@ -821,11 +821,11 @@
                                     </div>
                                     <div>
                                         <dt>Average</dt>
-                                        <dd>{{ currency_symbol }}{{ route.avg_amount|humanize_amount }}</dd>
+                                        <dd>{{ currency_symbol }}{{ route.avg_amount|comma_amount }}</dd>
                                     </div>
                                     <div>
                                         <dt>Largest</dt>
-                                        <dd>{{ currency_symbol }}{{ route.largest|humanize_amount }}</dd>
+                                        <dd>{{ currency_symbol }}{{ route.largest|comma_amount }}</dd>
                                     </div>
                                     <div>
                                         <dt>Last</dt>
@@ -881,7 +881,7 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end fw-semibold">
-                                    {{ t.currency_symbol }}{{ t.amount|floatformat:2 }}</td>
+                                    {{ t.currency_symbol }}{{ t.amount|comma_amount }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -959,6 +959,12 @@
     // Get currency symbol from context
     const currencySymbol = '{{ currency_symbol|safe }}';
 
+    // Thousands-separated amounts, matching the comma_amount template filter
+    const fmtAmount = (value, decimals = 2) => Number(value).toLocaleString('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+    });
+
     const initCharts = () => {
         {#console.log('\nINITIALIZING CHARTS:');#}
 
@@ -1003,7 +1009,7 @@
                                 label: (context) => {
                                     let label = context.label || '';
                                     if (label) label += ': ';
-                                    label += currencySymbol + context.parsed.toFixed(2);
+                                    label += currencySymbol + fmtAmount(context.parsed);
                                     return label;
                                 }
                             }
@@ -1071,7 +1077,7 @@
                         tooltip: {
                             callbacks: {
                                 label: (context) => {
-                                    return context.dataset.label + ': ' + currencySymbol + context.parsed.y.toFixed(2);
+                                    return context.dataset.label + ': ' + currencySymbol + fmtAmount(context.parsed.y);
                                 }
                             }
                         }
@@ -1082,7 +1088,7 @@
                             title: {display: true, text: 'Amount (' + currencySymbol + ')'},
                             beginAtZero: true,
                             ticks: {
-                                callback: (value) => currencySymbol + value.toFixed(0)
+                                callback: (value) => currencySymbol + fmtAmount(value, 0)
                             }
                         }
                     },
@@ -1167,8 +1173,8 @@
                                     const delta = context.parsed.y - acct.starting_balance;
                                     const sign = delta >= 0 ? '+' : '-';
                                     return [
-                                        'Balance: ' + currencySymbol + context.parsed.y.toFixed(2),
-                                        'vs opening: ' + sign + currencySymbol + Math.abs(delta).toFixed(2)
+                                        'Balance: ' + currencySymbol + fmtAmount(context.parsed.y),
+                                        'vs opening: ' + sign + currencySymbol + fmtAmount(Math.abs(delta))
                                     ];
                                 }
                             }
@@ -1206,7 +1212,7 @@
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'bottom';
                     chart.getDatasetMeta(0).data.forEach((bar, i) => {
-                        ctx.fillText(currencySymbol + data[i].total.toFixed(2), bar.x, bar.y - 4);
+                        ctx.fillText(currencySymbol + fmtAmount(data[i].total), bar.x, bar.y - 4);
                     });
                     ctx.restore();
                 }
@@ -1239,7 +1245,7 @@
                                 label: (context) => {
                                     const item = data[context.dataIndex];
                                     return [
-                                        currencySymbol + item.total.toFixed(2),
+                                        currencySymbol + fmtAmount(item.total),
                                         item.count + ' transaction' + (item.count === 1 ? '' : 's')
                                     ];
                                 }
@@ -1254,7 +1260,7 @@
                         y: {
                             beginAtZero: true,
                             border: {display: false},
-                            ticks: {callback: (value) => currencySymbol + value.toFixed(0)}
+                            ticks: {callback: (value) => currencySymbol + fmtAmount(value, 0)}
                         }
                     }
                 }
@@ -1302,7 +1308,7 @@
                             callbacks: {
                                 title: (items) => items[0].label,
                                 label: (context) => context.parsed.y > 0
-                                    ? currencySymbol + context.parsed.y.toFixed(2)
+                                    ? currencySymbol + fmtAmount(context.parsed.y)
                                     : 'No transfers'
                             }
                         }

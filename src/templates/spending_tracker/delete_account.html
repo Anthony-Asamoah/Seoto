@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load spending_extras %}
 
 {% block title %} - Delete Account{% endblock %}
 
@@ -111,7 +112,7 @@
                             <strong>{{ account.transaction_count }}</strong> transaction{{ account.transaction_count|pluralize }}
                         </div>
                         <div class="stat-item text-muted">
-                            Balance: {{ currency_symbol }}{{ account.balance }}
+                            Balance: {{ currency_symbol }}{{ account.balance|comma_amount }}
                         </div>
                     </div>
                 </div>

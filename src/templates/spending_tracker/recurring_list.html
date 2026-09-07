@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static spending_extras %}
 
 {% block title %} - Recurring Transactions {% endblock %}
 
@@ -404,7 +404,7 @@
                             <div class="row align-items-center">
                                 <div class="col-md-5">
                                     <div class="recurring-amount {{ recurring.mode|lower }}">
-                                        {{ currency_symbol }}{{ recurring.amount }}
+                                        {{ currency_symbol }}{{ recurring.amount|comma_amount }}
                                     </div>
                                     <div>
                                         {{ recurring.details|default:recurring.get_mode_display|striptags }}

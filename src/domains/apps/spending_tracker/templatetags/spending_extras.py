@@ -49,6 +49,7 @@ def humanize_amount(value):
     Formats a currency amount for compact display, abbreviating with K/M/B
     once the magnitude reaches 1000 (e.g. 7800 -> "7.8K", 2300000 -> "2.3M").
     Values under 1000 keep the standard two-decimal display (e.g. "588.00").
+    Reserved for the summary stat cards; everywhere else use comma_amount.
     """
     try:
         value = float(value)
@@ -67,3 +68,17 @@ def humanize_amount(value):
             return f'{sign}{scaled}{suffix}'
 
     return f'{sign}{magnitude:.2f}'
+
+
+@register.filter
+def comma_amount(value):
+    """
+    Formats a currency amount in full with thousands separators and two
+    decimals (e.g. 2000 -> "2,000.00", 45999.5 -> "45,999.50").
+    """
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return value
+
+    return f'{value:,.2f}'
