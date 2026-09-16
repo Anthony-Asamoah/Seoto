@@ -554,3 +554,36 @@ body.model-member .panel .inline-deletelink {
     display: inline-block;
     margin: 0 0 .75rem 1.5rem;
 }
+
+/* jazzmin 3.0.5 ships a main.css that dropped its own related-modal sizing rules
+   (they survive only in main.css.backup), so the popup iframe falls back to 300x150. */
+.modal.modal-wide .modal-dialog {
+    width: 92%;
+    max-width: 960px;
+}
+
+.modal-wide .modal-body {
+    padding: 0;
+    overflow-y: auto;
+}
+
+iframe.related-iframe {
+    display: block;
+    width: 100%;
+    height: 72vh;
+    min-height: 420px;
+    border: 0;
+}
+
+/* jazzmin's change_form.js stamps float-end onto every inline "Add another" link. */
+.inline-related fieldset.module .add-row a.float-end,
+.inline-group div.add-row > a.float-end,
+div.add-row > a.float-end {
+    float: none !important;
+}
+
+.inline-related fieldset.module .add-row td,
+.inline-group div.add-row,
+div.add-row {
+    text-align: left;
+}

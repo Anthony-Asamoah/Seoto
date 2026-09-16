@@ -31,6 +31,9 @@ SECURE_SSL_REDIRECT = not DEBUG
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# jazzmin's related-modal loads change forms in a same-origin iframe; DENY blocks it
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', cast=Csv(post_process=tuple))
 
 # Recoverable page (fresh token + one-click retry) instead of Django's bare 403

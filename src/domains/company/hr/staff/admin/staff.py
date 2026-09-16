@@ -1,6 +1,10 @@
 from django import forms
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminTextareaWidget
+from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.urls import path, reverse
 from django.utils import timezone
 
 from infrastructure.utils.widgets import ImagePreviewInput
@@ -17,10 +21,58 @@ from .profile import (
 from .team import MembershipInline
 
 
+class AssignmentForm(forms.ModelForm):
+    class Meta:
+        model = Assignment
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.initial.setdefault('effective_from', timezone.localdate())
+        # The row has no position yet on load, so the salary is filled in by JS on pick.
+        # The admin wraps the select in a RelatedFieldWidgetWrapper whose attrs the inner
+        # widget only sometimes aliases, so stamp the select itself.
+        widget = self.fields['position'].widget
+        widget = getattr(widget, 'widget', widget)
+        widget.attrs['data-defaults-url'] = reverse('admin:company_staff_position_defaults')
+
+
+class AssignmentInlineForm(AssignmentForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.instance.skip_overlap_check = True
+
+
+class AssignmentInlineFormSet(forms.BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        kept = []
+        for form in self.forms:
+            if not form.cleaned_data or form.cleaned_data.get('DELETE'):
+                continue
+            assignment = form.instance
+            if not assignment.position_id or not assignment.effective_from:
+                continue
+            if any(assignment.overlaps(other) for other in kept):
+                form.add_error('effective_from', Assignment.OVERLAP_ERROR)
+            else:
+                kept.append(assignment)
+
+
 class AssignmentInline(admin.TabularInline):
     model = Assignment
+    form = AssignmentInlineForm
+
+    class Media:
+        js = (
+            'admin/js/vendor/jquery/jquery.js',
+            'admin/js/jquery.init.js',
+            'js/admin_assignment_defaults.js',
+        )
+    formset = AssignmentInlineFormSet
     extra = 0
-    fields = ('position', 'salary', 'currency', 'effective_from', 'note')
+    fields = ('position', 'salary', 'currency', 'effective_from', 'effective_to', 'note')
     autocomplete_fields = ('position',)
 
 
@@ -75,26 +127,55 @@ class MemberAdmin(admin.ModelAdmin):
         options = {**options, 'fields': tuple(f for f in options['fields'] if f != 'staff_id')}
         return ((name, options), *rest)
 
-    @admin.display(description='Position')
+    @admin.display(description='Positions')
     def current_position(self, obj):
-        return obj.position or '—'
+        return ', '.join(str(position) for position in obj.positions) or '—'
 
 
 class PositionAdmin(admin.ModelAdmin):
     list_display = ('name', 'reference_salary', 'currency', 'holders')
     search_fields = ('name', 'description')
 
+    def get_urls(self):
+        # Ahead of super(), or `<path:object_id>/change/` swallows this.
+        custom_urls = [
+            path(
+                'defaults/',
+                self.admin_site.admin_view(self.defaults_view),
+                name='company_staff_position_defaults',
+            ),
+        ]
+        return custom_urls + super().get_urls()
+
+    def defaults_view(self, request):
+        """feeds the assignment rows; admin_view() only proves staff, so check the perm here"""
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+        position = get_object_or_404(Position, pk=request.GET.get('position'))
+        return JsonResponse({
+            'salary': '' if position.reference_salary is None else str(position.reference_salary),
+            'currency': position.currency,
+        })
+
     @admin.display(description='Current holders')
     def holders(self, obj):
-        return obj.assignments.filter(effective_from__lte=timezone.localdate()).count()
+        return obj.assignments.current().values('member').distinct().count()
 
 
 class AssignmentAdmin(admin.ModelAdmin):
-    list_display = ('member', 'position', 'salary', 'currency', 'effective_from')
+    form = AssignmentForm
+    list_display = ('member', 'position', 'salary', 'currency', 'effective_from', 'effective_to')
     list_filter = ('position', 'currency')
     search_fields = ('member__staff_id', 'member__user__first_name', 'member__user__last_name', 'position__name')
     autocomplete_fields = ('member', 'position')
     date_hierarchy = 'effective_from'
+
+    class Media:
+        js = (
+            'admin/js/vendor/jquery/jquery.js',
+            'admin/js/jquery.init.js',
+            'js/admin_assignment_defaults.js',
+        )
 
 
 admin.site.register(Member, MemberAdmin)

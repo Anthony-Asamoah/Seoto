@@ -1,11 +1,24 @@
+import json
 from datetime import date
+from decimal import Decimal
 
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.forms import inlineformset_factory
+from django.http import Http404
 from django.test import RequestFactory, TestCase
+from django.urls import reverse
+from django.utils import timezone
 
 from domains.company.hr.staff.admin.staff import MemberAdmin
-from domains.company.hr.staff.models import Member, StaffIdSequence
+from domains.company.hr.staff.admin.staff import (
+    AssignmentInline,
+    AssignmentInlineForm,
+    AssignmentInlineFormSet,
+    PositionAdmin,
+)
+from domains.company.hr.staff.models import Assignment, Member, Position, StaffIdSequence
 
 User = get_user_model()
 
@@ -93,3 +106,178 @@ class MemberAdminTests(TestCase):
         member = make_member('ama')
         form = self.admin.get_form(self.request, member)()
         self.assertNotIn('staff_id', form.fields)
+
+
+
+def make_assignment(member, position, effective_from, effective_to=None, salary=1000):
+    return Assignment.objects.create(
+        member=member, position=position, salary=salary,
+        effective_from=effective_from, effective_to=effective_to,
+    )
+
+
+class ConcurrentAssignmentTests(TestCase):
+    def setUp(self):
+        self.member = make_member('ama')
+        self.developer = Position.objects.create(name='Widget Wrangler')
+        self.lead = Position.objects.create(name='Widget Lead')
+
+    def test_two_positions_can_start_on_the_same_day(self):
+        make_assignment(self.member, self.developer, date(2026, 1, 1))
+        make_assignment(self.member, self.lead, date(2026, 1, 1))
+        self.assertEqual(self.member.assignments.count(), 2)
+
+    def test_both_open_assignments_are_current(self):
+        make_assignment(self.member, self.developer, date(2026, 1, 1))
+        make_assignment(self.member, self.lead, date(2026, 3, 1))
+        self.assertCountEqual(self.member.positions, [self.developer, self.lead])
+
+    def test_an_ended_assignment_drops_out(self):
+        make_assignment(self.member, self.developer, date(2026, 1, 1), date(2026, 2, 1))
+        make_assignment(self.member, self.lead, date(2026, 2, 2))
+        self.assertEqual(self.member.positions, [self.lead])
+
+    def test_a_future_assignment_is_not_current_yet(self):
+        make_assignment(self.member, self.developer, date(2099, 1, 1))
+        self.assertEqual(self.member.positions, [])
+
+    def test_the_same_position_cannot_overlap_itself(self):
+        make_assignment(self.member, self.developer, date(2026, 1, 1))
+        clash = Assignment(
+            member=self.member, position=self.developer, salary=2000, effective_from=date(2026, 6, 1)
+        )
+        with self.assertRaises(ValidationError):
+            clash.full_clean()
+
+    def test_a_pay_change_after_the_old_row_ends_is_allowed(self):
+        make_assignment(self.member, self.developer, date(2026, 1, 1), date(2026, 5, 31))
+        raise_ = Assignment(
+            member=self.member, position=self.developer, salary=2000, effective_from=date(2026, 6, 1)
+        )
+        raise_.full_clean()
+
+    def test_an_end_before_the_start_is_rejected(self):
+        assignment = Assignment(
+            member=self.member, position=self.developer, salary=1000,
+            effective_from=date(2026, 6, 1), effective_to=date(2026, 1, 1),
+        )
+        with self.assertRaises(ValidationError):
+            assignment.full_clean()
+
+
+class AssignmentInlineFormSetTests(TestCase):
+    def setUp(self):
+        self.member = make_member('ama')
+        self.developer = Position.objects.create(name='Widget Wrangler')
+
+    def _formset(self, rows, instances=()):
+        FormSet = inlineformset_factory(
+            Member, Assignment, form=AssignmentInlineForm, formset=AssignmentInlineFormSet,
+            fields=('position', 'salary', 'currency', 'effective_from', 'effective_to', 'note'), extra=0,
+        )
+        data = {
+            'assignments-TOTAL_FORMS': str(len(rows)),
+            'assignments-INITIAL_FORMS': str(len(instances)),
+            'assignments-MIN_NUM_FORMS': '0',
+            'assignments-MAX_NUM_FORMS': '1000',
+        }
+        for index, row in enumerate(rows):
+            for key, value in row.items():
+                data[f'assignments-{index}-{key}'] = value
+        return FormSet(data, instance=self.member)
+
+    def _row(self, effective_from, effective_to='', pk=''):
+        return {
+            'id': pk, 'member': str(self.member.pk), 'position': str(self.developer.pk),
+            'salary': '1000', 'currency': 'GHS', 'note': '',
+            'effective_from': effective_from, 'effective_to': effective_to,
+        }
+
+    def test_overlapping_rows_in_one_submit_are_rejected(self):
+        formset = self._formset([self._row('2026-01-01'), self._row('2026-06-01')])
+        self.assertFalse(formset.is_valid())
+        self.assertIn(Assignment.OVERLAP_ERROR, formset.forms[1].errors['effective_from'])
+
+    def test_ending_a_row_and_replacing_it_in_one_submit_is_allowed(self):
+        existing = make_assignment(self.member, self.developer, date(2026, 1, 1))
+        formset = self._formset(
+            [self._row('2026-01-01', '2026-05-31', pk=str(existing.pk)), self._row('2026-06-01')],
+            instances=[existing],
+        )
+        self.assertTrue(formset.is_valid(), formset.errors)
+
+
+
+class AssignmentDefaultsTests(TestCase):
+    """built through the admin inline, since the wrapper the admin adds is what broke this"""
+
+    def setUp(self):
+        self.member = make_member('ama')
+        self.developer = Position.objects.create(
+            name='Widget Wrangler', reference_salary=Decimal('4500.00')
+        )
+        self.inline = AssignmentInline(Member, AdminSite())
+        self.request = RequestFactory().get('/')
+        self.request.user = User.objects.create_superuser('boss')
+        self.expected_url = reverse('admin:company_staff_position_defaults')
+
+    def _formset(self):
+        FormSet = self.inline.get_formset(self.request, self.member)
+        return FormSet(instance=self.member)
+
+    def test_a_new_row_starts_today(self):
+        self.assertEqual(self._formset().empty_form['effective_from'].value(), timezone.localdate())
+
+    def test_a_saved_row_keeps_its_own_date(self):
+        make_assignment(self.member, self.developer, date(2026, 1, 1))
+        self.assertEqual(self._formset().forms[0]['effective_from'].value(), date(2026, 1, 1))
+
+    def test_the_blank_template_row_advertises_the_defaults_endpoint(self):
+        # Asserting on the HTML, not widget.attrs: the admin wraps the select in a
+        # RelatedFieldWidgetWrapper whose attrs never reach the rendered tag.
+        html = str(self._formset().empty_form['position'])
+        self.assertIn(f'data-defaults-url="{self.expected_url}"', html)
+
+    def test_a_saved_row_also_advertises_the_defaults_endpoint(self):
+        make_assignment(self.member, self.developer, date(2026, 1, 1))
+        html = str(self._formset().forms[0]['position'])
+        self.assertIn(f'data-defaults-url="{self.expected_url}"', html)
+
+
+class PositionDefaultsViewTests(TestCase):
+    """the admin site is behind OTP, so drive the view itself rather than the URL"""
+
+    def setUp(self):
+        self.admin = PositionAdmin(Position, AdminSite())
+        self.factory = RequestFactory()
+        self.boss = User.objects.create_superuser('boss')
+
+    def _get(self, position_id, user=None):
+        request = self.factory.get('/', {'position': position_id})
+        request.user = user or self.boss
+        return self.admin.defaults_view(request)
+
+    def test_it_returns_the_reference_figures(self):
+        position = Position.objects.create(
+            name='Chief Widget Officer', reference_salary=Decimal('4500.00'), currency='USD'
+        )
+        self.assertEqual(
+            json.loads(self._get(position.pk).content), {'salary': '4500.00', 'currency': 'USD'}
+        )
+
+    def test_a_position_without_a_reference_salary_returns_blank(self):
+        position = Position.objects.create(name='Widget Intern')
+        self.assertEqual(json.loads(self._get(position.pk).content)['salary'], '')
+
+    def test_an_unknown_position_is_a_404(self):
+        with self.assertRaises(Http404):
+            self._get(0)
+
+    def test_a_user_without_the_view_permission_is_refused(self):
+        nobody = User.objects.create_user('nobody', is_staff=True)
+        position = Position.objects.create(name='Widget Cleaner')
+        with self.assertRaises(PermissionDenied):
+            self._get(position.pk, user=nobody)
+
+    def test_the_admin_site_route_is_registered(self):
+        self.assertTrue(reverse('admin:company_staff_position_defaults'))
