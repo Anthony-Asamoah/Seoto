@@ -1,5 +1,9 @@
+from django import forms
 from django.contrib import admin
+from django.contrib.admin.widgets import AdminTextareaWidget
 from django.utils import timezone
+
+from infrastructure.utils.widgets import ImagePreviewInput
 
 from ..models import Assignment, Member, Position
 from .contact import AddressInline, ContactInline
@@ -20,7 +24,24 @@ class AssignmentInline(admin.TabularInline):
     autocomplete_fields = ('position',)
 
 
+class MemberForm(forms.ModelForm):
+    class Meta:
+        model = Member
+        fields = '__all__'
+        widgets = {
+            'profile_image': ImagePreviewInput(crop=True),
+            'about': AdminTextareaWidget(attrs={'rows': 4}),
+        }
+        labels = {'national_id': 'National ID'}
+        help_texts = {
+            'about': 'Shown on the marketing site profile.',
+            'is_public': 'Only public members are eligible to appear on the marketing site.',
+            'profile_image': 'Cropped to a square on upload.',
+        }
+
+
 class MemberAdmin(admin.ModelAdmin):
+    form = MemberForm
     list_display = ('__str__', 'staff_id', 'current_position', 'started_on', 'ended_on', 'is_public')
     list_filter = ('is_public', 'gender', 'teams', 'assignments__position')
     search_fields = ('staff_id', 'user__first_name', 'user__last_name', 'user__username', 'user__email')
@@ -35,15 +56,12 @@ class MemberAdmin(admin.ModelAdmin):
     readonly_fields = ('staff_id',)
 
     fieldsets = (
-        (None, {
-            'fields': ('user', 'staff_id', ('started_on', 'ended_on')),
-        }),
-        ('Personal', {
-            'fields': ('gender', 'date_of_birth', 'nationality', 'hometown', 'national_id'),
-        }),
-        ('Public profile', {
-            'fields': ('profile_image', 'about', 'is_public'),
-            'description': 'Only public members are eligible to appear on the marketing site.',
+        ('General', {
+            'fields': (
+                'user', 'staff_id', 'started_on', 'ended_on',
+                'gender', 'date_of_birth', 'nationality', 'hometown', 'national_id',
+                'profile_image', 'about', 'is_public',
+            ),
         }),
     )
 

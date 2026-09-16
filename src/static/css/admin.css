@@ -410,6 +410,7 @@ input[type="number"]:focus {
     object-fit: cover;
     border-radius: .5rem;
     box-shadow: 0 1px 4px rgba(0, 0, 0, .25);
+    cursor: pointer;
 }
 
 .image-preview-widget.is-cleared .image-preview-thumb {
@@ -430,6 +431,41 @@ input[type="number"]:focus {
 
 #imagePreviewModal .modal-body img {
     max-height: 70vh;
+}
+
+/* Square cropper: a fixed 1:1 viewport the image is dragged and scaled behind. */
+.image-crop-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: .5rem;
+    background: #1b1b1b;
+    touch-action: none;
+    cursor: grab;
+}
+
+.image-crop-stage:active {
+    cursor: grabbing;
+}
+
+.image-crop-stage img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+    max-width: none;
+    user-select: none;
+}
+
+.image-crop-zoom {
+    margin-top: .75rem;
+}
+
+.image-crop-hint {
+    margin: 0;
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: .85em;
 }
 
 /* Dashboard cards mirror the sidebar: section header, then per-app subgroups */
@@ -463,4 +499,20 @@ input[type="number"]:focus {
 
 .dashboard-table > tbody > tr.dashboard-subgroup ~ tr td:first-child {
     padding-left: 1.5rem;
+}
+
+/* Member change form: one control width, so the stacked fields share a right edge.
+   Scoped to the member tab — the inlines pair fields per row and need their narrower default.
+   !important beats select2's inline px width, which it copies off the native select. */
+body.model-member #general-tab .form-group input:not([type="checkbox"]),
+body.model-member #general-tab .form-group textarea,
+body.model-member #general-tab .form-group .readonly,
+body.model-member #general-tab .form-group .select2-container {
+    width: 20rem !important;
+    max-width: 100%;
+}
+
+/* The related-object wrapper is a flex row that would otherwise stretch select2 to fill it. */
+body.model-member #general-tab .form-group .select2-container {
+    flex: 0 0 auto;
 }

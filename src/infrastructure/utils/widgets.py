@@ -35,32 +35,32 @@ class ImagePreviewInput(forms.ClearableFileInput):
 
     thumbnail_url = None
 
+    def __init__(self, attrs=None, crop=False):
+        self.crop = crop
+        super().__init__(attrs)
+
     def render(self, name, value, attrs=None, renderer=None):
         has_image = self.is_initial(value)
         attrs = {**(attrs or {}), 'class': 'image-preview-file'}
         file_input = forms.FileInput(self.attrs).render(name, None, attrs, renderer)
         input_id = attrs.get('id', f'id_{name}')
+        image_url = value.url if has_image else ''
 
-        parts = []
-        if has_image:
-            parts.append(format_html(
-                '<img class="image-preview-thumb" src="{}" alt="">',
-                self.thumbnail_url or value.url,
-            ))
-        parts.append(file_input)
+        parts = [format_html(
+            '<img class="image-preview-thumb image-preview-trigger" src="{}" data-image-url="{}" alt=""{}>',
+            self.thumbnail_url or image_url, image_url,
+            mark_safe('' if has_image else ' hidden'),
+        ), file_input]
 
-        buttons = []
-        if has_image:
-            buttons.append(format_html(
-                '<button type="button" class="btn btn-sm btn-outline-secondary image-preview-trigger"'
-                ' data-image-url="{}"><i class="fas fa-eye"></i> Preview</button>',
-                value.url,
-            ))
-        buttons.append(format_html(
+        buttons = [format_html(
+            '<button type="button" class="btn btn-sm btn-outline-secondary image-preview-trigger"'
+            ' data-image-url="{}"{}><i class="fas fa-eye"></i> Preview</button>',
+            image_url, mark_safe('' if has_image else ' hidden'),
+        ), format_html(
             '<button type="button" class="btn btn-sm btn-outline-secondary image-preview-upload"'
             ' data-target="{}"><i class="fas fa-upload"></i> Upload</button>',
             input_id,
-        ))
+        )]
         if has_image and not self.is_required:
             checkbox_id = self.clear_checkbox_id(self.clear_checkbox_name(name))
             buttons.append(format_html(
@@ -76,6 +76,7 @@ class ImagePreviewInput(forms.ClearableFileInput):
         ))
         parts.append(mark_safe('<span class="image-preview-status"></span>'))
         return format_html(
-            '<div class="image-preview-widget">{}</div>',
+            '<div class="image-preview-widget"{}>{}</div>',
+            mark_safe(' data-crop="square"' if self.crop else ''),
             format_html_join('', '{}', ((p,) for p in parts)),
         )

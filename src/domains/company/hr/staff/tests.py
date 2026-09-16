@@ -56,7 +56,27 @@ class MemberAdminTests(TestCase):
         self.request.user = User.objects.create_superuser(username='root', password='x')
 
     def _first_fieldset_fields(self, obj):
-        return self.admin.get_fieldsets(self.request, obj)[0][1]['fields']
+        rows = self.admin.get_fieldsets(self.request, obj)[0][1]['fields']
+        return [
+            field
+            for row in rows
+            for field in (row if isinstance(row, (list, tuple)) else (row,))
+        ]
+
+    def test_the_change_form_is_a_single_fieldset(self):
+        member = make_member('ama')
+        self.assertEqual(len(self.admin.get_fieldsets(self.request, member)), 1)
+
+    def test_the_single_fieldset_covers_every_editable_field(self):
+        member = make_member('ama')
+        fields = self._first_fieldset_fields(member)
+        for name in ('user', 'started_on', 'gender', 'national_id', 'profile_image', 'is_public'):
+            self.assertIn(name, fields)
+
+    def test_the_profile_image_is_croppable(self):
+        member = make_member('ama')
+        form = self.admin.get_form(self.request, member)()
+        self.assertTrue(form.fields['profile_image'].widget.crop)
 
     def test_add_form_hides_the_id(self):
         self.assertNotIn('staff_id', self._first_fieldset_fields(None))

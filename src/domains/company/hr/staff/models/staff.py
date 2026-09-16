@@ -57,7 +57,7 @@ class Member(models.Model):
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='member'
     )
-    staff_id = models.CharField(max_length=50, unique=True, editable=False)
+    staff_id = models.CharField('Staff ID', max_length=50, unique=True, editable=False)
     started_on = models.DateField()
     ended_on = models.DateField(null=True, blank=True)
 
