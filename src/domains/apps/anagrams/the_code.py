@@ -2,7 +2,7 @@ import string
 from collections import Counter
 from functools import lru_cache
 
-from infrastructure.core.exceptions import InvalidInput
+from common.exceptions import InvalidInput
 from infrastructure.words import ENGLISH_DICTIONARY, load_words
 
 MAX_LETTERS = 15

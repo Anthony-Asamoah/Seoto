@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
 from infrastructure.external_services.ipqualityscore.email_validation import is_valid_email
-from infrastructure.core.mixins.views import HoneypotMixin, RecaptchaMixin
+from common.mixins.views import HoneypotMixin, RecaptchaMixin
 
 
 class LoginForm(RecaptchaMixin, HoneypotMixin, AuthenticationForm):

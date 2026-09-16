@@ -1,4 +1,4 @@
-"""Company API routes — mounted at /api/company/ by infrastructure.core.urls.
+"""Company API routes — mounted at /api/company/ by config.urls.
 
 Each subdomain of company/ owns its own urls.py and is included from here, so
 adding one never touches the root URLconf.

@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.urls import reverse
 
-from infrastructure.core.pagination import DefaultAPIPagination
+from common.pagination import DefaultAPIPagination
 
 from . import services
 from .models import FAQ, FAQCategory

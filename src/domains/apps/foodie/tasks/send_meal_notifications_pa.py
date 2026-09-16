@@ -11,7 +11,7 @@ import os
 SRC_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))))
 sys.path.insert(0, SRC_ROOT)
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'infrastructure.core.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 import django
 django.setup()

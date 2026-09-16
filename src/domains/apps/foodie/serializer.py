@@ -1,5 +1,5 @@
+from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
-from infrastructure.core.settings import MEDIA_URL
 from domains.apps.foodie.models import meal
 import logging
 
@@ -7,7 +7,7 @@ import logging
 def append_host_url(queryset, url):
 	for i in queryset.keys():
 		if 'img' in i:
-			queryset.update({i: f'{url}/{MEDIA_URL}{queryset[i]}'})
+			queryset.update({i: f'{url}/{settings.MEDIA_URL}{queryset[i]}'})
 	return queryset
 
 

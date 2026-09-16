@@ -2,7 +2,7 @@ from django.conf import settings
 from django.test import TestCase, override_settings
 from django.urls import clear_url_caches, reverse
 
-from infrastructure.core.pagination import DefaultAPIPagination
+from common.pagination import DefaultAPIPagination
 
 from . import services
 from .models import Product, ProductStatus, ProductTag
@@ -273,14 +273,14 @@ class ApiDocsFlagTests(TestCase):
         clear_url_caches()
 
     def _get(self, path):
-        with self.settings(ROOT_URLCONF='infrastructure.core.urls'):
+        with self.settings(ROOT_URLCONF='config.urls'):
             clear_url_caches()
             return self.client.get(path)
 
     @override_settings(IS_API_DOCS_ENABLED=True)
     def test_docs_served_when_enabled(self):
         import importlib
-        from infrastructure.core import urls
+        from config import urls
         importlib.reload(urls)
         clear_url_caches()
 
@@ -290,7 +290,7 @@ class ApiDocsFlagTests(TestCase):
     @override_settings(IS_API_DOCS_ENABLED=False)
     def test_docs_absent_when_disabled(self):
         import importlib
-        from infrastructure.core import urls
+        from config import urls
         importlib.reload(urls)
         clear_url_caches()
 
@@ -301,7 +301,7 @@ class ApiDocsFlagTests(TestCase):
         """The flag must gate the docs only, never the endpoints."""
         with override_settings(IS_API_DOCS_ENABLED=False):
             import importlib
-            from infrastructure.core import urls
+            from config import urls
             importlib.reload(urls)
             clear_url_caches()
 

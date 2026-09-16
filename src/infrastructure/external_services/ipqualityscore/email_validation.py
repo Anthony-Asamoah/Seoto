@@ -3,7 +3,7 @@ import logging
 import httpx
 from django.conf import settings
 
-from infrastructure.core.model_validators import is_random_string
+from common.model_validators import is_random_string
 
 logger = logging.getLogger(__name__)
 

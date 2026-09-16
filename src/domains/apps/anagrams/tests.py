@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from domains.apps.anagrams.the_code import AnagramSolver
-from infrastructure.core.exceptions import InvalidInput
+from common.exceptions import InvalidInput
 
 
 class AnagramSolverTests(TestCase):

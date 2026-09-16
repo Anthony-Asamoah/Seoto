@@ -1,12 +1,12 @@
 """Admin login forms carrying the same reCAPTCHA v3 check as the public auth forms.
 
-Imported from `infrastructure.core.apps` inside `ready()`, never at import time:
+Imported from `common.apps` inside `ready()`, never at import time:
 `django.contrib.admin.forms` pulls in the auth models.
 """
 
 from django.contrib.admin.forms import AdminAuthenticationForm
 
-from infrastructure.core.mixins.views import enforce_recaptcha
+from common.mixins.views import enforce_recaptcha
 
 
 class RecaptchaAdminLoginMixin:

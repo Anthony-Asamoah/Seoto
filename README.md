@@ -32,8 +32,9 @@ API layer. The project is ASGI-ready (Daphne + Channels) and ships as a PWA with
 | `theme` | Theme presets, gated behind `IS_THEME_ENABLED`; injects CSS via context processor |
 | `pwa` | Service worker, manifest, web push (VAPID) |
 
-Apps live under `src/domains/`; the Django project package is `src/infrastructure/core/`.
-Routing is centralized in `src/infrastructure/core/urls.py`; each app mounts its own `urls.py`
+Apps live under `src/domains/`; the Django project package is `src/config/` (settings,
+urls, wsgi/asgi) and shared cross-cutting code lives in `src/common/`.
+Routing is centralized in `src/config/urls.py`; each app mounts its own `urls.py`
 from there. See `CLAUDE.md` for deeper architecture notes.
 
 ## Getting started
@@ -78,7 +79,7 @@ python manage.py runserver
 `runserver` is fine for HTTP. For WebSocket / Channels testing, run under Daphne:
 
 ```bash
-daphne infrastructure.core.asgi:application
+daphne config.asgi:application
 ```
 
 ## Admin access

@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-from infrastructure.core.model_validators import Validators
+from common.model_validators import Validators
 
 
 class Rhyme(models.Model):

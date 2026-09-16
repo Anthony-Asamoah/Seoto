@@ -17,7 +17,7 @@ class AdminLoginRecaptchaTests(TestCase):
         self.assertContains(response, 'g-recaptcha-response-adminLoginForm')
 
     @override_settings(RECAPTCHA_ENABLED=True)
-    @mock.patch('infrastructure.core.mixins.views.is_human', return_value=(False, 0.1))
+    @mock.patch('common.mixins.views.is_human', return_value=(False, 0.1))
     def test_failing_score_blocks_the_login(self, mock_is_human):
         response = self.client.post(
             '/admin/login/', {'username': 'boss', 'password': 'pw12345678'}
@@ -28,7 +28,7 @@ class AdminLoginRecaptchaTests(TestCase):
         self.assertNotIn('_auth_user_id', self.client.session)
 
     @override_settings(RECAPTCHA_ENABLED=True)
-    @mock.patch('infrastructure.core.mixins.views.is_human', return_value=(True, 0.9))
+    @mock.patch('common.mixins.views.is_human', return_value=(True, 0.9))
     def test_passing_score_falls_through_to_the_credential_check(self, _mock_is_human):
         response = self.client.post('/admin/login/', {'username': 'boss', 'password': 'wrong'})
 
@@ -36,7 +36,7 @@ class AdminLoginRecaptchaTests(TestCase):
         self.assertContains(response, 'Please enter the correct')
 
     @override_settings(RECAPTCHA_ENABLED=False)
-    @mock.patch('infrastructure.core.mixins.views.is_human')
+    @mock.patch('common.mixins.views.is_human')
     def test_disabled_recaptcha_is_not_verified(self, mock_is_human):
         self.client.post('/admin/login/', {'username': 'boss', 'password': 'pw12345678'})
 

@@ -11,7 +11,7 @@ from django.http import Http404, HttpResponseForbidden, HttpResponseRedirect, Js
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
 
-from infrastructure.core.pagination import apply_view_pagination
+from common.pagination import apply_view_pagination
 from .forms import PostForm
 from .models import Post, PostTags, PostReadGroup, PostComment
 from .utils import (

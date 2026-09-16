@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
-from infrastructure.core.pagination import apply_view_pagination
+from common.pagination import apply_view_pagination
 from . import services
 from .forms import UserMealForm
 from .models import meal, userPreference, MealTimeSlot, UserMealSchedule

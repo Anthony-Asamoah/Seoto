@@ -4,7 +4,7 @@ from django.contrib.admin.apps import AdminConfig
 class SeotoAdminConfig(AdminConfig):
     """Stock admin site, with the project-wide admin form tweaks installed."""
 
-    login_form = 'infrastructure.core.admin_forms.AdminLoginForm'
+    login_form = 'common.admin_forms.AdminLoginForm'
 
     def ready(self):
         super().ready()
@@ -20,5 +20,5 @@ class SeotoAdminConfig(AdminConfig):
 class OTPAdminConfig(SeotoAdminConfig):
     """Swaps django.contrib.admin's default site for the TOTP-gated one."""
 
-    default_site = 'infrastructure.core.admin.SeotoAdminSite'
-    login_form = 'infrastructure.core.admin.OTPAdminLoginForm'
+    default_site = 'common.admin.SeotoAdminSite'
+    login_form = 'common.admin.OTPAdminLoginForm'

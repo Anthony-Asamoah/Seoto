@@ -1,7 +1,7 @@
 import random
 import string
 
-from infrastructure.core.exceptions import InvalidInput
+from common.exceptions import InvalidInput
 from infrastructure.words import ENGLISH_DICTIONARY, load_words
 
 # A common ending matches thousands of entries, so take a random sample of them

@@ -9,9 +9,9 @@ from pathlib import Path as pathlib
 from decouple import AutoConfig, Csv
 from django.contrib.messages import constants as messages
 
-# settings.py lives at <repo>/src/infrastructure/core/, so walk up to both the
-# import root (src/) and the repo root (which owns .env, db, media, staticfiles).
-SRC_DIR = pathlib(__file__).resolve().parent.parent.parent
+# settings.py lives at <repo>/src/config/, so walk up to both the import root
+# (src/) and the repo root (which owns .env, db, media, staticfiles).
+SRC_DIR = pathlib(__file__).resolve().parent.parent
 BASE_DIR = SRC_DIR.parent
 
 config = AutoConfig(search_path=BASE_DIR)
@@ -76,7 +76,7 @@ INSTALLED_APPS = [
     'domains.pwa',
 
     # Django default apps
-    'infrastructure.core.apps.OTPAdminConfig' if IS_ADMIN_OTP_ENABLED else 'infrastructure.core.apps.SeotoAdminConfig',
+    'common.apps.OTPAdminConfig' if IS_ADMIN_OTP_ENABLED else 'common.apps.SeotoAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -85,7 +85,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'infrastructure.core.middleware.BotScannerMiddleware',
+    'common.middleware.BotScannerMiddleware',
     'django.middleware.security.SecurityMiddleware',
     # Must sit above CommonMiddleware so preflights get their headers.
     'corsheaders.middleware.CorsMiddleware',
@@ -98,10 +98,10 @@ MIDDLEWARE = [
     'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'infrastructure.core.middleware.RateLimitMiddleware',
+    'common.middleware.RateLimitMiddleware',
 ]
 
-ROOT_URLCONF = 'infrastructure.core.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
@@ -115,14 +115,14 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'domains.theme.context_processors.theme_css',
-                'infrastructure.core.context_processors.recaptcha_site_key',
+                'common.context_processors.recaptcha_site_key',
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'infrastructure.core.wsgi.application'
-ASGI_APPLICATION = 'infrastructure.core.asgi.application'
+WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
 
 # Channels (in-memory layer for now)
 CHANNEL_LAYERS = {
@@ -247,12 +247,12 @@ else:
             'BACKEND': 'django.core.files.storage.FileSystemStorage',
         },
         'staticfiles': {
-            'BACKEND': 'infrastructure.core.storage.AdminSafeStaticFilesStorage',
+            'BACKEND': 'common.storage.AdminSafeStaticFilesStorage',
         },
     }
 
 # Email config
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.common.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST')
 EMAIL_PORT = config('EMAIL_PORT', cast=int)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')

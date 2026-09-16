@@ -1,12 +1,12 @@
 """Admin site wiring: a TOTP second factor on top of the stock admin login.
 
-Imported lazily by Django (see `infrastructure.core.apps.OTPAdminConfig`), because
+Imported lazily by Django (see `common.apps.OTPAdminConfig`), because
 django_otp pulls in auth models that aren't loadable while INSTALLED_APPS is being read.
 """
 
 from django_otp.admin import OTPAdminAuthenticationForm, OTPAdminSite
 
-from infrastructure.core.admin_forms import RecaptchaAdminLoginMixin
+from common.admin_forms import RecaptchaAdminLoginMixin
 
 
 class OTPAdminLoginForm(RecaptchaAdminLoginMixin, OTPAdminAuthenticationForm):

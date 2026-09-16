@@ -17,7 +17,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
-from infrastructure.core.pagination import apply_view_pagination
+from common.pagination import apply_view_pagination
 from .forms import (
     TransactionForm, AccountForm, CategoryForm, RecurringTransactionForm, ConfirmOccurrenceForm,
 )

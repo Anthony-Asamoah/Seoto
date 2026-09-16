@@ -14,7 +14,7 @@ from django.views.decorators.csrf import csrf_protect
 
 from domains.apps.rhymes.models import Rhyme
 from domains.apps.rhymes.the_code import RhymeDB
-from infrastructure.core.exceptions import InvalidInput
+from common.exceptions import InvalidInput
 
 
 class Rhymes(View):

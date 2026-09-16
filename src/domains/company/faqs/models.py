@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 
-from infrastructure.core.model_validators import Validators
+from common.model_validators import Validators
 
 
 class FAQCategory(models.Model):

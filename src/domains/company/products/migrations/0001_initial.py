@@ -2,7 +2,7 @@
 
 import django.db.models.deletion
 import domains.company.products.models
-import infrastructure.core.model_validators
+import common.model_validators
 from django.db import migrations, models
 
 
@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('slug', models.SlugField(blank=True, max_length=120, unique=True)),
-                ('title', models.CharField(max_length=200, validators=[infrastructure.core.model_validators.Validators.str])),
+                ('title', models.CharField(max_length=200, validators=[common.model_validators.Validators.str])),
                 ('client', models.CharField(blank=True, max_length=200, null=True)),
                 ('summary', models.CharField(help_text='The single line shown while the listing is collapsed.', max_length=300)),
                 ('body', models.TextField(help_text='What we built — shown when the listing expands.')),
@@ -39,7 +39,8 @@ class Migration(migrations.Migration):
             name='ProductTag',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('label', models.CharField(max_length=100, unique=True, validators=[infrastructure.core.model_validators.Validators.str])),
+                ('label', models.CharField(max_length=100, unique=True, validators=[
+                    common.model_validators.Validators.str])),
                 ('order', models.PositiveSmallIntegerField(blank=True, default=1)),
             ],
             options={
@@ -52,7 +53,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('image', models.ImageField(upload_to=domains.company.products.models.product_image_path)),
-                ('alt_text', models.CharField(max_length=250, validators=[infrastructure.core.model_validators.Validators.str])),
+                ('alt_text', models.CharField(max_length=250, validators=[common.model_validators.Validators.str])),
                 ('caption', models.CharField(blank=True, max_length=250, null=True)),
                 ('is_cover', models.BooleanField(default=False)),
                 ('order', models.PositiveSmallIntegerField(blank=True, default=1)),
