@@ -303,6 +303,70 @@ select.admin-select2 + .select2-container ~ .invalid-feedback {
     display: none;
 }
 
+.select2-container.select2-container--default .select2-selection.select2-selection--single,
+.select2-container.select2-container--admin-autocomplete .select2-selection.select2-selection--single {
+    display: flex;
+    align-items: center;
+    height: var(--control-height);
+    padding: 0 1.75rem 0 .75rem;
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: .375rem;
+    color: var(--bs-body-color);
+}
+
+.select2-container.select2-container--default .select2-selection.select2-selection--single .select2-selection__rendered,
+.select2-container.select2-container--admin-autocomplete .select2-selection.select2-selection--single .select2-selection__rendered {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    line-height: normal;
+    color: inherit;
+}
+
+.select2-container.select2-container--default.select2-container--focus .select2-selection.select2-selection--single,
+.select2-container.select2-container--default.select2-container--open .select2-selection.select2-selection--single,
+.select2-container.select2-container--admin-autocomplete.select2-container--focus .select2-selection.select2-selection--single,
+.select2-container.select2-container--admin-autocomplete.select2-container--open .select2-selection.select2-selection--single {
+    padding: 0 1.75rem 0 .75rem;
+    border-color: var(--brand);
+    box-shadow: 0 0 0 0.2rem rgba(var(--brand-rgb), 0.2);
+}
+
+.select2-container.select2-container--default .select2-selection.select2-selection--single .select2-selection__arrow,
+.select2-container.select2-container--admin-autocomplete .select2-selection.select2-selection--single .select2-selection__arrow {
+    top: 0;
+    right: .4rem;
+    height: 100%;
+}
+
+.inline-related.tabular .related-widget-wrapper .select2-container {
+    min-width: 14rem;
+}
+
+input[type="number"],
+input[type="number"].form-control {
+    height: var(--control-height);
+    padding: .375rem .75rem;
+    line-height: 1.5;
+    border: 1px solid var(--bs-border-color);
+    border-radius: .375rem;
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"]:focus {
+    border-color: var(--brand);
+    outline: 0;
+    box-shadow: 0 0 0 .25rem rgba(var(--brand-rgb), .25);
+}
+
 /* Changelist toolbars — select2 renders a 28px box, so the list filters and the
    action dropdown sit short beside the search input and the buttons. */
 #changelist-search .form-group,
@@ -313,25 +377,6 @@ select.admin-select2 + .select2-container ~ .invalid-feedback {
 #changelist-search .select2-container,
 .actions .select2-container {
     height: var(--control-height);
-}
-
-#changelist-search .select2-container--default .select2-selection--single,
-.actions .select2-container--default .select2-selection--single {
-    display: flex;
-    align-items: center;
-    height: 100%;
-}
-
-#changelist-search .select2-container--default .select2-selection--single .select2-selection__rendered,
-.actions .select2-container--default .select2-selection--single .select2-selection__rendered {
-    line-height: normal;
-}
-
-/* The arrow is absolutely positioned against select2's hardcoded 26px box. */
-#changelist-search .select2-container--default .select2-selection--single .select2-selection__arrow,
-.actions .select2-container--default .select2-selection--single .select2-selection__arrow {
-    top: 0;
-    height: 100%;
 }
 
 /* The action row is plain inline content; line it up like the search row. */

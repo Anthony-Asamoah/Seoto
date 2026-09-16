@@ -12,11 +12,6 @@ from common.admin_forms import RecaptchaAdminLoginMixin
 class OTPAdminLoginForm(RecaptchaAdminLoginMixin, OTPAdminAuthenticationForm):
     pass
 
-
-# Sidebar sections mirroring the source tree, each holding the apps that live there:
-# (section label, heading, icon, ((app label, sub-heading, icon), ...)).
-# The section label becomes the pseudo-app's label, so JAZZMIN_SETTINGS['icons'] keys
-# models as `<section>.<ModelName>`, not `<app_label>.<ModelName>`.
 SIDEBAR_SECTIONS = (
     ('site', 'Site', 'fas fa-globe', (
         ('accounts', 'Accounts', 'fas fa-id-badge'),
