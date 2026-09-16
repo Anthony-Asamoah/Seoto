@@ -13,11 +13,9 @@ class AddressInline(admin.StackedInline):
     model = Address
     extra = 0
     fields = (
-        ('address_type', 'is_primary', 'is_active'),
-        ('house_number', 'street'),
-        ('city', 'region', 'country'),
-        ('postal_code', 'digital_address'),
-        ('latitude', 'longitude'),
+        'address_type', 'is_primary', 'is_active',
+        'house_number', 'street', 'city', 'region', 'country',
+        'postal_code', 'digital_address', 'latitude', 'longitude',
     )
 
 

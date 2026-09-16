@@ -1,40 +1,38 @@
 from django.contrib import admin
+from django.contrib.admin.widgets import AdminTextareaWidget
+from django.db import models
 
 from ..models import Certificate, Education, Hobby, JobExperience, Specialisation
 
 
-class EducationInline(admin.StackedInline):
+class ProfileSectionInline(admin.StackedInline):
+    """shared layout for the ordered, hideable profile records"""
+    extra = 0
+    formfield_overrides = {models.TextField: {'widget': AdminTextareaWidget(attrs={'rows': 4})}}
+
+
+class EducationInline(ProfileSectionInline):
     model = Education
-    extra = 0
     fields = (
-        ('school', 'city'),
-        ('certificate_title', 'certificate_type', 'other_certificate_type'),
-        ('start_date', 'end_date'),
-        'description',
-        ('order', 'hidden'),
+        'school', 'city',
+        'certificate_title', 'certificate_type', 'other_certificate_type',
+        'start_date', 'end_date', 'description', 'order', 'hidden',
     )
 
 
-class CertificateInline(admin.StackedInline):
+class CertificateInline(ProfileSectionInline):
     model = Certificate
-    extra = 0
     fields = (
-        ('course_name', 'issuing_body'),
-        ('reference', 'is_sponsored'),
-        ('awarded_on', 'expires_on'),
-        'description',
-        ('order', 'hidden'),
+        'course_name', 'issuing_body', 'reference', 'is_sponsored',
+        'awarded_on', 'expires_on', 'description', 'order', 'hidden',
     )
 
 
-class JobExperienceInline(admin.StackedInline):
+class JobExperienceInline(ProfileSectionInline):
     model = JobExperience
-    extra = 0
     fields = (
-        ('job_title', 'employer', 'city'),
-        ('start_date', 'end_date'),
-        'description',
-        ('order', 'hidden'),
+        'job_title', 'employer', 'city',
+        'start_date', 'end_date', 'description', 'order', 'hidden',
     )
 
 
@@ -42,6 +40,8 @@ class SpecialisationInline(admin.TabularInline):
     model = Specialisation
     extra = 0
     fields = ('name', 'tools', 'is_active', 'order', 'hidden')
+    # A full-height textarea in a table cell stretches the whole row.
+    formfield_overrides = {models.TextField: {'widget': AdminTextareaWidget(attrs={'rows': 2})}}
 
 
 class HobbyInline(admin.TabularInline):

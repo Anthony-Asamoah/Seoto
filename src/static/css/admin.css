@@ -502,17 +502,55 @@ input[type="number"]:focus {
 }
 
 /* Member change form: one control width, so the stacked fields share a right edge.
-   Scoped to the member tab — the inlines pair fields per row and need their narrower default.
+   `.form-group` never wraps tabular-inline cells, so the inline tables keep their own sizing.
    !important beats select2's inline px width, which it copies off the native select. */
-body.model-member #general-tab .form-group input:not([type="checkbox"]),
-body.model-member #general-tab .form-group textarea,
-body.model-member #general-tab .form-group .readonly,
-body.model-member #general-tab .form-group .select2-container {
+body.model-member .form-group input:not([type="checkbox"]),
+body.model-member .form-group textarea,
+body.model-member .form-group .readonly,
+body.model-member .form-group .select2-container {
     width: 20rem !important;
     max-width: 100%;
 }
 
 /* The related-object wrapper is a flex row that would otherwise stretch select2 to fill it. */
-body.model-member #general-tab .form-group .select2-container {
+body.model-member .form-group .select2-container {
     flex: 0 0 auto;
+}
+
+/* Tabular inlines hold far more columns than the tab column is wide; keep the controls
+   compact so the table clears the edge before it has to scroll. */
+body.model-member .tabular td input:not([type="checkbox"]),
+body.model-member .tabular td select,
+body.model-member .tabular td .select2-container {
+    width: 9rem !important;
+    min-width: 0 !important;
+}
+
+body.model-member .tabular td textarea {
+    width: 11rem !important;
+}
+
+/* The date shortcuts cost more width than they earn in a cell; the field still takes typing. */
+body.model-member .tabular td .datetimeshortcuts {
+    display: none;
+}
+
+/* What is left over still scrolls, so give the row a scrollbar macOS will not hide. */
+body.model-member .tabular.inline-related {
+    scrollbar-width: thin;
+}
+
+body.model-member .tabular.inline-related::-webkit-scrollbar {
+    height: 8px;
+}
+
+body.model-member .tabular.inline-related::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background: rgba(0, 0, 0, .25);
+}
+
+/* jazzmin leaves the stacked inline's delete link hugging the card border. */
+body.model-member .panel .inline-deletelink {
+    display: inline-block;
+    margin: 0 0 .75rem 1.5rem;
 }
