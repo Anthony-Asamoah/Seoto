@@ -11,12 +11,12 @@ Dependencies are managed by **uv** (`pyproject.toml` + `uv.lock` at the repo roo
 - Run dev server: `python manage.py runserver`
   - ASGI is configured (`daphne` + `channels`); `runserver` works for HTTP, use `daphne config.asgi:application` for WebSocket testing.
 - Migrations: `python manage.py makemigrations` / `python manage.py migrate`
-- Tests (per app, since there is no top-level test runner config):
+- Tests — every test lives under `src/infrastructure/tests/`, in a package mirroring `domains/` (`accounts/`, `apps/foodie/`, `company/hr/staff/`, plus `common/`, `utils/`, `external_services/`). Apps have no `tests.py` of their own.
   - All: `python manage.py test`
-  - Single app: `python manage.py test domains.apps.spending_tracker`
-  - Single test: `python manage.py test domains.apps.spending_tracker.tests.TestClassName.test_method`
-  - Test discovery walks up from the cwd, so it only finds every app when run from `src/`.
-  - Each app has a `tests.py`; many start as a stub (`from django.test import TestCase`). When changing logic in an app whose `tests.py` is empty/stub, add tests there for the new/changed behavior — don't leave the stub untouched.
+  - One domain: `python manage.py test infrastructure.tests.apps.spending_tracker`
+  - Single test: `python manage.py test infrastructure.tests.apps.spending_tracker.test_recurring.TestClassName.test_method`
+  - Test discovery walks up from the cwd, so it only finds everything when run from `src/`.
+  - Modules are named for what they cover (`test_recurring.py`, `test_api.py`); fixtures shared across a package's modules go in that package's `helpers.py`. When changing an app whose domain has no test package yet (`blog`, `jotter`, `throw_a_die`, `flip_a_coin`, `interest_calc`), create one for the new/changed behavior.
 - Collect static: `python manage.py collectstatic --noinput`
 - Switch DB: set `DEFAULT_DB=sqlite` or `DEFAULT_DB=postgres` in `.env` (both are pre-configured in `settings.DATABASES`).
 - Switch storage: `MEDIA_STORAGE=LOCAL` or `AWS` in `.env` (S3 backend wired via `django-storages`).

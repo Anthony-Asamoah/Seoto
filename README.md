@@ -123,15 +123,20 @@ All settings come from `.env` (see `.env.example`). Common toggles:
 
 ## Testing
 
-There is no top-level test config; tests run per app. Run from `src/` — discovery walks up
-from the working directory, so it only finds every app when started there.
+All tests live in `src/infrastructure/tests/`, in packages mirroring `domains/` — so
+`domains/apps/spending_tracker/` is covered by `infrastructure/tests/apps/spending_tracker/`.
+Run from `src/`: discovery walks up from the working directory, so it only finds everything
+when started there.
 
 ```bash
 cd src
-python manage.py test                                  # all apps
-python manage.py test domains.apps.spending_tracker    # single app
-python manage.py test domains.apps.spending_tracker.tests.TestClassName.test_method
+python manage.py test                                            # everything
+python manage.py test infrastructure.tests.apps.spending_tracker  # one domain
+python manage.py test infrastructure.tests.apps.spending_tracker.test_recurring.TestClassName.test_method
 ```
+
+Modules within a package are named for what they cover (`test_recurring.py`, `test_api.py`);
+fixtures shared between them live in that package's `helpers.py`.
 
 ## Deployment
 
