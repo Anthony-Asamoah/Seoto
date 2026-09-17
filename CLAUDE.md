@@ -37,7 +37,7 @@ Single Django project migrating from stock Django MVT toward a repository-patter
     ├── manage.py
     ├── config/                the Django settings module only (settings, urls, wsgi/asgi)
     ├── common/                cross-cutting code (admin, middleware, mixins, pagination, storage)
-    ├── infrastructure/        utils/, external_services/, words/
+    ├── infrastructure/        utils/, external_services/, tasks/, tests/, words/
     ├── domains/               feature apps
     │   ├── accounts/ author/ home/ pwa/ theme/
     │   └── apps/              blog/ foodie/ spending_tracker/ jotter/ rhymes/
@@ -72,6 +72,7 @@ Routing is centralized in `src/config/urls.py` — each app owns its own `urls.p
 - `common/context_processors.py` — exposes `RECAPTCHA_SITE_KEY` to all templates.
 - CSRF: `static/js/csrf.js` (loaded from `base.html`) rewrites every rendered `csrfmiddlewaretoken` from the cookie at submit time, so service-worker-cached or long-open pages don't post a stale token; use its `csrfFetch` for JS POSTs. Failures land on `CSRF_FAILURE_VIEW` → `domains.home.views.error_handlers.csrf_failure`, which re-issues the cookie and offers a one-click retry (same-origin posts only, sensitive fields and uploads never replayed).
 - `infrastructure/utils/` — `media.py` (`MediaHelper` for thumbnail generation, used across foodie/accounts), `choices.py` (`BaseChoices`, the `TextChoices` base every model enum subclasses), `admin.py` (`RichTextAdminMixin`, `install_select2_m2m`), `widgets.py` (`Select2MultipleWidget`), `email.py`, `validators.py`, `profanity.py`. The package `__init__` re-exports everything but `contains_profanity`.
+- `infrastructure/tasks/` — standalone scheduled-task scripts, one package per domain (`foodie/`). They are run directly by the host's scheduler (PythonAnywhere Scheduled Tasks), not by `manage.py`, so each bootstraps Django itself: put `src/` on `sys.path`, set `DJANGO_SETTINGS_MODULE`, `django.setup()`, then import the domain's `services`. The `sys.path` hop counts directories, so moving a script changes it.
 - Email: **every** outgoing message goes through `infrastructure.utils.send_branded_email(subject, template, context, to, ...)`. It injects `app_domain` (templates that omit it render a blank footer link — the old hand-rolled senders all got this wrong), falls back to `strip_tags(html)` for the text part, and attaches `static/img/email-logo.png` as an inline `cid:` part. Don't hand-roll `EmailMultiAlternatives` again.
   - It sends via `RelatedEmail`, which retypes the root to `multipart/related` — `cid:` is only guaranteed to resolve there (RFC 2387), and Django 6 removed the `mixed_subtype` hook that used to do this. Use `set_type`, not `replace_header`. Attachments must be `email.message.MIMEPart`; Django 6 deprecates `MIMEBase`.
   - Templates live in `src/templates/emails/` and all extend `base_email.html`. Its palette is the admin's brown with the logo's gold; every pair is checked against WCAG AA. Change colours in `base_email.html`, then re-check the handful of literals in the sub-templates.
