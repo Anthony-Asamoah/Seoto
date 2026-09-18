@@ -55,9 +55,10 @@ def send_push_notification(user, title, body, icon=None, url=None, data=None):
             )
             success_count += 1
         except WebPushException as e:
-            response_status = e.response.status_code if e.response else 'no response'
+            # `is not None`: requests.Response.__bool__ is .ok, so an error response is falsy.
+            response_status = e.response.status_code if e.response is not None else 'no response'
             logger.error(f"Push failed for subscription {subscription.id} — status: {response_status}, error: {e}")
-            if e.response and e.response.status_code in [404, 410]:
+            if e.response is not None and e.response.status_code in [404, 410]:
                 subscription.is_active = False
                 subscription.save()
         except Exception:

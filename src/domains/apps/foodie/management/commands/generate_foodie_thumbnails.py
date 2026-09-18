@@ -1,21 +1,14 @@
 from django.core.management.base import BaseCommand
 
-from domains.apps.foodie.models import meal
+from common.management_utils import command_progress
+from domains.apps.foodie.services import generate_meal_thumbnails
 
 
 class Command(BaseCommand):
     help = 'Generate missing thumbnails for existing meal images'
 
     def handle(self, *args, **kwargs):
-        qs = meal.objects.filter(main_img__isnull=False).exclude(main_img='')
-        count, skipped = 0, 0
-        for m in qs:
-            if m.main_img_thumbnail:
-                skipped += 1
-                continue
-            m._generate_thumbnail()
-            count += 1
-            self.stdout.write(f'  Generated thumbnail for: {m.name}')
+        result = generate_meal_thumbnails(on_progress=command_progress(self))
         self.stdout.write(self.style.SUCCESS(
-            f'Done. Generated: {count}, Already had thumbnail: {skipped}'
+            f'Done. Generated: {result["generated"]}, Already had thumbnail: {result["skipped"]}'
         ))

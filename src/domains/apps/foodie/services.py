@@ -444,3 +444,213 @@ def get_all(user=None):
             for p in prefs
         ]
     return meal.objects.filter(created_by=None, is_public=True).values()
+
+
+# Seeding and maintenance: each returns a summary dict and reports progress via `on_progress`.
+
+SNACK_NO_FANCY = {'tea', 'indomie'}
+
+MEAL_SLOTS = {
+    'burgers':                    ['lunch', 'dinner'],
+    'assorted fried rice':        ['lunch', 'dinner'],
+    'banku':                      ['lunch'],
+    'bread & egg':                ['breakfast'],
+    'cake':                       ['snack'],
+    'fried rice':                 ['lunch', 'dinner'],
+    'fufu':                       ['lunch'],
+    'fula':                       ['breakfast', 'snack'],
+    'g)b3':                       ['breakfast', 'lunch'],
+    'ice cream':                  ['snack'],
+    'indomie':                    ['breakfast', 'lunch'],
+    'jollof':                     ['lunch', 'dinner'],
+    'kenkey':                     ['breakfast', 'lunch', 'dinner'],
+    'koliko':                     ['lunch', 'snack'],
+    'pastries':                   ['breakfast', 'snack'],
+    'pie':                        ['breakfast', 'lunch', 'snack'],
+    'pizza':                      ['lunch', 'dinner'],
+    'pork and fries':             ['lunch', 'dinner'],
+    'spring rolls':               ['breakfast', 'lunch', 'snack'],
+    'tea':                        ['breakfast', 'snack'],
+    'waakye & jollof combo':      ['breakfast', 'lunch', 'dinner'],
+    'waakye':                     ['breakfast', 'lunch'],
+    'assorted spaghetti (sauce)': ['lunch', 'dinner'],
+    'loaded fries':               ['lunch', 'snack', 'supper'],
+    'boba smoothie':              ['breakfast', 'snack'],
+    'sharwama':                   ['lunch', 'dinner'],
+    'lasagna':                    ['lunch', 'dinner', 'supper'],
+}
+
+MEAL_TIME_SLOT_DEFAULTS = [
+    ('breakfast', '08:00'),
+    ('lunch',     '12:00'),
+    ('snack',     '15:00'),
+    ('dinner',    '18:00'),
+    ('supper',    '20:00'),
+    ('fancy',     '00:00'),  # Pseudo-slot — not time-based; used for fancy meal preferences
+]
+
+MEAL_IMAGE_FIELDS = ['main_img', 'img_1', 'img_2', 'img_3']
+
+
+def _noop_progress(message, level='info'):
+    pass
+
+
+def _resolve_slots(name):
+    key = name.lower().strip()
+    slots = MEAL_SLOTS.get(key, [])
+    if 'snack' in slots and 'fancy' not in slots and key not in SNACK_NO_FANCY:
+        slots = slots + ['fancy']
+    return slots
+
+
+def generate_meal_thumbnails(on_progress=None):
+    """Generate the missing thumbnail for every meal that has a main image."""
+    on_progress = on_progress or _noop_progress
+
+    generated = skipped = 0
+    for m in meal.objects.filter(main_img__isnull=False).exclude(main_img=''):
+        if m.main_img_thumbnail:
+            skipped += 1
+            continue
+        m._generate_thumbnail()
+        generated += 1
+        on_progress(f'  Generated thumbnail for: {m.name}')
+
+    return {'generated': generated, 'skipped': skipped}
+
+
+def seed_meal_time_slots(on_progress=None):
+    """Create the default MealTimeSlot rows. Safe to re-run."""
+    on_progress = on_progress or _noop_progress
+
+    created = 0
+    for label, default_time in MEAL_TIME_SLOT_DEFAULTS:
+        slot, was_created = MealTimeSlot.objects.get_or_create(
+            label=label,
+            defaults={'default_time': default_time},
+        )
+        if was_created:
+            created += 1
+            on_progress(f'  Created: {label} @ {default_time}', 'success')
+        else:
+            on_progress(f'  Already exists: {label} @ {slot.default_time}')
+
+    return {'created': created}
+
+
+def seed_meal_defaults(on_progress=None):
+    """Set `categories`/`is_fancy` on each system meal from MEAL_SLOTS. Safe to re-run."""
+    on_progress = on_progress or _noop_progress
+
+    system_meals = list(meal.objects.filter(created_by=None))
+    if not system_meals:
+        on_progress('No system meals found in the database.', 'warning')
+        return {'updated': 0, 'unrecognised': []}
+
+    on_progress(f'Setting defaults for {len(system_meals)} system meal(s)...\n')
+
+    updated = 0
+    unrecognised = []
+    for m in system_meals:
+        slots = _resolve_slots(m.name)
+        if not slots:
+            unrecognised.append(m.name)
+            continue
+        is_fancy = 'fancy' in slots
+        meal.objects.filter(pk=m.pk).update(categories=slots, is_fancy=is_fancy)
+        updated += 1
+        on_progress(f'  {m.name}: {slots}{"  [fancy]" if is_fancy else ""}')
+
+    if unrecognised:
+        on_progress(f'\nUnrecognised meals (no slots assigned): {unrecognised}', 'warning')
+
+    return {'updated': updated, 'unrecognised': unrecognised}
+
+
+def seed_meal_default_preferences(on_progress=None):
+    """Seed userPreference rows for every user from each system meal's categories. Safe to re-run."""
+    from django.contrib.auth import get_user_model
+
+    on_progress = on_progress or _noop_progress
+    User = get_user_model()
+
+    slot_map = {s.label.lower(): s for s in MealTimeSlot.objects.all()}
+    if not slot_map:
+        on_progress('No MealTimeSlot records found. Run seed_meal_time_slots first.', 'warning')
+        return {'created': 0}
+
+    system_meals = list(meal.objects.filter(created_by=None))
+    if not system_meals:
+        on_progress('No system meals found in the database.', 'warning')
+        return {'created': 0}
+
+    users = User.objects.all()
+    on_progress(f'Seeding preferences for {len(users)} user(s), {len(system_meals)} meal(s)...\n')
+
+    created = 0
+    for user in users:
+        for m in system_meals:
+            for label in (m.categories or []):
+                slot = slot_map.get(label.lower())
+                if not slot: continue
+                _, was_created = userPreference.objects.get_or_create(
+                    user=user,
+                    meal=m,
+                    slot_id=slot.label,
+                    defaults={'isAvailable': True},
+                )
+                if was_created:
+                    created += 1
+
+    return {'created': created}
+
+
+def migrate_meal_images_to_s3(on_progress=None):
+    """One-time upload of local meal images to S3, skipping keys already present."""
+    import os
+
+    import boto3
+
+    on_progress = on_progress or _noop_progress
+
+    bucket = settings.AWS_STORAGE_BUCKET_NAME
+    prefix = settings.AWS_S3_BUCKET_PREFIX.rstrip('/')
+    s3 = boto3.client(
+        's3',
+        region_name=settings.AWS_S3_REGION_NAME,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    )
+
+    meals = meal.objects.all()
+    on_progress(f'Processing {meals.count()} meals...\n')
+
+    uploaded = skipped = missing = 0
+    for m in meals:
+        for field_name in MEAL_IMAGE_FIELDS:
+            field = getattr(m, field_name)
+            if not field:
+                continue
+
+            local_path = os.path.join(settings.MEDIA_ROOT, field.name)
+            s3_key = f'{prefix}/{field.name}'
+
+            if not os.path.exists(local_path):
+                on_progress(f'  MISSING  [{m.name}] {field_name}: {local_path}', 'warning')
+                missing += 1
+                continue
+
+            try:
+                s3.head_object(Bucket=bucket, Key=s3_key)
+                on_progress(f'  SKIP     [{m.name}] {field_name} already in S3')
+                skipped += 1
+                continue
+            except s3.exceptions.ClientError:
+                pass
+
+            s3.upload_file(local_path, bucket, s3_key)
+            on_progress(f'  UPLOADED [{m.name}] {field_name} → s3://{bucket}/{s3_key}', 'success')
+            uploaded += 1
+
+    return {'uploaded': uploaded, 'skipped': skipped, 'missing': missing}

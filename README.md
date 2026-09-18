@@ -238,14 +238,45 @@ Generates or regenerates thumbnails for all meal images that are missing one.
 python manage.py generate_foodie_thumbnails
 ```
 
-### Spending Tracker
+### Scheduled jobs
 
-#### `process_recurring_transactions`
-Processes due recurring transactions: auto-creates the transaction (`is_auto_renew=True`) or sends a push/in-app notification asking the user to approve it (`is_auto_renew=False`). Idempotent — safe to re-run for the same day. Intended to run once a day; since this app has no task queue, add it as a daily **PythonAnywhere Scheduled Task** at the time configured by the `RECURRING_TRANSACTIONS_CRON` env var (default `0 19 * * *`, i.e. 7pm) — the command logs a warning if it's invoked more than an hour off that time.
+Recurring work is not a set of per-app management commands. Jobs are registered with
+`@scheduled_job` in `src/infrastructure/scheduler/jobs/` — one module per domain, each
+job calling straight into that domain's `services` — and executed by a single entrypoint
+that runs whichever of them are due.
+
+**The trigger frequency is up to you.** Each job stores its own next-run time
+(`home.ScheduledJobRun`), so dueness never depends on the tick landing on a particular
+minute. A job scheduled for 19:00 fires once a day whether the runner is invoked every
+minute, every 5, every 15, or hourly — pick whatever the host makes convenient and
+change it later without touching code. Finer ticks only reduce how late a job can start.
+
+#### `run_jobs`
+Schedule this as a PythonAnywhere Scheduled Task at any frequency:
 
 ```bash
-python manage.py process_recurring_transactions
+python /home/<PA_USERNAME>/<PA_USERNAME>.pythonanywhere.com/src/infrastructure/scheduler/run_jobs.py
 ```
+
+Locally, or to force one job regardless of whether it is due (this does not disturb its
+schedule):
+
+```bash
+python manage.py run_jobs
+python manage.py run_jobs --job process_recurring_transactions
+```
+
+Currently registered:
+
+| Job id | Schedule | Late runs | What it does |
+| --- | --- | --- | --- |
+| `send_meal_notifications` | hourly, on the hour | skipped after 30 min | Pushes a meal suggestion to each user whose `UserMealSchedule` slot falls in this hour. |
+| `process_recurring_transactions` | daily, at the hour in `RECURRING_TRANSACTIONS_CRON` (default `0 19 * * *`, i.e. 7pm) | always run | Auto-creates due recurring transactions (`is_auto_renew=True`) or sends an approval notification (`is_auto_renew=False`). |
+
+Each run reports per job: `ran`, `skipped` (not due), `misfired` (too late to be useful,
+rescheduled) or `error` (logged, and never stops the other jobs). If the runner is not
+invoked for a long stretch, the missed fires coalesce into a single run rather than a
+backlog.
 
 ### Company
 

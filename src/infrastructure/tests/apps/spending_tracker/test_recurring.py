@@ -11,7 +11,10 @@ from domains.apps.spending_tracker.models import (
     Account, Transaction, RecurringTransaction, RecurringTransactionOccurrence,
     RecurringFrequencyChoices, CustomRecurrenceTypeChoices, RecurringOccurrenceStatusChoices,
 )
-from domains.apps.spending_tracker.services import process_due_occurrences
+from domains.apps.spending_tracker.services import (
+    process_all_due_recurring_transactions,
+    process_due_occurrences,
+)
 
 
 class RecurringTransactionNextOccurrenceTests(TestCase):
@@ -661,3 +664,60 @@ class RecurringListPendingRowTests(TestCase):
         gesture that deletes on release."""
         response = self.client.get(self.url)
         self.assertContains(response, 'data-swipe-commit="true"', count=1)  # the pending row only
+
+
+class ProcessAllDueRecurringTransactionsTests(TestCase):
+    """The batch entrypoint the scheduled job calls."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='batchuser', password='pass')
+        self.account = Account.objects.create(name='Batch', user=self.user, balance=Decimal('1000.00'))
+        self.today = date(2026, 6, 1)
+
+    def _schedule(self, **kwargs):
+        defaults = dict(
+            user=self.user,
+            mode='EXPENSE',
+            amount=Decimal('50.00'),
+            currency='GHS',
+            account=self.account,
+            frequency=RecurringFrequencyChoices.DAILY,
+            renewal_date=self.today,
+            is_auto_renew=True,
+        )
+        defaults.update(kwargs)
+        return RecurringTransaction.objects.create(**defaults)
+
+    def test_processes_only_active_schedules_due_today(self):
+        due = self._schedule(next_run_date=self.today)
+        self._schedule(next_run_date=self.today + timedelta(days=5))
+        self._schedule(next_run_date=self.today, is_active=False)
+
+        processed = process_all_due_recurring_transactions(today=self.today)
+
+        self.assertEqual(processed, 1)
+        self.assertTrue(
+            RecurringTransactionOccurrence.objects.filter(
+                recurring_transaction=due, scheduled_date=self.today
+            ).exists()
+        )
+        self.assertEqual(RecurringTransactionOccurrence.objects.count(), 1)
+
+    def test_returns_zero_when_nothing_is_due(self):
+        self._schedule(next_run_date=self.today + timedelta(days=1))
+        self.assertEqual(process_all_due_recurring_transactions(today=self.today), 0)
+
+    def test_is_idempotent_for_the_same_day(self):
+        self._schedule(next_run_date=self.today)
+
+        process_all_due_recurring_transactions(today=self.today)
+        before = Transaction.objects.count()
+        process_all_due_recurring_transactions(today=self.today)
+
+        self.assertEqual(Transaction.objects.count(), before)
+
+    def test_scheduled_job_runs_the_batch(self):
+        self._schedule(next_run_date=timezone.localdate())
+
+        from infrastructure.scheduler.jobs.spending_tracker import process_recurring_transactions
+        self.assertEqual(process_recurring_transactions(), 1)

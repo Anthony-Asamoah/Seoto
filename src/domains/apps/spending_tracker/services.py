@@ -5,7 +5,12 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
 
-from .models import RecurringOccurrenceStatusChoices, RecurringTransactionOccurrence, Transaction
+from .models import (
+    RecurringOccurrenceStatusChoices,
+    RecurringTransaction,
+    RecurringTransactionOccurrence,
+    Transaction,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -106,3 +111,16 @@ def process_due_occurrences(recurring_transaction, today=None):
         recurring_transaction.last_run_at = timezone.now()
         recurring_transaction.advance_next_run_date()
         recurring_transaction.save()
+
+
+def process_all_due_recurring_transactions(today=None):
+    """Process every active schedule due on or before `today`, returning how many were handled."""
+    today = today or timezone.localdate()
+    due_schedules = RecurringTransaction.objects.filter(is_active=True, next_run_date__lte=today)
+
+    processed = 0
+    for recurring_transaction in due_schedules:
+        process_due_occurrences(recurring_transaction, today=today)
+        processed += 1
+
+    return processed
