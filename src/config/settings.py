@@ -60,8 +60,8 @@ INSTALLED_APPS = [
     'django_otp.plugins.otp_totp',
     'django_otp.plugins.otp_static',
     # My apps
-    'domains.company.products.apps.ProductsConfig',
-    'domains.company.faqs.apps.FAQsConfig',
+    'domains.website.products.apps.ProductsConfig',
+    'domains.website.faqs.apps.FAQsConfig',
     'domains.company.hr.staff.apps.StaffConfig',
     'domains.accounts',
     'domains.home',
@@ -360,11 +360,13 @@ JAZZMIN_SETTINGS = {
         'feature_apps.todo': 'fas fa-square-check',
         'feature_apps.Rhyme': 'fas fa-music',
 
+        'website': 'fas fa-window-maximize',
+        'website.Product': 'fas fa-cubes',
+        'website.ProductTag': 'fas fa-tag',
+        'website.FAQ': 'fas fa-circle-question',
+        'website.FAQCategory': 'fas fa-folder-open',
+
         'company': 'fas fa-building',
-        'company.Product': 'fas fa-cubes',
-        'company.ProductTag': 'fas fa-tag',
-        'company.FAQ': 'fas fa-circle-question',
-        'company.FAQCategory': 'fas fa-folder-open',
         'company.Member': 'fas fa-user-tie',
         'company.Position': 'fas fa-sitemap',
         'company.Assignment': 'fas fa-file-signature',

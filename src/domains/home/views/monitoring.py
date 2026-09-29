@@ -28,7 +28,7 @@ def errors_list(request):
         'level': level,
         'levels': ['WARNING', 'ERROR', 'CRITICAL'],
     }
-    return render(request, 'Home/dashboard/errors.html', context)
+    return render(request, 'home/dashboard/errors.html', context)
 
 
 # ── User analytics ─────────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ def user_analytics(request):
         'recently_active': User.objects.filter(last_login__gte=week_ago).count(),
         'daily_regs': list(daily_regs),
     }
-    return render(request, 'Home/dashboard/users.html', context)
+    return render(request, 'home/dashboard/users.html', context)
 
 
 # ── App usage analytics ────────────────────────────────────────────────────────
@@ -105,5 +105,5 @@ def app_usage(request):
     ]
 
     context = {'apps': apps}
-    return render(request, 'Home/dashboard/usage.html', context)
+    return render(request, 'home/dashboard/usage.html', context)
 

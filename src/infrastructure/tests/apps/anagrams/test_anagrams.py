@@ -48,7 +48,7 @@ class AnagramViewTests(TestCase):
     def test_get_renders_page(self):
         response = self.client.get(reverse('anagrams'))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'anagrams/anagrams.html')
+        self.assertTemplateUsed(response, 'apps/anagrams/anagrams.html')
 
     def test_post_renders_results(self):
         response = self.client.post(reverse('anagrams'), {'letters': 'listen'})

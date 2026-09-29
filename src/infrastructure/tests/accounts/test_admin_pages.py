@@ -41,7 +41,7 @@ class AdminPageRenderTests(TestCase):
             reverse('admin:otp_static_staticdevice_changelist'),
             reverse('admin:blog_post_add'),
             reverse('admin:spending_tracker_transaction_changelist'),
-            reverse('admin:company_products_product_changelist'),
+            reverse('admin:website_products_product_changelist'),
             reverse('admin:password_change'),
         ]
         for url in urls:
@@ -98,7 +98,7 @@ class SidebarSectionTests(TestCase):
     def test_sections_replace_per_app_groups(self):
         names = [app['name'] for app in self.app_list()]
 
-        self.assertEqual(names, ['Site', 'Feature Apps', 'Company', 'Security'])
+        self.assertEqual(names, ['Site', 'Feature Apps', 'Website', 'Company', 'Security'])
 
     def test_models_land_in_their_section(self):
         sections = {app['app_label']: app for app in self.app_list()}
@@ -108,7 +108,8 @@ class SidebarSectionTests(TestCase):
 
         self.assertLessEqual({'User', 'Group', 'TOTPDevice'}, objects('security'))
         self.assertLessEqual({'Post', 'Transaction', 'meal'}, objects('feature_apps'))
-        self.assertLessEqual({'Product', 'FAQ'}, objects('company'))
+        self.assertLessEqual({'Product', 'FAQ'}, objects('website'))
+        self.assertLessEqual({'Member', 'Position'}, objects('company'))
         self.assertLessEqual({'ErrorLog', 'ThemePreset'}, objects('site'))
 
     def test_every_model_is_claimed_by_exactly_one_section(self):
@@ -134,7 +135,7 @@ class SidebarSectionTests(TestCase):
     def test_subgroup_models_are_the_same_objects_as_the_flat_list(self):
         """The sidebar relies on this: jazzmin stamps `url`/`icon` onto the flat list
         only, and the subgroups pick them up through shared dict identity."""
-        section = next(app for app in self.app_list() if app['app_label'] == 'company')
+        section = next(app for app in self.app_list() if app['app_label'] == 'website')
         flat = {id(model) for model in section['models']}
         nested = {id(model) for group in section['subgroups'] for model in group['models']}
 
@@ -143,7 +144,7 @@ class SidebarSectionTests(TestCase):
     def test_subgroups_survive_a_deepcopy_with_identity_intact(self):
         """jazzmin deep-copies the app list before mutating it; aliasing must hold."""
         section = copy.deepcopy(
-            next(app for app in self.app_list() if app['app_label'] == 'company')
+            next(app for app in self.app_list() if app['app_label'] == 'website')
         )
         for model in section['models']:
             model['url'] = 'stamped'

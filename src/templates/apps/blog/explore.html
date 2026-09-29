@@ -1,0 +1,80 @@
+{% extends "apps/blog/base.html" %}
+
+{% block window %}
+    <div class="search-container mb-4">
+        <form method="GET" action="{% url 'blog-explore' %}" class="form-inline">
+            <div class="input-group w-100">
+                <input type="text" name="search" class="form-control" placeholder="Search by title or author..."
+                       value="{{ search_query }}">
+                <select name="tag" class="form-control">
+                    <option value="">All Tags</option>
+                    {% for tag in all_tags %}
+                        <option value="{{ tag.label }}"
+                                {% if tag.label == tag_filter %}selected{% endif %}>{{ tag.label }}</option>
+                    {% endfor %}
+                </select>
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="submit">Search</button>
+                    {% if search_query or tag_filter %}
+                        <a href="{% url 'blog-explore' %}" class="btn btn-outline-danger">Clear</a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="popular-tags">
+        {% if popular_tags %}
+            <h5>Trending...</h5>
+            {% for tag in popular_tags %}
+                <a href="{% url 'tag-posts' tag.id %}" class="btn btn-outline-secondary btn-sm">{{ tag.label }}</a>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    {% if page_obj %}
+        {% for post in page_obj %}
+            <hr/>
+            <article class="media article-listing">
+                <div class="media-body">
+                    <div class="article-metadata d-flex align-items-center gap-2">
+                        {% with profile=post.author.user_profile %}
+                            {% if user.is_authenticated and profile.picture_thumbnail %}
+                                <img src="{{ profile.picture_thumbnail.url }}"
+                                     alt="{{ post.author.username }}"
+                                     class="blog-author-avatar">
+                            {% else %}
+                                <span class="blog-author-avatar blog-author-initials">{{ post.author.username|first|upper }}</span>
+                            {% endif %}
+                        {% endwith %}
+                        <div>
+                            <a class="mr-2" href="{% url 'author-posts' post.author.username %}">{{ post.author }}</a>
+                            <small class="text-muted d-block">{{ post.date_posted|date:"F d, Y" }}</small>
+                        </div>
+                        {% if not post.is_public %}
+                            <span class="badge badge-info">Private</span>
+                        {% endif %}
+                    </div>
+                    <h2><a class="article-title" href="{% url 'post-detail' post.id %}">{{ post.title }}</a></h2>
+                    <div class="article-content">
+                        {{ post.content|safe|truncatewords_html:50 }}
+                    </div>
+                    <div class="mt-2">
+                        {% for tag in post.tag_list %}
+                            <a href="{% url 'tag-posts' tag.id %}"
+                               class="badge badge-pill badge-secondary">{{ tag.label }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+
+    {% else %}
+        <div class="alert alert-info">
+            No posts found matching your criteria.
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block pagination %}
+    {% include 'partials/_pagination.html' with page_obj=page_obj search_query=search_query tag_filter=tag_filter %}
+{% endblock %}

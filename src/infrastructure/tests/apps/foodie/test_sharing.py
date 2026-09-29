@@ -113,7 +113,7 @@ class SharedSuggestionViewTests(TestCase):
         response = self.client.get(reverse('foodie_shared', kwargs={'token': 'garbage'}))
 
         self.assertEqual(response.status_code, 404)
-        self.assertTemplateUsed(response, 'foodie/shared_unavailable.html')
+        self.assertTemplateUsed(response, 'apps/foodie/shared_unavailable.html')
         self.assertFalse(response.context['expired'])
 
     @override_settings(FOODIE_SHARE_MAX_AGE_DAYS=7)

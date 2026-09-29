@@ -225,7 +225,7 @@ def dashboard(request):
         'net_monthly': monthly_income - monthly_expense,
         'currency_symbol': _get_currency_symbol(request.user),
     }
-    return render(request, 'spending_tracker/dashboard.html', context)
+    return render(request, 'apps/spending_tracker/dashboard.html', context)
 
 
 @login_required
@@ -244,7 +244,7 @@ def add_account(request):
     else:
         form = AccountForm()
 
-    return render(request, 'spending_tracker/add_account.html', {'form': form})
+    return render(request, 'apps/spending_tracker/add_account.html', {'form': form})
 
 
 @login_required
@@ -307,13 +307,13 @@ def transaction_list(request):
         if group_by:
             return _render_fragment(
                 request,
-                'spending_tracker/partials/_transactions_grouped_fragment.html',
+                'apps/spending_tracker/partials/_transactions_grouped_fragment.html',
                 page_obj,
                 {'currency_symbol': _get_currency_symbol(request.user)},
             )
         return _render_fragment(
             request,
-            'spending_tracker/partials/_transactions_flat_fragment.html',
+            'apps/spending_tracker/partials/_transactions_flat_fragment.html',
             page_obj,
         )
 
@@ -353,7 +353,7 @@ def transaction_list(request):
         'date_from': date_from,
         'date_to': date_to,
     }
-    return render(request, 'spending_tracker/transaction_list.html', context)
+    return render(request, 'apps/spending_tracker/transaction_list.html', context)
 
 
 @login_required
@@ -379,7 +379,7 @@ def add_transaction(request):
     # Step 1: Show mode selection if no mode specified
     if not mode or mode not in TransactionModeChoices.names_list():
         logger.debug("No mode specified, showing mode selection page")
-        return render(request, 'spending_tracker/add_transaction.html', {
+        return render(request, 'apps/spending_tracker/add_transaction.html', {
             'show_mode_selection': True
         })
 
@@ -500,7 +500,7 @@ def add_transaction(request):
         'currency_symbol': _get_currency_symbol(request.user),
         'idempotency_token': idempotency_token,
     }
-    return render(request, 'spending_tracker/add_transaction.html', context)
+    return render(request, 'apps/spending_tracker/add_transaction.html', context)
 
 
 @login_required
@@ -568,7 +568,7 @@ def edit_transaction(request, pk):
         'tags': list(Tag.objects.filter(user=request.user)),
         'currency_symbol': _get_currency_symbol(request.user),
     }
-    return render(request, 'spending_tracker/edit_transaction.html', context)
+    return render(request, 'apps/spending_tracker/edit_transaction.html', context)
 
 
 @login_required
@@ -672,7 +672,7 @@ def account_detail(request, pk):
     if _is_partial(request):
         return _render_fragment(
             request,
-            'spending_tracker/partials/_account_detail_transactions_fragment.html',
+            'apps/spending_tracker/partials/_account_detail_transactions_fragment.html',
             transactions_page,
         )
 
@@ -682,7 +682,7 @@ def account_detail(request, pk):
         'transactions_page': transactions_page,
         'currency_symbol': _get_currency_symbol(request.user),
     }
-    return render(request, 'spending_tracker/account_detail.html', context)
+    return render(request, 'apps/spending_tracker/account_detail.html', context)
 
 
 @login_required
@@ -722,7 +722,7 @@ def accounts_list(request):
         'total_balance': total_balance,
         'currency_symbol': _get_currency_symbol(request.user),
     }
-    return render(request, 'spending_tracker/accounts_list.html', context)
+    return render(request, 'apps/spending_tracker/accounts_list.html', context)
 
 
 @login_required
@@ -1466,7 +1466,7 @@ def reports(request):
         'transfer_routes': transfer_routes,
         'json_transfer_routes': json_transfer_routes,
     }
-    return render(request, 'spending_tracker/reports.html', context)
+    return render(request, 'apps/spending_tracker/reports.html', context)
 
 
 # Configuration and Management Views
@@ -1505,7 +1505,7 @@ def config(request):
         'currency_choices': Transaction.CURRENCY_CHOICES,
         'currency_symbol': CURRENCY_SYMBOLS.get(preferences.default_currency, preferences.default_currency),
     }
-    return render(request, 'spending_tracker/config.html', context)
+    return render(request, 'apps/spending_tracker/config.html', context)
 
 
 @login_required
@@ -1533,7 +1533,7 @@ def edit_account(request, pk):
         'account': account,
         'currency_symbol': _get_currency_symbol(request.user),
     }
-    return render(request, 'spending_tracker/edit_account.html', context)
+    return render(request, 'apps/spending_tracker/edit_account.html', context)
 
 
 @login_required
@@ -1585,7 +1585,7 @@ def delete_account(request, pk):
         'other_accounts': other_accounts,
         'currency_symbol': _get_currency_symbol(request.user),
     }
-    return render(request, 'spending_tracker/delete_account.html', context)
+    return render(request, 'apps/spending_tracker/delete_account.html', context)
 
 
 @login_required
@@ -1612,7 +1612,7 @@ def edit_category(request, pk):
         'form': form,
         'category': category,
     }
-    return render(request, 'spending_tracker/edit_category.html', context)
+    return render(request, 'apps/spending_tracker/edit_category.html', context)
 
 
 @login_required
@@ -1668,7 +1668,7 @@ def delete_category(request, pk):
         'transaction_count': transaction_count,
         'other_categories': other_categories,
     }
-    return render(request, 'spending_tracker/delete_category.html', context)
+    return render(request, 'apps/spending_tracker/delete_category.html', context)
 
 
 @login_required
@@ -1750,7 +1750,7 @@ def _pending_section_response(request, toast=None, close_modal=False):
     toasts through the messages framework mid-page, so they ride an HX-Trigger.
     """
     html = render_to_string(
-        'spending_tracker/partials/_pending_occurrences.html',
+        'apps/spending_tracker/partials/_pending_occurrences.html',
         {'pending_occurrences': _pending_occurrences_for(request.user), 'oob': True},
         request=request,
     )
@@ -1820,7 +1820,7 @@ def edit_recurring_transaction(request, pk):
         'currency_symbol': _get_currency_symbol(request.user),
         'today': timezone.localdate(),
     }
-    return render(request, 'spending_tracker/edit_recurring_transaction.html', context)
+    return render(request, 'apps/spending_tracker/edit_recurring_transaction.html', context)
 
 
 @login_required
@@ -1836,7 +1836,7 @@ def recurring_list(request):
         'pending_occurrences': pending_occurrences,
         'currency_symbol': _get_currency_symbol(request.user),
     }
-    return render(request, 'spending_tracker/recurring_list.html', context)
+    return render(request, 'apps/spending_tracker/recurring_list.html', context)
 
 
 @login_required
@@ -1971,5 +1971,5 @@ def confirm_recurring_occurrence(request, pk):
     if is_htmx:
         # Opening the modal, or re-rendering it with errors after an invalid submit.
         context['is_modal'] = True
-        return render(request, 'spending_tracker/partials/_confirm_occurrence_form.html', context)
-    return render(request, 'spending_tracker/confirm_recurring_occurrence.html', context)
+        return render(request, 'apps/spending_tracker/partials/_confirm_occurrence_form.html', context)
+    return render(request, 'apps/spending_tracker/confirm_recurring_occurrence.html', context)

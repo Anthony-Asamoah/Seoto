@@ -51,6 +51,7 @@ jobs:
           uv cache prune --ci --no-progress
           # manage.py lives in src/, which is also the import root.
           cd src
+          uv run --no-sync python manage.py relabel_apps
           uv run --no-sync python manage.py migrate --noinput
           uv run --no-sync python manage.py collectstatic --noinput
           echo DEPLOYMENT_SUCCESS

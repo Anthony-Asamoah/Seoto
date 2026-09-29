@@ -6,7 +6,5 @@ adding one never touches the root URLconf.
 from django.urls import include, path
 
 urlpatterns = [
-    path('products/', include('domains.company.products.urls')),
-    path('faqs/', include('domains.company.faqs.urls')),
     path('hr/', include('domains.company.hr.urls')),
 ]

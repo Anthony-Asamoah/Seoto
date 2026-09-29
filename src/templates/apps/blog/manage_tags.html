@@ -1,0 +1,106 @@
+{% extends 'apps/blog/base.html' %}
+
+{% block title %}- Manage Tags{% endblock %}
+
+{% block window %}
+    <div class="header">
+        <h2>Manage Tags</h2>
+        <p>Tags are shared across all users and automatically converted to lowercase.</p>
+        <hr/>
+    </div>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="create-tag-form">
+        <h3>Create New Tag</h3>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="tag_label">Tag Label:</label>
+                <input type="text" id="tag_label" name="tag_label" required>
+            </div>
+            <button type="submit" class="btn btn-success">Create Tag</button>
+        </form>
+    </div>
+
+    <div class="tags-list">
+        <h3>Existing Tags</h3>
+        {% if tags %}
+            <table>
+                <thead>
+                <tr>
+                    <th>Tag</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for tag in tags %}
+                    <tr>
+                        <td>{{ tag.label }}</td>
+                        <td>
+                            <a href="{% url 'tag-posts' tag.id %}" class="btn btn-secondary">View Posts</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No tags have been created yet.</p>
+        {% endif %}
+    </div>
+
+    <style>
+        .messages {
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f5f5f5;
+        }
+
+        .create-tag-form {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+    </style>
+
+    <a href="{% url 'blog-explore' %}" class="button button-secondary">&larr; Back to Posts</a>
+{% endblock %}

@@ -74,7 +74,7 @@ def explore(request):
         'all_tags': all_tags,
         'popular_tags': popular_tags
     }
-    return render(request, 'blog/explore.html', context)
+    return render(request, 'apps/blog/explore.html', context)
 
 
 def post_detail(request, pk):
@@ -102,7 +102,7 @@ def post_detail(request, pk):
     has_visible_comments = visible_comments.exists()
 
     PostTags.increment_hits(ids=list(post.tag_list.values_list('id', flat=True)))
-    return render(request, 'blog/post_detail.html', {
+    return render(request, 'apps/blog/post_detail.html', {
         'post': post,
         'visible_comments': visible_comments,
         'has_visible_comments': has_visible_comments
@@ -172,7 +172,7 @@ def create_post(request):
     else:
         form = PostForm()
 
-    return render(request, 'blog/create_post.html', {
+    return render(request, 'apps/blog/create_post.html', {
         'form': form
     })
 
@@ -193,7 +193,7 @@ def edit_post(request, pk):
     else:
         form = PostForm(instance=post)
 
-    return render(request, 'blog/edit_post.html', {
+    return render(request, 'apps/blog/edit_post.html', {
         'form': form,
         'post': post
     })
@@ -227,7 +227,7 @@ def manage_tags(request):
             return redirect('manage-tags')
 
     tags = PostTags.objects.all().order_by('label')
-    return render(request, 'blog/manage_tags.html', {'tags': tags})
+    return render(request, 'apps/blog/manage_tags.html', {'tags': tags})
 
 
 @login_required
@@ -257,7 +257,7 @@ def tag_posts(request, tag_id):
         'tag': tag,
         'page_obj': page_obj
     }
-    return render(request, 'blog/tag_posts.html', context)
+    return render(request, 'apps/blog/tag_posts.html', context)
 
 
 @login_required
@@ -284,7 +284,7 @@ def author_posts(request, username):
         'author': author,
         'page_obj': page_obj
     }
-    return render(request, 'blog/author_posts.html', context)
+    return render(request, 'apps/blog/author_posts.html', context)
 
 
 @login_required
@@ -305,7 +305,7 @@ def manage_read_groups(request):
 
     # Get user's read groups
     groups = PostReadGroup.objects.filter(author=request.user).order_by('label')
-    return render(request, 'blog/manage_read_groups.html', {'groups': groups})
+    return render(request, 'apps/blog/manage_read_groups.html', {'groups': groups})
 
 
 @login_required
@@ -369,7 +369,7 @@ def edit_read_group(request, group_id):
         'group': group,
         'all_users': User.objects.exclude(id=request.user.id).order_by('username')
     }
-    return render(request, 'blog/edit_read_group.html', context)
+    return render(request, 'apps/blog/edit_read_group.html', context)
 
 
 @login_required
@@ -383,7 +383,7 @@ def delete_read_group(request, group_id):
         messages.success(request, f'Read group "{group_label}" deleted successfully.')
         return redirect('manage-read-groups')
 
-    return render(request, 'blog/delete_read_group.html', {'group': group})
+    return render(request, 'apps/blog/delete_read_group.html', {'group': group})
 
 
 @login_required
@@ -396,7 +396,7 @@ def my_read_groups(request):
     for group in groups:
         group.post_count = group.allowed_posts.count()
 
-    return render(request, 'blog/my_read_groups.html', {'groups': groups})
+    return render(request, 'apps/blog/my_read_groups.html', {'groups': groups})
 
 
 @login_required
@@ -428,7 +428,7 @@ def leave_read_group(request, group_id):
 
         return redirect('my-read-groups')
 
-    return render(request, 'blog/leave_read_group.html', {'group': group})
+    return render(request, 'apps/blog/leave_read_group.html', {'group': group})
 
 
 @login_required

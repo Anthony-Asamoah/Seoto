@@ -143,4 +143,4 @@ class SearchAjaxTests(TestCase):
         response = self.client.post(reverse('rhymes'), {'rhyme': 'time'})
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'rhymes/rhymes.html')
+        self.assertTemplateUsed(response, 'apps/rhymes/rhymes.html')

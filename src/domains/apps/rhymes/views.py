@@ -19,7 +19,7 @@ from common.exceptions import InvalidInput
 
 class Rhymes(View):
     def get(self, request):
-        return render(request, 'rhymes/rhymes.html')
+        return render(request, 'apps/rhymes/rhymes.html')
 
     @method_decorator(never_cache)
     def post(self, request):
@@ -59,7 +59,7 @@ class Rhymes(View):
 
         if error:
             messages.error(request, error)
-        return render(request, 'rhymes/rhymes.html', context)
+        return render(request, 'apps/rhymes/rhymes.html', context)
 
     @staticmethod
     @login_required

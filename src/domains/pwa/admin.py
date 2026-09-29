@@ -19,6 +19,11 @@ class PushSubscriptionAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
     actions = ['send_push_notification_action']
 
+    def get_readonly_fields(self, request, obj=None):
+        if obj is None:
+            return super().get_readonly_fields(request, obj)
+        return [f.name for f in self.model._meta.fields]
+
     def endpoint_preview(self, obj):
         return obj.endpoint[:50] + '...'
 
@@ -82,4 +87,8 @@ class NotificationAdmin(admin.ModelAdmin):
     list_display = ['user', 'title', 'sent', 'sent_at', 'created_at']
     list_filter = ['sent', 'created_at']
     search_fields = ['user__username', 'title', 'body']
-    readonly_fields = ['created_at', 'sent_at']
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj is None:
+            return super().get_readonly_fields(request, obj)
+        return [f.name for f in self.model._meta.fields]

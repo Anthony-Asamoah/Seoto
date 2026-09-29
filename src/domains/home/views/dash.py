@@ -29,4 +29,4 @@ def dashboard(request):
         'posts_week': Post.objects.filter(date_posted__gte=week_ago).count(),
         'year': datetime.now().year,
     }
-    return render(request, 'Home/dashboard/overview.html', context)
+    return render(request, 'home/dashboard/overview.html', context)

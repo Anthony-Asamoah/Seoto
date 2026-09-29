@@ -13,7 +13,7 @@ from common.exceptions import InvalidInput
 
 class Anagrams(View):
     def get(self, request):
-        return render(request, 'anagrams/anagrams.html')
+        return render(request, 'apps/anagrams/anagrams.html')
 
     @method_decorator(never_cache)
     def post(self, request):
@@ -45,4 +45,4 @@ class Anagrams(View):
 
         if error:
             messages.error(request, error)
-        return render(request, 'anagrams/anagrams.html', context)
+        return render(request, 'apps/anagrams/anagrams.html', context)

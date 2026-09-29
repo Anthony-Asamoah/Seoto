@@ -9,7 +9,7 @@ from .the_code import Calculator
 
 class Interest(View):
     def get(self, request):
-        return render(request, 'interest/interest.html')
+        return render(request, 'apps/interest_calc/interest.html')
 
     def post(self, request):
         principal = request.POST['principal']
@@ -23,9 +23,9 @@ class Interest(View):
             calc = Calculator(principal, rate, time, kind)
             context['result'] = calc.get_result()
             context['chart_data'] = calc.get_chart_data()
-            return render(request, 'interest/interest.html', context)
+            return render(request, 'apps/interest_calc/interest.html', context)
 
         except ValueError as e:
             messages.error(request, str(e))
             context.update({'error': True})
-            return render(request, 'interest/interest.html', context)
+            return render(request, 'apps/interest_calc/interest.html', context)

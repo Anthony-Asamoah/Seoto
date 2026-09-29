@@ -30,6 +30,7 @@ urlpatterns = [
     # path('info/', Home.as_view(), name='index'),
     path('admin/', admin.site.urls, name='admin'),
     path('api/company/', include('domains.company.urls')),
+    path('api/company/', include('domains.website.urls')),
     path('accounts/', include('domains.accounts.urls')),
     path('home/', include("domains.home.urls")),
     # Anonymous

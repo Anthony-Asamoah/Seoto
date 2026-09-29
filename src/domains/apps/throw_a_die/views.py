@@ -6,7 +6,7 @@ from django.views import View
 
 class Die(View):
     def post(self, request):
-        return render(request, 'throw_a_die/die.html', {'side': randint(1, 6)})
+        return render(request, 'apps/throw_a_die/die.html', {'side': randint(1, 6)})
 
     def get(self, request):
-        return render(request, 'throw_a_die/die.html', {'side': None})
+        return render(request, 'apps/throw_a_die/die.html', {'side': None})

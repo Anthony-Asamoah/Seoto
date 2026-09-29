@@ -11,7 +11,7 @@ class GenerateInvoiceViewTests(TestCase):
     def test_page_renders(self):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'generate_invoice/index.html')
+        self.assertTemplateUsed(response, 'apps/generate_invoice/index.html')
 
 
 class LogoUploadMarkupTests(TestCase):

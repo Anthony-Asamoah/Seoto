@@ -1,0 +1,383 @@
+{% extends 'apps/blog/base.html' %}
+
+{% block title %}- Edit Post{% endblock %}
+
+{% block window %}
+    <div class="header">
+        <h2>Edit Post</h2>
+        <hr/>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label for="{{ form.title.id_for_label }}">Title:</label>
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="error">{{ form.title.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.content.id_for_label }}">Content:</label>
+            {{ form.content }}
+            {% if form.content.errors %}
+                <div class="error">{{ form.content.errors }}</div>
+            {% endif %}
+        </div>
+
+        <div class="media-upload-bar d-flex align-items-center gap-2 flex-wrap py-2 px-1">
+            <label class="mb-0 text-muted small fw-semibold">Insert Media:</label>
+            <input type="file" id="mediaFileInput" class="form-control form-control-sm"
+                   style="max-width:280px;"
+                   accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx">
+            <select id="mediaAlign" class="form-select form-select-sm" style="width:auto;">
+                <option value="">No align</option>
+                <option value="left">Float left</option>
+                <option value="right">Float right</option>
+                <option value="center">Center</option>
+            </select>
+            <select id="mediaSize" class="form-select form-select-sm" style="width:auto;">
+                <option value="">Full width</option>
+                <option value="75">75%</option>
+                <option value="50">50%</option>
+                <option value="25">25%</option>
+            </select>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertMedia()">
+                Upload &amp; Insert
+            </button>
+            <span id="mediaUploadStatus" class="text-muted small"></span>
+        </div>
+
+        <hr>
+        <div class="form-check form-switch mb-5 mt-5">
+            <input class="form-check-input" type="checkbox" name="is_public" id="checkNativeSwitch" switch>
+            <label class="form-check-label" for="checkNativeSwitch">
+                Public Audience: <span class="text-muted is-public-help-text">{{ form.is_public.help_text }}</span>
+            </label>
+        </div>
+
+        <hr>
+        <div class="form-group">
+            <label for="{{ form.tags_input.id_for_label }}">Tags:</label>
+            {{ form.tags_input }}
+            {% if form.tags_input.errors %}
+                <div class="error">{{ form.tags_input.errors }}</div>
+            {% endif %}
+            <div class="help-text">
+                {{ form.tags_input.help_text }}
+            </div>
+        </div>
+
+        <hr>
+        <div class="privacy-settings" id="privacySettings">
+            <h3>Privacy Settings</h3>
+            <p>If the post is not public, you can specify who can view it:</p>
+
+            <div class="form-group">
+                <label for="{{ form.allowed_groups.id_for_label }}">
+                    Allow Groups:
+                    <a href="{% url 'manage-read-groups' %}" class="manage-link" title="Manage Read Groups"
+                       target="_blank">
+                        <i class="fas fa-users-cog"></i> Manage
+                    </a>
+                </label>
+                {{ form.allowed_groups }}
+                {% if form.allowed_groups.errors %}
+                    <div class="error">{{ form.allowed_groups.errors }}</div>
+                {% endif %}
+                <div class="help-text">
+                    {{ form.allowed_groups.help_text }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.allowed_users_input.id_for_label }}">Allow Users:</label>
+                {{ form.allowed_users_input }}
+                {% if form.allowed_users_input.errors %}
+                    <div class="error">{{ form.allowed_users_input.errors }}</div>
+                {% endif %}
+                <div class="help-text">
+                    {{ form.allowed_users_input.help_text }}
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-secondary">Update Post</button>
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+            Delete Post
+        </button>
+    </form>
+
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Delete Post</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete <strong>{{ post.title }}</strong>? This cannot be undone.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form method="post" action="{% url 'post-delete' post.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .manage-link {
+            font-size: 0.85em;
+            color: #007bff;
+            text-decoration: none;
+            margin-left: 10px;
+            font-weight: normal;
+        }
+
+        .manage-link:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
+
+        .manage-link i {
+            font-size: 0.9em;
+        }
+
+        .tag-input,
+        .users-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .tag-input:focus,
+        .users-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+    </style>
+
+    <a href="{% url 'post-detail' post.pk %}" style="display: block; margin-top: 20px;">&larr; Back to Posts</a>
+{% endblock %}
+
+{% block script %}
+{{ form.media }}
+<script>
+    async function insertMedia() {
+        const input = document.getElementById('mediaFileInput');
+        const file = input.files[0];
+        if (!file) return;
+        const status = document.getElementById('mediaUploadStatus');
+        status.textContent = 'Uploading\u2026';
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        const resp = await fetch('{% url "blog-upload-media" %}', { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (data.error) { status.textContent = data.error; return; }
+
+        // Wrap with alignment / size if chosen
+        const align = document.getElementById('mediaAlign').value;
+        const size  = document.getElementById('mediaSize').value;
+        const widthStyle = size ? `width:${size}%;` : 'width:100%;';
+        let html = data.html;
+        if (align === 'left') {
+            html = `<div style="float:left;margin:0 1rem 1rem 0;${widthStyle}">${html}</div>`;
+        } else if (align === 'right') {
+            html = `<div style="float:right;margin:0 0 1rem 1rem;${widthStyle}">${html}</div>`;
+        } else if (align === 'center') {
+            html = `<div style="text-align:center;margin:1rem auto;${widthStyle}">${html}</div>`;
+        } else if (size) {
+            // No alignment wrapper — inject width directly onto the outermost element
+            html = html.replace(/^(<\w+)(\s|>)/, (m, tag, rest) =>
+                rest === '>' ? `${tag} style="${widthStyle}">` : `${tag} style="${widthStyle}" ${rest}`
+            );
+        }
+
+        // Insert at cursor position using CKEditor 5's data processor
+        const editor = window.editors['id_content'];
+        const viewFragment = editor.data.processor.toView(html);
+        const modelFragment = editor.data.toModel(viewFragment);
+        editor.model.insertContent(modelFragment);
+
+        input.value = '';
+        status.textContent = 'Inserted.';
+        setTimeout(() => status.textContent = '', 2000);
+    }
+</script>
+
+<script>
+(function () {
+    'use strict';
+
+    function initVideoResize(editor) {
+        const editorRoot = editor.ui.getEditableElement();
+        let overlay = null;
+        let trackedVideo = null;
+        let drag = null;
+
+        // Show/hide handles whenever the selection changes
+        editor.model.document.selection.on('change:range', () => {
+            requestAnimationFrame(sync);
+        });
+
+        // Re-position after a model change re-renders the view
+        editor.model.document.on('change:data', () => {
+            requestAnimationFrame(sync);
+        });
+
+        function getSelectedVideo() {
+            const modelEl = editor.model.document.selection.getSelectedElement();
+            if (!modelEl) return null;
+            const viewEl = editor.editing.mapper.toViewElement(modelEl);
+            if (!viewEl) return null;
+            const domEl = editor.editing.view.domConverter.mapViewToDom(viewEl);
+            if (!domEl) return null;
+            if (domEl.tagName === 'VIDEO') return domEl;
+            return domEl.querySelector('video');
+        }
+
+        function sync() {
+            const video = getSelectedVideo();
+            if (video) {
+                trackedVideo = video;
+                if (!overlay) {
+                    overlay = buildOverlay();
+                    document.body.appendChild(overlay);
+                }
+                positionOverlay();
+            } else if (!drag) {
+                destroyOverlay();
+            }
+        }
+
+        function buildOverlay() {
+            const el = document.createElement('div');
+            el.style.cssText = 'position:fixed;pointer-events:none;z-index:10000;';
+            [
+                ['nw', 'top:-5px;left:-5px;cursor:nw-resize;'],
+                ['ne', 'top:-5px;right:-5px;cursor:ne-resize;'],
+                ['sw', 'bottom:-5px;left:-5px;cursor:sw-resize;'],
+                ['se', 'bottom:-5px;right:-5px;cursor:se-resize;'],
+            ].forEach(([corner, pos]) => {
+                const h = document.createElement('div');
+                h.style.cssText = 'position:absolute;' + pos
+                    + 'width:10px;height:10px;background:#1a73e8;'
+                    + 'border:2px solid #fff;border-radius:2px;'
+                    + 'pointer-events:all;box-shadow:0 1px 4px rgba(0,0,0,.4);';
+                h.dataset.corner = corner;
+                h.addEventListener('mousedown', onMousedown);
+                el.appendChild(h);
+            });
+            return el;
+        }
+
+        function positionOverlay() {
+            if (!overlay || !trackedVideo) return;
+            const r = trackedVideo.getBoundingClientRect();
+            overlay.style.left   = r.left   + 'px';
+            overlay.style.top    = r.top    + 'px';
+            overlay.style.width  = r.width  + 'px';
+            overlay.style.height = r.height + 'px';
+        }
+
+        function destroyOverlay() {
+            if (overlay) { overlay.remove(); overlay = null; }
+            trackedVideo = null;
+        }
+
+        // Keep overlay aligned when the page or editor scrolls
+        window.addEventListener('scroll', positionOverlay, { passive: true, capture: true });
+        editorRoot.addEventListener('scroll', positionOverlay, { passive: true });
+
+        function onMousedown(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!trackedVideo) return;
+            const r = trackedVideo.getBoundingClientRect();
+            drag = {
+                corner:  e.currentTarget.dataset.corner,
+                startX:  e.clientX,
+                startY:  e.clientY,
+                startW:  r.width,
+                video:   trackedVideo,
+                // Capture the model element NOW — getSelectedElement() returns null after
+                // the mousedown fires outside the editor and CKEditor deselects the widget.
+                modelEl: editor.model.document.selection.getSelectedElement(),
+            };
+            document.addEventListener('mousemove', onMousemove);
+            document.addEventListener('mouseup',   onMouseup);
+        }
+
+        function onMousemove(e) {
+            if (!drag) return;
+            let dx = e.clientX - drag.startX;
+            let dy = e.clientY - drag.startY;
+            if (drag.corner.includes('w')) dx = -dx;
+            if (drag.corner.includes('n')) dy = -dy;
+            const delta = Math.abs(dx) >= Math.abs(dy) ? dx : dy;
+            drag.video.style.width = Math.max(80, drag.startW + delta) + 'px';
+            positionOverlay();
+        }
+
+        function onMouseup() {
+            document.removeEventListener('mousemove', onMousemove);
+            document.removeEventListener('mouseup',   onMouseup);
+            if (!drag) return;
+            const newW    = Math.round(drag.video.offsetWidth);
+            const modelEl = drag.modelEl;
+            drag = null;
+            if (!modelEl) return;
+            editor.model.change(writer => {
+                const attrs = modelEl.getAttribute('htmlAttributes') || {};
+                writer.setAttribute('htmlAttributes', {
+                    ...attrs,
+                    styles: { ...(attrs.styles || {}), width: newW + 'px' },
+                }, modelEl);
+            });
+            editor.editing.view.focus();
+        }
+    }
+
+    function boot() {
+        if (window.editors && window.editors['id_content']) {
+            initVideoResize(window.editors['id_content']);
+        } else {
+            setTimeout(boot, 150);
+        }
+    }
+    boot();
+}());
+</script>
+{% endblock %}
+
+<script>
+    // Toggle privacy settings visibility based on is_public checkbox
+    const isPublicCheckbox = document.getElementById('{{ form.is_public.id_for_label }}');
+    const privacySettings = document.getElementById('privacySettings');
+
+    function updatePrivacySettings() {
+        if (isPublicCheckbox.checked) {
+            privacySettings.style.display = 'none';
+        } else {
+            privacySettings.style.display = 'block';
+        }
+    }
+
+    isPublicCheckbox.addEventListener('change', updatePrivacySettings);
+    // Run once on page load
+    updatePrivacySettings();
+</script>
+

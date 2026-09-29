@@ -20,7 +20,7 @@ def foodie(request):
         context['share_url'] = request.build_absolute_uri(
             reverse('foodie_shared', kwargs={'token': token})
         )
-    return render(request, 'foodie/foodie.html', context)
+    return render(request, 'apps/foodie/foodie.html', context)
 
 
 def shared_suggestion(request, token):
@@ -28,12 +28,12 @@ def shared_suggestion(request, token):
     try:
         context = services.read_share_token(token)
     except services.ShareTokenExpired:
-        return render(request, 'foodie/shared_unavailable.html', {'expired': True}, status=410)
+        return render(request, 'apps/foodie/shared_unavailable.html', {'expired': True}, status=410)
     except services.ShareTokenError:
-        return render(request, 'foodie/shared_unavailable.html', {'expired': False}, status=404)
+        return render(request, 'apps/foodie/shared_unavailable.html', {'expired': False}, status=404)
 
     context['is_shared'] = True
-    return render(request, 'foodie/foodie.html', context)
+    return render(request, 'apps/foodie/foodie.html', context)
 
 
 @login_required
@@ -41,7 +41,7 @@ def foodie_config(request, mealtime=None):
     slots = MealTimeSlot.objects.all()
 
     if mealtime is None:
-        return render(request, 'foodie/foodie_config.html', {
+        return render(request, 'apps/foodie/foodie_config.html', {
             'mealtime': None,
             'slots': slots,
             'meals': [],
@@ -110,7 +110,7 @@ def foodie_config(request, mealtime=None):
         'all_categories': all_categories,
         'query_params': query_params,
     }
-    return render(request, 'foodie/foodie_config.html', context)
+    return render(request, 'apps/foodie/foodie_config.html', context)
 
 
 # User meal management
@@ -118,7 +118,7 @@ def foodie_config(request, mealtime=None):
 @login_required
 def my_meals(request):
     user_meals = meal.objects.filter(created_by=request.user).order_by('name')
-    return render(request, 'foodie/my_meals.html', {'user_meals': user_meals})
+    return render(request, 'apps/foodie/my_meals.html', {'user_meals': user_meals})
 
 
 @login_required
@@ -133,7 +133,7 @@ def meal_create(request):
             return redirect('foodie_my_meals')
     else:
         form = UserMealForm()
-    return render(request, 'foodie/meal_form.html', {'form': form, 'is_edit': False})
+    return render(request, 'apps/foodie/meal_form.html', {'form': form, 'is_edit': False})
 
 
 @login_required
@@ -163,7 +163,7 @@ def meal_edit(request, pk):
     active_mealtimes = list(
         userPreference.objects.filter(user=request.user, meal=m).values_list('slot_id', flat=True)
     )
-    return render(request, 'foodie/meal_form.html', {
+    return render(request, 'apps/foodie/meal_form.html', {
         'form': form,
         'is_edit': True,
         'meal_obj': m,
@@ -256,7 +256,7 @@ def meal_schedule(request):
         user=request.user
     ).order_by('time')
 
-    return render(request, 'foodie/meal_schedule.html', {
+    return render(request, 'apps/foodie/meal_schedule.html', {
         'schedules': schedules,
     })
 

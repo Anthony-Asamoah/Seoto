@@ -26,9 +26,11 @@ SIDEBAR_SECTIONS = (
         ('jotter', 'Jotter', 'fas fa-list-check'),
         ('rhymes', 'Rhymes', 'fas fa-music'),
     )),
+    ('website', 'Website', 'fas fa-window-maximize', (
+        ('website_products', 'Products', 'fas fa-cubes'),
+        ('website_faqs', 'FAQs', 'fas fa-circle-question'),
+    )),
     ('company', 'Company', 'fas fa-building', (
-        ('company_products', 'Products', 'fas fa-cubes'),
-        ('company_faqs', 'FAQs', 'fas fa-circle-question'),
         ('company_staff', 'Staff', 'fas fa-user-tie'),
     )),
     ('security', 'Security', 'fas fa-shield-halved', (

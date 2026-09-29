@@ -31,7 +31,7 @@ class JotterView(View):
             'tracker_list': tracker_qs[:3],
             'tracker_extra': max(0, tracker_qs.count() - 3),
         }
-        return render(request, 'jotter/jotter.html', context)
+        return render(request, 'apps/jotter/jotter.html', context)
 
     @staticmethod
     @login_required
@@ -45,7 +45,7 @@ class JotterView(View):
             return todo_form_validation(request, form)
 
 
-        return render(request, 'jotter/new_todo.html', {'form': default_form})
+        return render(request, 'apps/jotter/new_todo.html', {'form': default_form})
 
     @staticmethod
     @login_required
@@ -59,7 +59,7 @@ class JotterView(View):
             form = tracker_form(request.POST)
             return tracker_form_validation(request, form)
 
-        return render(request, 'jotter/new_to_track.html', {'form': default_form})
+        return render(request, 'apps/jotter/new_to_track.html', {'form': default_form})
 
     @staticmethod
     @login_required
@@ -85,7 +85,7 @@ class JotterView(View):
                         'notes_for_editor': request.POST.get('notes', item.notes or ''),
                         'conflict': True,
                     }
-                    return render(request, 'jotter/edit_todo.html', context)
+                    return render(request, 'apps/jotter/edit_todo.html', context)
             form = todo_form(request.POST, instance=item)
             return todo_form_validation(request, form)
 
@@ -100,7 +100,7 @@ class JotterView(View):
             'reminder': formatted_reminder,
             'notes_for_editor': item.notes,
         }
-        return render(request, 'jotter/edit_todo.html', context)
+        return render(request, 'apps/jotter/edit_todo.html', context)
 
     @staticmethod
     @login_required
@@ -123,7 +123,7 @@ class JotterView(View):
             form = tracker_form(request.POST, instance=item)
             return tracker_form_validation(request, form)
 
-        return render(request, 'jotter/edit_to_track.html', context)
+        return render(request, 'apps/jotter/edit_to_track.html', context)
 
     @staticmethod
     @login_required
@@ -166,7 +166,7 @@ class JotterView(View):
             'priority': priority,
             'priority_choices': ['High', 'Medium', 'Low'],
         }
-        return render(request, 'jotter/all_reminders.html', context)
+        return render(request, 'apps/jotter/all_reminders.html', context)
 
     @staticmethod
     @login_required
@@ -191,7 +191,7 @@ class JotterView(View):
             'category': category,
             'category_choices': valid_categories,
         }
-        return render(request, 'jotter/all_trackers.html', context)
+        return render(request, 'apps/jotter/all_trackers.html', context)
 
 
 @login_required

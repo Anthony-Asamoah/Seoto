@@ -17,11 +17,11 @@ MAX_RETRY_PAYLOAD_CHARS = 100_000
 
 
 def error404(request, *args, **kwargs):
-    return render(request, 'Home/404.html', status=404)
+    return render(request, 'home/404.html', status=404)
 
 
 def error500(request, *args, **kwargs):
-    return render(request, 'Home/500.html', status=500)
+    return render(request, 'home/500.html', status=500)
 
 
 def _wants_json(request):
@@ -103,7 +103,7 @@ def csrf_failure(request, reason=''):
     query = request.META.get('QUERY_STRING', '')
     return render(
         request,
-        'Home/403_csrf.html',
+        'home/403_csrf.html',
         {
             'can_retry': can_retry,
             'retry_action': f'{request.path}?{query}' if query else request.path,

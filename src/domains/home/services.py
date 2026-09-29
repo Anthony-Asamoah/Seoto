@@ -37,3 +37,31 @@ class ErrorLogService:
             )
         except Exception:
             pass
+
+
+APP_LABEL_RENAMES = {
+    'company_products': 'website_products',
+    'company_faqs': 'website_faqs',
+}
+
+
+def relabel_apps(renames=APP_LABEL_RENAMES, on_progress=None):
+    """Move already-migrated apps to a new label: tables, migration history and content types. Idempotent; run before `migrate`."""
+    from django.db import connection
+
+    report = on_progress or (lambda message, level='info': None)
+    with connection.schema_editor() as editor, connection.cursor() as cursor:
+        tables = connection.introspection.table_names(cursor)
+        for old, new in renames.items():
+            cursor.execute('SELECT COUNT(*) FROM django_migrations WHERE app = %s', [old])
+            if not cursor.fetchone()[0]:
+                report(f'{old}: nothing to relabel')
+                continue
+            for table in tables:
+                if table.startswith(f'{old}_'):
+                    renamed = new + table[len(old):]
+                    editor.alter_db_table(None, table, renamed)
+                    report(f'  {table} -> {renamed}')
+            cursor.execute('UPDATE django_migrations SET app = %s WHERE app = %s', [new, old])
+            cursor.execute('UPDATE django_content_type SET app_label = %s WHERE app_label = %s', [new, old])
+            report(f'{old} -> {new}', 'success')

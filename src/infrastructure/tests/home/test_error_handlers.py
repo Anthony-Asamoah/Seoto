@@ -27,7 +27,7 @@ class CsrfFailureViewTests(TestCase):
         response = self.client.post(self.url, {'note': 'lunch money'}, **self.same_origin)
 
         self.assertEqual(response.status_code, 403)
-        self.assertTemplateUsed(response, 'Home/403_csrf.html')
+        self.assertTemplateUsed(response, 'home/403_csrf.html')
         self.assertContains(response, 'Try Again', status_code=403)
         self.assertContains(response, 'name="note" value="lunch money"', status_code=403)
         self.assertTrue(response.cookies['csrftoken'].value)
