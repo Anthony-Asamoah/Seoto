@@ -12,9 +12,20 @@ from django.core.exceptions import ValidationError
 from infrastructure.external_services.ipqualityscore.email_validation import is_valid_email
 from common.mixins.views import HoneypotMixin, RecaptchaMixin
 
+from .otp import OptionalOTPMixin
 
-class LoginForm(RecaptchaMixin, HoneypotMixin, AuthenticationForm):
+
+class LoginForm(RecaptchaMixin, HoneypotMixin, OptionalOTPMixin, AuthenticationForm):
     recaptcha_action = 'login'
+
+    otp_device = forms.CharField(required=False, widget=forms.HiddenInput)
+    otp_token = forms.CharField(required=False)
+    otp_challenge = forms.CharField(required=False, widget=forms.HiddenInput)
+
+    def clean(self):
+        self.cleaned_data = super().clean()
+        self.clean_otp(self.get_user())
+        return self.cleaned_data
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -27,6 +38,10 @@ class LoginForm(RecaptchaMixin, HoneypotMixin, AuthenticationForm):
         })
         self.fields['username'].widget.attrs.update({
             'id': 'id_username'
+        })
+        self.fields['otp_token'].widget.attrs.update({
+            'autocomplete': 'one-time-code', 'inputmode': 'numeric', 'spellcheck': 'false',
+            'placeholder': '6-digit code or backup code',
         })
 
 

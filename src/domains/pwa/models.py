@@ -13,6 +13,7 @@ class PushSubscription(models.Model):
     is_active = models.BooleanField(default=True)
 
     class Meta:
+        permissions = [('view_all_pushsubscription', 'Can view all PushSubscription records')]
         unique_together = ('user', 'endpoint')
         verbose_name = 'Push Subscription'
         verbose_name_plural = 'Push Subscriptions'
@@ -45,6 +46,7 @@ class Notification(models.Model):
     is_read = models.BooleanField(default=False)
 
     class Meta:
+        permissions = [('view_all_notification', 'Can view all Notification records')]
         ordering = ['-created_at']
         verbose_name = 'Notification'
         verbose_name_plural = 'Notifications'

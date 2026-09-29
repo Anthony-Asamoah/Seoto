@@ -1,23 +1,24 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from common.mixins.admin import OwnerScopedAdminMixin
 
 from .models import Tag, Category, Account, Transaction, RecurringTransaction, RecurringTransactionOccurrence
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ['label', 'created_at', 'user']
     search_fields = ['label', 'user__username']
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ['label', 'description', 'created_at', 'user']
     search_fields = ['label', 'description', 'user__username']
 
 
 @admin.register(Account)
-class AccountAdmin(admin.ModelAdmin):
+class AccountAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ['name', 'user', 'account_type', 'balance', 'is_default', 'created_at']
     list_display_links = ['name']
     list_filter = ['account_type', 'is_default']
@@ -39,7 +40,8 @@ class AccountAdmin(admin.ModelAdmin):
 
 
 @admin.register(Transaction)
-class TransactionAdmin(admin.ModelAdmin):
+class TransactionAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+    owner_lookup = 'account__user'
     list_display = ['mode', 'amount', 'currency', 'account', 'category', 'transaction_time', 'created_at']
     list_display_links = ['mode', 'amount']
     list_filter = ['mode', 'currency', 'category', 'created_at']
@@ -68,7 +70,7 @@ class TransactionAdmin(admin.ModelAdmin):
 
 
 @admin.register(RecurringTransaction)
-class RecurringTransactionAdmin(admin.ModelAdmin):
+class RecurringTransactionAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ['mode', 'amount', 'currency', 'account', 'frequency', 'next_run_date', 'is_auto_renew', 'is_active', 'user']
     list_display_links = ['mode', 'amount']
     list_filter = ['mode', 'frequency', 'is_auto_renew', 'is_active']
@@ -103,7 +105,8 @@ class RecurringTransactionAdmin(admin.ModelAdmin):
 
 
 @admin.register(RecurringTransactionOccurrence)
-class RecurringTransactionOccurrenceAdmin(admin.ModelAdmin):
+class RecurringTransactionOccurrenceAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+    owner_lookup = 'recurring_transaction__user'
     list_display = ['recurring_transaction', 'scheduled_date', 'status', 'transaction', 'resolved_at']
     list_display_links = ['recurring_transaction']
     list_filter = ['status']

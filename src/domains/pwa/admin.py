@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import path, reverse
+from common.mixins.admin import OwnerScopedAdminMixin
 
 from .models import PushSubscription, Notification
 from .services import send_push_notification
@@ -12,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 @admin.register(PushSubscription)
-class PushSubscriptionAdmin(admin.ModelAdmin):
+class PushSubscriptionAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ['user', 'endpoint_preview', 'is_active', 'created_at']
     list_filter = ['is_active', 'created_at']
     search_fields = ['user__username', 'endpoint']
@@ -83,7 +84,7 @@ class PushSubscriptionAdmin(admin.ModelAdmin):
 
 
 @admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
+class NotificationAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ['user', 'title', 'sent', 'sent_at', 'created_at']
     list_filter = ['sent', 'created_at']
     search_fields = ['user__username', 'title', 'body']

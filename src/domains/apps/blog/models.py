@@ -31,6 +31,9 @@ class PostReadGroup(models.Model):
     def __str__(self):
         return self.label
 
+    class Meta:
+        permissions = [('view_all_postreadgroup', 'Can view all PostReadGroup records')]
+
 
 class Post(models.Model):
     title = models.CharField(max_length=200)
@@ -44,6 +47,7 @@ class Post(models.Model):
     allowed_users = models.ManyToManyField(User, blank=True, related_name="allowed_posts")
 
     class Meta:
+        permissions = [('view_all_post', 'Can view all Post records')]
         unique_together = ("title", "author", "is_public")
 
     def __str__(self):
@@ -60,3 +64,6 @@ class PostComment(models.Model):
 
     def __str__(self):
         return f"{self.author.username} - {self.post.title}"
+
+    class Meta:
+        permissions = [('view_all_postcomment', 'Can view all PostComment records')]

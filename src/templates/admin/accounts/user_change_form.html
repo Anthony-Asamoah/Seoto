@@ -1,4 +1,5 @@
 {% extends "admin/change_form.html" %}
+{% load otp_webauthn %}
 
 {% comment %}
 Adds the 2FA enrolment button. `extra_actions` is jazzmin's own empty hook inside
@@ -17,10 +18,25 @@ The modal shell goes in extrajs because after_related_objects sits inside the ch
         {% elif totp_status == 'pending' %}Resume 2FA setup
         {% else %}Set up 2FA{% endif %}
     </a>
+    {% if original.pk == request.user.pk %}
+        <span id="passkey-registration-placeholder"></span>
+        <template id="passkey-registration-available-template">
+            <button type="button" class="btn btn-outline-secondary" id="passkey-register-button">
+                <i class="fas fa-fingerprint"></i> Add a passkey
+            </button>
+            <span id="passkey-register-status-message" class="small text-muted" role="status"></span>
+        </template>
+    {% endif %}
 {% endblock %}
 
 {% block extrajs %}
     {{ block.super }}
+    {% if original.pk == request.user.pk %}
+        {% render_otp_webauthn_register_scripts %}
+        <script>
+            document.addEventListener('otp_webauthn.register_complete', function () { window.location.reload(); });
+        </script>
+    {% endif %}
     <div class="modal fade" id="totpSetupModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">

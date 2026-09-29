@@ -1,10 +1,11 @@
 from django.contrib import admin
+from common.mixins.admin import OwnerScopedAdminMixin
 
 from .models import tracker, todo
 
 
 @admin.register(tracker)
-class TrackerAdmin(admin.ModelAdmin):
+class TrackerAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ['user', 'category', 'title', 'episode', 'chapter', 'timestamp', 'link', 'isCompleted', 'added_on']
     list_display_links = ['title']
     list_filter = ['category', 'isCompleted']
@@ -29,7 +30,7 @@ class TrackerAdmin(admin.ModelAdmin):
 
 
 @admin.register(todo)
-class TodoAdmin(admin.ModelAdmin):
+class TodoAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ['user', 'title', 'priority', 'reminder', 'isCompleted', 'added_on']
     list_display_links = ['title']
     list_filter = ['priority', 'isCompleted']

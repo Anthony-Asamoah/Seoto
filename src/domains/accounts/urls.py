@@ -2,13 +2,14 @@ from django.urls import path
 from django.contrib.auth import views
 from .views import (
 	register, profile, totp_setup_confirm, totp_setup_done,
-	CustomLoginView, CustomPasswordResetView,
+	CustomLoginView, CustomPasswordResetView, login_factors,
 )
 from .forms import CustomPasswordChangeForm, CustomSetPasswordForm
 
 
 urlpatterns = [
 	path("login/", CustomLoginView.as_view(), name='login'),
+	path("login/factors/", login_factors, name='login_factors'),
 	path("logout/", views.LogoutView.as_view(), name="logout"),
 	path(
 		"password_change/", views.PasswordChangeView.as_view(template_name='accounts/password_change.html', form_class=CustomPasswordChangeForm), name="password_change"

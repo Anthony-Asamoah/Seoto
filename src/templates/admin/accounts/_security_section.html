@@ -1,0 +1,52 @@
+{% load otp_webauthn %}
+<section class="card account-section">
+    <div class="card-header"><h3><i class="fas fa-shield-halved"></i>Security</h3><p>Keep your sign-in protected.</p></div>
+    <ul class="account-security">
+        <li>
+            <span class="account-security-icon"><i class="fas fa-key"></i></span>
+            <div class="account-security-body">
+                <strong>Password</strong>
+                <small>Use a long, unique password you don't use elsewhere.</small>
+            </div>
+            <a href="{% url 'admin:password_change' %}" class="btn btn-sm btn-outline-secondary">Change</a>
+        </li>
+        <li>
+            <span class="account-security-icon"><i class="fas fa-mobile-screen"></i></span>
+            <div class="account-security-body">
+                <strong>Authenticator app
+                    {% if totp_status == 'active' %}<span class="badge text-bg-success">On</span>
+                    {% elif totp_status == 'pending' %}<span class="badge text-bg-warning">Pending</span>
+                    {% else %}<span class="badge account-badge-muted">Off</span>{% endif %}
+                </strong>
+                <small>{% if totp_status == 'active' %}{{ backup_code_count }} backup code{{ backup_code_count|pluralize }} left.{% else %}6-digit codes from an app like Google Authenticator or 1Password.{% endif %}</small>
+            </div>
+            <a href="#" class="btn btn-sm {% if totp_status == 'active' %}btn-outline-secondary{% else %}btn-primary{% endif %}" id="totp-setup-btn"
+               data-url="{% url 'admin:auth_user_totp_setup' request.user.pk %}"
+               data-verify-url="{% url 'admin:auth_user_totp_verify' request.user.pk %}"
+               data-email-url="{% url 'admin:auth_user_totp_email' request.user.pk %}">
+                {% if totp_status == 'active' %}Reset{% elif totp_status == 'pending' %}Resume setup{% else %}Set up{% endif %}
+            </a>
+        </li>
+        <li>
+            <span class="account-security-icon"><i class="fas fa-fingerprint"></i></span>
+            <div class="account-security-body">
+                <strong>Passkeys
+                    {% if passkeys %}<span class="badge text-bg-success">{{ passkeys|length }}</span>{% endif %}
+                </strong>
+                <small>Sign in with Touch ID, Face ID, Windows Hello or a security key.</small>
+                {% if passkeys %}
+                    <ul class="account-passkeys">
+                        {% for p in passkeys %}
+                            <li><span>{{ p.name|default:"Passkey" }}</span><small>Added {{ p.created_at|date:"j M Y" }}{% if p.last_used_at %} · used {{ p.last_used_at|timesince }} ago{% endif %}</small></li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <span id="passkey-register-status-message" class="small text-muted" role="status"></span>
+            </div>
+            <template id="passkey-registration-available-template">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="passkey-register-button">Add</button>
+            </template>
+            <span id="passkey-registration-placeholder"><small class="text-muted">Not supported here</small></span>
+        </li>
+    </ul>
+</section>

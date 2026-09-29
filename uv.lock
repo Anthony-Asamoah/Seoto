@@ -583,6 +583,21 @@ wheels = [
 ]
 
 [[package]]
+name = "django-otp-webauthn"
+version = "0.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+    { name = "django-otp" },
+    { name = "djangorestframework" },
+    { name = "webauthn" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ac/78/ad65437b9edb1c0d3cffc252105998c54e85cad02fe3e120b52466ab1712/django_otp_webauthn-0.9.0.tar.gz", hash = "sha256:3719e53a5be71f4bf7d1f60cdc4cd65d358309044907287c1dc181a8c937faba", size = 121663, upload-time = "2026-06-08T21:09:42.245Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ff/6f/08306f77522f6283645df57bc879fdc08c2f163c6ed2273af21eda3b76a7/django_otp_webauthn-0.9.0-py3-none-any.whl", hash = "sha256:6e120a180c8949a1b4d68c16f81a56a7a545b1581986d09a40b1943630d7a758", size = 101131, upload-time = "2026-06-08T21:09:40.885Z" },
+]
+
+[[package]]
 name = "django-storages"
 version = "1.14.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1673,6 +1688,7 @@ dependencies = [
     { name = "django-cors-headers" },
     { name = "django-jazzmin" },
     { name = "django-otp" },
+    { name = "django-otp-webauthn" },
     { name = "django-storages", extra = ["s3"] },
     { name = "djangorestframework" },
     { name = "drf-spectacular" },
@@ -1716,6 +1732,7 @@ requires-dist = [
     { name = "django-cors-headers" },
     { name = "django-jazzmin", specifier = ">=3.0.5" },
     { name = "django-otp", specifier = ">=1.7" },
+    { name = "django-otp-webauthn", specifier = ">=0.9.0" },
     { name = "django-storages", extras = ["s3"] },
     { name = "djangorestframework" },
     { name = "drf-spectacular" },
@@ -1934,6 +1951,21 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
+]
+
+[[package]]
+name = "webauthn"
+version = "2.7.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cbor2" },
+    { name = "cryptography" },
+    { name = "pyasn1" },
+    { name = "pyopenssl" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6c/f4/9529bcf85ef46c76842b84c66ffa8ec31f18e3aacd1330b62f440077b45b/webauthn-2.7.1.tar.gz", hash = "sha256:2a1ebbfffc4a83e31d3db5d69113944bc49d05fae77770c2d4e388386cb9656e", size = 124256, upload-time = "2026-02-11T23:36:02.302Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/90/5b/f73513367a9d34b199de916b44306acfa4027b57f7e22200421212b1f763/webauthn-2.7.1-py3-none-any.whl", hash = "sha256:d57e9613c65e0c6a4db7ee715fb49ebdf3c4a6eb3979729eeb497c99105e8181", size = 71684, upload-time = "2026-02-11T23:36:00.864Z" },
 ]
 
 [[package]]

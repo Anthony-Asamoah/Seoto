@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html, mark_safe, strip_tags
 
 from infrastructure.utils import RichTextAdminMixin
+from common.mixins.admin import OwnerScopedAdminMixin
 from .models import MealTimeSlot, UserMealSchedule, DailyMealSuggestion, meal, userPreference
 
 
@@ -29,7 +30,7 @@ class MealTimeSlotAdmin(admin.ModelAdmin):
 
 
 @admin.register(UserMealSchedule)
-class UserMealScheduleAdmin(admin.ModelAdmin):
+class UserMealScheduleAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ['user', 'slot', 'time']
     list_filter = ['slot']
     search_fields = ['user__username']
@@ -39,7 +40,8 @@ class UserMealScheduleAdmin(admin.ModelAdmin):
 
 
 @admin.register(meal)
-class MealAdmin(RichTextAdminMixin, admin.ModelAdmin):
+class MealAdmin(OwnerScopedAdminMixin, RichTextAdminMixin, admin.ModelAdmin):
+    owner_lookup = 'created_by'
     richtext_fields = ('description', 'ingredients', 'nutrients', 'benefits')
     richtext_config = 'foodie'
 
@@ -76,7 +78,7 @@ class MealAdmin(RichTextAdminMixin, admin.ModelAdmin):
 
 
 @admin.register(DailyMealSuggestion)
-class DailyMealSuggestionAdmin(admin.ModelAdmin):
+class DailyMealSuggestionAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ['user', 'date', 'slot', 'option_1', 'option_2', 'fancy', 'created_at']
     list_filter = ['slot', 'date']
     search_fields = ['user__username']
@@ -86,7 +88,7 @@ class DailyMealSuggestionAdmin(admin.ModelAdmin):
 
 
 @admin.register(userPreference)
-class UserPreferenceAdmin(admin.ModelAdmin):
+class UserPreferenceAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ['user', 'meal', 'slot', 'isAvailable']
     list_filter = ['slot', 'isAvailable']
     search_fields = ['user__username', 'meal__name']

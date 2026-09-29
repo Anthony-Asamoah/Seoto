@@ -1,7 +1,7 @@
 // Service Worker for Seoto PWA
 // Version: 1.3.0
 
-const CACHE_VERSION = 'seoto-v1.3.3';
+const CACHE_VERSION = 'seoto-v1.3.5';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 const IMAGE_CACHE = `${CACHE_VERSION}-images`;
@@ -19,6 +19,8 @@ const CACHEABLE_ROUTES = [
 // accounts.urls registers `<str:username>` last, after these literal paths —
 // anything else single-segment under /accounts/ is someone's profile page.
 const ACCOUNTS_RESERVED_PATHS = new Set(['register']);
+
+const AUTH_CHANGE_PATH = /^\/(?:(?:accounts|admin)\/(?:login|logout)|passkeys\/authentication\/complete)\/$/;
 
 function isCacheableRoute(pathname) {
   if (CACHEABLE_ROUTES.includes(pathname)) {
@@ -86,6 +88,12 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Cached pages are rendered per-user; drop them before a login/logout response reaches the page
+  if (request.method === 'POST' && url.origin === self.location.origin && AUTH_CHANGE_PATH.test(url.pathname)) {
+    event.respondWith(caches.delete(DYNAMIC_CACHE).then(() => fetch(request)));
+    return;
+  }
+
   // Skip non-GET requests
   if (request.method !== 'GET') {
     return;
@@ -96,9 +104,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategy 1: Cache-first for static assets (CSS, JS, fonts, images)
+  // Strategy 1: Cache-first only for content-hashed or cross-origin assets; unhashed ones change under the same URL
   if (isStaticAsset(request)) {
-    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    const immutable = url.origin !== self.location.origin || /\.[0-9a-f]{12}\.\w+$/.test(url.pathname);
+    event.respondWith(immutable ? cacheFirst(request, STATIC_CACHE) : networkFirst(request, STATIC_CACHE));
     return;
   }
 

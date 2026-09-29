@@ -89,6 +89,9 @@ class meal(models.Model):
     def __str__(self):
         return f"{self.name}"
 
+    class Meta:
+        permissions = [('view_all_meal', 'Can view all meal records')]
+
 
 class UserMealSchedule(models.Model):
     """Per-user meal time schedule. One row per slot, seeded on user creation."""
@@ -97,6 +100,7 @@ class UserMealSchedule(models.Model):
     time = models.TimeField()
 
     class Meta:
+        permissions = [('view_all_usermealschedule', 'Can view all UserMealSchedule records')]
         unique_together = ('user', 'slot')
 
     def __str__(self):
@@ -111,6 +115,7 @@ class userPreference(models.Model):
     isAvailable = models.BooleanField(default=True)
 
     class Meta:
+        permissions = [('view_all_userpreference', 'Can view all userPreference records')]
         unique_together = ('user', 'meal', 'slot')
 
     def __str__(self):
@@ -129,6 +134,7 @@ class DailyMealSuggestion(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        permissions = [('view_all_dailymealsuggestion', 'Can view all DailyMealSuggestion records')]
         unique_together = ('user', 'date', 'slot')
         indexes = [models.Index(fields=['user', 'date'])]
 

@@ -40,6 +40,7 @@ class tracker(models.Model):
 		return f"{self.link[:30]}{'...' if len(self.link) > 30 else ''}"
 
 	class Meta:
+		permissions = [('view_all_tracker', 'Can view all tracker records')]
 		verbose_name_plural = "tracker"
 
 	def __str__(self):
@@ -83,6 +84,7 @@ class todo(models.Model):
 		return self.notes or ''
 
 	class Meta:
+		permissions = [('view_all_todo', 'Can view all todo records')]
 		verbose_name_plural = "todo"
 
 	def __str__(self):

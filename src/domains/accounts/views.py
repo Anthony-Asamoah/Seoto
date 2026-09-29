@@ -8,6 +8,7 @@ from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 
 from . import services
+from .otp import login_factors_response
 from .forms import RegisterForm, LoginForm, CustomPasswordResetForm
 from .models import user_profile
 from .utils import trigger_user_onboarded_email
@@ -22,6 +23,10 @@ class CustomLoginView(LoginView):
         kwargs = super().get_form_kwargs()
         kwargs['request'] = self.request
         return kwargs
+
+
+def login_factors(request):
+    return login_factors_response(request)
 
 
 class CustomPasswordResetView(PasswordResetView):

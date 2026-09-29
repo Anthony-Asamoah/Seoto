@@ -28,6 +28,7 @@ urlpatterns = [
     path('ckeditor5/', include('django_ckeditor_5.urls')),
     path('', Apps.as_view(), name='apps'),
     # path('info/', Home.as_view(), name='index'),
+    path('passkeys/', include('domains.accounts.webauthn_urls')),
     path('admin/', admin.site.urls, name='admin'),
     path('api/company/', include('domains.company.urls')),
     path('api/company/', include('domains.website.urls')),

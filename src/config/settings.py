@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'django_otp',
     'django_otp.plugins.otp_totp',
     'django_otp.plugins.otp_static',
+    'django_otp_webauthn',
     # My apps
     'domains.website.products.apps.ProductsConfig',
     'domains.website.faqs.apps.FAQsConfig',
@@ -174,6 +175,9 @@ RATE_LIMIT_CONFIG = {
     # Roomier than the other auth endpoints: a mistyped rotating code costs an attempt,
     # and django-otp throttles the device itself on top of this.
     '/admin/login/': {'max_requests': 10, 'window': 300},
+    '/accounts/login/factors/': {'max_requests': 30, 'window': 300},
+    '/admin/login/factors/': {'max_requests': 30, 'window': 300},
+    '/passkeys/authentication/complete/': {'max_requests': 10, 'window': 300},
 }
 
 # Password validation
@@ -255,7 +259,7 @@ else:
     }
 
 # Email config
-EMAIL_BACKEND = 'django.common.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST')
 EMAIL_PORT = config('EMAIL_PORT', cast=int)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
@@ -305,6 +309,18 @@ LOGOUT_REDIRECT_URL = 'apps'
 # Admin two-factor (django-otp) — enrol devices with `manage.py setup_admin_totp <user>`
 # and mint emergency codes with `manage.py addstatictoken <user>`.
 OTP_TOTP_ISSUER = config('OTP_TOTP_ISSUER', default='Seoto')
+# Passkeys are bound to the RP ID; changing it orphans every enrolled credential.
+OTP_WEBAUTHN_RP_ID = config('OTP_WEBAUTHN_RP_ID', default='localhost' if DEBUG else '')
+OTP_WEBAUTHN_RP_NAME = config('OTP_WEBAUTHN_RP_NAME', default='Seoto')
+OTP_WEBAUTHN_ALLOWED_ORIGINS = config(
+    'OTP_WEBAUTHN_ALLOWED_ORIGINS',
+    default='http://localhost:8000,http://localhost:8003' if DEBUG else '',
+    cast=Csv(),
+)
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'django_otp_webauthn.backends.WebAuthnBackend',
+]
 # Leaving this False keeps the shared secret and QR code reachable in the admin, which is
 # how a verified admin enrols a second device without shell access.
 OTP_ADMIN_HIDE_SENSITIVE_DATA = config('OTP_ADMIN_HIDE_SENSITIVE_DATA', default=False, cast=bool)
@@ -325,6 +341,9 @@ JAZZMIN_SETTINGS = {
     'topmenu_links': [
         {'name': 'Site', 'url': 'apps', 'new_window': True},
         {'model': 'auth.User'},
+    ],
+    'usermenu_links': [
+        {'name': 'My account', 'url': 'admin:my_account', 'icon': 'fas fa-user-pen'},
     ],
     'show_sidebar': True,
     # `navigation_expanded` is deliberately absent: templates/admin/base_site.html

@@ -1,10 +1,11 @@
 from django.contrib import admin
+from common.mixins.admin import OwnerScopedAdminMixin
 
 from .models import Rhyme
 
 
 @admin.register(Rhyme)
-class RhymeAdmin(admin.ModelAdmin):
+class RhymeAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     list_display = ('rhyme', 'word_count', 'timestamp', 'user')
     list_display_links = ('rhyme',)
     list_filter = ('user',)

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from common.mixins.admin import OwnerScopedAdminMixin
 from .models import ThemePreset, UserTheme, ThemeRating
 
 
@@ -11,7 +12,8 @@ class ThemeRatingInline(admin.TabularInline):
 
 
 @admin.register(ThemePreset)
-class ThemePresetAdmin(admin.ModelAdmin):
+class ThemePresetAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+    owner_lookup = 'created_by'
     """Admin interface for ThemePreset model"""
     list_display = (
         'name',
@@ -121,7 +123,7 @@ class ThemePresetAdmin(admin.ModelAdmin):
 
 
 @admin.register(UserTheme)
-class UserThemeAdmin(admin.ModelAdmin):
+class UserThemeAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     """Admin interface for UserTheme model"""
     list_display = (
         'user',
@@ -176,7 +178,7 @@ class UserThemeAdmin(admin.ModelAdmin):
 
 
 @admin.register(ThemeRating)
-class ThemeRatingAdmin(admin.ModelAdmin):
+class ThemeRatingAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
     """Admin interface for ThemeRating model"""
     list_display = ('user', 'theme', 'rating', 'created_at')
     list_filter = ('rating', 'created_at')

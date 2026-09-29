@@ -1,0 +1,46 @@
+{% load i18n %}
+<div class="account-hr-head">
+    <h3>{% trans 'Employment record' %}</h3>
+    <p><i class="fas fa-lock"></i> Maintained by HR — ask them for changes.</p>
+</div>
+<div class="account-hr-grid">
+    {% if assignments %}
+        <div class="card account-hr-card"><div class="card-header"><i class="fas fa-briefcase"></i>Positions</div>
+            <ul class="account-timeline">{% for a in assignments %}
+                <li><strong>{{ a.position }}</strong><small>{{ a.effective_from|date:"M Y" }} – {{ a.effective_to|date:"M Y"|default:"Present" }}</small></li>
+            {% endfor %}</ul></div>
+    {% endif %}
+    {% if memberships %}
+        <div class="card account-hr-card"><div class="card-header"><i class="fas fa-users"></i>Teams</div>
+            <ul class="account-timeline">{% for m in memberships %}
+                <li><strong>{{ m.team }}</strong> <span class="badge account-badge-muted">{{ m.get_role_display }}</span><small>{{ m.joined_on|date:"M Y" }} – {{ m.left_on|date:"M Y"|default:"Present" }}</small></li>
+            {% endfor %}</ul></div>
+    {% endif %}
+    {% if contacts %}
+        <div class="card account-hr-card"><div class="card-header"><i class="fas fa-phone"></i>Contacts</div>
+            <ul class="account-list">{% for c in contacts %}<li>{{ c }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    {% if addresses %}
+        <div class="card account-hr-card"><div class="card-header"><i class="fas fa-location-dot"></i>Addresses</div>
+            <ul class="account-list">{% for a in addresses %}<li>{{ a }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    {% if education %}
+        <div class="card account-hr-card"><div class="card-header"><i class="fas fa-graduation-cap"></i>Education</div>
+            <ul class="account-list">{% for e in education %}<li>{{ e }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    {% if certificates %}
+        <div class="card account-hr-card"><div class="card-header"><i class="fas fa-certificate"></i>Certificates</div>
+            <ul class="account-list">{% for c in certificates %}<li>{{ c }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    {% if job_experience %}
+        <div class="card account-hr-card"><div class="card-header"><i class="fas fa-building"></i>Job experience</div>
+            <ul class="account-list">{% for j in job_experience %}<li>{{ j }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    {% if specialisations or hobbies %}
+        <div class="card account-hr-card"><div class="card-header"><i class="fas fa-star"></i>Specialisations &amp; hobbies</div>
+            <div class="account-chips">
+                {% for s in specialisations %}<span class="badge account-badge">{{ s }}</span>{% endfor %}
+                {% for h in hobbies %}<span class="badge account-badge-muted">{{ h }}</span>{% endfor %}
+            </div></div>
+    {% endif %}
+</div>

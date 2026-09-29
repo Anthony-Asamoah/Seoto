@@ -42,6 +42,7 @@ class UserPreferences(models.Model):
         return f"{self.user.username}'s preferences"
 
     class Meta:
+        permissions = [('view_all_userpreferences', 'Can view all UserPreferences records')]
         verbose_name_plural = "User Preferences"
 
 
@@ -73,6 +74,7 @@ class Tag(models.Model):
         return tags
 
     class Meta:
+        permissions = [('view_all_tag', 'Can view all Tag records')]
         ordering = ['label']
         indexes = [
             models.Index(fields=['user', 'label']),
@@ -90,6 +92,7 @@ class Category(models.Model):
         return self.label
 
     class Meta:
+        permissions = [('view_all_category', 'Can view all Category records')]
         ordering = ['label']
         verbose_name_plural = "Categories"
         indexes = [
@@ -122,6 +125,7 @@ class Account(models.Model):
         return f"{self.name} - {self.user.username}"
 
     class Meta:
+        permissions = [('view_all_account', 'Can view all Account records')]
         ordering = ['name']
         unique_together = ['name', 'user']
         indexes = [
@@ -246,6 +250,7 @@ class Transaction(models.Model):
         super().delete(*args, **kwargs)
 
     class Meta:
+        permissions = [('view_all_transaction', 'Can view all Transaction records')]
         ordering = ['-transaction_time', 'account__name', 'amount', 'reference']
         indexes = [
             models.Index(fields=['-transaction_time', 'mode']),
@@ -429,6 +434,7 @@ class RecurringTransaction(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
+        permissions = [('view_all_recurringtransaction', 'Can view all RecurringTransaction records')]
         ordering = ['next_run_date']
         indexes = [
             models.Index(fields=['is_active', 'next_run_date']),
@@ -456,5 +462,6 @@ class RecurringTransactionOccurrence(models.Model):
         return f"{self.recurring_transaction} — {self.scheduled_date} ({self.status})"
 
     class Meta:
+        permissions = [('view_all_recurringtransactionoccurrence', 'Can view all RecurringTransactionOccurrence records')]
         ordering = ['-scheduled_date']
         unique_together = ('recurring_transaction', 'scheduled_date')

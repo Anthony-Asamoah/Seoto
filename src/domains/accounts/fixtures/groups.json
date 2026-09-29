@@ -1,0 +1,1061 @@
+[
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website:viewer",
+      "permissions": [
+        ["view_producttag", "website_products", "producttag"],
+        ["view_product", "website_products", "product"],
+        ["view_productimage", "website_products", "productimage"],
+        ["view_faqcategory", "website_faqs", "faqcategory"],
+        ["view_faq", "website_faqs", "faq"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website:editor",
+      "permissions": [
+        ["view_producttag", "website_products", "producttag"],
+        ["add_producttag", "website_products", "producttag"],
+        ["change_producttag", "website_products", "producttag"],
+        ["view_product", "website_products", "product"],
+        ["add_product", "website_products", "product"],
+        ["change_product", "website_products", "product"],
+        ["view_productimage", "website_products", "productimage"],
+        ["add_productimage", "website_products", "productimage"],
+        ["change_productimage", "website_products", "productimage"],
+        ["view_faqcategory", "website_faqs", "faqcategory"],
+        ["add_faqcategory", "website_faqs", "faqcategory"],
+        ["change_faqcategory", "website_faqs", "faqcategory"],
+        ["view_faq", "website_faqs", "faq"],
+        ["add_faq", "website_faqs", "faq"],
+        ["change_faq", "website_faqs", "faq"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website:admin",
+      "permissions": [
+        ["view_producttag", "website_products", "producttag"],
+        ["add_producttag", "website_products", "producttag"],
+        ["change_producttag", "website_products", "producttag"],
+        ["delete_producttag", "website_products", "producttag"],
+        ["view_product", "website_products", "product"],
+        ["add_product", "website_products", "product"],
+        ["change_product", "website_products", "product"],
+        ["delete_product", "website_products", "product"],
+        ["view_productimage", "website_products", "productimage"],
+        ["add_productimage", "website_products", "productimage"],
+        ["change_productimage", "website_products", "productimage"],
+        ["delete_productimage", "website_products", "productimage"],
+        ["view_faqcategory", "website_faqs", "faqcategory"],
+        ["add_faqcategory", "website_faqs", "faqcategory"],
+        ["change_faqcategory", "website_faqs", "faqcategory"],
+        ["delete_faqcategory", "website_faqs", "faqcategory"],
+        ["view_faq", "website_faqs", "faq"],
+        ["add_faq", "website_faqs", "faq"],
+        ["change_faq", "website_faqs", "faq"],
+        ["delete_faq", "website_faqs", "faq"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website:supervisor",
+      "permissions": [
+        ["view_producttag", "website_products", "producttag"],
+        ["view_product", "website_products", "product"],
+        ["view_productimage", "website_products", "productimage"],
+        ["view_faqcategory", "website_faqs", "faqcategory"],
+        ["view_faq", "website_faqs", "faq"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website.products:viewer",
+      "permissions": [
+        ["view_producttag", "website_products", "producttag"],
+        ["view_product", "website_products", "product"],
+        ["view_productimage", "website_products", "productimage"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website.products:editor",
+      "permissions": [
+        ["view_producttag", "website_products", "producttag"],
+        ["add_producttag", "website_products", "producttag"],
+        ["change_producttag", "website_products", "producttag"],
+        ["view_product", "website_products", "product"],
+        ["add_product", "website_products", "product"],
+        ["change_product", "website_products", "product"],
+        ["view_productimage", "website_products", "productimage"],
+        ["add_productimage", "website_products", "productimage"],
+        ["change_productimage", "website_products", "productimage"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website.products:admin",
+      "permissions": [
+        ["view_producttag", "website_products", "producttag"],
+        ["add_producttag", "website_products", "producttag"],
+        ["change_producttag", "website_products", "producttag"],
+        ["delete_producttag", "website_products", "producttag"],
+        ["view_product", "website_products", "product"],
+        ["add_product", "website_products", "product"],
+        ["change_product", "website_products", "product"],
+        ["delete_product", "website_products", "product"],
+        ["view_productimage", "website_products", "productimage"],
+        ["add_productimage", "website_products", "productimage"],
+        ["change_productimage", "website_products", "productimage"],
+        ["delete_productimage", "website_products", "productimage"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website.products:supervisor",
+      "permissions": [
+        ["view_producttag", "website_products", "producttag"],
+        ["view_product", "website_products", "product"],
+        ["view_productimage", "website_products", "productimage"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website.faqs:viewer",
+      "permissions": [
+        ["view_faqcategory", "website_faqs", "faqcategory"],
+        ["view_faq", "website_faqs", "faq"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website.faqs:editor",
+      "permissions": [
+        ["view_faqcategory", "website_faqs", "faqcategory"],
+        ["add_faqcategory", "website_faqs", "faqcategory"],
+        ["change_faqcategory", "website_faqs", "faqcategory"],
+        ["view_faq", "website_faqs", "faq"],
+        ["add_faq", "website_faqs", "faq"],
+        ["change_faq", "website_faqs", "faq"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website.faqs:admin",
+      "permissions": [
+        ["view_faqcategory", "website_faqs", "faqcategory"],
+        ["add_faqcategory", "website_faqs", "faqcategory"],
+        ["change_faqcategory", "website_faqs", "faqcategory"],
+        ["delete_faqcategory", "website_faqs", "faqcategory"],
+        ["view_faq", "website_faqs", "faq"],
+        ["add_faq", "website_faqs", "faq"],
+        ["change_faq", "website_faqs", "faq"],
+        ["delete_faq", "website_faqs", "faq"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "website.faqs:supervisor",
+      "permissions": [
+        ["view_faqcategory", "website_faqs", "faqcategory"],
+        ["view_faq", "website_faqs", "faq"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "company:viewer",
+      "permissions": [
+        ["view_contact", "company_staff", "contact"],
+        ["view_address", "company_staff", "address"],
+        ["view_education", "company_staff", "education"],
+        ["view_certificate", "company_staff", "certificate"],
+        ["view_jobexperience", "company_staff", "jobexperience"],
+        ["view_hobby", "company_staff", "hobby"],
+        ["view_specialisation", "company_staff", "specialisation"],
+        ["view_position", "company_staff", "position"],
+        ["view_staffidsequence", "company_staff", "staffidsequence"],
+        ["view_member", "company_staff", "member"],
+        ["view_assignment", "company_staff", "assignment"],
+        ["view_team", "company_staff", "team"],
+        ["view_membership", "company_staff", "membership"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "company:editor",
+      "permissions": [
+        ["view_contact", "company_staff", "contact"],
+        ["add_contact", "company_staff", "contact"],
+        ["change_contact", "company_staff", "contact"],
+        ["view_address", "company_staff", "address"],
+        ["add_address", "company_staff", "address"],
+        ["change_address", "company_staff", "address"],
+        ["view_education", "company_staff", "education"],
+        ["add_education", "company_staff", "education"],
+        ["change_education", "company_staff", "education"],
+        ["view_certificate", "company_staff", "certificate"],
+        ["add_certificate", "company_staff", "certificate"],
+        ["change_certificate", "company_staff", "certificate"],
+        ["view_jobexperience", "company_staff", "jobexperience"],
+        ["add_jobexperience", "company_staff", "jobexperience"],
+        ["change_jobexperience", "company_staff", "jobexperience"],
+        ["view_hobby", "company_staff", "hobby"],
+        ["add_hobby", "company_staff", "hobby"],
+        ["change_hobby", "company_staff", "hobby"],
+        ["view_specialisation", "company_staff", "specialisation"],
+        ["add_specialisation", "company_staff", "specialisation"],
+        ["change_specialisation", "company_staff", "specialisation"],
+        ["view_position", "company_staff", "position"],
+        ["add_position", "company_staff", "position"],
+        ["change_position", "company_staff", "position"],
+        ["view_staffidsequence", "company_staff", "staffidsequence"],
+        ["add_staffidsequence", "company_staff", "staffidsequence"],
+        ["change_staffidsequence", "company_staff", "staffidsequence"],
+        ["view_member", "company_staff", "member"],
+        ["add_member", "company_staff", "member"],
+        ["change_member", "company_staff", "member"],
+        ["view_assignment", "company_staff", "assignment"],
+        ["add_assignment", "company_staff", "assignment"],
+        ["change_assignment", "company_staff", "assignment"],
+        ["view_team", "company_staff", "team"],
+        ["add_team", "company_staff", "team"],
+        ["change_team", "company_staff", "team"],
+        ["view_membership", "company_staff", "membership"],
+        ["add_membership", "company_staff", "membership"],
+        ["change_membership", "company_staff", "membership"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "company:admin",
+      "permissions": [
+        ["view_contact", "company_staff", "contact"],
+        ["add_contact", "company_staff", "contact"],
+        ["change_contact", "company_staff", "contact"],
+        ["delete_contact", "company_staff", "contact"],
+        ["view_address", "company_staff", "address"],
+        ["add_address", "company_staff", "address"],
+        ["change_address", "company_staff", "address"],
+        ["delete_address", "company_staff", "address"],
+        ["view_education", "company_staff", "education"],
+        ["add_education", "company_staff", "education"],
+        ["change_education", "company_staff", "education"],
+        ["delete_education", "company_staff", "education"],
+        ["view_certificate", "company_staff", "certificate"],
+        ["add_certificate", "company_staff", "certificate"],
+        ["change_certificate", "company_staff", "certificate"],
+        ["delete_certificate", "company_staff", "certificate"],
+        ["view_jobexperience", "company_staff", "jobexperience"],
+        ["add_jobexperience", "company_staff", "jobexperience"],
+        ["change_jobexperience", "company_staff", "jobexperience"],
+        ["delete_jobexperience", "company_staff", "jobexperience"],
+        ["view_hobby", "company_staff", "hobby"],
+        ["add_hobby", "company_staff", "hobby"],
+        ["change_hobby", "company_staff", "hobby"],
+        ["delete_hobby", "company_staff", "hobby"],
+        ["view_specialisation", "company_staff", "specialisation"],
+        ["add_specialisation", "company_staff", "specialisation"],
+        ["change_specialisation", "company_staff", "specialisation"],
+        ["delete_specialisation", "company_staff", "specialisation"],
+        ["view_position", "company_staff", "position"],
+        ["add_position", "company_staff", "position"],
+        ["change_position", "company_staff", "position"],
+        ["delete_position", "company_staff", "position"],
+        ["view_staffidsequence", "company_staff", "staffidsequence"],
+        ["add_staffidsequence", "company_staff", "staffidsequence"],
+        ["change_staffidsequence", "company_staff", "staffidsequence"],
+        ["delete_staffidsequence", "company_staff", "staffidsequence"],
+        ["view_member", "company_staff", "member"],
+        ["add_member", "company_staff", "member"],
+        ["change_member", "company_staff", "member"],
+        ["delete_member", "company_staff", "member"],
+        ["view_assignment", "company_staff", "assignment"],
+        ["add_assignment", "company_staff", "assignment"],
+        ["change_assignment", "company_staff", "assignment"],
+        ["delete_assignment", "company_staff", "assignment"],
+        ["view_team", "company_staff", "team"],
+        ["add_team", "company_staff", "team"],
+        ["change_team", "company_staff", "team"],
+        ["delete_team", "company_staff", "team"],
+        ["view_membership", "company_staff", "membership"],
+        ["add_membership", "company_staff", "membership"],
+        ["change_membership", "company_staff", "membership"],
+        ["delete_membership", "company_staff", "membership"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "company:supervisor",
+      "permissions": [
+        ["view_contact", "company_staff", "contact"],
+        ["view_address", "company_staff", "address"],
+        ["view_education", "company_staff", "education"],
+        ["view_certificate", "company_staff", "certificate"],
+        ["view_jobexperience", "company_staff", "jobexperience"],
+        ["view_hobby", "company_staff", "hobby"],
+        ["view_specialisation", "company_staff", "specialisation"],
+        ["view_position", "company_staff", "position"],
+        ["view_staffidsequence", "company_staff", "staffidsequence"],
+        ["view_member", "company_staff", "member"],
+        ["view_assignment", "company_staff", "assignment"],
+        ["view_team", "company_staff", "team"],
+        ["view_membership", "company_staff", "membership"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "company.hr.staff:viewer",
+      "permissions": [
+        ["view_contact", "company_staff", "contact"],
+        ["view_address", "company_staff", "address"],
+        ["view_education", "company_staff", "education"],
+        ["view_certificate", "company_staff", "certificate"],
+        ["view_jobexperience", "company_staff", "jobexperience"],
+        ["view_hobby", "company_staff", "hobby"],
+        ["view_specialisation", "company_staff", "specialisation"],
+        ["view_position", "company_staff", "position"],
+        ["view_staffidsequence", "company_staff", "staffidsequence"],
+        ["view_member", "company_staff", "member"],
+        ["view_assignment", "company_staff", "assignment"],
+        ["view_team", "company_staff", "team"],
+        ["view_membership", "company_staff", "membership"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "company.hr.staff:editor",
+      "permissions": [
+        ["view_contact", "company_staff", "contact"],
+        ["add_contact", "company_staff", "contact"],
+        ["change_contact", "company_staff", "contact"],
+        ["view_address", "company_staff", "address"],
+        ["add_address", "company_staff", "address"],
+        ["change_address", "company_staff", "address"],
+        ["view_education", "company_staff", "education"],
+        ["add_education", "company_staff", "education"],
+        ["change_education", "company_staff", "education"],
+        ["view_certificate", "company_staff", "certificate"],
+        ["add_certificate", "company_staff", "certificate"],
+        ["change_certificate", "company_staff", "certificate"],
+        ["view_jobexperience", "company_staff", "jobexperience"],
+        ["add_jobexperience", "company_staff", "jobexperience"],
+        ["change_jobexperience", "company_staff", "jobexperience"],
+        ["view_hobby", "company_staff", "hobby"],
+        ["add_hobby", "company_staff", "hobby"],
+        ["change_hobby", "company_staff", "hobby"],
+        ["view_specialisation", "company_staff", "specialisation"],
+        ["add_specialisation", "company_staff", "specialisation"],
+        ["change_specialisation", "company_staff", "specialisation"],
+        ["view_position", "company_staff", "position"],
+        ["add_position", "company_staff", "position"],
+        ["change_position", "company_staff", "position"],
+        ["view_staffidsequence", "company_staff", "staffidsequence"],
+        ["add_staffidsequence", "company_staff", "staffidsequence"],
+        ["change_staffidsequence", "company_staff", "staffidsequence"],
+        ["view_member", "company_staff", "member"],
+        ["add_member", "company_staff", "member"],
+        ["change_member", "company_staff", "member"],
+        ["view_assignment", "company_staff", "assignment"],
+        ["add_assignment", "company_staff", "assignment"],
+        ["change_assignment", "company_staff", "assignment"],
+        ["view_team", "company_staff", "team"],
+        ["add_team", "company_staff", "team"],
+        ["change_team", "company_staff", "team"],
+        ["view_membership", "company_staff", "membership"],
+        ["add_membership", "company_staff", "membership"],
+        ["change_membership", "company_staff", "membership"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "company.hr.staff:admin",
+      "permissions": [
+        ["view_contact", "company_staff", "contact"],
+        ["add_contact", "company_staff", "contact"],
+        ["change_contact", "company_staff", "contact"],
+        ["delete_contact", "company_staff", "contact"],
+        ["view_address", "company_staff", "address"],
+        ["add_address", "company_staff", "address"],
+        ["change_address", "company_staff", "address"],
+        ["delete_address", "company_staff", "address"],
+        ["view_education", "company_staff", "education"],
+        ["add_education", "company_staff", "education"],
+        ["change_education", "company_staff", "education"],
+        ["delete_education", "company_staff", "education"],
+        ["view_certificate", "company_staff", "certificate"],
+        ["add_certificate", "company_staff", "certificate"],
+        ["change_certificate", "company_staff", "certificate"],
+        ["delete_certificate", "company_staff", "certificate"],
+        ["view_jobexperience", "company_staff", "jobexperience"],
+        ["add_jobexperience", "company_staff", "jobexperience"],
+        ["change_jobexperience", "company_staff", "jobexperience"],
+        ["delete_jobexperience", "company_staff", "jobexperience"],
+        ["view_hobby", "company_staff", "hobby"],
+        ["add_hobby", "company_staff", "hobby"],
+        ["change_hobby", "company_staff", "hobby"],
+        ["delete_hobby", "company_staff", "hobby"],
+        ["view_specialisation", "company_staff", "specialisation"],
+        ["add_specialisation", "company_staff", "specialisation"],
+        ["change_specialisation", "company_staff", "specialisation"],
+        ["delete_specialisation", "company_staff", "specialisation"],
+        ["view_position", "company_staff", "position"],
+        ["add_position", "company_staff", "position"],
+        ["change_position", "company_staff", "position"],
+        ["delete_position", "company_staff", "position"],
+        ["view_staffidsequence", "company_staff", "staffidsequence"],
+        ["add_staffidsequence", "company_staff", "staffidsequence"],
+        ["change_staffidsequence", "company_staff", "staffidsequence"],
+        ["delete_staffidsequence", "company_staff", "staffidsequence"],
+        ["view_member", "company_staff", "member"],
+        ["add_member", "company_staff", "member"],
+        ["change_member", "company_staff", "member"],
+        ["delete_member", "company_staff", "member"],
+        ["view_assignment", "company_staff", "assignment"],
+        ["add_assignment", "company_staff", "assignment"],
+        ["change_assignment", "company_staff", "assignment"],
+        ["delete_assignment", "company_staff", "assignment"],
+        ["view_team", "company_staff", "team"],
+        ["add_team", "company_staff", "team"],
+        ["change_team", "company_staff", "team"],
+        ["delete_team", "company_staff", "team"],
+        ["view_membership", "company_staff", "membership"],
+        ["add_membership", "company_staff", "membership"],
+        ["change_membership", "company_staff", "membership"],
+        ["delete_membership", "company_staff", "membership"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "company.hr.staff:supervisor",
+      "permissions": [
+        ["view_contact", "company_staff", "contact"],
+        ["view_address", "company_staff", "address"],
+        ["view_education", "company_staff", "education"],
+        ["view_certificate", "company_staff", "certificate"],
+        ["view_jobexperience", "company_staff", "jobexperience"],
+        ["view_hobby", "company_staff", "hobby"],
+        ["view_specialisation", "company_staff", "specialisation"],
+        ["view_position", "company_staff", "position"],
+        ["view_staffidsequence", "company_staff", "staffidsequence"],
+        ["view_member", "company_staff", "member"],
+        ["view_assignment", "company_staff", "assignment"],
+        ["view_team", "company_staff", "team"],
+        ["view_membership", "company_staff", "membership"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "blog:viewer",
+      "permissions": [
+        ["view_posttags", "blog", "posttags"],
+        ["view_postreadgroup", "blog", "postreadgroup"],
+        ["view_post", "blog", "post"],
+        ["view_postcomment", "blog", "postcomment"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "blog:editor",
+      "permissions": [
+        ["view_posttags", "blog", "posttags"],
+        ["add_posttags", "blog", "posttags"],
+        ["change_posttags", "blog", "posttags"],
+        ["view_postreadgroup", "blog", "postreadgroup"],
+        ["add_postreadgroup", "blog", "postreadgroup"],
+        ["change_postreadgroup", "blog", "postreadgroup"],
+        ["view_post", "blog", "post"],
+        ["add_post", "blog", "post"],
+        ["change_post", "blog", "post"],
+        ["view_postcomment", "blog", "postcomment"],
+        ["add_postcomment", "blog", "postcomment"],
+        ["change_postcomment", "blog", "postcomment"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "blog:admin",
+      "permissions": [
+        ["view_posttags", "blog", "posttags"],
+        ["add_posttags", "blog", "posttags"],
+        ["change_posttags", "blog", "posttags"],
+        ["delete_posttags", "blog", "posttags"],
+        ["view_postreadgroup", "blog", "postreadgroup"],
+        ["add_postreadgroup", "blog", "postreadgroup"],
+        ["change_postreadgroup", "blog", "postreadgroup"],
+        ["delete_postreadgroup", "blog", "postreadgroup"],
+        ["view_all_postreadgroup", "blog", "postreadgroup"],
+        ["view_post", "blog", "post"],
+        ["add_post", "blog", "post"],
+        ["change_post", "blog", "post"],
+        ["delete_post", "blog", "post"],
+        ["view_all_post", "blog", "post"],
+        ["view_postcomment", "blog", "postcomment"],
+        ["add_postcomment", "blog", "postcomment"],
+        ["change_postcomment", "blog", "postcomment"],
+        ["delete_postcomment", "blog", "postcomment"],
+        ["view_all_postcomment", "blog", "postcomment"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "blog:supervisor",
+      "permissions": [
+        ["view_posttags", "blog", "posttags"],
+        ["view_postreadgroup", "blog", "postreadgroup"],
+        ["view_all_postreadgroup", "blog", "postreadgroup"],
+        ["view_post", "blog", "post"],
+        ["view_all_post", "blog", "post"],
+        ["view_postcomment", "blog", "postcomment"],
+        ["view_all_postcomment", "blog", "postcomment"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "foodie:viewer",
+      "permissions": [
+        ["view_mealtimeslot", "foodie", "mealtimeslot"],
+        ["view_meal", "foodie", "meal"],
+        ["view_usermealschedule", "foodie", "usermealschedule"],
+        ["view_userpreference", "foodie", "userpreference"],
+        ["view_dailymealsuggestion", "foodie", "dailymealsuggestion"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "foodie:editor",
+      "permissions": [
+        ["view_mealtimeslot", "foodie", "mealtimeslot"],
+        ["add_mealtimeslot", "foodie", "mealtimeslot"],
+        ["change_mealtimeslot", "foodie", "mealtimeslot"],
+        ["view_meal", "foodie", "meal"],
+        ["add_meal", "foodie", "meal"],
+        ["change_meal", "foodie", "meal"],
+        ["view_usermealschedule", "foodie", "usermealschedule"],
+        ["add_usermealschedule", "foodie", "usermealschedule"],
+        ["change_usermealschedule", "foodie", "usermealschedule"],
+        ["view_userpreference", "foodie", "userpreference"],
+        ["add_userpreference", "foodie", "userpreference"],
+        ["change_userpreference", "foodie", "userpreference"],
+        ["view_dailymealsuggestion", "foodie", "dailymealsuggestion"],
+        ["add_dailymealsuggestion", "foodie", "dailymealsuggestion"],
+        ["change_dailymealsuggestion", "foodie", "dailymealsuggestion"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "foodie:admin",
+      "permissions": [
+        ["view_mealtimeslot", "foodie", "mealtimeslot"],
+        ["add_mealtimeslot", "foodie", "mealtimeslot"],
+        ["change_mealtimeslot", "foodie", "mealtimeslot"],
+        ["delete_mealtimeslot", "foodie", "mealtimeslot"],
+        ["view_meal", "foodie", "meal"],
+        ["add_meal", "foodie", "meal"],
+        ["change_meal", "foodie", "meal"],
+        ["delete_meal", "foodie", "meal"],
+        ["view_all_meal", "foodie", "meal"],
+        ["view_usermealschedule", "foodie", "usermealschedule"],
+        ["add_usermealschedule", "foodie", "usermealschedule"],
+        ["change_usermealschedule", "foodie", "usermealschedule"],
+        ["delete_usermealschedule", "foodie", "usermealschedule"],
+        ["view_all_usermealschedule", "foodie", "usermealschedule"],
+        ["view_userpreference", "foodie", "userpreference"],
+        ["add_userpreference", "foodie", "userpreference"],
+        ["change_userpreference", "foodie", "userpreference"],
+        ["delete_userpreference", "foodie", "userpreference"],
+        ["view_all_userpreference", "foodie", "userpreference"],
+        ["view_dailymealsuggestion", "foodie", "dailymealsuggestion"],
+        ["add_dailymealsuggestion", "foodie", "dailymealsuggestion"],
+        ["change_dailymealsuggestion", "foodie", "dailymealsuggestion"],
+        ["delete_dailymealsuggestion", "foodie", "dailymealsuggestion"],
+        ["view_all_dailymealsuggestion", "foodie", "dailymealsuggestion"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "foodie:supervisor",
+      "permissions": [
+        ["view_mealtimeslot", "foodie", "mealtimeslot"],
+        ["view_meal", "foodie", "meal"],
+        ["view_all_meal", "foodie", "meal"],
+        ["view_usermealschedule", "foodie", "usermealschedule"],
+        ["view_all_usermealschedule", "foodie", "usermealschedule"],
+        ["view_userpreference", "foodie", "userpreference"],
+        ["view_all_userpreference", "foodie", "userpreference"],
+        ["view_dailymealsuggestion", "foodie", "dailymealsuggestion"],
+        ["view_all_dailymealsuggestion", "foodie", "dailymealsuggestion"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "jotter:viewer",
+      "permissions": [
+        ["view_tracker", "jotter", "tracker"],
+        ["view_todo", "jotter", "todo"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "jotter:editor",
+      "permissions": [
+        ["view_tracker", "jotter", "tracker"],
+        ["add_tracker", "jotter", "tracker"],
+        ["change_tracker", "jotter", "tracker"],
+        ["view_todo", "jotter", "todo"],
+        ["add_todo", "jotter", "todo"],
+        ["change_todo", "jotter", "todo"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "jotter:admin",
+      "permissions": [
+        ["view_tracker", "jotter", "tracker"],
+        ["add_tracker", "jotter", "tracker"],
+        ["change_tracker", "jotter", "tracker"],
+        ["delete_tracker", "jotter", "tracker"],
+        ["view_all_tracker", "jotter", "tracker"],
+        ["view_todo", "jotter", "todo"],
+        ["add_todo", "jotter", "todo"],
+        ["change_todo", "jotter", "todo"],
+        ["delete_todo", "jotter", "todo"],
+        ["view_all_todo", "jotter", "todo"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "jotter:supervisor",
+      "permissions": [
+        ["view_tracker", "jotter", "tracker"],
+        ["view_all_tracker", "jotter", "tracker"],
+        ["view_todo", "jotter", "todo"],
+        ["view_all_todo", "jotter", "todo"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "rhymes:viewer",
+      "permissions": [
+        ["view_rhyme", "rhymes", "rhyme"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "rhymes:editor",
+      "permissions": [
+        ["view_rhyme", "rhymes", "rhyme"],
+        ["add_rhyme", "rhymes", "rhyme"],
+        ["change_rhyme", "rhymes", "rhyme"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "rhymes:admin",
+      "permissions": [
+        ["view_rhyme", "rhymes", "rhyme"],
+        ["add_rhyme", "rhymes", "rhyme"],
+        ["change_rhyme", "rhymes", "rhyme"],
+        ["delete_rhyme", "rhymes", "rhyme"],
+        ["view_all_rhyme", "rhymes", "rhyme"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "rhymes:supervisor",
+      "permissions": [
+        ["view_rhyme", "rhymes", "rhyme"],
+        ["view_all_rhyme", "rhymes", "rhyme"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "spending_tracker:viewer",
+      "permissions": [
+        ["view_userpreferences", "spending_tracker", "userpreferences"],
+        ["view_tag", "spending_tracker", "tag"],
+        ["view_category", "spending_tracker", "category"],
+        ["view_account", "spending_tracker", "account"],
+        ["view_transaction", "spending_tracker", "transaction"],
+        ["view_recurringtransaction", "spending_tracker", "recurringtransaction"],
+        ["view_recurringtransactionoccurrence", "spending_tracker", "recurringtransactionoccurrence"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "spending_tracker:editor",
+      "permissions": [
+        ["view_userpreferences", "spending_tracker", "userpreferences"],
+        ["add_userpreferences", "spending_tracker", "userpreferences"],
+        ["change_userpreferences", "spending_tracker", "userpreferences"],
+        ["view_tag", "spending_tracker", "tag"],
+        ["add_tag", "spending_tracker", "tag"],
+        ["change_tag", "spending_tracker", "tag"],
+        ["view_category", "spending_tracker", "category"],
+        ["add_category", "spending_tracker", "category"],
+        ["change_category", "spending_tracker", "category"],
+        ["view_account", "spending_tracker", "account"],
+        ["add_account", "spending_tracker", "account"],
+        ["change_account", "spending_tracker", "account"],
+        ["view_transaction", "spending_tracker", "transaction"],
+        ["add_transaction", "spending_tracker", "transaction"],
+        ["change_transaction", "spending_tracker", "transaction"],
+        ["view_recurringtransaction", "spending_tracker", "recurringtransaction"],
+        ["add_recurringtransaction", "spending_tracker", "recurringtransaction"],
+        ["change_recurringtransaction", "spending_tracker", "recurringtransaction"],
+        ["view_recurringtransactionoccurrence", "spending_tracker", "recurringtransactionoccurrence"],
+        ["add_recurringtransactionoccurrence", "spending_tracker", "recurringtransactionoccurrence"],
+        ["change_recurringtransactionoccurrence", "spending_tracker", "recurringtransactionoccurrence"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "spending_tracker:admin",
+      "permissions": [
+        ["view_userpreferences", "spending_tracker", "userpreferences"],
+        ["add_userpreferences", "spending_tracker", "userpreferences"],
+        ["change_userpreferences", "spending_tracker", "userpreferences"],
+        ["delete_userpreferences", "spending_tracker", "userpreferences"],
+        ["view_all_userpreferences", "spending_tracker", "userpreferences"],
+        ["view_tag", "spending_tracker", "tag"],
+        ["add_tag", "spending_tracker", "tag"],
+        ["change_tag", "spending_tracker", "tag"],
+        ["delete_tag", "spending_tracker", "tag"],
+        ["view_all_tag", "spending_tracker", "tag"],
+        ["view_category", "spending_tracker", "category"],
+        ["add_category", "spending_tracker", "category"],
+        ["change_category", "spending_tracker", "category"],
+        ["delete_category", "spending_tracker", "category"],
+        ["view_all_category", "spending_tracker", "category"],
+        ["view_account", "spending_tracker", "account"],
+        ["add_account", "spending_tracker", "account"],
+        ["change_account", "spending_tracker", "account"],
+        ["delete_account", "spending_tracker", "account"],
+        ["view_all_account", "spending_tracker", "account"],
+        ["view_transaction", "spending_tracker", "transaction"],
+        ["add_transaction", "spending_tracker", "transaction"],
+        ["change_transaction", "spending_tracker", "transaction"],
+        ["delete_transaction", "spending_tracker", "transaction"],
+        ["view_all_transaction", "spending_tracker", "transaction"],
+        ["view_recurringtransaction", "spending_tracker", "recurringtransaction"],
+        ["add_recurringtransaction", "spending_tracker", "recurringtransaction"],
+        ["change_recurringtransaction", "spending_tracker", "recurringtransaction"],
+        ["delete_recurringtransaction", "spending_tracker", "recurringtransaction"],
+        ["view_all_recurringtransaction", "spending_tracker", "recurringtransaction"],
+        ["view_recurringtransactionoccurrence", "spending_tracker", "recurringtransactionoccurrence"],
+        ["add_recurringtransactionoccurrence", "spending_tracker", "recurringtransactionoccurrence"],
+        ["change_recurringtransactionoccurrence", "spending_tracker", "recurringtransactionoccurrence"],
+        ["delete_recurringtransactionoccurrence", "spending_tracker", "recurringtransactionoccurrence"],
+        ["view_all_recurringtransactionoccurrence", "spending_tracker", "recurringtransactionoccurrence"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "spending_tracker:supervisor",
+      "permissions": [
+        ["view_userpreferences", "spending_tracker", "userpreferences"],
+        ["view_all_userpreferences", "spending_tracker", "userpreferences"],
+        ["view_tag", "spending_tracker", "tag"],
+        ["view_all_tag", "spending_tracker", "tag"],
+        ["view_category", "spending_tracker", "category"],
+        ["view_all_category", "spending_tracker", "category"],
+        ["view_account", "spending_tracker", "account"],
+        ["view_all_account", "spending_tracker", "account"],
+        ["view_transaction", "spending_tracker", "transaction"],
+        ["view_all_transaction", "spending_tracker", "transaction"],
+        ["view_recurringtransaction", "spending_tracker", "recurringtransaction"],
+        ["view_all_recurringtransaction", "spending_tracker", "recurringtransaction"],
+        ["view_recurringtransactionoccurrence", "spending_tracker", "recurringtransactionoccurrence"],
+        ["view_all_recurringtransactionoccurrence", "spending_tracker", "recurringtransactionoccurrence"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "pwa:viewer",
+      "permissions": [
+        ["view_pushsubscription", "pwa", "pushsubscription"],
+        ["view_notification", "pwa", "notification"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "pwa:editor",
+      "permissions": [
+        ["view_pushsubscription", "pwa", "pushsubscription"],
+        ["add_pushsubscription", "pwa", "pushsubscription"],
+        ["change_pushsubscription", "pwa", "pushsubscription"],
+        ["view_notification", "pwa", "notification"],
+        ["add_notification", "pwa", "notification"],
+        ["change_notification", "pwa", "notification"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "pwa:admin",
+      "permissions": [
+        ["view_pushsubscription", "pwa", "pushsubscription"],
+        ["add_pushsubscription", "pwa", "pushsubscription"],
+        ["change_pushsubscription", "pwa", "pushsubscription"],
+        ["delete_pushsubscription", "pwa", "pushsubscription"],
+        ["view_all_pushsubscription", "pwa", "pushsubscription"],
+        ["view_notification", "pwa", "notification"],
+        ["add_notification", "pwa", "notification"],
+        ["change_notification", "pwa", "notification"],
+        ["delete_notification", "pwa", "notification"],
+        ["view_all_notification", "pwa", "notification"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "pwa:supervisor",
+      "permissions": [
+        ["view_pushsubscription", "pwa", "pushsubscription"],
+        ["view_all_pushsubscription", "pwa", "pushsubscription"],
+        ["view_notification", "pwa", "notification"],
+        ["view_all_notification", "pwa", "notification"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "theme:viewer",
+      "permissions": [
+        ["view_themepreset", "theme", "themepreset"],
+        ["view_usertheme", "theme", "usertheme"],
+        ["view_themerating", "theme", "themerating"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "theme:editor",
+      "permissions": [
+        ["view_themepreset", "theme", "themepreset"],
+        ["add_themepreset", "theme", "themepreset"],
+        ["change_themepreset", "theme", "themepreset"],
+        ["view_usertheme", "theme", "usertheme"],
+        ["add_usertheme", "theme", "usertheme"],
+        ["change_usertheme", "theme", "usertheme"],
+        ["view_themerating", "theme", "themerating"],
+        ["add_themerating", "theme", "themerating"],
+        ["change_themerating", "theme", "themerating"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "theme:admin",
+      "permissions": [
+        ["view_themepreset", "theme", "themepreset"],
+        ["add_themepreset", "theme", "themepreset"],
+        ["change_themepreset", "theme", "themepreset"],
+        ["delete_themepreset", "theme", "themepreset"],
+        ["view_all_themepreset", "theme", "themepreset"],
+        ["view_usertheme", "theme", "usertheme"],
+        ["add_usertheme", "theme", "usertheme"],
+        ["change_usertheme", "theme", "usertheme"],
+        ["delete_usertheme", "theme", "usertheme"],
+        ["view_all_usertheme", "theme", "usertheme"],
+        ["view_themerating", "theme", "themerating"],
+        ["add_themerating", "theme", "themerating"],
+        ["change_themerating", "theme", "themerating"],
+        ["delete_themerating", "theme", "themerating"],
+        ["view_all_themerating", "theme", "themerating"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "theme:supervisor",
+      "permissions": [
+        ["view_themepreset", "theme", "themepreset"],
+        ["view_all_themepreset", "theme", "themepreset"],
+        ["view_usertheme", "theme", "usertheme"],
+        ["view_all_usertheme", "theme", "usertheme"],
+        ["view_themerating", "theme", "themerating"],
+        ["view_all_themerating", "theme", "themerating"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "accounts:viewer",
+      "permissions": [
+        ["view_user_profile", "accounts", "user_profile"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "accounts:editor",
+      "permissions": [
+        ["view_user_profile", "accounts", "user_profile"],
+        ["add_user_profile", "accounts", "user_profile"],
+        ["change_user_profile", "accounts", "user_profile"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "accounts:admin",
+      "permissions": [
+        ["view_user_profile", "accounts", "user_profile"],
+        ["add_user_profile", "accounts", "user_profile"],
+        ["change_user_profile", "accounts", "user_profile"],
+        ["delete_user_profile", "accounts", "user_profile"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "accounts:supervisor",
+      "permissions": [
+        ["view_user_profile", "accounts", "user_profile"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "home:viewer",
+      "permissions": [
+        ["view_errorlog", "home", "errorlog"],
+        ["view_scheduledjobrun", "home", "scheduledjobrun"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "home:editor",
+      "permissions": [
+        ["view_errorlog", "home", "errorlog"],
+        ["add_errorlog", "home", "errorlog"],
+        ["change_errorlog", "home", "errorlog"],
+        ["view_scheduledjobrun", "home", "scheduledjobrun"],
+        ["add_scheduledjobrun", "home", "scheduledjobrun"],
+        ["change_scheduledjobrun", "home", "scheduledjobrun"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "home:admin",
+      "permissions": [
+        ["view_errorlog", "home", "errorlog"],
+        ["add_errorlog", "home", "errorlog"],
+        ["change_errorlog", "home", "errorlog"],
+        ["delete_errorlog", "home", "errorlog"],
+        ["view_scheduledjobrun", "home", "scheduledjobrun"],
+        ["add_scheduledjobrun", "home", "scheduledjobrun"],
+        ["change_scheduledjobrun", "home", "scheduledjobrun"],
+        ["delete_scheduledjobrun", "home", "scheduledjobrun"]
+      ]
+    }
+  },
+  {
+    "model": "auth.group",
+    "fields": {
+      "name": "home:supervisor",
+      "permissions": [
+        ["view_errorlog", "home", "errorlog"],
+        ["view_scheduledjobrun", "home", "scheduledjobrun"]
+      ]
+    }
+  }
+]

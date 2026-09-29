@@ -9,7 +9,10 @@ from django.http import HttpResponseForbidden, HttpResponseNotAllowed, JsonRespo
 from django.shortcuts import get_object_or_404, render
 from django.urls import path, reverse
 from django.utils.html import format_html, mark_safe
+from django_otp import login as otp_login
 from django_otp.plugins.otp_totp.models import TOTPDevice
+from django_otp_webauthn.admin import WebAuthnCredentialAdmin
+from django_otp_webauthn.models import WebAuthnCredential
 
 from infrastructure.utils.widgets import ImagePreviewInput
 
@@ -67,7 +70,7 @@ class CustomUserAdmin(UserAdmin):
         (None, {'fields': ['username', 'password_actions', 'last_login', 'date_joined']}),
         ('Personal info', {'fields': ['first_name', 'last_name', 'email']}),
         ('Permissions', {
-            'fields': ['is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'],
+            'fields': ['is_active', 'is_staff', 'groups', 'user_permissions'],
         }),
     ]
     readonly_fields = ['password_actions', 'last_login', 'date_joined']
@@ -81,6 +84,7 @@ class CustomUserAdmin(UserAdmin):
         # Both display columns would otherwise cost a query per row.
         return super().get_queryset(request).select_related('user_profile').annotate(
             _has_2fa=Exists(TOTPDevice.objects.filter(user=OuterRef('pk'), confirmed=True))
+            | Exists(WebAuthnCredential.objects.filter(user=OuterRef('pk'), confirmed=True))
         )
 
     def get_inline_instances(self, request, obj=None):
@@ -140,12 +144,12 @@ class CustomUserAdmin(UserAdmin):
     def _load_target(self, request, user_id):
         """The user being enrolled, or a response explaining why we won't.
 
-        admin_view() only proves staff + a verified OTP device; it says nothing about
-        whether this admin may edit users.
+        admin_view() only proves staff (and a verified device, if enrolled); it says nothing
+        about whether this admin may edit users. Anyone may enrol their own account.
         """
         if request.method != 'POST':
             return None, HttpResponseNotAllowed(['POST'])
-        if not request.user.has_perm('auth.change_user'):
+        if user_id != request.user.pk and not request.user.has_perm('auth.change_user'):
             return None, HttpResponseForbidden('You may not change users.')
         return get_object_or_404(User, pk=user_id), None
 
@@ -175,6 +179,9 @@ class CustomUserAdmin(UserAdmin):
 
         if not services.confirm_device(device, request.POST.get('code', '').strip()):
             return JsonResponse({'ok': False, 'message': 'That code did not match. Try the next one.'})
+
+        if user.pk == request.user.pk:
+            otp_login(request, device)
 
         return JsonResponse({'ok': True, 'message': f'Two-factor authentication is now active for {user}.'})
 
@@ -214,3 +221,8 @@ class CustomUserAdmin(UserAdmin):
             return avatar_tag(obj.user_profile.picture_thumbnail)
         except user_profile.DoesNotExist:
             return avatar_tag(None)
+
+
+@admin.register(WebAuthnCredential)
+class PasskeyAdmin(WebAuthnCredentialAdmin):
+    pass

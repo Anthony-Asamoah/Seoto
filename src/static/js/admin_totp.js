@@ -56,7 +56,8 @@
     }
 
     function send(url, extra) {
-        var payload = new FormData();
+        // An empty multipart body is rejected with a 400 before reaching Django.
+        var payload = new URLSearchParams();
         Object.keys(extra || {}).forEach(function (key) {
             payload.append(key, extra[key]);
         });

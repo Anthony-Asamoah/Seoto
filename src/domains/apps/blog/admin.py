@@ -1,10 +1,12 @@
 from django.contrib import admin
 
 from infrastructure.utils import RichTextAdminMixin
+from common.mixins.admin import OwnerScopedAdminMixin
 from .models import Post, PostTags, PostReadGroup, PostComment
 
 
-class PostAdmin(RichTextAdminMixin, admin.ModelAdmin):
+class PostAdmin(OwnerScopedAdminMixin, RichTextAdminMixin, admin.ModelAdmin):
+    owner_lookup = 'author'
     richtext_fields = ('content',)
     richtext_config = 'blog'
 
@@ -37,12 +39,14 @@ class PostTagsAdmin(admin.ModelAdmin):
     ordering = ('-hits',)
 
 
-class PostReadGroupAdmin(admin.ModelAdmin):
+class PostReadGroupAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+    owner_lookup = 'author'
     list_display = ('label',)
     search_fields = ('label',)
 
 
-class PostCommentAdmin(admin.ModelAdmin):
+class PostCommentAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+    owner_lookup = 'author'
     list_display = ('post', 'author', 'date_posted', 'is_visible', 'edited')
     list_display_links = ('post',)
     list_filter = ('is_visible', 'date_posted', 'edited')

@@ -1,0 +1,122 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static otp_webauthn %}
+
+{% block extrahead %}
+    {{ block.super }}
+    {{ media }}
+{% endblock %}
+
+{% block extrajs %}
+    {{ block.super }}
+    {% render_otp_webauthn_register_scripts %}
+    <script>document.addEventListener('otp_webauthn.register_complete', function () { window.location.reload(); });</script>
+    <div class="modal fade" id="totpSetupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-shield-halved"></i> Two-Factor Authentication</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="totpSetupBody"></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content_title %}{{ title }}{% endblock %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% trans 'Home' %}</a></li>
+        <li class="breadcrumb-item active">{{ title }}</li>
+    </ol>
+{% endblock %}
+
+{% block content %}
+<div class="account-page">
+    <section class="card account-hero">
+        <div class="card-body">
+            <div class="account-avatar">
+                {% if profile.picture_thumbnail %}<img src="{{ profile.picture_thumbnail.url }}" alt="">
+                {% elif profile.picture %}<img src="{{ profile.picture.url }}" alt="">
+                {% else %}<span>{{ request.user.first_name|default:request.user.username|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}</span>{% endif %}
+            </div>
+            <div class="account-identity">
+                <h2>{{ request.user.get_full_name|default:request.user.username }}</h2>
+                <div class="account-meta">
+                    <span><i class="fas fa-at"></i>{{ request.user.username }}</span>
+                    {% if request.user.email %}<span><i class="fas fa-envelope"></i>{{ request.user.email }}</span>{% endif %}
+                    <span><i class="fas fa-calendar"></i>{% trans 'Joined' %} {{ request.user.date_joined|date:"M Y" }}</span>
+                </div>
+                <div class="account-badges">
+                    {% if request.user.is_superuser %}<span class="badge account-badge">Superuser</span>{% elif request.user.is_staff %}<span class="badge account-badge">Staff</span>{% endif %}
+                    {% if member %}<span class="badge account-badge-muted">{{ member.staff_id }}</span>
+                        {% if member.is_public %}<span class="badge account-badge-muted"><i class="fas fa-globe"></i> Listed on website</span>{% endif %}{% endif %}
+                </div>
+            </div>
+            {% if totp_status == 'active' or passkeys %}
+                <span class="badge text-bg-success account-hero-action"><i class="fas fa-shield-halved"></i> 2FA on</span>
+            {% else %}
+                <a href="#account-security" class="btn btn-outline-warning account-hero-action"><i class="fas fa-shield-halved"></i><span>Secure your account</span></a>
+            {% endif %}
+        </div>
+    </section>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% if user_form.non_field_errors or profile_form.non_field_errors or member_form.non_field_errors %}
+            <div class="alert alert-danger">{{ user_form.non_field_errors }}{{ profile_form.non_field_errors }}{{ member_form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="account-grid">
+            <section class="card account-section">
+                <div class="card-header"><h3><i class="fas fa-user"></i>Personal details</h3><p>How you appear across the admin.</p></div>
+                <div class="card-body"><div class="row g-3">
+                    {% include "admin/accounts/_account_field.html" with field=user_form.first_name col="col-sm-6" %}
+                    {% include "admin/accounts/_account_field.html" with field=user_form.last_name col="col-sm-6" %}
+                    {% include "admin/accounts/_account_field.html" with field=user_form.email col="col-sm-7" %}
+                    {% include "admin/accounts/_account_field.html" with field=profile_form.contact col="col-sm-5" %}
+                </div></div>
+            </section>
+
+            <section class="card account-section">
+                <div class="card-header"><h3><i class="fas fa-image"></i>Profile photo</h3><p>Square images work best.</p></div>
+                <div class="card-body">{% include "admin/accounts/_account_field.html" with field=profile_form.picture %}</div>
+            </section>
+
+            <div id="account-security" class="account-span-lg">{% include "admin/accounts/_security_section.html" %}</div>
+
+            {% if member_form %}
+                <section class="card account-section account-span">
+                    <div class="card-header"><h3><i class="fas fa-id-card"></i>Staff profile</h3><p>Shown on the marketing site when listed.</p></div>
+                    <div class="card-body">
+                        <div class="account-stats">
+                            <div><small>Staff ID</small><strong>{{ member.staff_id }}</strong></div>
+                            <div><small>Started</small><strong>{{ member.started_on|date:"j M Y" }}</strong></div>
+                            {% if member.ended_on %}<div><small>Ended</small><strong>{{ member.ended_on|date:"j M Y" }}</strong></div>{% endif %}
+                            <div><small>Website</small><strong>{{ member.is_public|yesno:"Listed,Hidden" }}</strong></div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4">{% include "admin/accounts/_account_field.html" with field=member_form.profile_image %}</div>
+                            <div class="col-md-8"><div class="row g-3">
+                                {% include "admin/accounts/_account_field.html" with field=member_form.about %}
+                                {% include "admin/accounts/_account_field.html" with field=member_form.gender col="col-sm-6" %}
+                                {% include "admin/accounts/_account_field.html" with field=member_form.date_of_birth col="col-sm-6" %}
+                                {% include "admin/accounts/_account_field.html" with field=member_form.nationality col="col-sm-6" %}
+                                {% include "admin/accounts/_account_field.html" with field=member_form.hometown col="col-sm-6" %}
+                            </div></div>
+                        </div>
+                    </div>
+                </section>
+            {% endif %}
+        </div>
+
+        <div class="account-savebar">
+            <span class="text-muted small d-none d-sm-inline">{% trans 'Changes apply immediately after saving.' %}</span>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> {% trans 'Save changes' %}</button>
+        </div>
+    </form>
+
+    {% if member %}{% include "admin/accounts/_staff_sections.html" %}{% endif %}
+</div>
+{% endblock %}

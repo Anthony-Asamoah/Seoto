@@ -53,6 +53,7 @@ class ThemePreset(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
+        permissions = [('view_all_themepreset', 'Can view all ThemePreset records')]
         ordering = ['-is_featured', '-is_official', '-rating_count', '-created_at']
 
     def __str__(self):
@@ -177,6 +178,9 @@ class UserTheme(models.Model):
                 'card_text_color': self.custom_card_text_color or '#212529',
             }
 
+    class Meta:
+        permissions = [('view_all_usertheme', 'Can view all UserTheme records')]
+
 
 class ThemeRating(models.Model):
     """
@@ -191,6 +195,7 @@ class ThemeRating(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        permissions = [('view_all_themerating', 'Can view all ThemeRating records')]
         unique_together = ('user', 'theme')
         ordering = ['-created_at']
 

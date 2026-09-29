@@ -7,10 +7,12 @@ django_otp pulls in auth models that aren't loadable while INSTALLED_APPS is bei
 from django_otp.admin import OTPAdminAuthenticationForm, OTPAdminSite
 
 from common.admin_forms import RecaptchaAdminLoginMixin
+from domains.accounts.otp import OptionalOTPMixin
 
 
-class OTPAdminLoginForm(RecaptchaAdminLoginMixin, OTPAdminAuthenticationForm):
+class OTPAdminLoginForm(RecaptchaAdminLoginMixin, OptionalOTPMixin, OTPAdminAuthenticationForm):
     pass
+
 
 SIDEBAR_SECTIONS = (
     ('site', 'Site', 'fas fa-globe', (
@@ -37,12 +39,13 @@ SIDEBAR_SECTIONS = (
         ('auth', 'Users & Groups', 'fas fa-users-cog'),
         ('otp_totp', 'Authenticator Apps', 'fas fa-mobile-screen'),
         ('otp_static', 'Backup Codes', 'fas fa-key'),
+        ('django_otp_webauthn', 'Passkeys', 'fas fa-fingerprint'),
     )),
 )
 
 
 class SeotoAdminSite(OTPAdminSite):
-    """Admin site that treats users without a verified OTP device as non-staff."""
+    """Admin site where a user with an enrolled device must verify it; everyone else may sign in on a password."""
 
     # Keep the stock instance name, otherwise every {% url 'admin:...' %} breaks.
     name = 'admin'
@@ -54,6 +57,32 @@ class SeotoAdminSite(OTPAdminSite):
 
     def __init__(self, name='admin'):
         super().__init__(name)
+
+    def get_urls(self):
+        from django.urls import path
+
+        return [
+            path('login/factors/', self.login_factors, name='login_factors'),
+            path('account/', self.admin_view(self.my_account), name='my_account'),
+        ] + super().get_urls()
+
+    def my_account(self, request):
+        from domains.accounts.admin_views import my_account
+
+        return my_account(request, self)
+
+    def login_factors(self, request):
+        from domains.accounts.otp import login_factors_response
+
+        return login_factors_response(request, staff_only=True)
+
+    def has_permission(self, request):
+        from domains.accounts.services import requires_second_factor
+
+        user = request.user
+        if not (user.is_active and user.is_staff):
+            return False
+        return user.is_verified() or not requires_second_factor(user)
 
     def get_app_list(self, request, app_label=None):
         """Regroup the flat per-app list into the sections above.

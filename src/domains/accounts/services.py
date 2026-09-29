@@ -12,6 +12,7 @@ from django.core import signing
 from django.utils.safestring import mark_safe
 from django_otp.plugins.otp_static.models import StaticDevice, StaticToken
 from django_otp.plugins.otp_totp.models import TOTPDevice
+from django_otp_webauthn.models import WebAuthnCredential
 
 DEVICE_NAME = 'Authenticator'
 BACKUP_DEVICE_NAME = 'Backup codes'
@@ -33,6 +34,15 @@ def pending_device(user):
 
 def has_confirmed_device(user):
     return TOTPDevice.objects.filter(user=user, confirmed=True).exists()
+
+
+def has_passkey(user):
+    return WebAuthnCredential.objects.filter(user=user, confirmed=True).exists()
+
+
+def requires_second_factor(user):
+    """Backup codes are excluded: they exist from the moment setup starts, before it is confirmed."""
+    return user.is_authenticated and (has_confirmed_device(user) or has_passkey(user))
 
 
 def issue_backup_codes(user, count=BACKUP_CODE_COUNT):

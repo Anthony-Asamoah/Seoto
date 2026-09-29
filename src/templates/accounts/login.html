@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static otp_webauthn %}
 
 {% block title %}| Login{% endblock %}
 
@@ -79,6 +80,17 @@
             margin-bottom: 20px;
         }
 
+        .otp-reveal { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .25s ease, opacity .25s ease; }
+        .otp-reveal.is-open { grid-template-rows: 1fr; opacity: 1; }
+        .otp-reveal-inner { overflow: hidden; min-height: 0; }
+
+        .passkey-divider {
+            text-align: center;
+            margin: 18px 0 10px;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
         .alert {
             max-width: 600px;
             margin: 0 auto 20px;
@@ -90,7 +102,11 @@
 {% block content %}
     <div class="container">
         <div class="errors">
-            {% if form.errors %}
+            {% if form.otp_failed %}
+                <div class="alert alert-warning mt-3">
+                    {% for error in form.non_field_errors %}<h4>{{ error }}</h4>{% endfor %}
+                </div>
+            {% elif form.errors %}
                 <div class="alert alert-warning mt-3">
                     <h4>Incorrect username or password</h4>
                 </div>
@@ -153,6 +169,22 @@
                             </div>
                         </div>
                     </div>
+                    <div id="otpReveal" class="otp-reveal{% if form.otp_failed %} is-open{% endif %}"
+                         data-url="{% url 'login_factors' %}">
+                        <div class="otp-reveal-inner">
+                            <div class="form-group">
+                                <div class="form-row">
+                                    <div class="col-sm-5">
+                                        <label for="{{ form.otp_token.id_for_label }}">Code</label>
+                                    </div>
+                                    <div class="col-md">{{ form.otp_token }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p id="passkeyOnlyNote" class="text-muted small text-center" hidden>
+                        This account signs in with a passkey. Use the button below.
+                    </p>
                     <div class="button form-actions mt-3">
                         <button class="btn btn-success login-btn" type="submit">
                             <span class="btn-text" id="btnText">Login</span>
@@ -161,6 +193,19 @@
                     <input type="hidden" name="next" value="{{ next }}">
                     {% include 'partials/_recaptcha.html' with action='login' form_id='loginForm' %}
                 </form>
+
+                <div class="passkey-divider">or</div>
+                <div id="passkey-verification-placeholder"></div>
+                <template id="passkey-verification-available-template">
+                    <div class="form-actions">
+                        <button type="button" id="passkey-verification-button" class="btn btn-outline-secondary">
+                            <i class="fas fa-fingerprint"></i> Sign in with a passkey
+                        </button>
+                        <p id="passkey-verification-status-message" class="text-danger small mt-2 mb-0" role="status"></p>
+                    </div>
+                </template>
+                {% render_otp_webauthn_auth_scripts %}
+                <script src="{% static 'js/login_factors.js' %}" defer></script>
 
                 <div class="additional-links">
                     <a href="{% url 'password_reset' %}" class="btn btn-link">Lost password?</a>

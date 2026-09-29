@@ -15,6 +15,7 @@ class Rhyme(models.Model):
         return self.rhyme
 
     class Meta:
+        permissions = [('view_all_rhyme', 'Can view all Rhyme records')]
         ordering = ['-timestamp']
         db_table = 'rhyme'
 
