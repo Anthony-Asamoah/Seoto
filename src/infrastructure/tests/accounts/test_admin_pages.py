@@ -98,7 +98,7 @@ class SidebarSectionTests(TestCase):
     def test_sections_replace_per_app_groups(self):
         names = [app['name'] for app in self.app_list()]
 
-        self.assertEqual(names, ['Site', 'Feature Apps', 'Website', 'Company', 'Security'])
+        self.assertEqual(names, ['Site', 'Apps', 'Website', 'Company', 'Security'])
 
     def test_models_land_in_their_section(self):
         sections = {app['app_label']: app for app in self.app_list()}
@@ -107,7 +107,7 @@ class SidebarSectionTests(TestCase):
             return {model['object_name'] for model in sections[label]['models']}
 
         self.assertLessEqual({'User', 'Group', 'TOTPDevice'}, objects('security'))
-        self.assertLessEqual({'Post', 'Transaction', 'meal'}, objects('feature_apps'))
+        self.assertLessEqual({'Post', 'Transaction', 'meal'}, objects('apps'))
         self.assertLessEqual({'Product', 'FAQ'}, objects('website'))
         self.assertLessEqual({'Member', 'Position'}, objects('company'))
         self.assertLessEqual({'ErrorLog', 'ThemePreset'}, objects('site'))
@@ -128,9 +128,9 @@ class SidebarSectionTests(TestCase):
     def test_sections_expose_subgroups_per_app(self):
         sections = {app['app_label']: app for app in self.app_list()}
 
-        feature_apps = [group['name'] for group in sections['feature_apps']['subgroups']]
+        apps = [group['name'] for group in sections['apps']['subgroups']]
 
-        self.assertEqual(feature_apps, ['Blog', 'Spending Tracker', 'Foodie', 'Jotter', 'Rhymes'])
+        self.assertEqual(apps, ['Blog', 'Spending Tracker', 'Foodie', 'Jotter', 'Rhymes'])
 
     def test_subgroup_models_are_the_same_objects_as_the_flat_list(self):
         """The sidebar relies on this: jazzmin stamps `url`/`icon` onto the flat list

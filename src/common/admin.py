@@ -21,7 +21,7 @@ SIDEBAR_SECTIONS = (
         ('pwa', 'PWA', 'fas fa-bell'),
         ('theme', 'Theme', 'fas fa-palette'),
     )),
-    ('feature_apps', 'Feature Apps', 'fas fa-shapes', (
+    ('apps', 'Apps', 'fas fa-shapes', (
         ('blog', 'Blog', 'fas fa-newspaper'),
         ('spending_tracker', 'Spending Tracker', 'fas fa-wallet'),
         ('foodie', 'Foodie', 'fas fa-utensils'),

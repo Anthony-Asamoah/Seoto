@@ -1,7 +1,7 @@
 # Seoto
 
 A single Django project hosting a personal site and a collection of small, self-contained
-feature apps — a blog, a meal picker, a spending tracker, an author profile, and several
+apps — a blog, a meal picker, a spending tracker, an author profile, and several
 standalone tools. Views are server-rendered with Django templates; there is no separate REST
 API layer. The project is ASGI-ready (Daphne + Channels) and ships as a PWA with web push.
 

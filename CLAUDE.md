@@ -38,7 +38,7 @@ Single Django project migrating from stock Django MVT toward a repository-patter
     ├── config/                the Django settings module only (settings, urls, wsgi/asgi)
     ├── common/                cross-cutting code (admin, middleware, mixins, pagination, storage)
     ├── infrastructure/        utils/, external_services/, scheduler/, tests/, words/
-    ├── domains/               feature apps
+    ├── domains/               apps
     │   ├── accounts/ author/ home/ pwa/ theme/
     │   └── apps/              blog/ foodie/ spending_tracker/ jotter/ rhymes/
     │                          throw_a_die/ flip_a_coin/ interest_calc/ generate_invoice/
