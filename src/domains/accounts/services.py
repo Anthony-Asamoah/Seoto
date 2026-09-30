@@ -93,9 +93,32 @@ def read_setup_token(token):
     return TOTPDevice.objects.filter(pk=device_pk, user_id=user_pk, confirmed=False).first()
 
 
+def begin_totp_setup(user, confirm=False, rotate=False):
+    """The pending device to show, or None when that would wipe a working one unconfirmed."""
+    if has_confirmed_device(user) and not confirm:
+        return None
+    device = pending_device(user)
+    if device is None or confirm or rotate:
+        device = issue_totp_device(user)
+        issue_backup_codes(user)
+    return device
+
+
 def confirm_device(device, code):
     if not device.verify_token(code):
         return False
     device.confirmed = True
     device.save(update_fields=['confirmed'])
     return True
+
+
+def security_context(user):
+    if has_confirmed_device(user):
+        totp_status = 'active'
+    else:
+        totp_status = 'pending' if pending_device(user) else 'none'
+    return {
+        'totp_status': totp_status,
+        'passkeys': WebAuthnCredential.objects.filter(user=user, confirmed=True).order_by('-created_at'),
+        'backup_code_count': len(backup_codes(user)),
+    }

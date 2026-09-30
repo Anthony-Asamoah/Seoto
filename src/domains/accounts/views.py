@@ -2,10 +2,12 @@ import logging
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
+from django.http import HttpResponseForbidden, JsonResponse
 from django.contrib.auth.views import LoginView, PasswordResetView
 from django.db import transaction
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
+from django.views.decorators.http import require_POST
+from django_otp import login as otp_login
 
 from . import services
 from .otp import login_factors_response
@@ -94,15 +96,57 @@ def totp_setup_done(request):
     return render(request, 'accounts/totp_setup_done.html')
 
 
+def _unverified(user):
+    # Same rule as passkey enrolment: a password alone must not replace an enrolled factor.
+    return services.requires_second_factor(user) and not user.is_verified()
+
+
+@login_required
+@require_POST
+def self_totp_setup(request):
+    user = request.user
+    if _unverified(user):
+        return HttpResponseForbidden('Verify with your second factor first.')
+    device = services.begin_totp_setup(
+        user, confirm=request.POST.get('confirm') == '1', rotate=request.POST.get('rotate') == '1',
+    )
+    context = {'account': user, 'own': True, 'can_email': False, 'needs_confirmation': device is None}
+    if device is not None:
+        context.update({
+            'qr_svg': services.qr_svg(device.config_url),
+            'secret': services.secret_b32(device),
+            'backup_codes': services.backup_codes(user),
+        })
+    return render(request, 'admin/accounts/totp_setup_modal.html', context)
+
+
+@login_required
+@require_POST
+def self_totp_verify(request):
+    user = request.user
+    if _unverified(user):
+        return HttpResponseForbidden('Verify with your second factor first.')
+    device = services.pending_device(user)
+    if device is None:
+        return JsonResponse({'ok': False, 'message': 'There is nothing waiting to be activated.'})
+    if not services.confirm_device(device, request.POST.get('code', '').strip()):
+        return JsonResponse({'ok': False, 'message': 'That code did not match. Try the next one.'})
+    otp_login(request, device)
+    return JsonResponse({'ok': True, 'message': 'Two-factor authentication is now active.'})
+
+
 @login_required
 def profile(request, username):
-    user = get_object_or_404(User, username=username)
+    if username != request.user.username:
+        return redirect('profile', request.user.username)
+    user = request.user
 
     context = {
         'user': user,
         'joined_day': user.date_joined.strftime('%A'),
         'joined_date': user.date_joined.strftime('%d %B %Y'),
         'joined_time': user.date_joined.strftime('%I:%M:%S %p'),
+        **services.security_context(user),
     }
     try:
         extra_info = user_profile.objects.get(user=user)

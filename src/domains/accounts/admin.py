@@ -158,14 +158,11 @@ class CustomUserAdmin(UserAdmin):
         if denied:
             return denied
 
-        if services.has_confirmed_device(user) and request.POST.get('confirm') != '1':
+        device = services.begin_totp_setup(
+            user, confirm=request.POST.get('confirm') == '1', rotate=request.POST.get('rotate') == '1',
+        )
+        if device is None:
             return self._render_modal(request, user, needs_confirmation=True)
-
-        device = services.pending_device(user)
-        if device is None or request.POST.get('confirm') == '1' or request.POST.get('rotate') == '1':
-            device = services.issue_totp_device(user)
-            services.issue_backup_codes(user)
-
         return self._render_modal(request, user, device=device)
 
     def totp_verify_view(self, request, user_id):
@@ -206,7 +203,10 @@ class CustomUserAdmin(UserAdmin):
         return JsonResponse({'ok': True, 'message': f'Setup link sent to {user.email}.'})
 
     def _render_modal(self, request, user, device=None, needs_confirmation=False):
-        context = {'account': user, 'needs_confirmation': needs_confirmation}
+        context = {
+            'account': user, 'needs_confirmation': needs_confirmation,
+            'own': user.pk == request.user.pk, 'can_email': True,
+        }
         if device is not None:
             context.update({
                 'qr_svg': services.qr_svg(device.config_url),

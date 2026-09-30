@@ -5,6 +5,7 @@ Django settings for Seoto project.
 import logging
 from os import path
 from pathlib import Path as pathlib
+from urllib.parse import urlsplit
 
 from decouple import AutoConfig, Csv
 from django.contrib.messages import constants as messages
@@ -309,12 +310,14 @@ LOGOUT_REDIRECT_URL = 'apps'
 # Admin two-factor (django-otp) — enrol devices with `manage.py setup_admin_totp <user>`
 # and mint emergency codes with `manage.py addstatictoken <user>`.
 OTP_TOTP_ISSUER = config('OTP_TOTP_ISSUER', default='Seoto')
+# APP_DOMAIN is a full URL; the RP ID must be the bare host.
+_app_url = urlsplit(APP_DOMAIN)
 # Passkeys are bound to the RP ID; changing it orphans every enrolled credential.
-OTP_WEBAUTHN_RP_ID = config('OTP_WEBAUTHN_RP_ID', default='localhost' if DEBUG else APP_DOMAIN)
+OTP_WEBAUTHN_RP_ID = config('OTP_WEBAUTHN_RP_ID', default='localhost' if DEBUG else _app_url.hostname)
 OTP_WEBAUTHN_RP_NAME = config('OTP_WEBAUTHN_RP_NAME', default='Seoto')
 OTP_WEBAUTHN_ALLOWED_ORIGINS = config(
     'OTP_WEBAUTHN_ALLOWED_ORIGINS',
-    default='http://localhost:8000,http://localhost:8003' if DEBUG else f'https://{APP_DOMAIN}',
+    default='http://localhost:8000,http://localhost:8003' if DEBUG else f'{_app_url.scheme}://{_app_url.netloc}',
     cast=Csv(),
 )
 AUTHENTICATION_BACKENDS = [

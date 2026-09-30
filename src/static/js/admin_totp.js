@@ -1,4 +1,4 @@
-/* Drives the "Set up 2FA" button on the User change page.
+/* Drives the "Set up 2FA" button on the admin user pages and the site profile.
 
    The server owns every step: it renders the modal body (QR, secret, backup codes) and
    answers verify/email as JSON, so this file only moves HTML around. Reset confirmation is
@@ -37,13 +37,13 @@
        server is running old code, a 403 means CSRF, and a redirect means the session died. */
     function explain(response) {
         if (response.redirected || response.url.indexOf('/login/') !== -1) {
-            return 'Your admin session expired. Reload the page and sign in again.';
+            return 'Your session expired. Reload the page and sign in again.';
         }
         if (response.status === 404) {
             return 'Endpoint not found (404) — the server may be running older code. Restart it.';
         }
         if (response.status === 403) {
-            return 'Refused (403). Either the CSRF token is stale — reload the page — or you lack permission to change users.';
+            return 'Refused (403). Reload the page; if it persists, sign in again with your second factor.';
         }
         return 'The server returned ' + response.status + ' ' + response.statusText + '.';
     }

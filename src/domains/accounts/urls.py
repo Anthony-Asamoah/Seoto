@@ -3,6 +3,7 @@ from django.contrib.auth import views
 from .views import (
 	register, profile, totp_setup_confirm, totp_setup_done,
 	CustomLoginView, CustomPasswordResetView, login_factors,
+	self_totp_setup, self_totp_verify,
 )
 from .forms import CustomPasswordChangeForm, CustomSetPasswordForm
 
@@ -37,6 +38,8 @@ urlpatterns = [
 	),
 	path('register', register, name='register'),
 	# Both must stay above the username catch-all, and 'done' above the token pattern.
+	path('2fa/setup/', self_totp_setup, name='self_totp_setup'),
+	path('2fa/setup/verify/', self_totp_verify, name='self_totp_verify'),
 	path('2fa/setup/done/', totp_setup_done, name='totp_setup_done'),
 	path('2fa/setup/<str:token>/', totp_setup_confirm, name='totp_setup_confirm'),
 	path('<str:username>', profile, name='profile'),

@@ -1,10 +1,18 @@
 {% if needs_confirmation %}
     <div class="alert alert-warning">
-        <h6 class="alert-heading">{{ account }} already has a working authenticator</h6>
-        <p class="mb-0">
-            Continuing wipes it and issues a new secret with new backup codes. Their current app will
-            stop opening the admin, and they will need to scan the new code before they can sign in again.
-        </p>
+        {% if own %}
+            <h6 class="alert-heading">You already have a working authenticator</h6>
+            <p class="mb-0">
+                Continuing wipes it and issues a new secret with new backup codes. Your current app will
+                stop working, and you will need to scan the new code before you can sign in again.
+            </p>
+        {% else %}
+            <h6 class="alert-heading">{{ account }} already has a working authenticator</h6>
+            <p class="mb-0">
+                Continuing wipes it and issues a new secret with new backup codes. Their current app will
+                stop opening the admin, and they will need to scan the new code before they can sign in again.
+            </p>
+        {% endif %}
     </div>
     <div class="text-end">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -18,7 +26,7 @@
             <code class="totp-secret">{{ secret }}</code>
         </div>
         <div class="col-md-7">
-            <p>Have {{ account }} scan this with their authenticator app, then type the code it shows.</p>
+            <p>{% if own %}Scan this with your authenticator app{% else %}Have {{ account }} scan this with their authenticator app{% endif %}, then type the code it shows.</p>
 
             <div class="input-group mb-2">
                 <input type="text" class="form-control" id="totp-code" placeholder="6-digit code"
@@ -26,7 +34,8 @@
                 <button type="button" class="btn btn-primary" id="totp-verify">Verify &amp; activate</button>
             </div>
 
-            {% if account.email %}
+            {% if not can_email %}
+            {% elif account.email %}
                 <button type="button" class="btn btn-outline-secondary w-100" id="totp-email">
                     <i class="fas fa-envelope"></i> Email setup link to {{ account.email }}
                 </button>

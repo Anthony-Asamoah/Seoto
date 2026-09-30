@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% load static %}
+{% load static otp_webauthn %}
 
 {% block title %}| Profile {% endblock %}
 
@@ -143,6 +143,9 @@
         .settings-icon.icon-blue   { background: #e8f0fb; color: #175a9c; }
         .settings-icon.icon-purple { background: #f0eafa; color: #6f42c1; }
         .settings-icon.icon-green  { background: #e9f7ef; color: #198754; }
+        .settings-icon.icon-amber  { background: #fdf5e6; color: #b26a00; }
+        .totp-qr-plate svg { width: 100%; max-width: 220px; height: auto; background: #fff; }
+        .totp-backup-codes { columns: 2; font-family: monospace; padding-left: 1.2rem; }
 
         .settings-body {
             flex: 1;
@@ -424,6 +427,49 @@
                                     </div>
                                 </div>
 
+                                <!-- Authenticator app -->
+                                <div class="settings-item">
+                                    <div class="settings-icon icon-amber">
+                                        <i class="fas fa-mobile-screen"></i>
+                                    </div>
+                                    <div class="settings-body">
+                                        <div class="settings-title">Authenticator
+                                            {% if totp_status == 'active' %}<span class="badge text-bg-success">On</span>
+                                            {% elif totp_status == 'pending' %}<span class="badge text-bg-warning">Pending</span>{% endif %}
+                                        </div>
+                                        <div class="settings-desc">{% if totp_status == 'active' %}{{ backup_code_count }} backup code{{ backup_code_count|pluralize }} left{% else %}6-digit codes at sign in{% endif %}</div>
+                                    </div>
+                                    <div class="settings-action">
+                                        <button type="button" class="btn {% if totp_status == 'active' %}btn-outline-secondary{% else %}btn-outline-primary{% endif %}" id="totp-setup-btn"
+                                                data-url="{% url 'self_totp_setup' %}"
+                                                data-verify-url="{% url 'self_totp_verify' %}">
+                                            {% if totp_status == 'active' %}Reset{% elif totp_status == 'pending' %}Resume{% else %}Set up{% endif %}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Passkeys -->
+                                <div class="settings-item">
+                                    <div class="settings-icon icon-blue">
+                                        <i class="fas fa-fingerprint"></i>
+                                    </div>
+                                    <div class="settings-body">
+                                        <div class="settings-title">Passkeys
+                                            {% if passkeys %}<span class="badge text-bg-success">{{ passkeys|length }}</span>{% endif %}
+                                        </div>
+                                        <div class="settings-desc">
+                                            {% for p in passkeys %}{{ p.name|default:"Passkey" }}{% if not forloop.last %}, {% endif %}{% empty %}Touch ID, Face ID or a security key{% endfor %}
+                                        </div>
+                                        <span id="passkey-register-status-message" class="settings-desc" role="status"></span>
+                                    </div>
+                                    <div class="settings-action">
+                                        <template id="passkey-registration-available-template">
+                                            <button type="button" class="btn btn-outline-primary" id="passkey-register-button">Add</button>
+                                        </template>
+                                        <span id="passkey-registration-placeholder" class="settings-desc">Not supported</span>
+                                    </div>
+                                </div>
+
                                 {% if IS_THEME_ENABLED %}
                                 <!-- Theme -->
                                 <div class="settings-item">
@@ -526,9 +572,28 @@
             <i class="fas fa-times"></i>
         </button>
     </div>
+    <div class="modal fade" id="totpSetupModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-shield-halved"></i> Authenticator App</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="totpSetupBody"></div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block script %}
+{% render_otp_webauthn_register_scripts %}
+<script src="{% static 'js/admin_totp.js' %}"></script>
+<script>
+    document.addEventListener('otp_webauthn.register_complete', function () { window.location.reload(); });
+    document.getElementById('totpSetupModal').addEventListener('hidden.bs.modal', function () {
+        if (document.getElementById('totp-verify')?.disabled) { window.location.reload(); }
+    });
+</script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 

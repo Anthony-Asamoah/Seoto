@@ -4,8 +4,6 @@ from django.contrib.auth.models import User
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
 
-from django_otp_webauthn.models import WebAuthnCredential
-
 from domains.company.hr.staff.models import Member
 from infrastructure.utils.widgets import ImagePreviewInput
 
@@ -58,18 +56,6 @@ def staff_context(member):
     }
 
 
-def security_context(user):
-    if services.has_confirmed_device(user):
-        totp_status = 'active'
-    else:
-        totp_status = 'pending' if services.pending_device(user) else 'none'
-    return {
-        'totp_status': totp_status,
-        'passkeys': WebAuthnCredential.objects.filter(user=user, confirmed=True).order_by('-created_at'),
-        'backup_code_count': len(services.backup_codes(user)),
-    }
-
-
 def my_account(request, admin_site):
     user = request.user
     profile, _ = user_profile.objects.get_or_create(user=user)
@@ -101,7 +87,7 @@ def my_account(request, admin_site):
         'member': member,
         'member_form': member_form,
         'media': sum((f.media for f in forms_), forms.Media(js=['js/csrf.js', 'js/admin_totp.js'])),
-        **security_context(user),
+        **services.security_context(user),
         **(staff_context(member) if member else {}),
     }
     return TemplateResponse(request, 'admin/accounts/my_account.html', context)
