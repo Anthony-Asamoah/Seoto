@@ -310,11 +310,11 @@ LOGOUT_REDIRECT_URL = 'apps'
 # and mint emergency codes with `manage.py addstatictoken <user>`.
 OTP_TOTP_ISSUER = config('OTP_TOTP_ISSUER', default='Seoto')
 # Passkeys are bound to the RP ID; changing it orphans every enrolled credential.
-OTP_WEBAUTHN_RP_ID = config('OTP_WEBAUTHN_RP_ID', default='localhost' if DEBUG else '')
+OTP_WEBAUTHN_RP_ID = config('OTP_WEBAUTHN_RP_ID', default='localhost' if DEBUG else APP_DOMAIN)
 OTP_WEBAUTHN_RP_NAME = config('OTP_WEBAUTHN_RP_NAME', default='Seoto')
 OTP_WEBAUTHN_ALLOWED_ORIGINS = config(
     'OTP_WEBAUTHN_ALLOWED_ORIGINS',
-    default='http://localhost:8000,http://localhost:8003' if DEBUG else '',
+    default='http://localhost:8000,http://localhost:8003' if DEBUG else f'https://{APP_DOMAIN}',
     cast=Csv(),
 )
 AUTHENTICATION_BACKENDS = [
