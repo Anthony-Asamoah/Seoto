@@ -98,7 +98,7 @@ class SidebarSectionTests(TestCase):
     def test_sections_replace_per_app_groups(self):
         names = [app['name'] for app in self.app_list()]
 
-        self.assertEqual(names, ['Site', 'Apps', 'Website', 'Company', 'Security'])
+        self.assertEqual(names, ['Apps', 'Company', 'System', 'Website'])
 
     def test_models_land_in_their_section(self):
         sections = {app['app_label']: app for app in self.app_list()}
@@ -106,11 +106,11 @@ class SidebarSectionTests(TestCase):
         def objects(label):
             return {model['object_name'] for model in sections[label]['models']}
 
-        self.assertLessEqual({'User', 'Group', 'TOTPDevice'}, objects('security'))
+        self.assertLessEqual({'User', 'Group', 'TOTPDevice'}, objects('system'))
         self.assertLessEqual({'Post', 'Transaction', 'meal'}, objects('apps'))
         self.assertLessEqual({'Product', 'FAQ'}, objects('website'))
         self.assertLessEqual({'Member', 'Position'}, objects('company'))
-        self.assertLessEqual({'ErrorLog', 'ThemePreset'}, objects('site'))
+        self.assertLessEqual({'ErrorLog', 'ThemePreset'}, objects('system'))
 
     def test_every_model_is_claimed_by_exactly_one_section(self):
         flat = [
@@ -130,7 +130,16 @@ class SidebarSectionTests(TestCase):
 
         apps = [group['name'] for group in sections['apps']['subgroups']]
 
-        self.assertEqual(apps, ['Blog', 'Spending Tracker', 'Foodie', 'Jotter', 'Rhymes'])
+        self.assertEqual(apps, ['Blog', 'Foodie', 'Jotter', 'Rhymes', 'Spending Tracker'])
+
+    def test_security_subgroup_merges_otp_apps(self):
+        sections = {app['app_label']: app for app in self.app_list()}
+        groups = {group['name']: group for group in sections['system']['subgroups']}
+
+        objects = {model['object_name'] for model in groups['Security']['models']}
+
+        self.assertLessEqual({'TOTPDevice', 'StaticDevice'}, objects)
+        self.assertNotIn('Authenticator Apps', groups)
 
     def test_subgroup_models_are_the_same_objects_as_the_flat_list(self):
         """The sidebar relies on this: jazzmin stamps `url`/`icon` onto the flat list

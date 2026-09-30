@@ -15,11 +15,13 @@ class OTPAdminLoginForm(RecaptchaAdminLoginMixin, OptionalOTPMixin, OTPAdminAuth
 
 
 SIDEBAR_SECTIONS = (
-    ('site', 'Site', 'fas fa-globe', (
+    ('system', 'System', 'fas fa-gears', (
         ('accounts', 'Accounts', 'fas fa-id-badge'),
         ('home', 'Home', 'fas fa-house'),
         ('pwa', 'PWA', 'fas fa-bell'),
         ('theme', 'Theme', 'fas fa-palette'),
+        ('auth', 'Users & Groups', 'fas fa-users-cog'),
+        (('otp_totp', 'otp_static', 'django_otp_webauthn'), 'Security', 'fas fa-shield-halved'),
     )),
     ('apps', 'Apps', 'fas fa-shapes', (
         ('blog', 'Blog', 'fas fa-newspaper'),
@@ -34,12 +36,6 @@ SIDEBAR_SECTIONS = (
     )),
     ('company', 'Company', 'fas fa-building', (
         ('company_staff', 'Staff', 'fas fa-user-tie'),
-    )),
-    ('security', 'Security', 'fas fa-shield-halved', (
-        ('auth', 'Users & Groups', 'fas fa-users-cog'),
-        ('otp_totp', 'Authenticator Apps', 'fas fa-mobile-screen'),
-        ('otp_static', 'Backup Codes', 'fas fa-key'),
-        ('django_otp_webauthn', 'Passkeys', 'fas fa-fingerprint'),
     )),
 )
 
@@ -106,16 +102,25 @@ class SeotoAdminSite(OTPAdminSite):
 
         for label, heading, icon, members in SIDEBAR_SECTIONS:
             models, subgroups = [], []
-            for member_label, sub_heading, sub_icon in members:
-                app = remaining.pop(member_label, None)
-                if not app:
+            for member_labels, sub_heading, sub_icon in members:
+                if isinstance(member_labels, str):
+                    member_labels = (member_labels,)
+                sub_models = []
+                for member_label in member_labels:
+                    app = remaining.pop(member_label, None)
+                    if app:
+                        sub_models.extend(app['models'])
+                if not sub_models:
                     continue
-                models.extend(app['models'])
+                sub_models.sort(key=lambda model: model['name'].lower())
                 subgroups.append({
                     'name': sub_heading,
                     'icon': sub_icon,
-                    'models': app['models'],
+                    'models': sub_models,
                 })
+            subgroups.sort(key=lambda group: group['name'].lower())
+            for group in subgroups:
+                models.extend(group['models'])
             if models:
                 sections.append({
                     'name': heading,
@@ -130,4 +135,4 @@ class SeotoAdminSite(OTPAdminSite):
                 })
 
         # Anything not claimed by a section (a newly added app) keeps its own group.
-        return sections + list(remaining.values())
+        return sorted([*sections, *remaining.values()], key=lambda app: app['name'].lower())

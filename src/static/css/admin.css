@@ -1048,3 +1048,8 @@ div.add-row {
         grid-template-columns: 1fr;
     }
 }
+
+#jazzy-usermenu .dropdown-footer,
+#jazzy-usermenu .dropdown-divider:has(+ .dropdown-footer) {
+    display: none;
+}
