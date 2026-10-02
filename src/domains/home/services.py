@@ -52,6 +52,9 @@ def relabel_apps(renames=APP_LABEL_RENAMES, on_progress=None):
     report = on_progress or (lambda message, level='info': None)
     with connection.schema_editor() as editor, connection.cursor() as cursor:
         tables = connection.introspection.table_names(cursor)
+        if 'django_migrations' not in tables:
+            report('fresh database: nothing to relabel')
+            return
         for old, new in renames.items():
             cursor.execute('SELECT COUNT(*) FROM django_migrations WHERE app = %s', [old])
             if not cursor.fetchone()[0]:

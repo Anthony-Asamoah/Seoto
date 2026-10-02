@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.test import TestCase
 
-from domains.apps.foodie.models import MealTimeSlot, meal, userPreference
+from domains.apps.foodie.models import MealTimeSlot, UserMealSchedule, meal, userPreference
 from domains.apps.foodie.services import (
     MEAL_TIME_SLOT_DEFAULTS,
     seed_meal_default_preferences,
@@ -104,3 +104,17 @@ class SeedMealDefaultPreferencesTests(TestCase):
         meal.objects.create(name='banku', created_by=None, categories=['not_a_slot'])
 
         self.assertEqual(seed_meal_default_preferences()['created'], 0)
+
+
+class NewUserSignalTests(TestCase):
+    def setUp(self):
+        seed_meal_time_slots()
+
+    def test_a_new_user_gets_a_meal_schedule(self):
+        user = get_user_model().objects.create_user('fresh')
+        self.assertTrue(UserMealSchedule.objects.filter(user=user).exists())
+
+    def test_a_raw_fixture_load_leaves_the_schedule_to_the_fixture(self):
+        user = get_user_model()(username='restored')
+        user.save_base(raw=True)
+        self.assertFalse(UserMealSchedule.objects.filter(user=user).exists())

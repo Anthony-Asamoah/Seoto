@@ -4,9 +4,10 @@ from django.dispatch import receiver
 
 
 @receiver(post_save, sender=get_user_model())
-def create_user_meal_schedule(sender, instance, created, **kwargs):
+def create_user_meal_schedule(sender, instance, created, raw=False, **kwargs):
     """On new user: seed UserMealSchedule entries and userPreference menu from meal categories."""
-    if not created:
+    # raw: loaddata is restoring the user, and their schedule/preferences come from the same fixture.
+    if not created or raw:
         return
     try:
         from .models import MealTimeSlot, UserMealSchedule, meal, userPreference

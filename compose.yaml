@@ -1,0 +1,146 @@
+# Run with: docker compose --env-file .env.prod up -d --build
+# --env-file feeds the ${...} below; env_file feeds the containers. Both are .env.prod unless APP_ENV_FILE says otherwise.
+
+x-app: &app
+  build: .
+  image: seoto-monolith
+  restart: unless-stopped
+  init: true
+  env_file: ${APP_ENV_FILE:-.env.prod}
+  networks: [backend]
+
+x-app-env: &app-env
+  DEFAULT_DB: postgres
+  PG_DB_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@pgbouncer:5432/${POSTGRES_DB:?}
+  PG_BEHIND_PGBOUNCER: "True"
+  REDIS_URL: redis://redis:6379
+  STATIC_STORAGE: LOCAL
+
+services:
+  web:
+    <<: *app
+    environment:
+      <<: *app-env
+      RUN_MIGRATIONS: "1"
+    networks: [backend, edge]
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, urllib.request as r; r.urlopen(r.Request('http://127.0.0.1:8000/robots.txt', headers={'Host': os.environ['ALLOWED_HOSTS'].split(',')[0].lstrip('.'), 'X-Forwarded-Proto': 'https'}), timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.seoto.rule=Host(`${APP_HOST:?}`)
+      - traefik.http.routers.seoto.entrypoints=websecure
+      - traefik.http.routers.seoto.tls.certresolver=letsencrypt
+      - traefik.http.routers.seoto.middlewares=seoto-compress
+      - traefik.http.middlewares.seoto-compress.compress.includedcontenttypes=text/html,text/css,text/plain,application/javascript,application/json,image/svg+xml
+      - traefik.http.services.seoto.loadbalancer.server.port=8000
+
+  worker:
+    <<: *app
+    environment: *app-env
+    command: ["celery", "-A", "config", "worker", "--loglevel=INFO", "--concurrency=2"]
+    depends_on:
+      web:
+        condition: service_healthy
+
+  # Exactly one beat, or every tick is sent twice.
+  beat:
+    <<: *app
+    environment: *app-env
+    command: ["celery", "-A", "config", "beat", "--loglevel=INFO", "--schedule=/tmp/celerybeat-schedule"]
+    depends_on:
+      web:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    # UTC server default so Django never has to SET TIME ZONE through the pooler.
+    command: ["postgres", "-c", "timezone=UTC"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?}
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    volumes:
+      - postgres:/var/lib/postgresql
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgbouncer:
+    image: edoburu/pgbouncer:v1.26.0-p0
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres
+      DB_NAME: ${POSTGRES_DB:?}
+      DB_USER: ${POSTGRES_USER:?}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?}
+      AUTH_TYPE: scram-sha-256
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 200
+      DEFAULT_POOL_SIZE: 20
+    networks: [backend]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-p", "5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis:/data
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  traefik:
+    image: traefik:v3.6
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=seoto_edge
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    networks: [edge]
+
+networks:
+  backend:
+  edge:
+    name: seoto_edge
+
+volumes:
+  postgres:
+  redis:
+  letsencrypt:

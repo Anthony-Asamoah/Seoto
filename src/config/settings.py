@@ -23,6 +23,7 @@ logging.basicConfig(
 )
 
 SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY_FALLBACKS = config('SECRET_KEY_FALLBACKS', default='', cast=Csv())
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', cast=bool)
@@ -31,6 +32,9 @@ DEBUG = config('DEBUG', cast=bool)
 SECURE_SSL_REDIRECT = not DEBUG
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = not DEBUG
+# Browsers cache this for the full duration, so raise it only once HTTPS is known-good.
+SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
 
 # jazzmin's related-modal loads change forms in a same-origin iframe; DENY blocks it
 X_FRAME_OPTIONS = 'SAMEORIGIN'
@@ -147,7 +151,7 @@ DATABASES = {
 PG_DB_URL = config('PG_DB_URL', default='')
 if PG_DB_URL:
     import dj_database_url
-    DATABASES['postgres'] = dj_database_url.parse(PG_DB_URL, conn_max_age=600)
+    DATABASES['postgres'] = dj_database_url.parse(PG_DB_URL, conn_max_age=600, conn_health_checks=True)
 else:
     DATABASES['postgres'] = {
         "ENGINE": "django.db.backends.postgresql",
@@ -158,14 +162,39 @@ else:
         "PASSWORD": config('PG_DB_PASSWORD'),
     }
 
+# PgBouncer in transaction mode can hand each transaction a different server connection, which named cursors don't survive.
+DATABASES['postgres']['DISABLE_SERVER_SIDE_CURSORS'] = config('PG_BEHIND_PGBOUNCER', default=False, cast=bool)
+
 DATABASES['default'] = DATABASES[config('DEFAULT_DB')]
 
-# Cache configuration (used by rate limiting middleware)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'rate-limit-cache',
+REDIS_URL = config('REDIS_URL', default='').rstrip('/')
+
+# Cache configuration (used by rate limiting middleware). Redis shares limits across workers; LocMem is per-process.
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': f'{REDIS_URL}/1',
+        }
     }
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'rate-limit-cache',
+        }
+    }
+
+CELERY_BROKER_URL = f'{REDIS_URL}/0' if REDIS_URL else 'memory://'
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+# Beat is only the clock: the runner decides dueness, so a tick missed during downtime is simply dropped.
+CELERY_BEAT_SCHEDULE = {
+    'run-due-jobs': {
+        'task': 'infrastructure.scheduler.tasks.run_due_jobs_task',
+        'schedule': 60.0,
+        'options': {'expires': 55},
+    },
 }
 
 # Rate limit configuration: path -> {max_requests, window (seconds)}
@@ -258,6 +287,10 @@ else:
             'BACKEND': 'common.storage.AdminSafeStaticFilesStorage',
         },
     }
+
+# Docker bakes static into the image and serves it via WhiteNoise while media stays on S3.
+if config('STATIC_STORAGE', default=MEDIA_STORAGE) == 'LOCAL':
+    STORAGES['staticfiles'] = {'BACKEND': 'common.storage.AdminSafeStaticFilesStorage'}
 
 # Email config
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

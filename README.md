@@ -8,13 +8,14 @@ API layer. The project is ASGI-ready (Daphne + Channels) and ships as a PWA with
 ## Stack
 
 - **Python / Django** (ASGI via Daphne + Channels)
-- **Database:** SQLite by default, PostgreSQL optional (`dj-database-url`, `psycopg2`)
+- **Database:** SQLite by default, PostgreSQL optional (`dj-database-url`, `psycopg2`); Docker runs PostgreSQL behind PgBouncer
+- **Background work:** Celery worker + Celery beat on Redis (Docker); Redis also backs the cache
 - **Storage:** local filesystem by default, S3 optional (`django-storages`)
 - **Static files:** WhiteNoise
 - **Rich text:** CKEditor 5
 - **Admin:** jazzmin skin, TOTP second factor (`django-otp`)
 - **Web push:** VAPID (`pywebpush`)
-- **Deploy:** PythonAnywhere (GitHub Actions workflow, build via `build.sh`)
+- **Deploy:** Docker Compose behind Traefik (HTTPS via Let's Encrypt); previously PythonAnywhere (GitHub Actions workflow, build via `build.sh`)
 
 ## Apps
 
@@ -33,7 +34,7 @@ API layer. The project is ASGI-ready (Daphne + Channels) and ships as a PWA with
 | `pwa` | Service worker, manifest, web push (VAPID) |
 
 Apps live under `src/domains/`; the Django project package is `src/config/` (settings,
-urls, wsgi/asgi) and shared cross-cutting code lives in `src/common/`.
+urls, wsgi/asgi, celery) and shared cross-cutting code lives in `src/common/`.
 Routing is centralized in `src/config/urls.py`; each app mounts its own `urls.py`
 from there. See `CLAUDE.md` for deeper architecture notes.
 
@@ -82,6 +83,100 @@ python manage.py runserver
 daphne config.asgi:application
 ```
 
+## Running with Docker
+
+`compose.yaml` runs the whole stack:
+
+| Service | What it does |
+| --- | --- |
+| `traefik` | Public entrypoint. Terminates HTTPS (Let's Encrypt), redirects HTTP → HTTPS. The only service with published ports. |
+| `web` | Django under gunicorn. Runs `relabel_apps` + `migrate` on start; serves static files baked into the image. |
+| `worker` | Celery worker — executes background tasks. |
+| `beat` | Celery beat — sends the scheduled-jobs tick every minute. Run exactly one. |
+| `pgbouncer` | Connection pooler (transaction mode) between Django and Postgres. |
+| `postgres` | PostgreSQL 18. Data in the `postgres` volume. |
+| `redis` | Celery broker (db 0) and Django cache (db 1, shared rate limits). |
+
+Every command takes `--env-file <file>`: it supplies both the values compose interpolates
+(Postgres credentials, host name, ports) and the env the containers read. Without it, compose
+stops with a missing-variable error rather than silently using the dev `.env`.
+
+### Locally
+
+`.env.docker.local` (gitignored) holds safe local values: `https://apps.localhost:8443`, local
+media, no real credentials. If you don't have one, create it from `.env.example`: fill in the
+`DOCKER` block with the local values shown there, and set `ALLOWED_HOSTS=apps.localhost`,
+`CSRF_TRUSTED_ORIGINS=https://apps.localhost:8443`, `APP_DOMAIN=https://apps.localhost`,
+`DEBUG=False`.
+
+1. Start Docker Desktop.
+2. Build and start everything:
+   ```bash
+   docker compose --env-file .env.docker.local up -d --build --wait
+   ```
+3. Optional — load your dev data (only into an empty database, so start fresh):
+   ```bash
+   docker compose --env-file .env.docker.local down -v
+   ENV_FILE=.env.docker.local docker/sqlite_to_postgres.sh db.sqlite3
+   ```
+   This brings your dev users and their TOTP devices along; skip step 4 if you do it.
+4. Create an admin and enrol TOTP (interactive — scan the QR, type the code):
+   ```bash
+   docker compose --env-file .env.docker.local exec web python manage.py createsuperuser
+   docker compose --env-file .env.docker.local exec web python manage.py setup_admin_totp <username>
+   ```
+5. Open **https://apps.localhost:8443** in Chrome or Firefox and accept the self-signed
+   certificate warning (Traefik can't get a real certificate for `localhost`). Use the
+   `https://…:8443` URL directly — the HTTP redirect points at port 443. If your browser
+   doesn't resolve `apps.localhost`, add `127.0.0.1 apps.localhost` to `/etc/hosts`.
+
+Uploaded media isn't served locally (`MEDIA_STORAGE=LOCAL` with `DEBUG=False`); email goes
+to [Mailpit](https://mailpit.axllent.org/) on the host at port 1025 if it is running.
+
+### Everyday commands
+
+Locally use `--env-file .env.docker.local`; on the server, `--env-file .env.prod`.
+
+```bash
+docker compose --env-file .env.docker.local ps                          # web/postgres/pgbouncer/redis show (healthy)
+docker compose --env-file .env.docker.local logs -f web worker beat     # logs
+docker compose --env-file .env.docker.local up -d --build               # rebuild after code changes
+docker compose --env-file .env.docker.local exec web python manage.py <command>
+docker compose --env-file .env.docker.local exec web python manage.py run_jobs --job <id>  # force a job now
+docker compose --env-file .env.docker.local down                        # stop, keep data
+docker compose --env-file .env.docker.local down -v                     # stop and wipe Postgres, Redis, certificates
+```
+
+### Celery, Redis and beat
+
+- **Beat is only the clock.** Every minute it queues
+  `infrastructure.scheduler.tasks.run_due_jobs_task`; a worker runs it, and the existing
+  scheduler decides which jobs are actually due (see [Scheduled jobs](#scheduled-jobs)). Downtime
+  never produces a backlog, and job history stays in `home.ScheduledJobRun`. Run exactly one
+  `beat`, or every tick is sent twice.
+- **Adding background work:** put a `@shared_task` in the domain's `tasks.py` (auto-discovered)
+  that calls into its `services`, then `.delay()` it from a view or service. Worker
+  concurrency is set on the `worker` command in `compose.yaml`.
+- **Redis** is the broker (db 0) and the Django cache (db 1), so login rate limits are shared
+  by every gunicorn worker. Without `REDIS_URL` (plain `runserver`), Celery uses an
+  in-memory broker and the cache is per-process.
+
+### Production
+
+1. On the server, put `.env.prod` next to `compose.yaml` with `DEBUG=False`, a fresh
+   `SECRET_KEY`, `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD`, `APP_HOST` and
+   `ACME_EMAIL` (see the `DOCKER` block in `.env.example`).
+2. Point the domain's DNS at the server and open ports 80 and 443.
+3. Start it: `docker compose --env-file .env.prod up -d --build`. Traefik requests the
+   certificate on first start.
+4. Moving from the old SQLite database: `docker/sqlite_to_postgres.sh path/to/db.sqlite3`.
+   It works on a copy (the original is never touched), migrates it, prunes stale content
+   types, dumps it, then flushes and loads Postgres. It refuses to run if Postgres already
+   has users.
+
+Back up Postgres separately, e.g.
+`docker compose --env-file .env.prod exec -T postgres pg_dump -U seoto seoto > backup.sql`.
+
 ## Admin access
 
 `/admin/` requires two factors: password plus a rotating code from an authenticator app
@@ -115,6 +210,10 @@ secrets and QR codes there).
 All settings come from `.env` (see `.env.example`). Common toggles:
 
 - **Database:** `DEFAULT_DB=sqlite` or `postgres` (Postgres vars only needed when selected).
+  Behind PgBouncer set `PG_BEHIND_PGBOUNCER=True` (Docker does this for you).
+- **Redis:** `REDIS_URL` enables the Celery broker and the shared cache; blank keeps both in-process.
+- **Static files:** `STATIC_STORAGE=LOCAL` (WhiteNoise) or `AWS`; defaults to `MEDIA_STORAGE`.
+- **HTTPS hardening:** `SECURE_HSTS_SECONDS` (0 = off); `SECRET_KEY_FALLBACKS` for key rotation.
 - **Media storage:** `MEDIA_STORAGE=LOCAL` or `AWS` (S3 vars only needed when `AWS`).
 - **Theme feature:** `IS_THEME_ENABLED=True/False`.
 - **Admin 2FA:** `IS_ADMIN_OTP_ENABLED=True/False`, issuer name via `OTP_TOTP_ISSUER`.
@@ -139,6 +238,9 @@ Modules within a package are named for what they cover (`test_recurring.py`, `te
 fixtures shared between them live in that package's `helpers.py`.
 
 ## Deployment
+
+The Docker setup above is the production path going forward. The PythonAnywhere
+deployment below still works until the switch-over.
 
 Deployment targets PythonAnywhere. Pushing to `master` triggers
 `.github/workflows/deploy-pythonanywhere.yml`, which pulls the branch over SSH, installs
@@ -252,7 +354,9 @@ minute, every 5, every 15, or hourly — pick whatever the host makes convenient
 change it later without touching code. Finer ticks only reduce how late a job can start.
 
 #### `run_jobs`
-Schedule this as a PythonAnywhere Scheduled Task at any frequency:
+Under Docker nothing needs scheduling — Celery beat ticks every minute (see
+[Celery, Redis and beat](#celery-redis-and-beat)). On PythonAnywhere, schedule this as a
+Scheduled Task at any frequency:
 
 ```bash
 python /home/<PA_USERNAME>/<PA_USERNAME>.pythonanywhere.com/src/infrastructure/scheduler/run_jobs.py

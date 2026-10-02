@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+.git
+.github
+.idea
+.claude
+.venv
+**/__pycache__
+**/.DS_Store
+db.sqlite3*
+media/
+staticfiles/
+scripts/
+Dockerfile
+compose.yaml
