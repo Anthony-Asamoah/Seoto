@@ -1,6 +1,6 @@
 import zlib
 from datetime import datetime
-from random import choice, sample
+from random import Random, choice, sample
 
 from django.conf import settings
 from django.core import signing
@@ -93,12 +93,29 @@ FANCY_MOODS = (
 )
 
 
-def _fancy_text(name, mealtime=None):
+def _fancy_mood(name, mealtime=None):
     """Pick the mood word from the meal name so the line is stable across reloads
     and identical on a shared link, but varies between meals and slots."""
     seed = f"{name.lower()}:{mealtime or ''}"
-    mood = FANCY_MOODS[zlib.crc32(seed.encode()) % len(FANCY_MOODS)]
-    return f"Or, if you're feeling {mood}, let's get some {name.lower()}."
+    return FANCY_MOODS[zlib.crc32(seed.encode()) % len(FANCY_MOODS)]
+
+
+def _fancy_text(name, mealtime=None):
+    return f"Or, if you're feeling {_fancy_mood(name, mealtime)}, let's get some {name.lower()}."
+
+
+def _fancy_only_text(name, mealtime=None):
+    lead = f"Nothing's on the menu for {mealtime.lower()}" if mealtime else "The kitchen's quiet right now"
+    return f"{lead}, but if you're feeling {_fancy_mood(name, mealtime)}, how about some {name.lower()}?"
+
+
+def _fancy_only_context(mealtime, fancy_obj):
+    fancy = _meal_data(fancy_obj)
+    return {
+        'mealtime': mealtime,
+        'fancy': fancy,
+        'suggestion_text': _fancy_only_text(fancy['name'], mealtime),
+    }
 
 
 def _build_context(mealtime, option_1_obj, option_2_obj, fancy_obj):
@@ -174,11 +191,7 @@ def read_share_token(token):
     if option_1_obj is None:
         if fancy_obj is None:
             raise ShareTokenError('meals no longer exist')
-        return {
-            'mealtime': mealtime,
-            'fancy': _meal_data(fancy_obj),
-            'fancy_text': _fancy_text(fancy_obj.name, mealtime),
-        }
+        return _fancy_only_context(mealtime, fancy_obj)
 
     return _build_context(mealtime, option_1_obj, option_2_obj, fancy_obj)
 
@@ -206,13 +219,12 @@ def _pick_options(pool, exclude_ids):
     return pool[0], None
 
 
-def _pick_fancy(pool, exclude_ids):
+def _pick_fancy(pool, exclude_ids, rng=None):
     if not pool:
         return None
+    pick = rng.choice if rng else choice
     filtered = [m for m in pool if m.id not in exclude_ids]
-    if filtered:
-        return choice(filtered)
-    return choice(pool)
+    return pick(sorted(filtered or pool, key=lambda m: m.id))
 
 
 def _session_key(today, mealtime):
@@ -320,17 +332,10 @@ def suggest(user=None, slot=None, request=None):
     # 4. Pick options
     option_1_obj, option_2_obj = _pick_options(available_meals, used_ids)
     if option_1_obj is None:
-        # No meals at all for this slot — return empty context (matches prior behavior)
-        # but still try fancy.
-        fancy_exclude = used_ids.copy()
-        fancy_obj = _pick_fancy(fancy_pool, fancy_exclude)
-        if fancy_obj is None:
-            return {}
-        # Build a fancy-only context (no main options).
-        ctx = {'mealtime': mealtime}
-        ctx['fancy'] = _meal_data(fancy_obj)
-        ctx['fancy_text'] = _fancy_text(ctx['fancy']['name'], mealtime)
-        return ctx
+        # Seeded so the fallback stays put across reloads without persisting it.
+        rng = Random(f"{today.isoformat()}:{mealtime}:{user.pk if is_auth else ''}")
+        fancy_obj = _pick_fancy(fancy_pool, used_ids, rng)
+        return _fancy_only_context(mealtime, fancy_obj) if fancy_obj else {}
 
     # 5. Pick fancy (excluding used + chosen options)
     fancy_exclude = set(used_ids)
