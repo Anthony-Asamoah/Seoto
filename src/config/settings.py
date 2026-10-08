@@ -1,6 +1,9 @@
 """
 Django settings for Seoto project.
 """
+import os
+
+print("###### ENV LOG HERE #####\n", os.environ)
 
 import logging
 from os import path
