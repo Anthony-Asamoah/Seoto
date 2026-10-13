@@ -33,6 +33,7 @@ SIDEBAR_SECTIONS = (
     ('website', 'Website', 'fas fa-window-maximize', (
         ('website_products', 'Products', 'fas fa-cubes'),
         ('website_faqs', 'FAQs', 'fas fa-circle-question'),
+        ('consultations', 'Consultations', 'fas fa-comments'),
     )),
     ('company', 'Company', 'fas fa-building', (
         ('company_staff', 'Staff', 'fas fa-user-tie'),

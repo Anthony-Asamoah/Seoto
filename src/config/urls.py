@@ -32,6 +32,7 @@ urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
     path('api/company/', include('domains.company.urls')),
     path('api/company/', include('domains.website.urls')),
+    path('v1/', include('domains.consultations.urls')),
     path('accounts/', include('domains.accounts.urls')),
     path('home/', include("domains.home.urls")),
     # Anonymous

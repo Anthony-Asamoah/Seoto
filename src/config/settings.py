@@ -1,10 +1,6 @@
 """
 Django settings for Seoto project.
 """
-import os
-
-print("###### ENV LOG HERE #####\n", os.environ)
-
 import logging
 from os import path
 from pathlib import Path as pathlib
@@ -71,6 +67,7 @@ INSTALLED_APPS = [
     # My apps
     'domains.website.products.apps.ProductsConfig',
     'domains.website.faqs.apps.FAQsConfig',
+    'domains.consultations.apps.ConsultationsConfig',
     'domains.company.hr.staff.apps.StaffConfig',
     'domains.accounts',
     'domains.home',
@@ -211,6 +208,9 @@ RATE_LIMIT_CONFIG = {
     '/accounts/login/factors/': {'max_requests': 30, 'window': 300},
     '/admin/login/factors/': {'max_requests': 30, 'window': 300},
     '/passkeys/authentication/complete/': {'max_requests': 10, 'window': 300},
+    # Matched exactly, and the frontend posts without the trailing slash.
+    '/v1/consultations': {'max_requests': 5, 'window': 300},
+    '/v1/consultations/': {'max_requests': 5, 'window': 300},
 }
 
 # Password validation
@@ -337,7 +337,7 @@ SPECTACULAR_SETTINGS = {
 # The API is public and read-only, so no credentials are exchanged.
 CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='', cast=Csv())
 CORS_ALLOW_CREDENTIALS = False
-CORS_URLS_REGEX = r'^/api/.*$'
+CORS_URLS_REGEX = r'^/(api|v1)/.*$'
 
 # Accounts config
 LOGIN_REDIRECT_URL = 'apps'
@@ -423,6 +423,8 @@ JAZZMIN_SETTINGS = {
         'website.ProductTag': 'fas fa-tag',
         'website.FAQ': 'fas fa-circle-question',
         'website.FAQCategory': 'fas fa-folder-open',
+        'website.ConsultationRequest': 'fas fa-envelope-open-text',
+        'website.ConsultationBooking': 'fas fa-calendar-check',
 
         'company': 'fas fa-building',
         'company.Member': 'fas fa-user-tie',
@@ -555,6 +557,9 @@ GEOLOCATION_PROVIDER = config('GEOLOCATION_PROVIDER', default='ip_api')
 
 # SEOTO — marketing site URL, linked from the apps page
 SEOTO_URL = config('SEOTO_URL', default='https://seoto.org')
+
+# Calendly scheduling page handed to the reach-out funnel's booking step
+CALENDLY_URL = config('CALENDLY_URL', default='https://calendly.com/seoto/consultation')
 
 # Blog media upload limits (MB)
 BLOG_UPLOAD_MAX_SIZE_MB = config('BLOG_UPLOAD_MAX_SIZE_MB', default=10, cast=int)
