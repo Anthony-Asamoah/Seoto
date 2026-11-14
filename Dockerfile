@@ -18,7 +18,8 @@ FROM python:3.13-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/app/.venv/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH" \
+    STATIC_STORAGE=LOCAL
 
 RUN useradd --system --uid 1000 --create-home app
 

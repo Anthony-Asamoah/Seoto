@@ -15,7 +15,6 @@ x-app-env: &app-env
   DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@pgbouncer:5432/${POSTGRES_DB:?}}
   PG_BEHIND_PGBOUNCER: ${PG_BEHIND_PGBOUNCER:-True}
   REDIS_URL: redis://redis:6379
-  STATIC_STORAGE: LOCAL
 
 services:
   web:
