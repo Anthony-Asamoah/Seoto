@@ -11,8 +11,9 @@ x-app: &app
 
 x-app-env: &app-env
   DEFAULT_DB: postgres
-  PG_DB_URL: postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@pgbouncer:5432/${POSTGRES_DB:?}
-  PG_BEHIND_PGBOUNCER: "True"
+  # Set DATABASE_URL (and PG_BEHIND_PGBOUNCER) in the --env-file to use an external Postgres instead of the bundled one.
+  DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@pgbouncer:5432/${POSTGRES_DB:?}}
+  PG_BEHIND_PGBOUNCER: ${PG_BEHIND_PGBOUNCER:-True}
   REDIS_URL: redis://redis:6379
   STATIC_STORAGE: LOCAL
 

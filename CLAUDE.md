@@ -95,7 +95,7 @@ Routing is centralized in `src/config/urls.py` — each app owns its own `urls.p
 
 ## Deployment
 
-Host is **PythonAnywhere**, deployed by `.github/workflows/deploy-pythonanywhere.yml` on push to `master` (SSH → `git pull` → `uv sync --frozen --no-dev` → `migrate` → `collectstatic` → touch the WSGI file to reload → health check).
+Host was **PythonAnywhere**; the move to Virk (Docker) is under way, so `.github/workflows/deploy-pythonanywhere.yml` is now manual-only (`workflow_dispatch`, no push trigger). It deployed on push to `master` (SSH → `git pull` → `uv sync --frozen --no-dev` → `migrate` → `collectstatic` → touch the WSGI file to reload → health check).
 
 - **`apps.seoto.org` is the Django app**; `seoto.org` is a separate marketing site. The `APP_DOMAIN` secret must be the former — it selects both the health-check target and the WSGI filename (`/var/www/apps_seoto_org_wsgi.py`). Probing `seoto.org` returns a green 200 from an app that was never deployed.
 - Project dir is `~/<PA_USERNAME>.pythonanywhere.com`, the venv is `.venv` **inside** it (not `~/.virtualenvs/`), and the Web tab's Virtualenv field holds that absolute path. `workon` only sees `~/.virtualenvs`, so it needs a symlink there to keep working.

@@ -209,8 +209,8 @@ secrets and QR codes there).
 
 All settings come from `.env` (see `.env.example`). Common toggles:
 
-- **Database:** `DEFAULT_DB=sqlite` or `postgres` (Postgres vars only needed when selected).
-  Behind PgBouncer set `PG_BEHIND_PGBOUNCER=True` (Docker does this for you).
+- **Database:** `DEFAULT_DB=sqlite` or `postgres`. Postgres comes from `DATABASE_URL` (what a host injects; `DEFAULT_DB` then defaults to `postgres`) or the `PG_DB_*` fields.
+  Behind a transaction-mode pooler (PgBouncer, Virk) set `PG_BEHIND_PGBOUNCER=True`; it applies to either form.
 - **Redis:** `REDIS_URL` enables the Celery broker and the shared cache; blank keeps both in-process.
 - **Static files:** `STATIC_STORAGE=LOCAL` (WhiteNoise) or `AWS`; defaults to `MEDIA_STORAGE`.
 - **HTTPS hardening:** `SECURE_HSTS_SECONDS` (0 = off); `SECRET_KEY_FALLBACKS` for key rotation.

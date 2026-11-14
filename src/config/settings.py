@@ -6,7 +6,8 @@ from os import path
 from pathlib import Path as pathlib
 from urllib.parse import urlsplit
 
-from decouple import AutoConfig, Csv
+import dj_database_url
+from decouple import AutoConfig, Csv, undefined
 from django.contrib.messages import constants as messages
 
 # settings.py lives at <repo>/src/config/, so walk up to both the import root
@@ -148,10 +149,9 @@ DATABASES = {
     },
 }
 
-PG_DB_URL = config('PG_DB_URL', default='')
-if PG_DB_URL:
-    import dj_database_url
-    DATABASES['postgres'] = dj_database_url.parse(PG_DB_URL, conn_max_age=600, conn_health_checks=True)
+DATABASE_URL = config('DATABASE_URL', default='')
+if DATABASE_URL:
+    DATABASES['postgres'] = dj_database_url.parse(DATABASE_URL, conn_max_age=600, conn_health_checks=True)
 else:
     DATABASES['postgres'] = {
         "ENGINE": "django.db.backends.postgresql",
@@ -165,7 +165,8 @@ else:
 # PgBouncer in transaction mode can hand each transaction a different server connection, which named cursors don't survive.
 DATABASES['postgres']['DISABLE_SERVER_SIDE_CURSORS'] = config('PG_BEHIND_PGBOUNCER', default=False, cast=bool)
 
-DATABASES['default'] = DATABASES[config('DEFAULT_DB')]
+# An explicit DEFAULT_DB wins (the cutover script relies on it); a host-injected DATABASE_URL alone implies postgres.
+DATABASES['default'] = DATABASES[config('DEFAULT_DB', default='postgres' if DATABASE_URL else undefined)]
 
 REDIS_URL = config('REDIS_URL', default='').rstrip('/')
 
