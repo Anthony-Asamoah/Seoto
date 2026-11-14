@@ -13,7 +13,7 @@ API layer. The project is ASGI-ready (Daphne + Channels) and ships as a PWA with
 - **Storage:** local filesystem by default, S3 optional (`django-storages`)
 - **Static files:** WhiteNoise
 - **Rich text:** CKEditor 5
-- **Admin:** jazzmin skin, TOTP second factor (`django-otp`)
+- **Admin:** Unfold skin, TOTP second factor (`django-otp`)
 - **Web push:** VAPID (`pywebpush`)
 - **Deploy:** Docker Compose behind Traefik (HTTPS via Let's Encrypt); previously PythonAnywhere (GitHub Actions workflow, build via `build.sh`)
 

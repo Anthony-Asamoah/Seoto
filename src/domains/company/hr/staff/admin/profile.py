@@ -1,14 +1,15 @@
 from django.contrib import admin
-from django.contrib.admin.widgets import AdminTextareaWidget
 from django.db import models
+from unfold.admin import ModelAdmin, TabularInline, StackedInline
+from unfold.widgets import UnfoldAdminTextareaWidget
 
 from ..models import Certificate, Education, Hobby, JobExperience, Specialisation
 
 
-class ProfileSectionInline(admin.StackedInline):
+class ProfileSectionInline(StackedInline):
     """shared layout for the ordered, hideable profile records"""
     extra = 0
-    formfield_overrides = {models.TextField: {'widget': AdminTextareaWidget(attrs={'rows': 4})}}
+    formfield_overrides = {models.TextField: {'widget': UnfoldAdminTextareaWidget(attrs={'rows': 4})}}
 
 
 class EducationInline(ProfileSectionInline):
@@ -36,21 +37,21 @@ class JobExperienceInline(ProfileSectionInline):
     )
 
 
-class SpecialisationInline(admin.TabularInline):
+class SpecialisationInline(TabularInline):
     model = Specialisation
     extra = 0
     fields = ('name', 'tools', 'is_active', 'order', 'hidden')
     # A full-height textarea in a table cell stretches the whole row.
-    formfield_overrides = {models.TextField: {'widget': AdminTextareaWidget(attrs={'rows': 2})}}
+    formfield_overrides = {models.TextField: {'widget': UnfoldAdminTextareaWidget(attrs={'rows': 2})}}
 
 
-class HobbyInline(admin.TabularInline):
+class HobbyInline(TabularInline):
     model = Hobby
     extra = 0
     fields = ('description', 'order', 'hidden')
 
 
-class ProfileSectionAdmin(admin.ModelAdmin):
+class ProfileSectionAdmin(ModelAdmin):
     """shared list config for the ordered, hideable profile records"""
     list_filter = ('hidden',)
     autocomplete_fields = ('member',)

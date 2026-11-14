@@ -1,53 +1,49 @@
 {% extends "admin/change_form.html" %}
 {% load otp_webauthn %}
 
-{% comment %}
-Adds the 2FA enrolment button. `extra_actions` is jazzmin's own empty hook inside
-object-tools-items, so overriding it cannot drop jazzmin's own change_form_object_tools.
-The modal shell goes in extrajs because after_related_objects sits inside the change form.
-{% endcomment %}
-
-{% block extra_actions %}
+{% block form_before %}
     {{ block.super }}
-    <a href="#" class="btn btn-outline-secondary" id="totp-setup-btn"
-       data-url="{% url 'admin:auth_user_totp_setup' original.pk %}"
-       data-verify-url="{% url 'admin:auth_user_totp_verify' original.pk %}"
-       data-email-url="{% url 'admin:auth_user_totp_email' original.pk %}">
-        <i class="fas fa-mobile-screen"></i>
-        {% if totp_status == 'active' %}Reset 2FA
-        {% elif totp_status == 'pending' %}Resume 2FA setup
-        {% else %}Set up 2FA{% endif %}
-    </a>
-    {% if original.pk == request.user.pk %}
-        <span id="passkey-registration-placeholder"></span>
-        <template id="passkey-registration-available-template">
-            <button type="button" class="btn btn-outline-secondary" id="passkey-register-button">
-                <i class="fas fa-fingerprint"></i> Add a passkey
-            </button>
-            <span id="passkey-register-status-message" class="small text-muted" role="status"></span>
-        </template>
+    {% if change %}
+        <div class="seoto-toolbar">
+            <a href="#" class="seoto-btn" id="totp-setup-btn"
+               data-url="{% url 'admin:auth_user_totp_setup' original.pk %}"
+               data-verify-url="{% url 'admin:auth_user_totp_verify' original.pk %}"
+               data-email-url="{% url 'admin:auth_user_totp_email' original.pk %}">
+                <span class="material-symbols-outlined">smartphone</span>
+                {% if totp_status == 'active' %}Reset 2FA
+                {% elif totp_status == 'pending' %}Resume 2FA setup
+                {% else %}Set up 2FA{% endif %}
+            </a>
+            {% if original.pk == request.user.pk %}
+                <span id="passkey-registration-placeholder"></span>
+                <template id="passkey-registration-available-template">
+                    <button type="button" class="seoto-btn" id="passkey-register-button">
+                        <span class="material-symbols-outlined">fingerprint</span> Add a passkey
+                    </button>
+                    <span id="passkey-register-status-message" role="status"></span>
+                </template>
+            {% endif %}
+        </div>
     {% endif %}
 {% endblock %}
 
-{% block extrajs %}
+{% block form_after %}
     {{ block.super }}
-    {% if original.pk == request.user.pk %}
-        {% render_otp_webauthn_register_scripts %}
-        <script>
-            document.addEventListener('otp_webauthn.register_complete', function () { window.location.reload(); });
-        </script>
-    {% endif %}
-    <div class="modal fade" id="totpSetupModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-shield-halved"></i> Two-Factor Authentication
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="totpSetupBody"></div>
+    {% if change %}
+        {% if original.pk == request.user.pk %}
+            {% render_otp_webauthn_register_scripts %}
+            <script>
+                document.addEventListener('otp_webauthn.register_complete', function () { window.location.reload(); });
+            </script>
+        {% endif %}
+        <dialog class="admin-dialog" id="totpSetupModal">
+            <div class="admin-dialog-header">
+                <h5><span class="material-symbols-outlined">shield</span> Two-Factor Authentication</h5>
+                <button type="button" class="admin-dialog-close" data-dialog-close aria-label="Close">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
             </div>
-        </div>
-    </div>
+            <div class="admin-dialog-body" id="totpSetupBody"></div>
+        </dialog>
+    {% endif %}
 {% endblock %}

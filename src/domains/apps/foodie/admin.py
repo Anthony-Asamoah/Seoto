@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html, mark_safe, strip_tags
+from unfold.admin import ModelAdmin
 
 from infrastructure.utils import RichTextAdminMixin
 from common.mixins.admin import OwnerScopedAdminMixin
@@ -24,13 +25,13 @@ class CategoriesFilter(admin.SimpleListFilter):
 
 
 @admin.register(MealTimeSlot)
-class MealTimeSlotAdmin(admin.ModelAdmin):
+class MealTimeSlotAdmin(ModelAdmin):
     list_display = ['label', 'default_time']
     ordering = ['default_time']
 
 
 @admin.register(UserMealSchedule)
-class UserMealScheduleAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+class UserMealScheduleAdmin(OwnerScopedAdminMixin, ModelAdmin):
     list_display = ['user', 'slot', 'time']
     list_filter = ['slot']
     search_fields = ['user__username']
@@ -40,7 +41,7 @@ class UserMealScheduleAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
 
 
 @admin.register(meal)
-class MealAdmin(OwnerScopedAdminMixin, RichTextAdminMixin, admin.ModelAdmin):
+class MealAdmin(OwnerScopedAdminMixin, RichTextAdminMixin, ModelAdmin):
     owner_lookup = 'created_by'
     richtext_fields = ('description', 'ingredients', 'nutrients', 'benefits')
     richtext_config = 'foodie'
@@ -78,7 +79,7 @@ class MealAdmin(OwnerScopedAdminMixin, RichTextAdminMixin, admin.ModelAdmin):
 
 
 @admin.register(DailyMealSuggestion)
-class DailyMealSuggestionAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+class DailyMealSuggestionAdmin(OwnerScopedAdminMixin, ModelAdmin):
     list_display = ['user', 'date', 'slot', 'option_1', 'option_2', 'fancy', 'created_at']
     list_filter = ['slot', 'date']
     search_fields = ['user__username']
@@ -88,7 +89,7 @@ class DailyMealSuggestionAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
 
 
 @admin.register(userPreference)
-class UserPreferenceAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+class UserPreferenceAdmin(OwnerScopedAdminMixin, ModelAdmin):
     list_display = ['user', 'meal', 'slot', 'isAvailable']
     list_filter = ['slot', 'isAvailable']
     search_fields = ['user__username', 'meal__name']

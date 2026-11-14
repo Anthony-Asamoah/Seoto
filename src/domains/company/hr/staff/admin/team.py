@@ -1,16 +1,17 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
 
 from ..models import Membership, Team
 
 
-class MembershipInline(admin.TabularInline):
+class MembershipInline(TabularInline):
     model = Membership
     extra = 0
     fields = ('team', 'role', 'joined_on', 'left_on')
     autocomplete_fields = ('team',)
 
 
-class TeamAdmin(admin.ModelAdmin):
+class TeamAdmin(ModelAdmin):
     list_display = ('name', 'team_lead', 'active_members', 'is_active')
     list_filter = ('is_active',)
     search_fields = ('name', 'description')
@@ -26,7 +27,7 @@ class TeamAdmin(admin.ModelAdmin):
         return obj.memberships.active().count()
 
 
-class MembershipAdmin(admin.ModelAdmin):
+class MembershipAdmin(ModelAdmin):
     list_display = ('member', 'team', 'role', 'joined_on', 'left_on')
     list_filter = ('role', 'team')
     search_fields = ('member__staff_id', 'member__user__first_name', 'member__user__last_name', 'team__name')

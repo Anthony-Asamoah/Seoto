@@ -1,10 +1,10 @@
-from django.contrib import admin
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import RequestFactory, TestCase
 from django.urls import NoReverseMatch, reverse
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
+from common.admin import sidebar_navigation
 from domains.consultations.models import ConsultationBooking, ConsultationRequest
 from infrastructure.tests.accounts.helpers import current_token
 
@@ -64,12 +64,13 @@ class ConsultationSidebarTests(TestCase):
         request = RequestFactory().get('/admin/')
         request.user = User.objects.create_superuser('root', 'root@example.com', 'pw-pw-pw-pw')
 
-        website = next(
-            app for app in admin.site.get_app_list(request) if app['app_label'] == 'website'
-        )
+        website = next(group for group in sidebar_navigation(request) if group['title'] == 'Website')
 
-        subgroup = next(group for group in website['subgroups'] if group['name'] == 'Consultations')
+        item = next(item for item in website['items'] if item['title'] == 'Consultations')
         self.assertEqual(
-            {model['object_name'] for model in subgroup['models']},
-            {'ConsultationRequest', 'ConsultationBooking'},
+            {link['link'] for link in item['items']},
+            {
+                reverse('admin:consultations_consultationrequest_changelist'),
+                reverse('admin:consultations_consultationbooking_changelist'),
+            },
         )

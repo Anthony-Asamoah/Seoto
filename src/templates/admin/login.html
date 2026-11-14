@@ -1,114 +1,86 @@
-{% extends "registration/base.html" %}
+{% extends "unfold/layouts/unauthenticated.html" %}
 
-{% load i18n jazzmin otp_webauthn static %}
-{% get_jazzmin_settings request as jazzmin_settings %}
-{% get_jazzmin_ui_tweaks as jazzmin_ui %}
+{% load i18n static unfold otp_webauthn %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    {{ form.media }}
+{% endblock %}
+
+{% block title %}
+    {{ title }} | {{ site_title }}
+{% endblock %}
 
 {% block content %}
-    <p class="login-box-msg">{{ jazzmin_settings.welcome_sign }}</p>
+    {% include "unfold/helpers/unauthenticated_title.html" with title=site_title|default:_('Django site admin') subtitle=_('Sign in to Seoto administration') %}
+
+    {% include "unfold/helpers/messages.html" %}
+
+    {% if form.errors or form.non_field_errors %}
+        <div class="flex flex-col gap-4 mb-8 *:mb-0">
+            {% include "unfold/helpers/messages/errornote.html" with errors=form.errors %}
+
+            {% include "unfold/helpers/messages/error.html" with errors=form.non_field_errors %}
+
+            {% if user.is_authenticated %}
+                {% blocktranslate trimmed asvar message %}
+                    You are authenticated as {{ username }}, but are not authorized to
+                    access this page. Would you like to login to a different account?
+                {% endblocktranslate %}
+
+                {% include "unfold/helpers/messages/error.html" with error=message %}
+            {% endif %}
+        </div>
+    {% endif %}
+
     <form action="{{ app_path }}" method="post" id="adminLoginForm">
         {% csrf_token %}
-        {% if user.is_authenticated %}
-            <div class="callout callout-danger">
-                <p>
-                    {% blocktrans trimmed %}
-                        You are authenticated as {{ username }}, but are not authorized to
-                        access this page. Would you like to login to a different account?
-                    {% endblocktrans %}
-                </p>
-            </div>
-        {% endif %}
-        {% if form.errors %}
-            {% if form.username.errors %}
-                <div class="callout callout-danger">
-                    <p>{{ form.username.label }}: {{ form.username.errors|join:', ' }}</p>
-                </div>
-            {% endif %}
-            {% if form.password.errors %}
-                <div class="callout callout-danger">
-                    <p>{{ form.password.label }}: {{ form.password.errors|join:', ' }}</p>
-                </div>
-            {% endif %}
-            {% if form.otp_token.errors %}
-                <div class="callout callout-danger">
-                    <p>{{ form.otp_token.errors|join:', ' }}</p>
-                </div>
-            {% endif %}
-            {% if form.non_field_errors %}
-                <div class="callout callout-danger">
-                    {% for error in form.non_field_errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endif %}
-        <div class="input-group mb-3">
-            <input type="text" name="username" class="form-control" placeholder="{{ form.username.label }}"
-                   autocomplete="username" value="{{ form.username.value|default:'' }}" autofocus required>
-            <span class="input-group-text">
-                <i class="fas fa-user"></i>
-            </span>
-        </div>
-        <div class="input-group mb-3">
-            <input type="password" name="password" class="form-control" placeholder="{{ form.password.label }}"
-                   autocomplete="current-password" required>
-            <span class="input-group-text">
-                <i class="fas fa-lock"></i>
-            </span>
-        </div>
+
+        {% include "unfold/helpers/field.html" with field=form.username %}
+
+        {% include "unfold/helpers/field.html" with field=form.password %}
+
         {% if form.otp_token %}
             <div id="otpReveal" class="otp-reveal{% if form.is_bound and form.errors %} is-open{% endif %}"
                  data-url="{% url 'admin:login_factors' %}">
                 <div class="otp-reveal-inner">
-                    <div class="input-group mb-1">
-                        <input type="text" name="otp_token" class="form-control" placeholder="{% trans 'Authentication code' %}"
-                               inputmode="numeric" autocomplete="one-time-code" spellcheck="false">
-                        <span class="input-group-text">
-                            <i class="fas fa-mobile-alt"></i>
-                        </span>
-                    </div>
-                    <p class="text-muted small mb-3">
-                        {% trans "The 6-digit code from your authenticator app, or a backup code." %}
-                    </p>
+                    {% include "unfold/helpers/field.html" with field=form.otp_token %}
                 </div>
             </div>
-            <p id="passkeyOnlyNote" class="text-muted small mb-3" hidden>
+            <p id="passkeyOnlyNote" class="text-subtle mb-4" hidden>
                 {% trans "This account signs in with a passkey. Use the button below." %}
             </p>
             <noscript><style>.otp-reveal { grid-template-rows: 1fr !important; }</style></noscript>
-            <style>
-                .otp-reveal { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .25s ease, opacity .25s ease; }
-                .otp-reveal.is-open { grid-template-rows: 1fr; opacity: 1; }
-                .otp-reveal-inner { overflow: hidden; min-height: 0; }
-            </style>
             <script src="{% static 'js/login_factors.js' %}" defer></script>
         {% endif %}
+
         {% url 'admin:index' as admin_index_url %}
         <input type="hidden" name="next" value="{{ next|default:admin_index_url }}">
-        {% url 'admin_password_reset' as password_reset_url %}
-        {% if password_reset_url %}
-            <div class="mb-3 text-center">
-                <a href="{{ password_reset_url }}">
-                    {% trans 'Forgotten your password or username?' %}
-                </a>
-            </div>
-        {% endif %}
-        <div class="d-grid">
-            <button type="submit" class="btn {{ jazzmin_ui.button_classes.primary }}">
+
+        <div class="flex flex-col gap-3 mt-2">
+            {% component "unfold/components/button.html" with submit=1 variant="primary" class="submit-row w-full" %}
                 {% trans "Log in" %}
-            </button>
+            {% endcomponent %}
+
+            {% url 'admin_password_reset' as password_reset_url %}
+            {% url 'admin:admin_password_reset' as unfold_password_reset_url %}
+
+            {% if password_reset_url or unfold_password_reset_url %}
+                {% component "unfold/components/button.html" with href=password_reset_url|default:unfold_password_reset_url variant="secondary" class="password-reset-link w-full" %}
+                    {% trans "Forgotten your password or username?" %}
+                {% endcomponent %}
+            {% endif %}
         </div>
         {% include 'partials/_recaptcha.html' with action='admin_login' form_id='adminLoginForm' %}
     </form>
-    <div class="text-center text-muted small my-3">{% trans "or" %}</div>
+
+    <div class="text-center text-subtle my-4">{% trans "or" %}</div>
     <div id="passkey-verification-placeholder"></div>
     <template id="passkey-verification-available-template">
-        <div class="d-grid">
-            <button type="button" id="passkey-verification-button" class="btn btn-outline-secondary">
-                <i class="fas fa-fingerprint"></i> {% trans "Sign in with a passkey" %}
-            </button>
-        </div>
-        <p id="passkey-verification-status-message" class="text-danger small mt-2 mb-0" role="status"></p>
+        {% component "unfold/components/button.html" with type="button" variant="default" icon="fingerprint" class="w-full" extra_attrs='id="passkey-verification-button"' %}
+            {% trans "Sign in with a passkey" %}
+        {% endcomponent %}
+        <p id="passkey-verification-status-message" class="text-red-600 mt-2 mb-0" role="status"></p>
     </template>
     {% render_otp_webauthn_auth_scripts %}
 {% endblock %}

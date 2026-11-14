@@ -1,15 +1,16 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline, StackedInline
 
 from ..models import Address, Contact
 
 
-class ContactInline(admin.TabularInline):
+class ContactInline(TabularInline):
     model = Contact
     extra = 0
     fields = ('channel', 'value', 'usage', 'label', 'is_primary', 'is_active', 'is_public', 'verified_on')
 
 
-class AddressInline(admin.StackedInline):
+class AddressInline(StackedInline):
     model = Address
     extra = 0
     fields = (
@@ -19,14 +20,14 @@ class AddressInline(admin.StackedInline):
     )
 
 
-class ContactAdmin(admin.ModelAdmin):
+class ContactAdmin(ModelAdmin):
     list_display = ('member', 'channel', 'value', 'usage', 'is_primary', 'is_active', 'is_public')
     list_filter = ('channel', 'usage', 'is_primary', 'is_active', 'is_public')
     search_fields = ('value', 'member__staff_id', 'member__user__first_name', 'member__user__last_name')
     autocomplete_fields = ('member',)
 
 
-class AddressAdmin(admin.ModelAdmin):
+class AddressAdmin(ModelAdmin):
     list_display = ('member', 'address_type', 'city', 'region', 'country', 'is_primary', 'is_active')
     list_filter = ('address_type', 'is_primary', 'is_active', 'country')
     search_fields = ('city', 'street', 'digital_address', 'member__staff_id')

@@ -11,10 +11,9 @@
     const baselines = new WeakMap();
 
     function build(id, html) {
-        const el = document.createElement('div');
-        el.className = 'modal fade';
+        const el = document.createElement('dialog');
+        el.className = 'admin-dialog';
         el.id = id;
-        el.tabIndex = -1;
         el.innerHTML = html;
         document.body.appendChild(el);
         return el;
@@ -23,44 +22,36 @@
     function previewShell() {
         if (previewModal) return previewModal;
         previewModal = build('imagePreviewModal',
-            '<div class="modal-dialog modal-lg modal-dialog-centered">' +
-            '<div class="modal-content">' +
-            '<div class="modal-header"><h5 class="modal-title">Image preview</h5>' +
-            '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>' +
-            '<div class="modal-body text-center"><img alt="" class="img-fluid"></div>' +
-            '</div></div>');
+            '<div class="admin-dialog-header"><h5>Image preview</h5>' +
+            '<button type="button" class="admin-dialog-close" data-dialog-close aria-label="Close">' +
+            '<span class="material-symbols-outlined">close</span></button></div>' +
+            '<div class="admin-dialog-body admin-dialog-image"><img alt=""></div>');
         return previewModal;
     }
 
     function cropShell() {
         if (cropModal) return cropModal;
         cropModal = build('imageCropModal',
-            '<div class="modal-dialog modal-dialog-centered">' +
-            '<div class="modal-content">' +
-            '<div class="modal-header"><h5 class="modal-title">Crop image</h5>' +
-            '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>' +
-            '<div class="modal-body">' +
+            '<div class="admin-dialog-header"><h5>Crop image</h5>' +
+            '<button type="button" class="admin-dialog-close" data-dialog-close aria-label="Close">' +
+            '<span class="material-symbols-outlined">close</span></button></div>' +
+            '<div class="admin-dialog-body">' +
             '<div class="image-crop-stage"><img alt="" draggable="false"></div>' +
-            '<input type="range" class="form-range image-crop-zoom" min="1" max="4" step="0.01" value="1">' +
+            '<input type="range" class="image-crop-zoom" min="1" max="4" step="0.01" value="1">' +
             '<p class="image-crop-hint">Drag to reposition, slide to zoom.</p>' +
             '</div>' +
-            '<div class="modal-footer">' +
-            '<button type="button" class="btn btn-outline-secondary image-crop-cancel">Cancel</button>' +
-            '<button type="button" class="btn btn-primary image-crop-apply">Apply crop</button>' +
-            '</div></div></div>');
+            '<div class="admin-dialog-actions">' +
+            '<button type="button" class="seoto-btn image-crop-cancel">Cancel</button>' +
+            '<button type="button" class="seoto-btn seoto-btn--primary image-crop-apply">Apply crop</button>' +
+            '</div>');
         return cropModal;
     }
 
     function openPreview(url) {
         if (!url) return;
         const el = previewShell();
-        el.querySelector('.modal-body img').src = url;
-
-        if (window.bootstrap && window.bootstrap.Modal) {
-            window.bootstrap.Modal.getOrCreateInstance(el).show();
-        } else {
-            window.open(url, '_blank', 'noopener');
-        }
+        el.querySelector('.admin-dialog-body img').src = url;
+        el.showModal();
     }
 
     function status(widget, text) {
@@ -164,7 +155,7 @@
             stage.removeEventListener('pointerup', onPointerUp);
             zoom.removeEventListener('input', onZoom);
             el.querySelector('.image-crop-apply').removeEventListener('click', apply);
-            el.removeEventListener('hidden.bs.modal', teardown);
+            el.removeEventListener('close', teardown);
             URL.revokeObjectURL(url);
             if (!applied) onCancel();
         }
@@ -184,16 +175,8 @@
             const type = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
             canvas.toBlob(function (blob) {
                 onDone(new File([blob], file.name, {type: type, lastModified: Date.now()}));
-                hide();
+                el.close();
             }, type, 0.92);
-        }
-
-        function hide() {
-            if (window.bootstrap && window.bootstrap.Modal) {
-                window.bootstrap.Modal.getOrCreateInstance(el).hide();
-            } else {
-                teardown();
-            }
         }
 
         img.onload = function () {
@@ -212,32 +195,26 @@
         stage.addEventListener('pointerup', onPointerUp);
         zoom.addEventListener('input', onZoom);
         el.querySelector('.image-crop-apply').addEventListener('click', apply);
-        el.addEventListener('hidden.bs.modal', teardown);
-
-        if (window.bootstrap && window.bootstrap.Modal) {
-            const instance = window.bootstrap.Modal.getOrCreateInstance(el);
-            instance.show();
-            // The stage has no width until it is laid out, so size once it is on screen.
-            el.addEventListener('shown.bs.modal', function once() {
-                el.removeEventListener('shown.bs.modal', once);
-                if (img.complete) img.onload();
-            });
-        } else {
-            applied = true;  // No bootstrap: take the file uncropped rather than lose it.
-            onDone(file);
-            teardown();
-        }
+        el.addEventListener('close', teardown);
+        el.showModal();
+        // The stage has no width until it is on screen, so size a cached image once it is.
+        if (img.complete && img.naturalWidth) img.onload();
     }
 
     document.addEventListener('click', function (event) {
         const button = event.target.closest(
             '.image-preview-trigger, .image-preview-upload, .image-preview-remove, .image-crop-cancel'
         );
+        const dialog = event.target.closest('dialog.admin-dialog');
+        if (dialog && (event.target.closest('[data-dialog-close]') || event.target === dialog)) {
+            dialog.close();
+            return;
+        }
         if (!button) return;
         event.preventDefault();
 
         if (button.classList.contains('image-crop-cancel')) {
-            window.bootstrap.Modal.getOrCreateInstance(cropShell()).hide();
+            cropShell().close();
             return;
         }
 

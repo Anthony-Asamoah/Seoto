@@ -1,11 +1,12 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 
 from infrastructure.utils import RichTextAdminMixin
 from common.mixins.admin import OwnerScopedAdminMixin
 from .models import Post, PostTags, PostReadGroup, PostComment
 
 
-class PostAdmin(OwnerScopedAdminMixin, RichTextAdminMixin, admin.ModelAdmin):
+class PostAdmin(OwnerScopedAdminMixin, RichTextAdminMixin, ModelAdmin):
     owner_lookup = 'author'
     richtext_fields = ('content',)
     richtext_config = 'blog'
@@ -33,19 +34,20 @@ class PostAdmin(OwnerScopedAdminMixin, RichTextAdminMixin, admin.ModelAdmin):
     )
 
 
-class PostTagsAdmin(admin.ModelAdmin):
+class PostTagsAdmin(ModelAdmin):
     list_display = ('hits', 'label')
     search_fields = ('label',)
     ordering = ('-hits',)
 
 
-class PostReadGroupAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+class PostReadGroupAdmin(OwnerScopedAdminMixin, ModelAdmin):
     owner_lookup = 'author'
+    autocomplete_fields = ('users',)
     list_display = ('label',)
     search_fields = ('label',)
 
 
-class PostCommentAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+class PostCommentAdmin(OwnerScopedAdminMixin, ModelAdmin):
     owner_lookup = 'author'
     list_display = ('post', 'author', 'date_posted', 'is_visible', 'edited')
     list_display_links = ('post',)

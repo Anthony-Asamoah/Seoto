@@ -1,16 +1,17 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
 
 from infrastructure.utils import RichTextAdminMixin
 from .models import Product, ProductImage, ProductTag
 
 
-class ProductImageInline(admin.TabularInline):
+class ProductImageInline(TabularInline):
     model = ProductImage
     extra = 1
     fields = ('image', 'alt_text', 'caption', 'is_cover', 'order')
 
 
-class ProductAdmin(RichTextAdminMixin, admin.ModelAdmin):
+class ProductAdmin(RichTextAdminMixin, ModelAdmin):
     richtext_fields = ('body',)
 
     list_display = ('title', 'client', 'status', 'is_featured', 'launched_on', 'order')
@@ -43,7 +44,7 @@ class ProductAdmin(RichTextAdminMixin, admin.ModelAdmin):
     )
 
 
-class ProductTagAdmin(admin.ModelAdmin):
+class ProductTagAdmin(ModelAdmin):
     list_display = ('label', 'order')
     list_editable = ('order',)
     search_fields = ('label',)

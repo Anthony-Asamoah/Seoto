@@ -2,8 +2,9 @@ from django.contrib.admin.apps import AdminConfig
 
 
 class SeotoAdminConfig(AdminConfig):
-    """Stock admin site, with the project-wide admin form tweaks installed."""
+    """Unfold admin site, with the reCAPTCHA-checked login form installed."""
 
+    default_site = 'unfold.sites.UnfoldAdminSite'
     login_form = 'common.admin_forms.AdminLoginForm'
 
     def ready(self):
@@ -11,9 +12,6 @@ class SeotoAdminConfig(AdminConfig):
         from django.contrib import admin
         from django.utils.module_loading import import_string
 
-        from infrastructure.utils.admin import install_select2_m2m
-
-        install_select2_m2m()
         admin.site.login_form = import_string(self.login_form)
 
 

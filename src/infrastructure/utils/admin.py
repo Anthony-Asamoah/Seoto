@@ -1,7 +1,4 @@
-from django.contrib.admin.options import BaseModelAdmin
 from django_ckeditor_5.widgets import CKEditor5Widget
-
-from infrastructure.utils.widgets import Select2MultipleWidget
 
 
 class RichTextAdminMixin:
@@ -11,7 +8,7 @@ class RichTextAdminMixin:
 
     Usage::
 
-        class MyModelAdmin(RichTextAdminMixin, admin.ModelAdmin):
+        class MyModelAdmin(RichTextAdminMixin, unfold.admin.ModelAdmin):
             richtext_fields = ('body', 'summary')          # required
             richtext_config = 'blog'                        # optional, defaults to 'default'
     """
@@ -28,40 +25,3 @@ class RichTextAdminMixin:
                 )
         return form
 
-
-def install_select2_m2m():
-    """Make every admin many-to-many field render as a select2 tag box.
-
-    Patches `BaseModelAdmin`, so it covers `ModelAdmin` and inlines alike without any
-    per-admin opt-in. `autocomplete_fields` and `raw_id_fields` are left alone (both are
-    deliberate choices for large tables), as is any field listed in a ModelAdmin's
-    `select2_exclude`, which falls back to whatever Django would have rendered —
-    `filter_horizontal` included.
-    """
-    if getattr(BaseModelAdmin, '_select2_m2m_installed', False):
-        return
-
-    original = BaseModelAdmin.formfield_for_manytomany
-
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        overridable = (
-            'widget' not in kwargs
-            and db_field.name not in self.get_autocomplete_fields(request)
-            and db_field.name not in self.raw_id_fields
-            and db_field.name not in getattr(self, 'select2_exclude', ())
-        )
-        if overridable:
-            kwargs['widget'] = Select2MultipleWidget(
-                placeholder=f'Select {db_field.verbose_name}'
-            )
-
-        form_field = original(self, db_field, request, **kwargs)
-
-        # Django appends "Hold down Control…" to any SelectMultiple; select2 makes it a lie.
-        if overridable and form_field is not None:
-            form_field.help_text = db_field.help_text
-        return form_field
-
-    BaseModelAdmin.formfield_for_manytomany = formfield_for_manytomany
-    BaseModelAdmin.select2_exclude = ()
-    BaseModelAdmin._select2_m2m_installed = True

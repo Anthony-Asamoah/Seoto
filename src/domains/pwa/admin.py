@@ -1,9 +1,12 @@
 import logging
 
+from django import forms
 from django.contrib import admin
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import path, reverse
+from unfold.admin import ModelAdmin
+from unfold.widgets import UnfoldAdminTextareaWidget, UnfoldAdminTextInputWidget
 from common.mixins.admin import OwnerScopedAdminMixin
 
 from .models import PushSubscription, Notification
@@ -12,8 +15,17 @@ from .services import send_push_notification
 logger = logging.getLogger(__name__)
 
 
+class PushNotificationForm(forms.Form):
+    title = forms.CharField(max_length=200, widget=UnfoldAdminTextInputWidget)
+    body = forms.CharField(widget=UnfoldAdminTextareaWidget(attrs={'rows': 3}))
+    url = forms.CharField(
+        label='URL (on click)', required=False, initial='/', widget=UnfoldAdminTextInputWidget,
+        help_text='Relative path the notification opens when clicked, e.g. /spending/',
+    )
+
+
 @admin.register(PushSubscription)
-class PushSubscriptionAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+class PushSubscriptionAdmin(OwnerScopedAdminMixin, ModelAdmin):
     list_display = ['user', 'endpoint_preview', 'is_active', 'created_at']
     list_filter = ['is_active', 'created_at']
     search_fields = ['user__username', 'endpoint']
@@ -49,42 +61,40 @@ class PushSubscriptionAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
         selected_ids = request.session.get('push_selected_ids', [])
         subscriptions = PushSubscription.objects.filter(id__in=selected_ids).select_related('user')
 
-        if request.method == 'POST':
-            title = request.POST.get('title', '').strip()
-            body = request.POST.get('body', '').strip()
-            url = request.POST.get('url', '').strip() or '/'
+        form = PushNotificationForm(request.POST or None)
+        if request.method == 'POST' and form.is_valid():
+            title, body = form.cleaned_data['title'], form.cleaned_data['body']
+            url = form.cleaned_data['url'] or '/'
 
-            if not title or not body:
-                self.message_user(request, 'Title and body are required.', level='error')
-            else:
-                seen_users = set()
-                success_count = 0
-                for sub in subscriptions:
-                    if sub.user_id not in seen_users:
-                        seen_users.add(sub.user_id)
-                        success_count += send_push_notification(sub.user, title, body, url=url)
+            seen_users = set()
+            success_count = 0
+            for sub in subscriptions:
+                if sub.user_id not in seen_users:
+                    seen_users.add(sub.user_id)
+                    success_count += send_push_notification(sub.user, title, body, url=url)
 
-                del request.session['push_selected_ids']
-                self.message_user(
-                    request,
-                    f'Push notification sent to {len(seen_users)} user(s), '
-                    f'{success_count} device(s) reached.'
-                )
-                return HttpResponseRedirect(
-                    reverse('admin:pwa_pushsubscription_changelist')
-                )
+            del request.session['push_selected_ids']
+            self.message_user(
+                request,
+                f'Push notification sent to {len(seen_users)} user(s), '
+                f'{success_count} device(s) reached.'
+            )
+            return HttpResponseRedirect(
+                reverse('admin:pwa_pushsubscription_changelist')
+            )
 
         context = {
             **self.admin_site.each_context(request),
             'title': 'Send Push Notification',
             'subscriptions': subscriptions,
+            'form': form,
             'opts': self.model._meta,
         }
         return render(request, 'admin/pwa/send_push_notification.html', context)
 
 
 @admin.register(Notification)
-class NotificationAdmin(OwnerScopedAdminMixin, admin.ModelAdmin):
+class NotificationAdmin(OwnerScopedAdminMixin, ModelAdmin):
     list_display = ['user', 'title', 'sent', 'sent_at', 'created_at']
     list_filter = ['sent', 'created_at']
     search_fields = ['user__username', 'title', 'body']

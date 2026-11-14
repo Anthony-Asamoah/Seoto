@@ -1,4 +1,5 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, StackedInline
 
 from .models import ConsultationBooking, ConsultationRequest
 
@@ -16,13 +17,13 @@ class ReadOnlyAdminMixin:
         return [field.name for field in self.model._meta.fields]
 
 
-class ConsultationBookingInline(ReadOnlyAdminMixin, admin.StackedInline):
+class ConsultationBookingInline(ReadOnlyAdminMixin, StackedInline):
     model = ConsultationBooking
     can_delete = False
     extra = 0
 
 
-class ConsultationRequestAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+class ConsultationRequestAdmin(ReadOnlyAdminMixin, ModelAdmin):
     list_display = ('created_at', 'kind', 'name', 'email', 'phone', 'interest', 'booked_for')
     list_filter = ('kind', 'created_at', 'interest')
     list_select_related = ('booking',)
@@ -38,7 +39,7 @@ class ConsultationRequestAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
         return booking.start_time or 'Booked (time unknown)'
 
 
-class ConsultationBookingAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
+class ConsultationBookingAdmin(ReadOnlyAdminMixin, ModelAdmin):
     list_display = ('consultation', 'provider', 'start_time', 'booked_at')
     list_filter = ('provider', 'start_time')
     list_select_related = ('consultation',)

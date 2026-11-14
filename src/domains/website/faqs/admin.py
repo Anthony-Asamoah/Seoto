@@ -1,17 +1,18 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
 
 from infrastructure.utils import RichTextAdminMixin
 from .models import FAQ, FAQCategory
 
 
-class FAQInline(admin.TabularInline):
+class FAQInline(TabularInline):
     model = FAQ
     extra = 1
     fields = ('question', 'is_published', 'is_featured', 'order')
     show_change_link = True
 
 
-class FAQAdmin(RichTextAdminMixin, admin.ModelAdmin):
+class FAQAdmin(RichTextAdminMixin, ModelAdmin):
     richtext_fields = ('answer',)
 
     list_display = ('question', 'category', 'is_published', 'is_featured', 'order', 'updated_at')
@@ -36,7 +37,7 @@ class FAQAdmin(RichTextAdminMixin, admin.ModelAdmin):
     )
 
 
-class FAQCategoryAdmin(admin.ModelAdmin):
+class FAQCategoryAdmin(ModelAdmin):
     list_display = ('name', 'order')
     list_editable = ('order',)
     search_fields = ('name',)

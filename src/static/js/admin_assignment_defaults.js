@@ -13,8 +13,7 @@
 
     function setCurrency(select, value) {
         select.value = value;
-        // jazzmin runs select2 over plain selects and does so with its own jQuery copy, so a
-        // django.jQuery trigger never reaches it. A native event reaches every jQuery on the page.
+        // A native event reaches every listener, jQuery-bound ones included.
         select.dispatchEvent(new Event('change', {bubbles: true}));
     }
 

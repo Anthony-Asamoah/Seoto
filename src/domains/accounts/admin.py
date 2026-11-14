@@ -2,17 +2,23 @@ import logging
 
 from django import forms
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from django.contrib.auth.models import User
+from django.contrib.auth.admin import GroupAdmin, UserAdmin
+from django.contrib.auth.models import Group, User
 from django.db.models import Exists, OuterRef
 from django.http import HttpResponseForbidden, HttpResponseNotAllowed, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from django.urls import path, reverse
 from django.utils.html import format_html, mark_safe
 from django_otp import login as otp_login
+from django_otp.plugins.otp_static.admin import StaticDeviceAdmin, StaticTokenInline
+from django_otp.plugins.otp_static.models import StaticDevice
+from django_otp.plugins.otp_totp.admin import TOTPDeviceAdmin
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from django_otp_webauthn.admin import WebAuthnCredentialAdmin
 from django_otp_webauthn.models import WebAuthnCredential
+from unfold.admin import ModelAdmin, StackedInline, TabularInline
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
 from infrastructure.utils.widgets import ImagePreviewInput
 
@@ -48,7 +54,7 @@ class UserProfileForm(forms.ModelForm):
             self.fields['picture'].widget.thumbnail_url = thumbnail.url
 
 
-class UserProfileInline(admin.StackedInline):
+class UserProfileInline(StackedInline):
     """The profile only ever makes sense next to its user, so it has no menu entry of its own."""
 
     model = user_profile
@@ -59,10 +65,35 @@ class UserProfileInline(admin.StackedInline):
 
 
 admin.site.unregister(User)
+admin.site.unregister(Group)
+admin.site.unregister(TOTPDevice)
+admin.site.unregister(StaticDevice)
+
+
+@admin.register(Group)
+class UnfoldGroupAdmin(GroupAdmin, ModelAdmin):
+    pass
+
+
+@admin.register(TOTPDevice)
+class UnfoldTOTPDeviceAdmin(TOTPDeviceAdmin, ModelAdmin):
+    pass
+
+
+class UnfoldStaticTokenInline(StaticTokenInline, TabularInline):
+    pass
+
+
+@admin.register(StaticDevice)
+class UnfoldStaticDeviceAdmin(StaticDeviceAdmin, ModelAdmin):
+    inlines = [UnfoldStaticTokenInline]
 
 
 @admin.register(User)
-class CustomUserAdmin(UserAdmin):
+class CustomUserAdmin(UserAdmin, ModelAdmin):
+    form = UserChangeForm
+    add_form = UserCreationForm
+    change_password_form = AdminPasswordChangeForm
     list_display = ['user_icon', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'has_2fa']
     change_form_template = 'admin/accounts/user_change_form.html'
     inlines = [UserProfileInline]
@@ -123,11 +154,11 @@ class CustomUserAdmin(UserAdmin):
         if obj is None or not obj.pk:
             return '—'
         if not obj.has_usable_password():
-            return mark_safe('<span class="text-muted">No usable password set.</span>')
-        return format_html(
-            '<a class="btn btn-sm btn-outline-secondary" href="{}">Reset password</a>',
-            reverse('admin:auth_user_password_change', args=[obj.pk]),
-        )
+            return 'No usable password set.'
+        return render_to_string('unfold/components/button.html', {
+            'href': reverse('admin:auth_user_password_change', args=[obj.pk]),
+            'variant': 'default', 'size': 'sm', 'children': 'Reset password',
+        })
 
     @admin.display(description='2FA', boolean=True, ordering='_has_2fa')
     def has_2fa(self, obj):
@@ -224,5 +255,5 @@ class CustomUserAdmin(UserAdmin):
 
 
 @admin.register(WebAuthnCredential)
-class PasskeyAdmin(WebAuthnCredentialAdmin):
+class PasskeyAdmin(WebAuthnCredentialAdmin, ModelAdmin):
     pass

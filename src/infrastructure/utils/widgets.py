@@ -3,26 +3,6 @@ from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 
 
-class Select2MultipleWidget(forms.SelectMultiple):
-    """A plain multi-select carrying select2's HTML5 options as data attributes.
-
-    jazzmin's `change_form.js` already calls `.select2()` on every select it hasn't
-    excluded, and select2 merges `data-*` attributes into its options, so the tag
-    editor needs no JavaScript of its own.
-    """
-
-    def __init__(self, attrs=None, choices=(), placeholder=''):
-        defaults = {
-            'class': 'admin-select2',
-            'data-placeholder': placeholder or 'Start typing to search…',
-            'data-allow-clear': 'true',
-            'data-close-on-select': 'false',
-            'data-width': '100%',
-        }
-        defaults.update(attrs or {})
-        super().__init__(defaults, choices)
-
-
 class ImagePreviewInput(forms.ClearableFileInput):
     """File input that shows the current image as a thumbnail opening a modal, not a URL.
 
@@ -53,20 +33,20 @@ class ImagePreviewInput(forms.ClearableFileInput):
         ), file_input]
 
         buttons = [format_html(
-            '<button type="button" class="btn btn-sm btn-outline-secondary image-preview-trigger"'
-            ' data-image-url="{}"{}><i class="fas fa-eye"></i> Preview</button>',
+            '<button type="button" class="seoto-btn seoto-btn--sm image-preview-trigger"'
+            ' data-image-url="{}"{}><span class="material-symbols-outlined">visibility</span> Preview</button>',
             image_url, mark_safe('' if has_image else ' hidden'),
         ), format_html(
-            '<button type="button" class="btn btn-sm btn-outline-secondary image-preview-upload"'
-            ' data-target="{}"><i class="fas fa-upload"></i> Upload</button>',
+            '<button type="button" class="seoto-btn seoto-btn--sm image-preview-upload"'
+            ' data-target="{}"><span class="material-symbols-outlined">upload</span> Upload</button>',
             input_id,
         )]
         if has_image and not self.is_required:
             checkbox_id = self.clear_checkbox_id(self.clear_checkbox_name(name))
             buttons.append(format_html(
                 '<input type="checkbox" class="image-preview-clear-input" name="{}" id="{}" hidden>'
-                '<button type="button" class="btn btn-sm btn-outline-danger image-preview-remove"'
-                ' data-target="{}"><i class="fas fa-trash"></i> Remove</button>',
+                '<button type="button" class="seoto-btn seoto-btn--sm seoto-btn--danger image-preview-remove"'
+                ' data-target="{}"><span class="material-symbols-outlined">delete</span> Remove</button>',
                 self.clear_checkbox_name(name), checkbox_id, checkbox_id,
             ))
 

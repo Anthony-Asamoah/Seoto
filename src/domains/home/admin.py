@@ -1,10 +1,11 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 
 from domains.home.models import ErrorLog
 
 
 @admin.register(ErrorLog)
-class ErrorLogAdmin(admin.ModelAdmin):
+class ErrorLogAdmin(ModelAdmin):
     list_display = ('timestamp', 'level', 'logger_name', 'message_preview')
     list_filter = ('level',)
     readonly_fields = ('level', 'logger_name', 'message', 'traceback', 'path', 'method', 'user_id', 'timestamp')

@@ -4,7 +4,7 @@ Imported from `common.apps` inside `ready()`, never at import time:
 `django.contrib.admin.forms` pulls in the auth models.
 """
 
-from django.contrib.admin.forms import AdminAuthenticationForm
+from unfold.forms import AuthenticationForm
 
 from common.mixins.views import enforce_recaptcha
 
@@ -18,5 +18,5 @@ class RecaptchaAdminLoginMixin:
         return super().clean()
 
 
-class AdminLoginForm(RecaptchaAdminLoginMixin, AdminAuthenticationForm):
+class AdminLoginForm(RecaptchaAdminLoginMixin, AuthenticationForm):
     pass

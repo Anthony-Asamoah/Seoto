@@ -6,32 +6,6 @@
     {{ media }}
 {% endblock %}
 
-{% block extrajs %}
-    {{ block.super }}
-    {% render_otp_webauthn_register_scripts %}
-    <script>document.addEventListener('otp_webauthn.register_complete', function () { window.location.reload(); });</script>
-    <div class="modal fade" id="totpSetupModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-shield-halved"></i> Two-Factor Authentication</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="totpSetupBody"></div>
-            </div>
-        </div>
-    </div>
-{% endblock %}
-
-{% block content_title %}{{ title }}{% endblock %}
-
-{% block breadcrumbs %}
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% trans 'Home' %}</a></li>
-        <li class="breadcrumb-item active">{{ title }}</li>
-    </ol>
-{% endblock %}
-
 {% block content %}
 <div class="account-page">
     <section class="card account-hero">
@@ -44,20 +18,20 @@
             <div class="account-identity">
                 <h2>{{ request.user.get_full_name|default:request.user.username }}</h2>
                 <div class="account-meta">
-                    <span><i class="fas fa-at"></i>{{ request.user.username }}</span>
-                    {% if request.user.email %}<span><i class="fas fa-envelope"></i>{{ request.user.email }}</span>{% endif %}
-                    <span><i class="fas fa-calendar"></i>{% trans 'Joined' %} {{ request.user.date_joined|date:"M Y" }}</span>
+                    <span><span class="material-symbols-outlined">alternate_email</span>{{ request.user.username }}</span>
+                    {% if request.user.email %}<span><span class="material-symbols-outlined">mail</span>{{ request.user.email }}</span>{% endif %}
+                    <span><span class="material-symbols-outlined">calendar_month</span>{% trans 'Joined' %} {{ request.user.date_joined|date:"M Y" }}</span>
                 </div>
                 <div class="account-badges">
-                    {% if request.user.is_superuser %}<span class="badge account-badge">Superuser</span>{% elif request.user.is_staff %}<span class="badge account-badge">Staff</span>{% endif %}
-                    {% if member %}<span class="badge account-badge-muted">{{ member.staff_id }}</span>
-                        {% if member.is_public %}<span class="badge account-badge-muted"><i class="fas fa-globe"></i> Listed on website</span>{% endif %}{% endif %}
+                    {% if request.user.is_superuser %}<span class="seoto-badge">Superuser</span>{% elif request.user.is_staff %}<span class="seoto-badge">Staff</span>{% endif %}
+                    {% if member %}<span class="seoto-badge seoto-badge--muted">{{ member.staff_id }}</span>
+                        {% if member.is_public %}<span class="seoto-badge seoto-badge--muted"><span class="material-symbols-outlined">public</span> Listed on website</span>{% endif %}{% endif %}
                 </div>
             </div>
             {% if totp_status == 'active' or passkeys %}
-                <span class="badge text-bg-success account-hero-action"><i class="fas fa-shield-halved"></i> 2FA on</span>
+                <span class="seoto-badge seoto-badge--success account-hero-action"><span class="material-symbols-outlined">shield</span> 2FA on</span>
             {% else %}
-                <a href="#account-security" class="btn btn-outline-warning account-hero-action"><i class="fas fa-shield-halved"></i><span>Secure your account</span></a>
+                <a href="#account-security" class="seoto-btn account-hero-action"><span class="material-symbols-outlined">shield</span><span>Secure your account</span></a>
             {% endif %}
         </div>
     </section>
@@ -65,13 +39,13 @@
     <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
         {% if user_form.non_field_errors or profile_form.non_field_errors or member_form.non_field_errors %}
-            <div class="alert alert-danger">{{ user_form.non_field_errors }}{{ profile_form.non_field_errors }}{{ member_form.non_field_errors }}</div>
+            <div class="seoto-alert is-error">{{ user_form.non_field_errors }}{{ profile_form.non_field_errors }}{{ member_form.non_field_errors }}</div>
         {% endif %}
 
         <div class="account-grid">
             <section class="card account-section">
-                <div class="card-header"><h3><i class="fas fa-user"></i>Personal details</h3><p>How you appear across the admin.</p></div>
-                <div class="card-body"><div class="row g-3">
+                <div class="card-header"><h3><span class="material-symbols-outlined">person</span>Personal details</h3><p>How you appear across the admin.</p></div>
+                <div class="card-body"><div class="row">
                     {% include "admin/accounts/_account_field.html" with field=user_form.first_name col="col-sm-6" %}
                     {% include "admin/accounts/_account_field.html" with field=user_form.last_name col="col-sm-6" %}
                     {% include "admin/accounts/_account_field.html" with field=user_form.email col="col-sm-7" %}
@@ -80,7 +54,7 @@
             </section>
 
             <section class="card account-section">
-                <div class="card-header"><h3><i class="fas fa-image"></i>Profile photo</h3><p>Square images work best.</p></div>
+                <div class="card-header"><h3><span class="material-symbols-outlined">image</span>Profile photo</h3><p>Square images work best.</p></div>
                 <div class="card-body">{% include "admin/accounts/_account_field.html" with field=profile_form.picture %}</div>
             </section>
 
@@ -88,7 +62,7 @@
 
             {% if member_form %}
                 <section class="card account-section account-span">
-                    <div class="card-header"><h3><i class="fas fa-id-card"></i>Staff profile</h3><p>Shown on the marketing site when listed.</p></div>
+                    <div class="card-header"><h3><span class="material-symbols-outlined">badge</span>Staff profile</h3><p>Shown on the marketing site when listed.</p></div>
                     <div class="card-body">
                         <div class="account-stats">
                             <div><small>Staff ID</small><strong>{{ member.staff_id }}</strong></div>
@@ -96,9 +70,9 @@
                             {% if member.ended_on %}<div><small>Ended</small><strong>{{ member.ended_on|date:"j M Y" }}</strong></div>{% endif %}
                             <div><small>Website</small><strong>{{ member.is_public|yesno:"Listed,Hidden" }}</strong></div>
                         </div>
-                        <div class="row g-3">
+                        <div class="row">
                             <div class="col-md-4">{% include "admin/accounts/_account_field.html" with field=member_form.profile_image %}</div>
-                            <div class="col-md-8"><div class="row g-3">
+                            <div class="col-md-8"><div class="row">
                                 {% include "admin/accounts/_account_field.html" with field=member_form.about %}
                                 {% include "admin/accounts/_account_field.html" with field=member_form.gender col="col-sm-6" %}
                                 {% include "admin/accounts/_account_field.html" with field=member_form.date_of_birth col="col-sm-6" %}
@@ -112,11 +86,23 @@
         </div>
 
         <div class="account-savebar">
-            <span class="text-muted small d-none d-sm-inline">{% trans 'Changes apply immediately after saving.' %}</span>
-            <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> {% trans 'Save changes' %}</button>
+            <span class="seoto-muted">{% trans 'Changes apply immediately after saving.' %}</span>
+            <button type="submit" class="seoto-btn seoto-btn--primary"><span class="material-symbols-outlined">check</span> {% trans 'Save changes' %}</button>
         </div>
     </form>
 
     {% if member %}{% include "admin/accounts/_staff_sections.html" %}{% endif %}
 </div>
+
+{% render_otp_webauthn_register_scripts %}
+<script>document.addEventListener('otp_webauthn.register_complete', function () { window.location.reload(); });</script>
+<dialog class="admin-dialog" id="totpSetupModal">
+    <div class="admin-dialog-header">
+        <h5><span class="material-symbols-outlined">shield</span> Two-Factor Authentication</h5>
+        <button type="button" class="admin-dialog-close" data-dialog-close aria-label="Close">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+    <div class="admin-dialog-body" id="totpSetupBody"></div>
+</dialog>
 {% endblock %}

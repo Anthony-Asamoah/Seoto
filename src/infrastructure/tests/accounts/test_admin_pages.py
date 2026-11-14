@@ -1,4 +1,3 @@
-import copy
 from io import BytesIO
 
 from django.contrib import admin
@@ -10,6 +9,7 @@ from django.urls import NoReverseMatch, reverse
 from django_otp.plugins.otp_totp.models import TOTPDevice
 from PIL import Image
 
+from common.admin import sidebar_navigation
 from domains.accounts.admin import CustomUserAdmin
 from domains.accounts.models import user_profile
 
@@ -17,7 +17,7 @@ from .helpers import current_token
 
 
 class AdminPageRenderTests(TestCase):
-    """Renders the admin under jazzmin. Tests run with DEBUG=False, so this also covers
+    """Renders the admin under unfold. Tests run with DEBUG=False, so this also covers
     the staticfiles manifest lookups that only bite once hashing is on."""
 
     def setUp(self):
@@ -76,15 +76,21 @@ class AdminPageRenderTests(TestCase):
         self.assertContains(response, 'image-preview-remove')
         self.assertNotContains(response, 'Currently:')
 
-    def test_jazzmin_skin_is_applied(self):
+    def test_unfold_skin_is_applied(self):
         response = self.client.get(reverse('admin:index'))
 
-        self.assertContains(response, 'jazzy-sidebar')
+        self.assertContains(response, 'nav-sidebar-apps')
         self.assertContains(response, 'Seoto')
+
+    def test_sidebar_uses_animated_collapse_markup(self):
+        response = self.client.get(reverse('admin:index'))
+
+        self.assertContains(response, 'sidebar-shell')
+        self.assertContains(response, 'nav-collapse-inner')
 
 
 class SidebarSectionTests(TestCase):
-    """`SeotoAdminSite.get_app_list` regroups the flat app list into source-tree sections."""
+    """`sidebar_navigation` regroups the flat app list into source-tree sections."""
 
     def setUp(self):
         cache.clear()
@@ -92,81 +98,65 @@ class SidebarSectionTests(TestCase):
         self.request = RequestFactory().get('/admin/')
         self.request.user = self.user
 
-    def app_list(self):
-        return admin.site.get_app_list(self.request)
+    def navigation(self):
+        return {group['title']: group for group in sidebar_navigation(self.request)}
+
+    def titles(self, group):
+        return {link['title'] for item in group['items'] for link in item['items']}
 
     def test_sections_replace_per_app_groups(self):
-        names = [app['name'] for app in self.app_list()]
+        names = [group['title'] for group in sidebar_navigation(self.request)]
 
         self.assertEqual(names, ['Apps', 'Company', 'System', 'Website'])
 
     def test_models_land_in_their_section(self):
-        sections = {app['app_label']: app for app in self.app_list()}
+        navigation = self.navigation()
 
-        def objects(label):
-            return {model['object_name'] for model in sections[label]['models']}
-
-        self.assertLessEqual({'User', 'Group', 'TOTPDevice'}, objects('system'))
-        self.assertLessEqual({'Post', 'Transaction', 'meal'}, objects('apps'))
-        self.assertLessEqual({'Product', 'FAQ'}, objects('website'))
-        self.assertLessEqual({'Member', 'Position'}, objects('company'))
-        self.assertLessEqual({'ErrorLog', 'ThemePreset'}, objects('system'))
+        self.assertLessEqual({'Users', 'Groups', 'TOTP devices'}, self.titles(navigation['System']))
+        self.assertLessEqual({'Posts', 'Transactions', 'Meals'}, self.titles(navigation['Apps']))
+        self.assertLessEqual({'Products', 'FAQs'}, self.titles(navigation['Website']))
+        self.assertLessEqual({'Members', 'Positions'}, self.titles(navigation['Company']))
+        self.assertLessEqual({'Error logs', 'Theme presets'}, self.titles(navigation['System']))
 
     def test_every_model_is_claimed_by_exactly_one_section(self):
-        flat = [
-            (app['app_label'], model['object_name'])
+        flat = sorted(
+            model['admin_url']
             for app in admin.AdminSite.get_app_list(admin.site, self.request)
             for model in app['models']
-        ]
-        grouped = [
-            model['object_name'] for app in self.app_list() for model in app['models']
-        ]
+            if model['admin_url']
+        )
+        grouped = sorted(
+            link['link']
+            for group in sidebar_navigation(self.request)
+            for item in group['items']
+            for link in item['items']
+        )
 
-        self.assertEqual(len(flat), len(grouped))
-        self.assertEqual(sorted(name for _, name in flat), sorted(grouped))
+        self.assertEqual(flat, grouped)
 
-    def test_sections_expose_subgroups_per_app(self):
-        sections = {app['app_label']: app for app in self.app_list()}
-
-        apps = [group['name'] for group in sections['apps']['subgroups']]
+    def test_sections_expose_one_item_per_app(self):
+        apps = [item['title'] for item in self.navigation()['Apps']['items']]
 
         self.assertEqual(apps, ['Blog', 'Foodie', 'Jotter', 'Rhymes', 'Spending Tracker'])
 
-    def test_security_subgroup_merges_otp_apps(self):
-        sections = {app['app_label']: app for app in self.app_list()}
-        groups = {group['name']: group for group in sections['system']['subgroups']}
+    def test_security_item_merges_otp_apps(self):
+        items = {item['title']: item for item in self.navigation()['System']['items']}
 
-        objects = {model['object_name'] for model in groups['Security']['models']}
+        links = {link['title'] for link in items['Security']['items']}
 
-        self.assertLessEqual({'TOTPDevice', 'StaticDevice'}, objects)
-        self.assertNotIn('Authenticator Apps', groups)
+        self.assertLessEqual({'TOTP devices', 'Static devices'}, links)
+        self.assertNotIn('Authenticator Apps', items)
 
-    def test_subgroup_models_are_the_same_objects_as_the_flat_list(self):
-        """The sidebar relies on this: jazzmin stamps `url`/`icon` onto the flat list
-        only, and the subgroups pick them up through shared dict identity."""
-        section = next(app for app in self.app_list() if app['app_label'] == 'website')
-        flat = {id(model) for model in section['models']}
-        nested = {id(model) for group in section['subgroups'] for model in group['models']}
+    def test_only_the_first_section_lacks_a_separator(self):
+        separators = [group['separator'] for group in sidebar_navigation(self.request)]
 
-        self.assertEqual(flat, nested)
+        self.assertEqual(separators, [False, True, True, True])
 
-    def test_subgroups_survive_a_deepcopy_with_identity_intact(self):
-        """jazzmin deep-copies the app list before mutating it; aliasing must hold."""
-        section = copy.deepcopy(
-            next(app for app in self.app_list() if app['app_label'] == 'website')
-        )
-        for model in section['models']:
-            model['url'] = 'stamped'
+    def test_users_without_permissions_get_no_sections(self):
+        staff = User.objects.create_user('staff', 'staff@example.com', 'pw-pw-pw-pw', is_staff=True)
+        self.request.user = staff
 
-        nested = [model.get('url') for group in section['subgroups'] for model in group['models']]
-
-        self.assertTrue(nested and all(url == 'stamped' for url in nested))
-
-    def test_single_app_view_is_left_ungrouped(self):
-        """The per-app page needs the real app so its breadcrumbs and title stay right."""
-        app_list = admin.site.get_app_list(self.request, app_label='blog')
-
-        self.assertEqual([app['app_label'] for app in app_list], ['blog'])
+        self.assertEqual(sidebar_navigation(self.request), [])
 
 
 class UserProfileInlineTests(TestCase):

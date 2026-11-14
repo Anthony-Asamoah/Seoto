@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.shortcuts import redirect
 from django.template.response import TemplateResponse
+from unfold.widgets import INPUT_CLASSES, SELECT_CLASSES, TEXTAREA_CLASSES
 
 from domains.company.hr.staff.models import Member
 from infrastructure.utils.widgets import ImagePreviewInput
@@ -11,13 +12,31 @@ from . import services
 from .models import user_profile
 
 
-class AccountForm(forms.ModelForm):
+class UnfoldFormMixin:
+    """These forms render outside a ModelAdmin, so Unfold's input classes are stamped on by hand."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            widget = field.widget
+            if isinstance(widget, ImagePreviewInput):
+                continue
+            if isinstance(widget, forms.Select):
+                classes = SELECT_CLASSES
+            elif isinstance(widget, forms.Textarea):
+                classes = TEXTAREA_CLASSES
+            else:
+                classes = INPUT_CLASSES
+            widget.attrs['class'] = ' '.join(classes)
+
+
+class AccountForm(UnfoldFormMixin, forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email']
 
 
-class AccountProfileForm(forms.ModelForm):
+class AccountProfileForm(UnfoldFormMixin, forms.ModelForm):
     class Meta:
         model = user_profile
         fields = ['contact', 'picture']
@@ -30,7 +49,7 @@ class AccountProfileForm(forms.ModelForm):
             self.fields['picture'].widget.thumbnail_url = thumbnail.url
 
 
-class MemberSelfForm(forms.ModelForm):
+class MemberSelfForm(UnfoldFormMixin, forms.ModelForm):
     class Meta:
         model = Member
         fields = ['profile_image', 'about', 'gender', 'date_of_birth', 'nationality', 'hometown']

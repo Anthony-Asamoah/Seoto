@@ -1,42 +1,36 @@
 {% extends "admin/base_site.html" %}
-
-{% block title %}Send Push Notification{% endblock %}
+{% load i18n unfold %}
 
 {% block content %}
-<h1>Send Push Notification</h1>
+    <div class="flex flex-col gap-6 max-w-2xl">
+        <div>
+            <h2 class="font-semibold mb-2 text-important">
+                {% blocktrans count counter=subscriptions|length %}Recipient: {{ counter }} subscription{% plural %}Recipients: {{ counter }} subscriptions{% endblocktrans %}
+            </h2>
+            <ul class="list-disc ms-5">
+                {% for sub in subscriptions %}
+                    <li>{{ sub.user.username }} — {{ sub.endpoint|slice:":60" }}…{% if not sub.is_active %} <em>({% trans "inactive" %})</em>{% endif %}</li>
+                {% empty %}
+                    <li><em>{% trans "No subscriptions selected." %}</em></li>
+                {% endfor %}
+            </ul>
+        </div>
 
-<p><strong>Recipients ({{ subscriptions|length }} subscription{{ subscriptions|length|pluralize }}):</strong></p>
-<ul>
-  {% for sub in subscriptions %}
-    <li>{{ sub.user.username }} — {{ sub.endpoint|slice:":60" }}…
-      {% if not sub.is_active %}<em>(inactive)</em>{% endif %}
-    </li>
-  {% empty %}
-    <li><em>No subscriptions selected.</em></li>
-  {% endfor %}
-</ul>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+                {% include "unfold/helpers/field.html" %}
+            {% endfor %}
 
-<form method="post">
-  {% csrf_token %}
-  <fieldset class="module aligned">
-    <div class="form-row">
-      <label for="id_title" class="required">Title:</label>
-      <input type="text" id="id_title" name="title" maxlength="200" required style="width: 400px">
+            <div class="flex gap-3 mt-2">
+                {% component "unfold/components/button.html" with submit=1 variant="primary" %}
+                    {% trans "Send notification" %}
+                {% endcomponent %}
+                {% url 'admin:pwa_pushsubscription_changelist' as cancel_url %}
+                {% component "unfold/components/button.html" with href=cancel_url variant="default" %}
+                    {% trans "Cancel" %}
+                {% endcomponent %}
+            </div>
+        </form>
     </div>
-    <div class="form-row">
-      <label for="id_body" class="required">Body:</label>
-      <textarea id="id_body" name="body" rows="3" required style="width: 400px"></textarea>
-    </div>
-    <div class="form-row">
-      <label for="id_url">URL (on click):</label>
-      <input type="text" id="id_url" name="url" value="/" style="width: 400px">
-      <p class="help">Relative path the notification opens when clicked, e.g. <code>/spending/</code></p>
-    </div>
-  </fieldset>
-
-  <div class="submit-row">
-    <input type="submit" value="Send Notification" class="default">
-    <a href="{% url 'admin:pwa_pushsubscription_changelist' %}" class="button cancel-link">Cancel</a>
-  </div>
-</form>
 {% endblock %}

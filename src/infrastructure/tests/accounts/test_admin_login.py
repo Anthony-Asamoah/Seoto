@@ -275,8 +275,9 @@ class MyAccountTests(TestCase):
         self.assertEqual(self.user.user_profile.contact, '0244')
 
     def test_menu_links_to_account_page(self):
-        page = self.client.get(reverse('admin:my_account'))
-        self.assertContains(page, f'href="{reverse("admin:my_account")}" class="dropdown-item"')
+        page = self.client.get(reverse('admin:index'))
+        self.assertContains(page, f'href="{reverse("admin:my_account")}"')
+        self.assertContains(page, 'My account')
 
     def test_staff_profile_shown_and_editable(self):
         from datetime import date

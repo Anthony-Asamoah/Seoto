@@ -1,53 +1,106 @@
-"""Admin site wiring: a TOTP second factor on top of the stock admin login.
+"""Admin site wiring: the Unfold skin and a TOTP second factor on top of the stock admin login.
 
 Imported lazily by Django (see `common.apps.OTPAdminConfig`), because
 django_otp pulls in auth models that aren't loadable while INSTALLED_APPS is being read.
 """
 
 from django_otp.admin import OTPAdminAuthenticationForm, OTPAdminSite
+from unfold.forms import AuthenticationForm as UnfoldAuthenticationForm
+from unfold.sites import UnfoldAdminSite
+from unfold.widgets import BASE_INPUT_CLASSES
 
 from common.admin_forms import RecaptchaAdminLoginMixin
 from domains.accounts.otp import OptionalOTPMixin
 
 
-class OTPAdminLoginForm(RecaptchaAdminLoginMixin, OptionalOTPMixin, OTPAdminAuthenticationForm):
-    pass
+class OTPAdminLoginForm(
+    RecaptchaAdminLoginMixin, OptionalOTPMixin, OTPAdminAuthenticationForm, UnfoldAuthenticationForm
+):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        token = self.fields['otp_token']
+        token.label = 'Authentication code'
+        token.help_text = 'The 6-digit code from your authenticator app, or a backup code.'
+        token.widget.attrs.update({
+            'class': ' '.join(BASE_INPUT_CLASSES),
+            'inputmode': 'numeric',
+            'autocomplete': 'one-time-code',
+            'spellcheck': 'false',
+        })
 
 
 SIDEBAR_SECTIONS = (
-    ('system', 'System', 'fas fa-gears', (
-        ('accounts', 'Accounts', 'fas fa-id-badge'),
-        ('home', 'Home', 'fas fa-house'),
-        ('pwa', 'PWA', 'fas fa-bell'),
-        ('theme', 'Theme', 'fas fa-palette'),
-        ('auth', 'Users & Groups', 'fas fa-users-cog'),
-        (('otp_totp', 'otp_static', 'django_otp_webauthn'), 'Security', 'fas fa-shield-halved'),
+    ('System', (
+        ('accounts', 'Accounts', 'badge'),
+        ('home', 'Home', 'home'),
+        ('pwa', 'PWA', 'notifications'),
+        ('theme', 'Theme', 'palette'),
+        ('auth', 'Users & Groups', 'manage_accounts'),
+        (('otp_totp', 'otp_static', 'django_otp_webauthn'), 'Security', 'shield'),
     )),
-    ('apps', 'Apps', 'fas fa-shapes', (
-        ('blog', 'Blog', 'fas fa-newspaper'),
-        ('spending_tracker', 'Spending Tracker', 'fas fa-wallet'),
-        ('foodie', 'Foodie', 'fas fa-utensils'),
-        ('jotter', 'Jotter', 'fas fa-list-check'),
-        ('rhymes', 'Rhymes', 'fas fa-music'),
+    ('Apps', (
+        ('blog', 'Blog', 'article'),
+        ('spending_tracker', 'Spending Tracker', 'account_balance_wallet'),
+        ('foodie', 'Foodie', 'restaurant'),
+        ('jotter', 'Jotter', 'checklist'),
+        ('rhymes', 'Rhymes', 'music_note'),
     )),
-    ('website', 'Website', 'fas fa-window-maximize', (
-        ('website_products', 'Products', 'fas fa-cubes'),
-        ('website_faqs', 'FAQs', 'fas fa-circle-question'),
-        ('consultations', 'Consultations', 'fas fa-comments'),
+    ('Website', (
+        ('website_products', 'Products', 'inventory_2'),
+        ('website_faqs', 'FAQs', 'help'),
+        ('consultations', 'Consultations', 'forum'),
     )),
-    ('company', 'Company', 'fas fa-building', (
-        ('company_staff', 'Staff', 'fas fa-user-tie'),
+    ('Company', (
+        ('company_staff', 'Staff', 'groups'),
     )),
 )
 
 
-class SeotoAdminSite(OTPAdminSite):
+def _model_links(models):
+    return [{'title': model['name'], 'link': model['admin_url']} for model in models if model['admin_url']]
+
+
+def sidebar_navigation(request):
+    """Unfold nav: section → app → models, built from the permission-filtered app list."""
+    from django.contrib import admin
+
+    remaining = {app['app_label']: app for app in admin.site.get_app_list(request)}
+    groups = []
+
+    for heading, members in SIDEBAR_SECTIONS:
+        items = []
+        for member_labels, title, icon in members:
+            if isinstance(member_labels, str):
+                member_labels = (member_labels,)
+            models = [
+                model
+                for label in member_labels
+                for model in remaining.pop(label, {'models': []})['models']
+            ]
+            links = _model_links(sorted(models, key=lambda model: model['name'].lower()))
+            if links:
+                items.append({'title': title, 'icon': icon, 'link': '#', 'items': links})
+        if items:
+            items.sort(key=lambda item: item['title'].lower())
+            groups.append({'title': heading, 'items': items})
+
+    # Anything not claimed by a section (a newly added app) keeps its own group.
+    for app in remaining.values():
+        links = _model_links(app['models'])
+        if links:
+            groups.append({'title': app['name'], 'items': links})
+
+    groups.sort(key=lambda group: group['title'].lower())
+    return [{**group, 'separator': index > 0, 'collapsible': True} for index, group in enumerate(groups)]
+
+
+class SeotoAdminSite(UnfoldAdminSite, OTPAdminSite):
     """Admin site where a user with an enrolled device must verify it; everyone else may sign in on a password."""
 
     # Keep the stock instance name, otherwise every {% url 'admin:...' %} breaks.
     name = 'admin'
 
-    # django-otp defaults to its own bare template; use ours so jazzmin still skins it.
+    # django-otp defaults to its own bare template; use ours so Unfold still skins it.
     login_template = 'admin/login.html'
 
     login_form = OTPAdminLoginForm
@@ -80,60 +133,3 @@ class SeotoAdminSite(OTPAdminSite):
         if not (user.is_active and user.is_staff):
             return False
         return user.is_verified() or not requires_second_factor(user)
-
-    def get_app_list(self, request, app_label=None):
-        """Regroup the flat per-app list into the sections above.
-
-        Each section carries a flat `models` list (what jazzmin and the dashboard read)
-        plus `subgroups` holding the same model dicts split by owning app, which
-        `templates/admin/base_site.html` renders as a second sidebar level. The two share
-        dict identity on purpose: jazzmin deep-copies the app list and then stamps `url`
-        and `icon` onto the entries in `models`, and a deepcopy preserves internal
-        aliasing, so the subgroup entries pick those up for free.
-
-        A single app's own page (`app_label` given) is left alone so its breadcrumbs and
-        title stay coherent.
-        """
-        app_list = super().get_app_list(request, app_label)
-        if app_label:
-            return app_list
-
-        remaining = {app['app_label']: app for app in app_list}
-        sections = []
-
-        for label, heading, icon, members in SIDEBAR_SECTIONS:
-            models, subgroups = [], []
-            for member_labels, sub_heading, sub_icon in members:
-                if isinstance(member_labels, str):
-                    member_labels = (member_labels,)
-                sub_models = []
-                for member_label in member_labels:
-                    app = remaining.pop(member_label, None)
-                    if app:
-                        sub_models.extend(app['models'])
-                if not sub_models:
-                    continue
-                sub_models.sort(key=lambda model: model['name'].lower())
-                subgroups.append({
-                    'name': sub_heading,
-                    'icon': sub_icon,
-                    'models': sub_models,
-                })
-            subgroups.sort(key=lambda group: group['name'].lower())
-            for group in subgroups:
-                models.extend(group['models'])
-            if models:
-                sections.append({
-                    'name': heading,
-                    'app_label': label,
-                    'icon': icon,
-                    # No single URL fits a merged section; the sidebar renders these as
-                    # collapsible parents rather than links.
-                    'app_url': '',
-                    'has_module_perms': True,
-                    'models': models,
-                    'subgroups': subgroups,
-                })
-
-        # Anything not claimed by a section (a newly added app) keeps its own group.
-        return sorted([*sections, *remaining.values()], key=lambda app: app['name'].lower())

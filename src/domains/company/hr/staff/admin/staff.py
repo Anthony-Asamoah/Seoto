@@ -1,11 +1,12 @@
 from django import forms
 from django.contrib import admin
-from django.contrib.admin.widgets import AdminTextareaWidget
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import path, reverse
 from django.utils import timezone
+from unfold.admin import ModelAdmin, TabularInline
+from unfold.widgets import UnfoldAdminTextareaWidget
 
 from infrastructure.utils.widgets import ImagePreviewInput
 
@@ -60,7 +61,7 @@ class AssignmentInlineFormSet(forms.BaseInlineFormSet):
                 kept.append(assignment)
 
 
-class AssignmentInline(admin.TabularInline):
+class AssignmentInline(TabularInline):
     model = Assignment
     form = AssignmentInlineForm
 
@@ -82,7 +83,7 @@ class MemberForm(forms.ModelForm):
         fields = '__all__'
         widgets = {
             'profile_image': ImagePreviewInput(crop=True),
-            'about': AdminTextareaWidget(attrs={'rows': 4}),
+            'about': UnfoldAdminTextareaWidget(attrs={'rows': 4}),
         }
         labels = {'national_id': 'National ID'}
         help_texts = {
@@ -92,7 +93,7 @@ class MemberForm(forms.ModelForm):
         }
 
 
-class MemberAdmin(admin.ModelAdmin):
+class MemberAdmin(ModelAdmin):
     form = MemberForm
     list_display = ('__str__', 'staff_id', 'current_position', 'started_on', 'ended_on', 'is_public')
     list_filter = ('is_public', 'gender', 'teams', 'assignments__position')
@@ -132,7 +133,7 @@ class MemberAdmin(admin.ModelAdmin):
         return ', '.join(str(position) for position in obj.positions) or '—'
 
 
-class PositionAdmin(admin.ModelAdmin):
+class PositionAdmin(ModelAdmin):
     list_display = ('name', 'reference_salary', 'currency', 'holders')
     search_fields = ('name', 'description')
 
@@ -162,7 +163,7 @@ class PositionAdmin(admin.ModelAdmin):
         return obj.assignments.current().values('member').distinct().count()
 
 
-class AssignmentAdmin(admin.ModelAdmin):
+class AssignmentAdmin(ModelAdmin):
     form = AssignmentForm
     list_display = ('member', 'position', 'salary', 'currency', 'effective_from', 'effective_to')
     list_filter = ('position', 'currency')

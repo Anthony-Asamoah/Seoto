@@ -6,8 +6,6 @@
 
    Depends on window.csrfFetch from csrf.js — both are pulled in by CustomUserAdmin.Media. */
 (function () {
-    var modal = null;
-
     function body() {
         return document.getElementById('totpSetupBody');
     }
@@ -18,10 +16,9 @@
 
     function show() {
         var element = document.getElementById('totpSetupModal');
-        if (!modal) {
-            modal = new bootstrap.Modal(element);
+        if (!element.open) {
+            element.showModal();
         }
-        modal.show();
     }
 
     function say(text, ok) {
@@ -29,7 +26,7 @@
         if (!target) {
             return;
         }
-        target.className = 'mt-3 alert ' + (ok ? 'alert-success' : 'alert-danger');
+        target.className = 'seoto-alert ' + (ok ? 'is-success' : 'is-error');
         target.textContent = text;
     }
 
@@ -50,7 +47,7 @@
 
     function alertHtml(message) {
         var node = document.createElement('div');
-        node.className = 'alert alert-danger mb-0';
+        node.className = 'seoto-alert is-error';
         node.textContent = message;
         return node.outerHTML;
     }
@@ -68,7 +65,7 @@
     }
 
     function open(extra) {
-        body().innerHTML = '<p class="text-muted mb-0">Working…</p>';
+        body().innerHTML = '<p class="seoto-muted">Working…</p>';
         show();
 
         send(button().dataset.url, extra)
@@ -106,6 +103,12 @@
     }
 
     document.addEventListener('click', function (event) {
+        var dialog = event.target.closest('#totpSetupModal');
+        if (dialog && (event.target.closest('[data-dialog-close]') || event.target === dialog)) {
+            dialog.close();
+            return;
+        }
+
         var trigger = button();
         if (!trigger) {
             return;

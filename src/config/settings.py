@@ -9,6 +9,8 @@ from urllib.parse import urlsplit
 import dj_database_url
 from decouple import AutoConfig, Csv, undefined
 from django.contrib.messages import constants as messages
+from django.templatetags.static import static
+from django.urls import reverse
 
 # settings.py lives at <repo>/src/config/, so walk up to both the import root
 # (src/) and the repo root (which owns .env, db, media, staticfiles).
@@ -36,7 +38,7 @@ SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = not DEBUG
 # Browsers cache this for the full duration, so raise it only once HTTPS is known-good.
 SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=0, cast=int)
 
-# jazzmin's related-modal loads change forms in a same-origin iframe; DENY blocks it
+# SAMEORIGIN rather than DENY, so our own pages can be framed
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', cast=Csv(post_process=tuple))
@@ -53,8 +55,8 @@ IS_ADMIN_OTP_ENABLED = config('IS_ADMIN_OTP_ENABLED', default=True, cast=bool)
 # Application definition
 INSTALLED_APPS = [
     # Third-party
-    # jazzmin must precede django.contrib.admin so its template overrides win.
-    'jazzmin',
+    # Must precede django.contrib.admin; Basic leaves our custom admin site in place.
+    'unfold.apps.BasicAppConfig',
     'daphne',
     'channels',
     'django_ckeditor_5',
@@ -288,13 +290,13 @@ else:
             'BACKEND': 'django.core.files.storage.FileSystemStorage',
         },
         'staticfiles': {
-            'BACKEND': 'common.storage.AdminSafeStaticFilesStorage',
+            'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
         },
     }
 
 # Docker bakes static into the image and serves it via WhiteNoise while media stays on S3.
 if config('STATIC_STORAGE', default=MEDIA_STORAGE) == 'LOCAL':
-    STORAGES['staticfiles'] = {'BACKEND': 'common.storage.AdminSafeStaticFilesStorage'}
+    STORAGES['staticfiles'] = {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'}
 
 # Email config
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -365,115 +367,42 @@ AUTHENTICATION_BACKENDS = [
 # how a verified admin enrols a second device without shell access.
 OTP_ADMIN_HIDE_SENSITIVE_DATA = config('OTP_ADMIN_HIDE_SENSITIVE_DATA', default=False, cast=bool)
 
-# Admin skin (django-jazzmin)
-JAZZMIN_SETTINGS = {
-    'site_title': 'Seoto Administration',
-    'site_header': 'Seoto',
-    'site_brand': 'Seoto',
-    'site_logo': 'img/logo-mark-light.png',
-    'login_logo': 'img/logo.png',
-    'site_logo_classes': '',
-    'site_icon': 'img/logo-mark.png',
-    'welcome_sign': 'Sign in to Seoto administration',
-    'copyright': 'Seoto',
-    'search_model': ['auth.User', 'blog.Post'],
-    'user_avatar': None,
-    'topmenu_links': [
-        {'name': 'Site', 'url': 'apps', 'new_window': True},
-        {'model': 'auth.User'},
-    ],
-    'usermenu_links': [
-        {'name': 'My account', 'url': 'admin:my_account', 'icon': 'fas fa-user-pen'},
-    ],
-    'show_sidebar': True,
-    # `navigation_expanded` is deliberately absent: templates/admin/base_site.html
-    # replaces the menu loop with a two-level one that is always collapsible.
-    # Sections come from SeotoAdminSite.get_app_list, so model icon keys are
-    # `<section>.<ModelName>` rather than `<app_label>.<ModelName>`.
-    'icons': {
-        'site': 'fas fa-globe',
-        'site.ErrorLog': 'fas fa-triangle-exclamation',
-        'site.PushSubscription': 'fas fa-bell',
-        'site.Notification': 'fas fa-paper-plane',
-        'site.ThemePreset': 'fas fa-palette',
-        'site.UserTheme': 'fas fa-brush',
-        'site.ThemeRating': 'fas fa-star',
-
-        'apps': 'fas fa-shapes',
-        'apps.Post': 'fas fa-newspaper',
-        'apps.PostTags': 'fas fa-tags',
-        'apps.PostReadGroup': 'fas fa-user-group',
-        'apps.PostComment': 'fas fa-comments',
-        'apps.Transaction': 'fas fa-receipt',
-        'apps.RecurringTransaction': 'fas fa-repeat',
-        'apps.RecurringTransactionOccurrence': 'fas fa-clock-rotate-left',
-        'apps.Account': 'fas fa-piggy-bank',
-        'apps.Category': 'fas fa-folder-tree',
-        'apps.Tag': 'fas fa-tag',
-        'apps.meal': 'fas fa-utensils',
-        'apps.MealTimeSlot': 'fas fa-clock',
-        'apps.UserMealSchedule': 'fas fa-calendar-days',
-        'apps.DailyMealSuggestion': 'fas fa-lightbulb',
-        'apps.userPreference': 'fas fa-sliders',
-        'apps.tracker': 'fas fa-list-check',
-        'apps.todo': 'fas fa-square-check',
-        'apps.Rhyme': 'fas fa-music',
-
-        'website': 'fas fa-window-maximize',
-        'website.Product': 'fas fa-cubes',
-        'website.ProductTag': 'fas fa-tag',
-        'website.FAQ': 'fas fa-circle-question',
-        'website.FAQCategory': 'fas fa-folder-open',
-        'website.ConsultationRequest': 'fas fa-envelope-open-text',
-        'website.ConsultationBooking': 'fas fa-calendar-check',
-
-        'company': 'fas fa-building',
-        'company.Member': 'fas fa-user-tie',
-        'company.Position': 'fas fa-sitemap',
-        'company.Assignment': 'fas fa-file-signature',
-        'company.Team': 'fas fa-people-group',
-        'company.Membership': 'fas fa-user-plus',
-        'company.Contact': 'fas fa-address-book',
-        'company.Address': 'fas fa-location-dot',
-        'company.Education': 'fas fa-graduation-cap',
-        'company.Certificate': 'fas fa-certificate',
-        'company.JobExperience': 'fas fa-briefcase',
-        'company.Specialisation': 'fas fa-screwdriver-wrench',
-        'company.Hobby': 'fas fa-heart',
-
-        'security': 'fas fa-shield-halved',
-        'security.User': 'fas fa-user',
-        'security.Group': 'fas fa-users',
-        'security.TOTPDevice': 'fas fa-mobile-screen',
-        'security.StaticDevice': 'fas fa-key',
-        'security.StaticToken': 'fas fa-hashtag',
+# Admin skin (django-unfold)
+UNFOLD = {
+    'SITE_TITLE': 'Seoto Administration',
+    'SITE_HEADER': 'Seoto',
+    'SITE_URL': '/',
+    'SITE_ICON': {
+        'light': lambda request: static('img/logo-mark.png'),
+        'dark': lambda request: static('img/logo-mark-light.png'),
     },
-    'related_modal_active': True,
-    'custom_css': 'css/admin.css',
-    'custom_js': 'js/admin_sidebar.js',
-    # jazzmin 3.0.5 drops the UI-builder panel into the layout grid instead of
-    # positioning it off-canvas, which blows the sidebar column out to ~3x its width.
-    'show_ui_builder': False,
-    'changeform_format': 'horizontal_tabs',
-}
-
-# jazzmin 3.x rides on Bootstrap 5.3 + AdminLTE 4, which dropped the `accent-*`,
-# `navbar-*` and `sidebar-dark-*` colour classes — the silver & brown palette is
-# applied through CSS custom properties in static/css/admin.css instead.
-JAZZMIN_UI_TWEAKS = {
-    'no_navbar_border': True,
-    'navbar_fixed': True,
-    'sidebar_fixed': True,
-    'sidebar_nav_child_indent': True,
-    'theme': 'default',
-    'default_theme_mode': 'auto',
-    'button_classes': {
-        'primary': 'btn-primary',
-        'secondary': 'btn-outline-secondary',
-        'info': 'btn-info',
-        'warning': 'btn-warning',
-        'danger': 'btn-danger',
-        'success': 'btn-success',
+    'SITE_FAVICONS': [
+        {'rel': 'icon', 'type': 'image/png', 'href': lambda request: static('img/logo-mark.png')},
+    ],
+    'SHOW_HISTORY': True,
+    'STYLES': [lambda request: static('css/admin.css')],
+    'SCRIPTS': [lambda request: static('js/admin_motion.js')],
+    'COMMAND': {'search_models': ['auth.user', 'blog.post']},
+    'SIDEBAR': {
+        'show_search': True,
+        'navigation': 'common.admin.sidebar_navigation',
+    },
+    'ACCOUNT': {
+        'navigation': [
+            {'title': 'My account', 'link': lambda request: reverse('admin:my_account')},
+        ],
+    },
+    'COLORS': {
+        'base': {
+            '50': '#f6f7f8', '100': '#eceff1', '200': '#d9dde1', '300': '#c0c5ca',
+            '400': '#9aa3a8', '500': '#707a80', '600': '#565f65', '700': '#434b50',
+            '800': '#2f3539', '900': '#202528', '950': '#14171a',
+        },
+        'primary': {
+            '50': '#efebe9', '100': '#d7ccc8', '200': '#bcaaa4', '300': '#a1887f',
+            '400': '#8d6e63', '500': '#795548', '600': '#6d4c41', '700': '#5d4037',
+            '800': '#4e342e', '900': '#3e2723', '950': '#2a1a17',
+        },
     },
 }
 
