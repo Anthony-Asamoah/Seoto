@@ -1,0 +1,10 @@
+<div class="mb-4 p-4 border rounded-default border-base-200 dark:border-base-800">
+    <p class="font-semibold mb-2">Background jobs</p>
+    {% for sweeper in sweepers %}
+        <p class="text-sm">
+            {{ sweeper.name }}:
+            {% if sweeper.last_run %}last ran {{ sweeper.last_run|timesince }} ago{% else %}no run recorded{% endif %}
+            {% if sweeper.stale %}<strong class="text-red-600">&mdash; not running</strong>{% endif %}
+        </p>
+    {% endfor %}
+</div>

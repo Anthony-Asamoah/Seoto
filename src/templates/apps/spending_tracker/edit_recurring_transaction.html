@@ -278,6 +278,13 @@
                                 {{ recurring_form.frequency }}
                             </div>
                             <div class="col-md-4">
+                                <label class="aura-field-label" for="{{ recurring_form.run_time.id_for_label }}">Notify at</label>
+                                {{ recurring_form.run_time }}
+                                {% if recurring_form.run_time.errors %}
+                                    <div class="aura-error">{{ recurring_form.run_time.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
                                 <label class="aura-field-label" for="{{ recurring_form.end_date.id_for_label }}">
                                     End Date <small>(optional)</small>
                                 </label>

@@ -423,9 +423,9 @@ def add_transaction(request):
                 # A schedule due today (or later) always processes immediately. One whose next
                 # run is already in the past (a backdated renewal date) only catches up if the
                 # user explicitly opted in via the "create and backdate" checkbox.
-                today = timezone.localdate()
-                if recurring_transaction.next_run_date >= today or request.POST.get('create_backdated') == 'true':
-                    process_due_occurrences(recurring_transaction, today=today)
+                now = timezone.localtime()
+                if recurring_transaction.next_run_date >= now.date() or request.POST.get('create_backdated') == 'true':
+                    process_due_occurrences(recurring_transaction, now=now)
 
                 messages.success(request, 'Recurring transaction scheduled successfully!')
                 request.session.pop('transaction_form_data', None)
@@ -1800,9 +1800,9 @@ def edit_recurring_transaction(request, pk):
 
             # If editing (e.g. changing the frequency) pushed next_run_date into the past,
             # only catch it up now if the user explicitly opted in via the checkbox.
-            today = timezone.localdate()
-            if updated.next_run_date < today and request.POST.get('create_backdated') == 'true':
-                process_due_occurrences(updated, today=today)
+            now = timezone.localtime()
+            if updated.next_run_date < now.date() and request.POST.get('create_backdated') == 'true':
+                process_due_occurrences(updated, now=now)
 
             messages.success(request, 'Recurring transaction updated. Changes apply to future runs.')
             return redirect('spending_tracker:recurring_list')

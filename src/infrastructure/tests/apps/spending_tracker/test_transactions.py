@@ -89,7 +89,7 @@ class EditTransactionRecurringBannerTests(TestCase):
             account=self.account, frequency=RecurringFrequencyChoices.MONTHLY,
             renewal_date=date.today(), is_auto_renew=True,
         )
-        process_due_occurrences(schedule, today=date.today())
+        process_due_occurrences(schedule, now=timezone.localtime().replace(hour=23, minute=59))
         occurrence = RecurringTransactionOccurrence.objects.get(recurring_transaction=schedule)
 
         response = self.client.get(reverse('spending_tracker:edit_transaction', args=[occurrence.transaction_id]))

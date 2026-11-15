@@ -1,6 +1,8 @@
 import logging
+from datetime import datetime
 
 from django.db import transaction as db_transaction
+from django.db.models import Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
@@ -29,11 +31,9 @@ def create_transaction_from_recurring(recurring_transaction, scheduled_date):
     `scheduled_date` is the occurrence's due date, not the moment this function actually runs —
     those two differ for a backdated catch-up run (several occurrences processed together, long
     after they were due), and the transaction should record the date it was due, not the
-    processing time. The schedule has no time-of-day of its own (only a date), so the current
-    time-of-day is kept and just re-dated onto `scheduled_date`.
+    processing time; it is stamped with the schedule's `run_time`.
     """
-    now = timezone.now()
-    transaction_time = now.replace(year=scheduled_date.year, month=scheduled_date.month, day=scheduled_date.day)
+    transaction_time = timezone.make_aware(datetime.combine(scheduled_date, recurring_transaction.run_time))
     transaction = Transaction.objects.create(
         mode=recurring_transaction.mode,
         amount=recurring_transaction.amount,
@@ -50,20 +50,20 @@ def create_transaction_from_recurring(recurring_transaction, scheduled_date):
     return transaction
 
 
-def process_due_occurrences(recurring_transaction, today=None):
+def process_due_occurrences(recurring_transaction, now=None):
     """
-    Create RecurringTransactionOccurrence rows for every due date up to `today`,
+    Create RecurringTransactionOccurrence rows for every occurrence due by `now` (local),
     acting on each per `is_auto_renew`. Idempotent: re-processing a date that
     already has an occurrence (e.g. the daily command running after this was
     already handled at save-time) is a no-op for that date, thanks to the
     unique_together constraint on (recurring_transaction, scheduled_date).
     """
-    from domains.pwa.services import send_push_notification
+    from domains.pwa.services import enqueue_push_notification
 
-    today = today or timezone.localdate()
+    now = now or timezone.localtime()
     iterations = 0
 
-    while recurring_transaction.is_active and recurring_transaction.next_run_date <= today:
+    while recurring_transaction.is_due(now):
         iterations += 1
         if iterations > MAX_OCCURRENCES_PER_RUN:
             logger.warning(
@@ -94,14 +94,14 @@ def process_due_occurrences(recurring_transaction, today=None):
                     occurrence.transaction = created_transaction
                     occurrence.resolved_at = timezone.now()
                     occurrence.save()
-                send_push_notification(
+                enqueue_push_notification(
                     user=recurring_transaction.user,
                     title='Recurring Transaction Created',
                     body=f'{mode_label}: {amount_label}{description_suffix}{note_suffix}',
                     url=f'/spending_tracker/transactions/?highlight={created_transaction.pk}',
                 )
             else:
-                send_push_notification(
+                enqueue_push_notification(
                     user=recurring_transaction.user,
                     title='Recurring Transaction Due',
                     body=f'Approve creating {amount_label} {mode_label}{description_suffix}?{note_suffix}',
@@ -113,14 +113,21 @@ def process_due_occurrences(recurring_transaction, today=None):
         recurring_transaction.save()
 
 
-def process_all_due_recurring_transactions(today=None):
-    """Process every active schedule due on or before `today`, returning how many were handled."""
-    today = today or timezone.localdate()
-    due_schedules = RecurringTransaction.objects.filter(is_active=True, next_run_date__lte=today)
+def process_all_due_recurring_transactions(now=None):
+    """Process every active schedule whose date and `run_time` have passed, returning how many were handled."""
+    now = now or timezone.localtime()
+    due_schedules = RecurringTransaction.objects.filter(is_active=True).filter(
+        Q(next_run_date__lt=now.date()) | Q(next_run_date=now.date(), run_time__lte=now.time())
+    )
 
     processed = 0
-    for recurring_transaction in due_schedules:
-        process_due_occurrences(recurring_transaction, today=today)
+    for pk in list(due_schedules.values_list('pk', flat=True)):
+        with db_transaction.atomic():
+            # Re-checked under the row lock, so an overlapping tick that got there first leaves nothing to do.
+            recurring_transaction = RecurringTransaction.objects.select_for_update(skip_locked=True).filter(pk=pk).first()
+            if recurring_transaction is None or not recurring_transaction.is_due(now):
+                continue
+            process_due_occurrences(recurring_transaction, now=now)
         processed += 1
 
     return processed

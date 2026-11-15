@@ -1013,8 +1013,7 @@
     "fields": {
       "name": "home:viewer",
       "permissions": [
-        ["view_errorlog", "home", "errorlog"],
-        ["view_scheduledjobrun", "home", "scheduledjobrun"]
+        ["view_errorlog", "home", "errorlog"]
       ]
     }
   },
@@ -1025,10 +1024,7 @@
       "permissions": [
         ["view_errorlog", "home", "errorlog"],
         ["add_errorlog", "home", "errorlog"],
-        ["change_errorlog", "home", "errorlog"],
-        ["view_scheduledjobrun", "home", "scheduledjobrun"],
-        ["add_scheduledjobrun", "home", "scheduledjobrun"],
-        ["change_scheduledjobrun", "home", "scheduledjobrun"]
+        ["change_errorlog", "home", "errorlog"]
       ]
     }
   },
@@ -1040,11 +1036,7 @@
         ["view_errorlog", "home", "errorlog"],
         ["add_errorlog", "home", "errorlog"],
         ["change_errorlog", "home", "errorlog"],
-        ["delete_errorlog", "home", "errorlog"],
-        ["view_scheduledjobrun", "home", "scheduledjobrun"],
-        ["add_scheduledjobrun", "home", "scheduledjobrun"],
-        ["change_scheduledjobrun", "home", "scheduledjobrun"],
-        ["delete_scheduledjobrun", "home", "scheduledjobrun"]
+        ["delete_errorlog", "home", "errorlog"]
       ]
     }
   },
@@ -1053,8 +1045,7 @@
     "fields": {
       "name": "home:supervisor",
       "permissions": [
-        ["view_errorlog", "home", "errorlog"],
-        ["view_scheduledjobrun", "home", "scheduledjobrun"]
+        ["view_errorlog", "home", "errorlog"]
       ]
     }
   }

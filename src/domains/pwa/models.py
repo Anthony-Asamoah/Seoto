@@ -42,6 +42,7 @@ class Notification(models.Model):
     data = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     sent = models.BooleanField(default=False)
+    failed = models.BooleanField(default=False)
     sent_at = models.DateTimeField(blank=True, null=True)
     is_read = models.BooleanField(default=False)
 

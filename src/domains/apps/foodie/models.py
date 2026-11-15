@@ -98,6 +98,7 @@ class UserMealSchedule(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='meal_schedule')
     slot = models.ForeignKey(MealTimeSlot, on_delete=models.CASCADE, related_name='user_schedules')
     time = models.TimeField()
+    last_notified_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         permissions = [('view_all_usermealschedule', 'Can view all UserMealSchedule records')]

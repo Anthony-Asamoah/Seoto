@@ -142,18 +142,17 @@ docker compose --env-file .env.docker.local ps                          # web/po
 docker compose --env-file .env.docker.local logs -f web worker beat     # logs
 docker compose --env-file .env.docker.local up -d --build               # rebuild after code changes
 docker compose --env-file .env.docker.local exec web python manage.py <command>
-docker compose --env-file .env.docker.local exec web python manage.py run_jobs --job <id>  # force a job now
+docker compose --env-file .env.docker.local exec web python manage.py shell -c "from domains.apps.jotter.tasks import send_todo_reminders as t; print(t())"  # run a sweeper now
 docker compose --env-file .env.docker.local down                        # stop, keep data
 docker compose --env-file .env.docker.local down -v                     # stop and wipe Postgres, Redis, certificates
 ```
 
 ### Celery, Redis and beat
 
-- **Beat is only the clock.** Every minute it queues
-  `infrastructure.scheduler.tasks.run_due_jobs_task`; a worker runs it, and the existing
-  scheduler decides which jobs are actually due (see [Scheduled jobs](#scheduled-jobs)). Downtime
-  never produces a backlog, and job history stays in `home.ScheduledJobRun`. Run exactly one
-  `beat`, or every tick is sent twice.
+- **Beat is the clock.** `CELERY_BEAT_SCHEDULE` in `config/settings.py` queues one sweeper task
+  per domain every minute (see [Scheduled jobs](#scheduled-jobs)). A tick missed during downtime
+  is simply dropped; the next sweep catches up from the data. Run exactly one `beat`, or every
+  tick is sent twice.
 - **Adding background work:** put a `@shared_task` in the domain's `tasks.py` (auto-discovered)
   that calls into its `services`, then `.delay()` it from a view or service. Worker
   concurrency is set on the `worker` command in `compose.yaml`.
@@ -342,45 +341,18 @@ python manage.py generate_foodie_thumbnails
 
 ### Scheduled jobs
 
-Recurring work is not a set of per-app management commands. Jobs are registered with
-`@scheduled_job` in `src/infrastructure/scheduler/jobs/` — one module per domain, each
-job calling straight into that domain's `services` — and executed by a single entrypoint
-that runs whichever of them are due.
+Recurring work is not a set of per-app management commands. Each domain has a sweeper
+`@shared_task` in its `tasks.py` that calls into its `services`; Celery beat queues it every
+minute. A sweeper finds its own due rows (a stored time that has passed and no "already
+notified" marker), claims them under a row lock, and queues one `deliver_notification_task`
+per push, which retries transient failures with backoff. Because dueness is read from the data,
+the tick rate only affects how late a notification can be.
 
-**The trigger frequency is up to you.** Each job stores its own next-run time
-(`home.ScheduledJobRun`), so dueness never depends on the tick landing on a particular
-minute. A job scheduled for 19:00 fires once a day whether the runner is invoked every
-minute, every 5, every 15, or hourly — pick whatever the host makes convenient and
-change it later without touching code. Finer ticks only reduce how late a job can start.
-
-#### `run_jobs`
-Under Docker nothing needs scheduling — Celery beat ticks every minute (see
-[Celery, Redis and beat](#celery-redis-and-beat)). On PythonAnywhere, schedule this as a
-Scheduled Task at any frequency:
-
-```bash
-python /home/<PA_USERNAME>/<PA_USERNAME>.pythonanywhere.com/src/infrastructure/scheduler/run_jobs.py
-```
-
-Locally, or to force one job regardless of whether it is due (this does not disturb its
-schedule):
-
-```bash
-python manage.py run_jobs
-python manage.py run_jobs --job process_recurring_transactions
-```
-
-Currently registered:
-
-| Job id | Schedule | Late runs | What it does |
-| --- | --- | --- | --- |
-| `send_meal_notifications` | hourly, on the hour | skipped after 30 min | Pushes a meal suggestion to each user whose `UserMealSchedule` slot falls in this hour. |
-| `process_recurring_transactions` | daily, at the hour in `RECURRING_TRANSACTIONS_CRON` (default `0 19 * * *`, i.e. 7pm) | always run | Auto-creates due recurring transactions (`is_auto_renew=True`) or sends an approval notification (`is_auto_renew=False`). |
-
-Each run reports per job: `ran`, `skipped` (not due), `misfired` (too late to be useful,
-rescheduled) or `error` (logged, and never stops the other jobs). If the runner is not
-invoked for a long stretch, the missed fires coalesce into a single run rather than a
-backlog.
+| Task | What it does |
+| --- | --- |
+| `foodie.tasks.send_meal_notifications` | Pushes a meal suggestion once per user slot, at the slot's time (skipped if more than 30 min late). |
+| `spending_tracker.tasks.process_recurring_transactions` | At each schedule's `run_time` on its due date, auto-creates the transaction (`is_auto_renew=True`) or sends an approval notification (`is_auto_renew=False`). |
+| `jotter.tasks.send_todo_reminders` | Pushes each open jotter todo once when its `reminder` time passes. |
 
 ### Company
 

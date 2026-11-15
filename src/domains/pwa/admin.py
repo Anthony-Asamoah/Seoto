@@ -7,6 +7,7 @@ from django.shortcuts import render
 from django.urls import path, reverse
 from unfold.admin import ModelAdmin
 from unfold.widgets import UnfoldAdminTextareaWidget, UnfoldAdminTextInputWidget
+from common.heartbeat import sweeper_status
 from common.mixins.admin import OwnerScopedAdminMixin
 
 from .models import PushSubscription, Notification
@@ -95,9 +96,13 @@ class PushSubscriptionAdmin(OwnerScopedAdminMixin, ModelAdmin):
 
 @admin.register(Notification)
 class NotificationAdmin(OwnerScopedAdminMixin, ModelAdmin):
-    list_display = ['user', 'title', 'sent', 'sent_at', 'created_at']
-    list_filter = ['sent', 'created_at']
+    list_display = ['user', 'title', 'sent', 'failed', 'sent_at', 'created_at']
+    list_filter = ['sent', 'failed', 'created_at']
     search_fields = ['user__username', 'title', 'body']
+    list_before_template = 'admin/pwa/sweeper_status.html'
+
+    def changelist_view(self, request, extra_context=None):
+        return super().changelist_view(request, {**(extra_context or {}), 'sweepers': sweeper_status()})
 
     def get_readonly_fields(self, request, obj=None):
         if obj is None:

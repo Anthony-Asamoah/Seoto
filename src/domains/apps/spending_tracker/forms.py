@@ -180,7 +180,7 @@ class RecurringTransactionForm(forms.ModelForm):
             'mode', 'amount', 'currency', 'details', 'reference',
             'account', 'destination_account', 'category', 'tags',
             'frequency', 'custom_type', 'custom_weekdays',
-            'renewal_date', 'end_date', 'is_auto_renew', 'notification_note',
+            'renewal_date', 'run_time', 'end_date', 'is_auto_renew', 'notification_note',
         ]
         widgets = {
             'mode': forms.Select(attrs={'class': 'form-control'}),
@@ -191,6 +191,7 @@ class RecurringTransactionForm(forms.ModelForm):
             'category': forms.Select(attrs={'class': 'form-control'}),
             'reference': forms.TextInput(attrs={'class': 'form-control'}),
             'renewal_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'run_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}, format='%H:%M'),
             'end_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'frequency': forms.Select(attrs={'class': 'form-control'}),
             'custom_type': forms.Select(attrs={'class': 'form-control'}),

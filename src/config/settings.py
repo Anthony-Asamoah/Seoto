@@ -196,12 +196,13 @@ else:
 CELERY_BROKER_URL = f'{REDIS_URL}/0' if REDIS_URL else 'memory://'
 CELERY_TASK_IGNORE_RESULT = True
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-# Beat is only the clock: the runner decides dueness, so a tick missed during downtime is simply dropped.
+# Beat is the clock; each sweeper finds its own due rows, so a tick missed during downtime is simply dropped.
+_EVERY_MINUTE = {'schedule': 60.0, 'options': {'expires': 55}}
 CELERY_BEAT_SCHEDULE = {
-    'run-due-jobs': {
-        'task': 'infrastructure.scheduler.tasks.run_due_jobs_task',
-        'schedule': 60.0,
-        'options': {'expires': 55},
+    'send-meal-notifications': {'task': 'domains.apps.foodie.tasks.send_meal_notifications', **_EVERY_MINUTE},
+    'send-todo-reminders': {'task': 'domains.apps.jotter.tasks.send_todo_reminders', **_EVERY_MINUTE},
+    'process-recurring-transactions': {
+        'task': 'domains.apps.spending_tracker.tasks.process_recurring_transactions', **_EVERY_MINUTE,
     },
 }
 
@@ -469,7 +470,6 @@ CLIENT_CACHE_TTL_SECONDS = config('CLIENT_CACHE_TTL_SECONDS', default=300, cast=
 # Recurring transactions: expected daily run time for `process_recurring_transactions`,
 # configured as a PythonAnywhere Scheduled Task (which takes an hour:minute, not a real
 # cron expression) — used only to log a warning if the task drifts from this time.
-RECURRING_TRANSACTIONS_CRON = config('RECURRING_TRANSACTIONS_CRON', default='0 19 * * *')
 
 # reCAPTCHA v3 Configuration
 RECAPTCHA_VERIFY_URL = config('RECAPTCHA_VERIFY_URL', default='')

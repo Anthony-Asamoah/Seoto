@@ -61,6 +61,15 @@ since asking for the same date twice on one form is redundant.
     </div>
     <div class="col-md-6">
         <div class="mb-3">
+            <label for="{{ recurring_form.run_time.id_for_label }}" class="form-label">Notify at</label>
+            {{ recurring_form.run_time }}
+            {% if recurring_form.run_time.errors %}
+                <div class="text-danger small">{{ recurring_form.run_time.errors.0 }}</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
             <label for="{{ recurring_form.end_date.id_for_label }}" class="form-label">
                 End Date <small class="text-muted">(optional)</small>
             </label>
@@ -79,7 +88,7 @@ since asking for the same date twice on one form is redundant.
     <input class="form-check-input" type="checkbox" name="create_backdated" value="true" id="id_create_backdated">
     <label class="form-check-label" for="id_create_backdated">
         Create and backdate — process every occurrence from the renewal date up to today right now
-        (otherwise it's picked up by tonight's automatic run, per <code>is_auto_renew</code>).
+        (otherwise the next automatic run picks it up, per <code>is_auto_renew</code>).
     </label>
 </div>
 

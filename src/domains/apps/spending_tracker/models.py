@@ -1,5 +1,5 @@
 import calendar
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
@@ -330,6 +330,7 @@ class RecurringTransaction(models.Model):
 
     renewal_date = models.DateField(default=timezone.localdate)
     next_run_date = models.DateField(db_index=True)
+    run_time = models.TimeField(default=time(19, 0), help_text='Time of day the notification is sent')
     end_date = models.DateField(blank=True, null=True)
 
     # Behaviour toggle: True = auto-create silently, False = notify for approval first
@@ -399,6 +400,9 @@ class RecurringTransaction(models.Model):
             if self.custom_type == CustomRecurrenceTypeChoices.DAYS_OF_MONTH:
                 return self._next_month_day_occurrence(after_date)
         return None
+
+    def is_due(self, now):
+        return self.is_active and (self.next_run_date, self.run_time) <= (now.date(), now.time())
 
     def advance_next_run_date(self):
         """Advance next_run_date to the next occurrence; deactivate if that falls past end_date."""

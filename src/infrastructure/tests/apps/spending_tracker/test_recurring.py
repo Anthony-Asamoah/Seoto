@@ -1,5 +1,5 @@
 import json
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
@@ -15,6 +15,10 @@ from domains.apps.spending_tracker.services import (
     process_all_due_recurring_transactions,
     process_due_occurrences,
 )
+
+
+def _end_of(day):
+    return timezone.make_aware(datetime.combine(day, time(23, 59)))
 
 
 class RecurringTransactionNextOccurrenceTests(TestCase):
@@ -101,7 +105,7 @@ class ProcessDueOccurrencesTests(TestCase):
 
     def test_auto_renew_creates_transaction_and_updates_balance(self):
         schedule = self._schedule(is_auto_renew=True)
-        process_due_occurrences(schedule, today=self.today)
+        process_due_occurrences(schedule, now=_end_of(self.today))
 
         self.account.refresh_from_db()
         self.assertEqual(self.account.balance, Decimal('950.00'))
@@ -118,7 +122,7 @@ class ProcessDueOccurrencesTests(TestCase):
         # Renewal date is 2 days in the past, so this single run catches up on 3 occurrences
         # (today-2, today-1, today) — each should be dated to when it was due, not to "now".
         schedule = self._schedule(is_auto_renew=True, renewal_date=self.today - timedelta(days=2))
-        process_due_occurrences(schedule, today=self.today)
+        process_due_occurrences(schedule, now=_end_of(self.today))
 
         occurrences = RecurringTransactionOccurrence.objects.filter(recurring_transaction=schedule).order_by('scheduled_date')
         self.assertEqual(occurrences.count(), 3)
@@ -127,7 +131,7 @@ class ProcessDueOccurrencesTests(TestCase):
 
     def test_manual_creates_pending_occurrence_no_transaction(self):
         schedule = self._schedule(is_auto_renew=False)
-        process_due_occurrences(schedule, today=self.today)
+        process_due_occurrences(schedule, now=_end_of(self.today))
 
         self.account.refresh_from_db()
         self.assertEqual(self.account.balance, Decimal('1000.00'))
@@ -138,10 +142,10 @@ class ProcessDueOccurrencesTests(TestCase):
 
     def test_idempotent_when_run_twice_same_day(self):
         schedule = self._schedule(is_auto_renew=True)
-        process_due_occurrences(schedule, today=self.today)
+        process_due_occurrences(schedule, now=_end_of(self.today))
         schedule.refresh_from_db()
         # Simulate the daily command running again after next_run_date already advanced past today
-        process_due_occurrences(schedule, today=self.today)
+        process_due_occurrences(schedule, now=_end_of(self.today))
 
         self.assertEqual(RecurringTransactionOccurrence.objects.filter(recurring_transaction=schedule).count(), 1)
         self.account.refresh_from_db()
@@ -149,12 +153,12 @@ class ProcessDueOccurrencesTests(TestCase):
 
     def test_paused_schedule_is_not_processed(self):
         schedule = self._schedule(is_auto_renew=True, is_active=False)
-        process_due_occurrences(schedule, today=self.today)
+        process_due_occurrences(schedule, now=_end_of(self.today))
         self.assertEqual(RecurringTransactionOccurrence.objects.filter(recurring_transaction=schedule).count(), 0)
 
     def test_end_date_deactivates_after_last_occurrence(self):
         schedule = self._schedule(is_auto_renew=True, end_date=self.today)
-        process_due_occurrences(schedule, today=self.today)
+        process_due_occurrences(schedule, now=_end_of(self.today))
 
         schedule.refresh_from_db()
         self.assertFalse(schedule.is_active)
@@ -164,7 +168,7 @@ class ProcessDueOccurrencesTests(TestCase):
         from domains.pwa.models import Notification
 
         schedule = self._schedule(is_auto_renew=True)
-        process_due_occurrences(schedule, today=self.today)
+        process_due_occurrences(schedule, now=_end_of(self.today))
 
         occurrence = RecurringTransactionOccurrence.objects.get(recurring_transaction=schedule, scheduled_date=self.today)
         notification = Notification.objects.get(user=self.user, title='Recurring Transaction Created')
@@ -202,6 +206,7 @@ class AddRecurringTransactionViewTests(TestCase):
             'is_recurring': 'true',
             'frequency': 'DAILY',
             'renewal_date': today.isoformat(),
+            'run_time': '00:00',
             'end_date': '',
             'idempotency_token': self._get_idempotency_token(),
         }
@@ -295,6 +300,7 @@ class EditRecurringTransactionViewTests(TestCase):
             'tags_input': '',
             'frequency': self.schedule.frequency,
             'renewal_date': self.schedule.renewal_date.isoformat(),
+            'run_time': self.schedule.run_time.strftime('%H:%M'),
             'end_date': '',
         }
         data.update(overrides)
@@ -325,7 +331,7 @@ class EditRecurringTransactionViewTests(TestCase):
             account=self.account, frequency=RecurringFrequencyChoices.DAILY,
             renewal_date=date.today(), is_auto_renew=True,
         )
-        process_due_occurrences(auto_schedule, today=date.today())
+        process_due_occurrences(auto_schedule, now=_end_of(date.today()))
         occurrence = RecurringTransactionOccurrence.objects.get(recurring_transaction=auto_schedule)
         self.assertEqual(occurrence.transaction.amount, Decimal('40.00'))
 
@@ -369,7 +375,7 @@ class ConfirmRecurringOccurrenceTests(TestCase):
             renewal_date=self.today,
             is_auto_renew=False,
         )
-        process_due_occurrences(self.schedule, today=self.today)
+        process_due_occurrences(self.schedule, now=_end_of(self.today))
         self.occurrence = RecurringTransactionOccurrence.objects.get(recurring_transaction=self.schedule)
         self.url = reverse('spending_tracker:confirm_recurring_occurrence', args=[self.occurrence.pk])
         self.client.force_login(self.user)
@@ -469,7 +475,7 @@ class ConfirmRecurringOccurrenceTests(TestCase):
             renewal_date=self.today,
             is_auto_renew=False,
         )
-        process_due_occurrences(transfer, today=self.today)
+        process_due_occurrences(transfer, now=_end_of(self.today))
         occurrence = RecurringTransactionOccurrence.objects.get(recurring_transaction=transfer)
         url = reverse('spending_tracker:confirm_recurring_occurrence', args=[occurrence.pk])
 
@@ -544,7 +550,7 @@ class RecurringListPendingRowTests(TestCase):
             account=self.account, frequency=RecurringFrequencyChoices.MONTHLY,
             renewal_date=date(2026, 6, 1), is_auto_renew=False,
         )
-        process_due_occurrences(self.schedule, today=date(2026, 6, 1))
+        process_due_occurrences(self.schedule, now=_end_of(date(2026, 6, 1)))
         self.occurrence = RecurringTransactionOccurrence.objects.get(recurring_transaction=self.schedule)
         self.url = reverse('spending_tracker:recurring_list')
         self.client.force_login(self.user)
@@ -693,7 +699,7 @@ class ProcessAllDueRecurringTransactionsTests(TestCase):
         self._schedule(next_run_date=self.today + timedelta(days=5))
         self._schedule(next_run_date=self.today, is_active=False)
 
-        processed = process_all_due_recurring_transactions(today=self.today)
+        processed = process_all_due_recurring_transactions(now=_end_of(self.today))
 
         self.assertEqual(processed, 1)
         self.assertTrue(
@@ -705,19 +711,49 @@ class ProcessAllDueRecurringTransactionsTests(TestCase):
 
     def test_returns_zero_when_nothing_is_due(self):
         self._schedule(next_run_date=self.today + timedelta(days=1))
-        self.assertEqual(process_all_due_recurring_transactions(today=self.today), 0)
+        self.assertEqual(process_all_due_recurring_transactions(now=_end_of(self.today)), 0)
 
     def test_is_idempotent_for_the_same_day(self):
         self._schedule(next_run_date=self.today)
 
-        process_all_due_recurring_transactions(today=self.today)
+        process_all_due_recurring_transactions(now=_end_of(self.today))
         before = Transaction.objects.count()
-        process_all_due_recurring_transactions(today=self.today)
+        process_all_due_recurring_transactions(now=_end_of(self.today))
 
         self.assertEqual(Transaction.objects.count(), before)
 
     def test_scheduled_job_runs_the_batch(self):
-        self._schedule(next_run_date=timezone.localdate())
+        self._schedule(next_run_date=timezone.localdate() - timedelta(days=1))
 
-        from infrastructure.scheduler.jobs.spending_tracker import process_recurring_transactions
-        self.assertEqual(process_recurring_transactions(), 1)
+        from domains.apps.spending_tracker.tasks import process_recurring_transactions
+        self.assertEqual(process_recurring_transactions.apply().get(), 1)
+
+
+class RunTimeTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='runtimeuser', password='pass')
+        account = Account.objects.create(name='Main', user=self.user, balance=Decimal('100.00'))
+        self.day = date(2026, 6, 1)
+        self.schedule = RecurringTransaction.objects.create(
+            user=self.user, mode='EXPENSE', amount=Decimal('5.00'), account=account,
+            frequency=RecurringFrequencyChoices.DAILY, renewal_date=self.day, run_time=time(9, 30),
+        )
+
+    def _at(self, hour, minute):
+        return timezone.make_aware(datetime.combine(self.day, time(hour, minute)))
+
+    def test_not_due_before_run_time(self):
+        self.assertEqual(process_all_due_recurring_transactions(now=self._at(9, 29)), 0)
+        self.assertFalse(RecurringTransactionOccurrence.objects.exists())
+
+    def test_due_at_run_time_and_fires_once(self):
+        self.assertEqual(process_all_due_recurring_transactions(now=self._at(9, 30)), 1)
+        self.assertEqual(process_all_due_recurring_transactions(now=self._at(9, 31)), 0)
+        self.assertEqual(RecurringTransactionOccurrence.objects.count(), 1)
+
+    def test_auto_created_transaction_uses_run_time(self):
+        self.schedule.is_auto_renew = True
+        self.schedule.save()
+        process_all_due_recurring_transactions(now=self._at(10, 0))
+        created = Transaction.objects.get()
+        self.assertEqual(timezone.localtime(created.transaction_time).time(), time(9, 30))

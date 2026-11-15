@@ -97,7 +97,7 @@ class DeadSubscriptionPruningTest(TestCase):
 
     def test_410_gone_deactivates_the_subscription(self):
         with patch('domains.pwa.services.webpush', self._failing_webpush(410)):
-            with self.assertLogs('domains.pwa.views', level='ERROR') as logs:
+            with self.assertLogs('domains.pwa.services', level='ERROR') as logs:
                 sent = self._send()
 
         self.sub.refresh_from_db()
@@ -107,7 +107,7 @@ class DeadSubscriptionPruningTest(TestCase):
 
     def test_404_not_found_deactivates_the_subscription(self):
         with patch('domains.pwa.services.webpush', self._failing_webpush(404)):
-            with self.assertLogs('domains.pwa.views', level='ERROR'):
+            with self.assertLogs('domains.pwa.services', level='ERROR'):
                 self._send()
 
         self.sub.refresh_from_db()
@@ -115,7 +115,7 @@ class DeadSubscriptionPruningTest(TestCase):
 
     def test_transient_failure_keeps_the_subscription(self):
         with patch('domains.pwa.services.webpush', self._failing_webpush(503)):
-            with self.assertLogs('domains.pwa.views', level='ERROR'):
+            with self.assertLogs('domains.pwa.services', level='ERROR'):
                 self._send()
 
         self.sub.refresh_from_db()
@@ -124,7 +124,7 @@ class DeadSubscriptionPruningTest(TestCase):
     def test_failure_without_a_response_is_logged_and_kept(self):
         exception = WebPushException('no response at all')
         with patch('domains.pwa.services.webpush', Mock(side_effect=exception)):
-            with self.assertLogs('domains.pwa.views', level='ERROR') as logs:
+            with self.assertLogs('domains.pwa.services', level='ERROR') as logs:
                 self._send()
 
         self.sub.refresh_from_db()
@@ -147,7 +147,7 @@ class DeadSubscriptionPruningTest(TestCase):
             return None
 
         with patch('domains.pwa.services.webpush', side_effect=webpush):
-            with self.assertLogs('domains.pwa.views', level='ERROR'):
+            with self.assertLogs('domains.pwa.services', level='ERROR'):
                 sent = self._send()
 
         self.sub.refresh_from_db()

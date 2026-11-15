@@ -68,6 +68,7 @@ class todo(models.Model):
 	)
 	notes = models.TextField(null=True, blank=True)
 	reminder = models.DateTimeField(null=True, blank=True)
+	reminded_for = models.DateTimeField(null=True, blank=True)
 	isCompleted = models.BooleanField(default=False)
 	completed_on = models.DateTimeField(null=True, blank=True)
 	added_on = models.DateTimeField(default=timezone.now)

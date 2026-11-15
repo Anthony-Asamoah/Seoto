@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.utils import timezone
 
 from domains.apps.foodie.models import MealTimeSlot, UserMealSchedule, meal, userPreference
 from domains.apps.foodie.services import send_due_meal_notifications
@@ -41,30 +42,42 @@ class SendDueMealNotificationsTests(TestCase):
             is_active=True,
         )
 
+    def _run(self, hour, minute=0):
+        with patch('domains.pwa.services.enqueue_push_notification') as mock_push:
+            result = send_due_meal_notifications(now=timezone.make_aware(_at(hour, minute)))
+        return result, mock_push
+
     def test_sends_to_subscribed_user(self):
         self._add_subscription(self.user)
-        with patch('domains.apps.foodie.services.datetime') as mock_dt, \
-                patch('domains.pwa.services.send_push_notification', return_value=1) as mock_push:
-            mock_dt.now.return_value = _at(13)
-            result = send_due_meal_notifications()
+        result, mock_push = self._run(13)
 
         mock_push.assert_called_once()
         self.assertEqual(result, {'sent': 1, 'skipped': 0})
 
-    def test_skips_user_without_active_subscription(self):
-        with patch('domains.apps.foodie.services.datetime') as mock_dt, \
-                patch('domains.pwa.services.send_push_notification') as mock_push:
-            mock_dt.now.return_value = _at(13)
-            result = send_due_meal_notifications()
-
-        mock_push.assert_not_called()
-        self.assertEqual(result, {'sent': 0, 'skipped': 1})
-
-    def test_no_schedules_for_hour(self):
-        with patch('domains.apps.foodie.services.datetime') as mock_dt, \
-                patch('domains.pwa.services.send_push_notification') as mock_push:
-            mock_dt.now.return_value = _at(3)  # no schedule at 03:xx
-            result = send_due_meal_notifications()
+    def test_not_sent_before_slot_time(self):
+        self._add_subscription(self.user)
+        result, mock_push = self._run(12, 59)
 
         mock_push.assert_not_called()
         self.assertEqual(result, {'sent': 0, 'skipped': 0})
+
+    def test_sent_once_per_fire_time(self):
+        self._add_subscription(self.user)
+        self._run(13, 2)
+        result, mock_push = self._run(13, 3)
+
+        mock_push.assert_not_called()
+        self.assertEqual(result, {'sent': 0, 'skipped': 0})
+
+    def test_late_beyond_grace_is_skipped(self):
+        self._add_subscription(self.user)
+        result, mock_push = self._run(13, 31)
+
+        mock_push.assert_not_called()
+        self.assertEqual(result, {'sent': 0, 'skipped': 0})
+
+    def test_skips_user_without_active_subscription(self):
+        result, mock_push = self._run(13)
+
+        mock_push.assert_not_called()
+        self.assertEqual(result, {'sent': 0, 'skipped': 1})

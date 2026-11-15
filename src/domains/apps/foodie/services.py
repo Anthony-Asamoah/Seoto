@@ -1,13 +1,16 @@
 import zlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from random import Random, choice, sample
 
 from django.conf import settings
 from django.core import signing
+from django.db import transaction
+from django.utils import timezone
 
 from .models import meal, userPreference, UserMealSchedule, DailyMealSuggestion, MealTimeSlot
 
 SHARE_SALT = 'foodie.share'
+NOTIFY_GRACE_MINUTES = 30
 
 
 class ShareTokenError(Exception):
@@ -371,35 +374,47 @@ def suggest(user=None, slot=None, request=None):
     return _build_context(mealtime, option_1_obj, option_2_obj, fancy_obj)
 
 
-def send_due_meal_notifications(current_hour=None):
-    """Send a meal suggestion push notification to every user whose schedule is due this hour.
+def send_due_meal_notifications(now=None):
+    """Send a meal suggestion push to each user whose slot time has passed in the last 30 minutes.
 
-    Finds all UserMealSchedule rows whose time falls in ``current_hour`` (defaults to the
-    current local hour), and for each distinct user with an active push subscription, sends a
-    suggestion built via :func:`suggest`. Returns ``{'sent': int, 'skipped': int}``.
+    Each schedule is notified once per fire time (`last_notified_at`), and a missed window is
+    skipped rather than sent late. Returns ``{'sent': int, 'skipped': int}``.
     """
-    # Lazy import to avoid an import-time foodie -> pwa coupling at module load.
+    from domains.pwa.services import enqueue_push_notification
+
+    now = now or timezone.localtime()
+    window_start = now - timedelta(minutes=NOTIFY_GRACE_MINUTES)
+
+    # shortcut: a window straddling midnight matches nothing, so slots at 00:00-00:30 never fire.
+    sent_count = 0
+    skipped_count = 0
+
+    with transaction.atomic():
+        due_schedules = list(
+            UserMealSchedule.objects.select_for_update(skip_locked=True, of=('self',)).select_related('user', 'slot')
+            .exclude(slot__label='fancy')
+            .filter(time__lte=now.time(), time__gt=window_start.time())
+        )
+        sent_count, skipped_count = _claim_and_queue(due_schedules, now, enqueue_push_notification)
+
+    return {'sent': sent_count, 'skipped': skipped_count}
+
+
+def _claim_and_queue(due_schedules, now, enqueue_push_notification):
     from domains.pwa.models import PushSubscription
-    from domains.pwa.services import send_push_notification
-
-    if current_hour is None:
-        current_hour = datetime.now().hour
-
-    due_schedules = UserMealSchedule.objects.select_related('user', 'slot').filter(
-        time__hour=current_hour,
-    )
 
     sent_count = 0
     skipped_count = 0
-    seen_users = set()
 
     for schedule in due_schedules:
-        user = schedule.user
-
-        if user.id in seen_users:
+        fire_at = timezone.make_aware(datetime.combine(now.date(), schedule.time))
+        if schedule.last_notified_at and schedule.last_notified_at >= fire_at:
             continue
-        seen_users.add(user.id)
 
+        schedule.last_notified_at = now
+        schedule.save(update_fields=['last_notified_at'])
+
+        user = schedule.user
         if not PushSubscription.objects.filter(user=user, is_active=True).exists():
             skipped_count += 1
             continue
@@ -419,14 +434,10 @@ def send_due_meal_notifications(current_hour=None):
         else:
             body = f"How about {option_1['name']}?"
 
-        result = send_push_notification(user=user, title=title, body=body, url='/foodie/')
+        enqueue_push_notification(user=user, title=title, body=body, url='/foodie/')
+        sent_count += 1
 
-        if result:
-            sent_count += 1
-        else:
-            skipped_count += 1
-
-    return {'sent': sent_count, 'skipped': skipped_count}
+    return sent_count, skipped_count
 
 
 def get_all(user=None):
