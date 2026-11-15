@@ -5,8 +5,6 @@ import logging
 from django.conf import settings
 from django.http import HttpResponse
 
-logger = logging.getLogger(__name__)
-
 
 def get_client_ip(request):
 	"""Client IP from the right of X-Forwarded-For, skipping the proxies we run behind.
@@ -21,12 +19,6 @@ def get_client_ip(request):
 		ip = remote
 	else:
 		ip = parts[-(hops + 1)] if len(parts) > hops else parts[-1]
-
-	# TEMP: verify the proxy chain in prod, then delete
-	logger.warning(
-		'client-ip debug: resolved=%s remote=%s xff=%r cf=%r hops=%s',
-		ip, remote, request.META.get('HTTP_X_FORWARDED_FOR'), request.META.get('HTTP_CF_CONNECTING_IP'), hops,
-	)
 	return ip
 
 
