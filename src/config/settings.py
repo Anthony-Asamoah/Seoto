@@ -48,6 +48,11 @@ CSRF_FAILURE_VIEW = 'domains.home.views.error_handlers.csrf_failure'
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv(post_process=tuple))
 APP_DOMAIN = config('APP_DOMAIN')
 
+# Proxies in front of Traefik (Cloudflare = 1); see domains.home.utils.get_client_ip.
+CLIENT_IP_PROXY_HOPS = config('CLIENT_IP_PROXY_HOPS', default=1, cast=int)
+# Shared secret for /home/incoming; empty keeps the endpoint closed.
+INCOMING_WEBHOOK_SECRET = config('INCOMING_WEBHOOK_SECRET', default='')
+
 # Gates the TOTP requirement on the admin. Turn off only to recover from a lockout;
 # django_otp itself stays installed either way so the devices survive the round trip.
 IS_ADMIN_OTP_ENABLED = config('IS_ADMIN_OTP_ENABLED', default=True, cast=bool)

@@ -2,20 +2,31 @@ import hashlib
 import hmac
 import logging
 
+from django.conf import settings
 from django.http import HttpResponse
+
+logger = logging.getLogger(__name__)
 
 
 def get_client_ip(request):
-	try:
-		x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-		if x_forwarded_for:
-			ip = x_forwarded_for.split(',')[0]
-		else:
-			ip = request.META.get('REMOTE_ADDR')
-	except Exception as e:
-		ip = request.META.get('REMOTE_ADDR')
+	"""Client IP from the right of X-Forwarded-For, skipping the proxies we run behind.
 
-	logging.info(f'IP: {ip}')
+	Each trusted proxy appends the peer it saw, so the left side is attacker-controlled.
+	Chain is Cloudflare -> Traefik: Traefik appends Cloudflare's edge IP, Cloudflare appended the client.
+	"""
+	remote = request.META.get('REMOTE_ADDR')
+	parts = [p.strip() for p in request.META.get('HTTP_X_FORWARDED_FOR', '').split(',') if p.strip()]
+	hops = settings.CLIENT_IP_PROXY_HOPS
+	if not parts:
+		ip = remote
+	else:
+		ip = parts[-(hops + 1)] if len(parts) > hops else parts[-1]
+
+	# TEMP: verify the proxy chain in prod, then delete
+	logger.warning(
+		'client-ip debug: resolved=%s remote=%s xff=%r cf=%r hops=%s',
+		ip, remote, request.META.get('HTTP_X_FORWARDED_FOR'), request.META.get('HTTP_CF_CONNECTING_IP'), hops,
+	)
 	return ip
 
 

@@ -1,3 +1,4 @@
+import hmac
 import logging
 from datetime import datetime
 
@@ -14,6 +15,10 @@ from domains.home.utils import get_client_ip
 def incoming(request):
     if request.method != 'POST':
         return HttpResponse(status=405)
+    secret = settings.INCOMING_WEBHOOK_SECRET
+    supplied = request.headers.get('X-Webhook-Secret') or request.GET.get('token', '')
+    if not secret or not hmac.compare_digest(supplied.encode(), secret.encode()):
+        return HttpResponse(status=403)
     ip = get_client_ip(request)
     timestamp = datetime.now().utcnow()
 

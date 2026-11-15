@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% load static %}
+{% load static sanitize %}
 
 {% block title %}| My Foods{% endblock %}
 
@@ -53,7 +53,7 @@
                                 {% endif %}
                             </td>
                             <td>{{ m.name }}</td>
-                            <td>{{ m.description|truncatewords_html:12|safe }}</td>
+                            <td>{{ m.description|truncatewords_html:12|sanitize }}</td>
                             <td>
                                 {% if m.is_public %}
                                     <span class="badge badge-public">Public</span>

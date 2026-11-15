@@ -1,4 +1,4 @@
-{% load spending_extras %}
+{% load spending_extras sanitize %}
 <div class="transaction-card"
      data-bs-toggle="collapse"
      data-bs-target="#transaction-{{ transaction.id }}"
@@ -57,7 +57,7 @@
             {% if transaction.details %}
                 <div class="detail-row">
                     <span class="detail-label">Details:</span>
-                    <span class="detail-value">{{ transaction.details|safe }}</span>
+                    <span class="detail-value">{{ transaction.details|sanitize }}</span>
                 </div>
             {% endif %}
             {% if transaction.reference %}

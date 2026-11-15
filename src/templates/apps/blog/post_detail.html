@@ -1,4 +1,5 @@
 {% extends 'apps/blog/base.html' %}
+{% load sanitize %}
 
 {% block meta %}
     <!-- Open Graph Meta Tags for Facebook/LinkedIn -->
@@ -61,7 +62,7 @@
         <hr/>
 
         <div class="post-content rich-text-content">
-            {{ post.content|safe }}
+            {{ post.content|sanitize_rich }}
         </div>
         <hr/>
 

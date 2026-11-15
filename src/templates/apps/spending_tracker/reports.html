@@ -1,4 +1,4 @@
-{% load static spending_extras %}
+{% load static spending_extras sanitize %}
 {{ trend_data|json_script:"trend-data" }}
 {{ json_expense_categories|json_script:"expense-categories-data" }}
 {{ json_account_performance|json_script:"account-performance-data" }}
@@ -875,7 +875,7 @@
                                            data-details-id="transfer-detail-{{ forloop.counter }}">
                                             <i class="fa fa-circle-info"></i>
                                         </a>
-                                        <div id="transfer-detail-{{ forloop.counter }}" class="d-none">{{ t.details|safe }}</div>
+                                        <div id="transfer-detail-{{ forloop.counter }}" class="d-none">{{ t.details|sanitize }}</div>
                                     {% else %}
                                         —
                                     {% endif %}

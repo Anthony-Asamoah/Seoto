@@ -1,4 +1,5 @@
 {% extends 'apps/blog/base.html' %}
+{% load sanitize %}
 
 {% block title %}- {{ author.username }} Posts{% endblock %}
 
@@ -34,7 +35,7 @@
                 {% endif %}
 
                 <div class="post-content markdown-content">
-                    {{ post.content|safe|truncatewords_html:50 }}
+                    {{ post.content|truncatewords_html:50|sanitize_rich }}
                     <a href="{% url 'post-detail' post.pk %}" class="btn btn-outline-primary">Read More</a>
                 </div>
 
