@@ -6,7 +6,7 @@
             {% if group.items %}
                 {% has_nav_item_active group.items as has_active %}
 
-                <div class="hidden mb-1.5 has-[ol]:has-[li]:block" {% if group.collapsible %}x-data="{navigationOpen: {% if has_active %}true{% else %}false{% endif %}}"{% endif %}>
+                <div class="hidden mb-1.5 has-[ol]:has-[li]:block" {% if group.collapsible %}x-data="{navigationOpen: $persist(false).as('seoto-nav:{{ group.title|slugify }}')}" {% if has_active %}x-init="navigationOpen = true"{% endif %}{% endif %}>
                     {% if group.separator %}
                         <hr class="border-t border-base-200 mx-6 my-2 dark:border-base-800" />
                     {% endif %}
@@ -29,7 +29,7 @@
                     <ol class="flex flex-col px-6">
                         {% for item in group.items %}
                             {% if item.has_permission %}
-                                <li {% if item.items|is_list %}x-data="{'subnavigationOpen': {% if item.items|has_active_item %}true{% else %}false{% endif %} }"{% endif %}>
+                                <li {% if item.items|is_list %}x-data="{subnavigationOpen: $persist(false).as('seoto-nav:{{ group.title|slugify }}:{{ item.title|slugify }}')}" {% if item.items|has_active_item %}x-init="subnavigationOpen = true; navigationOpen = true"{% endif %}{% endif %}>
                                     <a {% if item.items|is_list and item.items|length > 0 %}x-on:click="subnavigationOpen = !subnavigationOpen"{% else %}href="{% if item.link_callback %}{{ item.link_callback }}{% else %}{{ item.link }}{% endif %}"{% endif %} class="cursor-pointer flex h-[38px] items-center -mx-3 px-3 rounded-default hover:text-primary-600 dark:hover:text-primary-500 {% if item.active %}bg-base-100 font-semibold text-primary-600 dark:bg-white/[.06] dark:text-primary-500 active{% endif %}" {% if item.link_attrs %}{% include "unfold/helpers/attrs.html" with attrs=item.link_attrs %}{% endif %}>
                                         {% if item.icon_template %}
                                             {% include item.icon_template with item=item %}
